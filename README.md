@@ -5,7 +5,7 @@
 - **Project Title:** Dark Matter Engine
 - **Version:** 1.0
 - **Date:** 2025-03-07
-- **Author(s):** Rivierez Mathias / Lucas Delphin / Brieuc Mignot / Tavares Silva Ivania / Quentin Recco / Gabriel Funaro / Diamin Nathan
+- **Author(s):** Ari / Raytroll / Cyparisss / Tavares Silva Ivania / ZoraNovachrono / Gabriel / ND972 
 - **Contact:** [AriLeGrand](https://github.com/AriLeGrand) / [Raytroll](https://github.com/Raytroll) / [Cyparisss](https://github.com/Cyparisss) / [IvaniaTAVARESSILVA](https://github.com/IvaniaTAVARESSILVA) / [ZoraNovachrono](https://github.com/ZoraNovachrono) / [FTGabriel](https://github.com/FTGabriel) / [ND972](https://github.com/ND972)
 
 ## Revision History
