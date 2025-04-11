@@ -1,0 +1,181 @@
+\doxysection{bt\+Raycast\+Callback.\+cpp}
+\hypertarget{bt_raycast_callback_8cpp_source}{}\label{bt_raycast_callback_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/NarrowPhaseCollision/btRaycastCallback.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/NarrowPhaseCollision/btRaycastCallback.cpp}}
+\mbox{\hyperlink{bt_raycast_callback_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2006\ Erwin\ Coumans\ \ https://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{comment}{//\#include\ <stdio.h>}}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_convex_shape_8h}{BulletCollision/CollisionShapes/btConvexShape.h}}"{}}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_triangle_shape_8h}{BulletCollision/CollisionShapes/btTriangleShape.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_sub_simplex_convex_cast_8h}{BulletCollision/NarrowPhaseCollision/btSubSimplexConvexCast.h}}"{}}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_gjk_convex_cast_8h}{BulletCollision/NarrowPhaseCollision/btGjkConvexCast.h}}"{}}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_continuous_convex_collision_8h}{BulletCollision/NarrowPhaseCollision/btContinuousConvexCollision.h}}"{}}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_gjk_epa_penetration_depth_solver_8h}{BulletCollision/NarrowPhaseCollision/btGjkEpaPenetrationDepthSolver.h}}"{}}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_raycast_callback_8h}{btRaycastCallback.h}}"{}}}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \mbox{\hyperlink{classbt_triangle_raycast_callback_acfd6e50b725eedde2c5054d877a679fc}{btTriangleRaycastCallback::btTriangleRaycastCallback}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ from,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ to,\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_ac7ba7d3cce3d19ca020e056b37231289}{flags}})}
+\DoxyCodeLine{00027\ \ \ \ \ :\ \mbox{\hyperlink{classbt_triangle_raycast_callback_abeb58bc424f22dda0061939895c76339}{m\_from}}(from),}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \mbox{\hyperlink{classbt_triangle_raycast_callback_aa322a8ab074226440312548a7512e4bc}{m\_to}}(to),}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \textcolor{comment}{//@BP\ Mod}}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \mbox{\hyperlink{classbt_triangle_raycast_callback_a62a5d1ff4e30d29aa0de9cc8dcda8911}{m\_flags}}(\mbox{\hyperlink{glad_8h_ac7ba7d3cce3d19ca020e056b37231289}{flags}}),}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \mbox{\hyperlink{classbt_triangle_raycast_callback_a3f105a17c84acb05a1ff5a0a3fa9e43a}{m\_hitFraction}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.))}
+\DoxyCodeLine{00032\ \{}
+\DoxyCodeLine{00033\ \}}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_triangle_raycast_callback_abfa22cc0d4b842c1ad9566154f450f1d}{btTriangleRaycastCallback::processTriangle}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}*\ triangle,\ \textcolor{keywordtype}{int}\ partId,\ \textcolor{keywordtype}{int}\ triangleIndex)}
+\DoxyCodeLine{00036\ \{}
+\DoxyCodeLine{00037\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ vert0\ =\ triangle[0];}
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ vert1\ =\ triangle[1];}
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ vert2\ =\ triangle[2];}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ v10;}
+\DoxyCodeLine{00042\ \ \ \ \ v10\ =\ vert1\ -\/\ vert0;}
+\DoxyCodeLine{00043\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ v20;}
+\DoxyCodeLine{00044\ \ \ \ \ v20\ =\ vert2\ -\/\ vert0;}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00046\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ triangleNormal;}
+\DoxyCodeLine{00047\ \ \ \ \ triangleNormal\ =\ v10.cross(v20);}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ dist\ =\ vert0.dot(triangleNormal);}
+\DoxyCodeLine{00050\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ dist\_a\ =\ triangleNormal.dot(\mbox{\hyperlink{classbt_triangle_raycast_callback_abeb58bc424f22dda0061939895c76339}{m\_from}});}
+\DoxyCodeLine{00051\ \ \ \ \ dist\_a\ -\/=\ dist;}
+\DoxyCodeLine{00052\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ dist\_b\ =\ triangleNormal.dot(\mbox{\hyperlink{classbt_triangle_raycast_callback_aa322a8ab074226440312548a7512e4bc}{m\_to}});}
+\DoxyCodeLine{00053\ \ \ \ \ dist\_b\ -\/=\ dist;}
+\DoxyCodeLine{00054\ }
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keywordflow}{if}\ (dist\_a\ *\ dist\_b\ >=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0))}
+\DoxyCodeLine{00056\ \ \ \ \ \{}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};\ \ \textcolor{comment}{//\ same\ sign}}
+\DoxyCodeLine{00058\ \ \ \ \ \}}
+\DoxyCodeLine{00059\ }
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{keywordflow}{if}\ (((\mbox{\hyperlink{classbt_triangle_raycast_callback_a62a5d1ff4e30d29aa0de9cc8dcda8911}{m\_flags}}\ \&\ \mbox{\hyperlink{classbt_triangle_raycast_callback_a561b385fd82b6b972fb6d206a42fc478ab3fa7f2634cd32a796acfde17c1fc15a}{kF\_FilterBackfaces}})\ !=\ 0)\ \&\&\ (dist\_a\ <=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0)))}
+\DoxyCodeLine{00061\ \ \ \ \ \{}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Backface,\ skip\ check}}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00064\ \ \ \ \ \}}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ proj\_length\ =\ dist\_a\ -\/\ dist\_b;}
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}}\ =\ (dist\_a)\ /\ (proj\_length);}
+\DoxyCodeLine{00068\ \ \ \ \ \textcolor{comment}{//\ Now\ we\ have\ the\ intersection\ point\ on\ the\ plane,\ we'll\ see\ if\ it's\ inside\ the\ triangle}}
+\DoxyCodeLine{00069\ \ \ \ \ \textcolor{comment}{//\ Add\ an\ epsilon\ as\ a\ tolerance\ for\ the\ raycast,}}
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{comment}{//\ in\ case\ the\ ray\ hits\ exacly\ on\ the\ edge\ of\ the\ triangle.}}
+\DoxyCodeLine{00071\ \ \ \ \ \textcolor{comment}{//\ It\ must\ be\ scaled\ for\ the\ triangle\ size.}}
+\DoxyCodeLine{00072\ }
+\DoxyCodeLine{00073\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}}\ <\ \mbox{\hyperlink{classbt_triangle_raycast_callback_a3f105a17c84acb05a1ff5a0a3fa9e43a}{m\_hitFraction}})}
+\DoxyCodeLine{00074\ \ \ \ \ \{}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ edge\_tolerance\ =\ triangleNormal.length2();}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ edge\_tolerance\ *=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/0.0001);}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ point;}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ point.setInterpolate3(\mbox{\hyperlink{classbt_triangle_raycast_callback_abeb58bc424f22dda0061939895c76339}{m\_from}},\ \mbox{\hyperlink{classbt_triangle_raycast_callback_aa322a8ab074226440312548a7512e4bc}{m\_to}},\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}});}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ v0p;}
+\DoxyCodeLine{00081\ \ \ \ \ \ \ \ \ \ \ \ \ v0p\ =\ vert0\ -\/\ point;}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ v1p;}
+\DoxyCodeLine{00083\ \ \ \ \ \ \ \ \ \ \ \ \ v1p\ =\ vert1\ -\/\ point;}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ cp0;}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ \ \ \ \ cp0\ =\ v0p.cross(v1p);}
+\DoxyCodeLine{00086\ }
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})(cp0.dot(triangleNormal))\ >=\ edge\_tolerance)}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ v2p;}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ v2p\ =\ vert2\ -\/\ point;}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ cp1;}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cp1\ =\ v1p.cross(v2p);}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})(cp1.dot(triangleNormal))\ >=\ edge\_tolerance)}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ cp2;}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cp2\ =\ v2p.cross(v0p);}
+\DoxyCodeLine{00097\ }
+\DoxyCodeLine{00098\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})(cp2.dot(triangleNormal))\ >=\ edge\_tolerance)}
+\DoxyCodeLine{00099\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00100\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//@BP\ Mod}}
+\DoxyCodeLine{00101\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Triangle\ normal\ isn't\ normalized}}
+\DoxyCodeLine{00102\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangleNormal.normalize();}
+\DoxyCodeLine{00103\ }
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//@BP\ Mod\ -\/\ Allow\ for\ unflipped\ normal\ when\ raycasting\ against\ backfaces}}
+\DoxyCodeLine{00105\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (((\mbox{\hyperlink{classbt_triangle_raycast_callback_a62a5d1ff4e30d29aa0de9cc8dcda8911}{m\_flags}}\ \&\ \mbox{\hyperlink{classbt_triangle_raycast_callback_a561b385fd82b6b972fb6d206a42fc478af09a31c174fc489ac13834e27ac1d1bc}{kF\_KeepUnflippedNormal}})\ ==\ 0)\ \&\&\ (dist\_a\ <=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0)))}
+\DoxyCodeLine{00106\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00107\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_triangle_raycast_callback_a3f105a17c84acb05a1ff5a0a3fa9e43a}{m\_hitFraction}}\ =\ \mbox{\hyperlink{classbt_triangle_raycast_callback_ae586790c742393f3650261de3a87f738}{reportHit}}(-\/triangleNormal,\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}},\ partId,\ triangleIndex);}
+\DoxyCodeLine{00108\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_triangle_raycast_callback_a3f105a17c84acb05a1ff5a0a3fa9e43a}{m\_hitFraction}}\ =\ \mbox{\hyperlink{classbt_triangle_raycast_callback_ae586790c742393f3650261de3a87f738}{reportHit}}(triangleNormal,\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}},\ partId,\ triangleIndex);}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00117\ \ \ \ \ \}}
+\DoxyCodeLine{00118\ \}}
+\DoxyCodeLine{00119\ }
+\DoxyCodeLine{00120\ \mbox{\hyperlink{classbt_triangle_convexcast_callback_ae34f524d20db09e0c81f7f98afc77497}{btTriangleConvexcastCallback::btTriangleConvexcastCallback}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_convex_shape_8h_a55a9d3eb9b332530624a2651ede0a28b}{btConvexShape}}*\ convexShape,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ convexShapeFrom,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ convexShapeTo,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ triangleToWorld,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ triangleCollisionMargin)}
+\DoxyCodeLine{00121\ \{}
+\DoxyCodeLine{00122\ \ \ \ \ \mbox{\hyperlink{classbt_triangle_convexcast_callback_a8431c9286e2157ba4fa955f20efd4856}{m\_convexShape}}\ =\ convexShape;}
+\DoxyCodeLine{00123\ \ \ \ \ \mbox{\hyperlink{classbt_triangle_convexcast_callback_aab60a7be21e4fd6c8139bb2570637804}{m\_convexShapeFrom}}\ =\ convexShapeFrom;}
+\DoxyCodeLine{00124\ \ \ \ \ \mbox{\hyperlink{classbt_triangle_convexcast_callback_a5dcc11b83390358d62115e26595b369d}{m\_convexShapeTo}}\ =\ convexShapeTo;}
+\DoxyCodeLine{00125\ \ \ \ \ \mbox{\hyperlink{classbt_triangle_convexcast_callback_a52e81f79e5164a46df5ae43bece29eb5}{m\_triangleToWorld}}\ =\ triangleToWorld;}
+\DoxyCodeLine{00126\ \ \ \ \ \mbox{\hyperlink{classbt_triangle_convexcast_callback_a51408b7878294c6255bcbf522df49971}{m\_hitFraction}}\ =\ 1.0f;}
+\DoxyCodeLine{00127\ \ \ \ \ \mbox{\hyperlink{classbt_triangle_convexcast_callback_ac10d5afa47d0ccd2fa5446569962b39f}{m\_triangleCollisionMargin}}\ =\ triangleCollisionMargin;}
+\DoxyCodeLine{00128\ \ \ \ \ \mbox{\hyperlink{classbt_triangle_convexcast_callback_ae093478803bf03fa70e45bec053c765e}{m\_allowedPenetration}}\ =\ 0.f;}
+\DoxyCodeLine{00129\ \}}
+\DoxyCodeLine{00130\ }
+\DoxyCodeLine{00131\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_triangle_convexcast_callback_a2927a686e707e8ed885433f120bc5e32}{btTriangleConvexcastCallback::processTriangle}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}*\ triangle,\ \textcolor{keywordtype}{int}\ partId,\ \textcolor{keywordtype}{int}\ triangleIndex)}
+\DoxyCodeLine{00132\ \{}
+\DoxyCodeLine{00133\ \ \ \ \ \mbox{\hyperlink{bt_triangle_shape_8h_abb9af934a7aa99a1277405c97195658d}{btTriangleShape}}\ triangleShape(triangle[0],\ triangle[1],\ triangle[2]);}
+\DoxyCodeLine{00134\ \ \ \ \ triangleShape.setMargin(\mbox{\hyperlink{classbt_triangle_convexcast_callback_ac10d5afa47d0ccd2fa5446569962b39f}{m\_triangleCollisionMargin}});}
+\DoxyCodeLine{00135\ }
+\DoxyCodeLine{00136\ \ \ \ \ \mbox{\hyperlink{bt_voronoi_simplex_solver_8h_a3b334607f9f018d3b42403e8b289b35d}{btVoronoiSimplexSolver}}\ simplexSolver;}
+\DoxyCodeLine{00137\ \ \ \ \ \mbox{\hyperlink{classbt_gjk_epa_penetration_depth_solver}{btGjkEpaPenetrationDepthSolver}}\ gjkEpaPenetrationSolver;}
+\DoxyCodeLine{00138\ }
+\DoxyCodeLine{00139\ \textcolor{comment}{//\#define\ \ USE\_SUBSIMPLEX\_CONVEX\_CAST\ 1}}
+\DoxyCodeLine{00140\ \textcolor{comment}{//if\ you\ reenable\ USE\_SUBSIMPLEX\_CONVEX\_CAST\ see\ commented\ out\ code\ below}}
+\DoxyCodeLine{00141\ \textcolor{preprocessor}{\#ifdef\ USE\_SUBSIMPLEX\_CONVEX\_CAST}}
+\DoxyCodeLine{00142\ \ \ \ \ \mbox{\hyperlink{classbt_subsimplex_convex_cast}{btSubsimplexConvexCast}}\ convexCaster(\mbox{\hyperlink{classbt_triangle_convexcast_callback_a8431c9286e2157ba4fa955f20efd4856}{m\_convexShape}},\ \&triangleShape,\ \&simplexSolver);}
+\DoxyCodeLine{00143\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00144\ \ \ \ \ \textcolor{comment}{//btGjkConvexCast\ \ \ convexCaster(m\_convexShape,\&triangleShape,\&simplexSolver);}}
+\DoxyCodeLine{00145\ \ \ \ \ \mbox{\hyperlink{classbt_continuous_convex_collision}{btContinuousConvexCollision}}\ convexCaster(\mbox{\hyperlink{classbt_triangle_convexcast_callback_a8431c9286e2157ba4fa955f20efd4856}{m\_convexShape}},\ \&triangleShape,\ \&simplexSolver,\ \&gjkEpaPenetrationSolver);}
+\DoxyCodeLine{00146\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\#USE\_SUBSIMPLEX\_CONVEX\_CAST}}
+\DoxyCodeLine{00147\ }
+\DoxyCodeLine{00148\ \ \ \ \ \mbox{\hyperlink{structbt_convex_cast_1_1_cast_result}{btConvexCast::CastResult}}\ castResult;}
+\DoxyCodeLine{00149\ \ \ \ \ castResult.\mbox{\hyperlink{structbt_convex_cast_1_1_cast_result_a4685e4b6ea1dd8acc76738986555874a}{m\_fraction}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.);}
+\DoxyCodeLine{00150\ \ \ \ \ castResult.\mbox{\hyperlink{structbt_convex_cast_1_1_cast_result_abb06d78a6878f231ab30a4e112d16781}{m\_allowedPenetration}}\ =\ \mbox{\hyperlink{classbt_triangle_convexcast_callback_ae093478803bf03fa70e45bec053c765e}{m\_allowedPenetration}};}
+\DoxyCodeLine{00151\ \ \ \ \ \textcolor{keywordflow}{if}\ (convexCaster.\mbox{\hyperlink{classbt_subsimplex_convex_cast_a93202199b82c9d2f3074617f8db72e17}{calcTimeOfImpact}}(\mbox{\hyperlink{classbt_triangle_convexcast_callback_aab60a7be21e4fd6c8139bb2570637804}{m\_convexShapeFrom}},\ \mbox{\hyperlink{classbt_triangle_convexcast_callback_a5dcc11b83390358d62115e26595b369d}{m\_convexShapeTo}},\ \mbox{\hyperlink{classbt_triangle_convexcast_callback_a52e81f79e5164a46df5ae43bece29eb5}{m\_triangleToWorld}},\ \mbox{\hyperlink{classbt_triangle_convexcast_callback_a52e81f79e5164a46df5ae43bece29eb5}{m\_triangleToWorld}},\ castResult))}
+\DoxyCodeLine{00152\ \ \ \ \ \{}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ \textcolor{comment}{//add\ hit}}
+\DoxyCodeLine{00154\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (castResult.\mbox{\hyperlink{structbt_convex_cast_1_1_cast_result_a148656b35ce0209617a5f65d60260e5b}{m\_normal}}.length2()\ >\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0001))}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00156\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (castResult.\mbox{\hyperlink{structbt_convex_cast_1_1_cast_result_a4685e4b6ea1dd8acc76738986555874a}{m\_fraction}}\ <\ \mbox{\hyperlink{classbt_triangle_convexcast_callback_a51408b7878294c6255bcbf522df49971}{m\_hitFraction}})}
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{/*\ btContinuousConvexCast's\ normal\ is\ already\ in\ world\ space\ */}}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{/*}}
+\DoxyCodeLine{00160\ \textcolor{comment}{\#ifdef\ USE\_SUBSIMPLEX\_CONVEX\_CAST}}
+\DoxyCodeLine{00161\ \textcolor{comment}{\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ //rotate\ normal\ into\ worldspace}}
+\DoxyCodeLine{00162\ \textcolor{comment}{\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ castResult.m\_normal\ =\ m\_convexShapeFrom.getBasis()\ *\ castResult.m\_normal;}}
+\DoxyCodeLine{00163\ \textcolor{comment}{\#endif\ //USE\_SUBSIMPLEX\_CONVEX\_CAST}}
+\DoxyCodeLine{00164\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ castResult.\mbox{\hyperlink{structbt_convex_cast_1_1_cast_result_a148656b35ce0209617a5f65d60260e5b}{m\_normal}}.normalize();}
+\DoxyCodeLine{00166\ }
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_triangle_convexcast_callback_a74bdd1264324629f7f44e305ec3187a2}{reportHit}}(castResult.\mbox{\hyperlink{structbt_convex_cast_1_1_cast_result_a148656b35ce0209617a5f65d60260e5b}{m\_normal}},}
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ castResult.\mbox{\hyperlink{structbt_convex_cast_1_1_cast_result_acb26f2da1eff229db573667b6a415aab}{m\_hitPoint}},}
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ castResult.\mbox{\hyperlink{structbt_convex_cast_1_1_cast_result_a4685e4b6ea1dd8acc76738986555874a}{m\_fraction}},}
+\DoxyCodeLine{00170\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ partId,}
+\DoxyCodeLine{00171\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangleIndex);}
+\DoxyCodeLine{00172\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00173\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00174\ \ \ \ \ \}}
+\DoxyCodeLine{00175\ \}}
+
+\end{DoxyCode}

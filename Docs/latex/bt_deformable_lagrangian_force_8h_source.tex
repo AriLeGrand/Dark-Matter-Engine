@@ -1,0 +1,378 @@
+\doxysection{bt\+Deformable\+Lagrangian\+Force.\+h}
+\hypertarget{bt_deformable_lagrangian_force_8h_source}{}\label{bt_deformable_lagrangian_force_8h_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletSoftBody/btDeformableLagrangianForce.h@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletSoftBody/btDeformableLagrangianForce.h}}
+\mbox{\hyperlink{bt_deformable_lagrangian_force_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{\ Written\ by\ Xuchen\ Han\ <xuchenhan2015@u.northwestern.edu>}}
+\DoxyCodeLine{00003\ \textcolor{comment}{\ }}
+\DoxyCodeLine{00004\ \textcolor{comment}{\ Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00005\ \textcolor{comment}{\ Copyright\ (c)\ 2019\ Google\ Inc.\ http://bulletphysics.org}}
+\DoxyCodeLine{00006\ \textcolor{comment}{\ This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{\ In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00008\ \textcolor{comment}{\ Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,}}
+\DoxyCodeLine{00009\ \textcolor{comment}{\ including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,}}
+\DoxyCodeLine{00010\ \textcolor{comment}{\ subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00011\ \textcolor{comment}{\ 1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{\ 2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{\ 3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{\ */}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#ifndef\ BT\_DEFORMABLE\_LAGRANGIAN\_FORCE\_H}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#define\ BT\_DEFORMABLE\_LAGRANGIAN\_FORCE\_H}}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_soft_body_8h}{btSoftBody.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ <\mbox{\hyperlink{bt_hash_map_8h}{LinearMath/btHashMap.h}}>}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ <iostream>}}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \textcolor{keyword}{enum}\ \mbox{\hyperlink{bt_deformable_lagrangian_force_8h_a3625d09e510427d96216d4b9e04f6e5f}{btDeformableLagrangianForceType}}}
+\DoxyCodeLine{00024\ \{}
+\DoxyCodeLine{00025\ \ \ \ \ \mbox{\hyperlink{bt_deformable_lagrangian_force_8h_a3625d09e510427d96216d4b9e04f6e5fae94488b112b17e3cb5f76124c0e1e608}{BT\_GRAVITY\_FORCE}}\ =\ 1,}
+\DoxyCodeLine{00026\ \ \ \ \ \mbox{\hyperlink{bt_deformable_lagrangian_force_8h_a3625d09e510427d96216d4b9e04f6e5fa9930607341f8e9906f8908e87522a3e3}{BT\_MASSSPRING\_FORCE}}\ =\ 2,}
+\DoxyCodeLine{00027\ \ \ \ \ \mbox{\hyperlink{bt_deformable_lagrangian_force_8h_a3625d09e510427d96216d4b9e04f6e5fab65c3ab492aca59138af45ef4fbbbcb1}{BT\_COROTATED\_FORCE}}\ =\ 3,}
+\DoxyCodeLine{00028\ \ \ \ \ \mbox{\hyperlink{bt_deformable_lagrangian_force_8h_a3625d09e510427d96216d4b9e04f6e5fade1cc757089c121fc7063326fe7e6884}{BT\_NEOHOOKEAN\_FORCE}}\ =\ 4,}
+\DoxyCodeLine{00029\ \ \ \ \ \mbox{\hyperlink{bt_deformable_lagrangian_force_8h_a3625d09e510427d96216d4b9e04f6e5fa1e3032a07c42b9b92085680a02a00507}{BT\_LINEAR\_ELASTICITY\_FORCE}}\ =\ 5,}
+\DoxyCodeLine{00030\ \ \ \ \ \mbox{\hyperlink{bt_deformable_lagrangian_force_8h_a3625d09e510427d96216d4b9e04f6e5fa5dacb788a75eea660709f02b364e14cb}{BT\_MOUSE\_PICKING\_FORCE}}\ =\ 6}
+\DoxyCodeLine{00031\ \};}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \textcolor{keyword}{static}\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{double}\ randomDouble(\textcolor{keywordtype}{double}\ low,\ \textcolor{keywordtype}{double}\ high)}
+\DoxyCodeLine{00034\ \{}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keywordflow}{return}\ low\ +\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{double}\textcolor{keyword}{>}(rand())\ /\ RAND\_MAX\ *\ (high\ -\/\ low);}
+\DoxyCodeLine{00036\ \}}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_deformable_lagrangian_force_aa4467cf53cb7a2fb5ad515b839765595}{btDeformableLagrangianForce}}}
+\DoxyCodeLine{00039\ \{}
+\DoxyCodeLine{00040\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00041\ \ \ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btVector3>}}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}};}
+\DoxyCodeLine{00042\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btSoftBody*>}}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}};}
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btSoftBody::Node*>}}*\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a38ff342b7bc2a51dcd78a77fe7c9a44f}{m\_nodes}};}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa4467cf53cb7a2fb5ad515b839765595}{btDeformableLagrangianForce}}()}
+\DoxyCodeLine{00046\ \ \ \ \ \{}
+\DoxyCodeLine{00047\ \ \ \ \ \}}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{keyword}{virtual}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a421203e9d20f8473be65b2be2637725c}{\string~btDeformableLagrangianForce}}()\ \{\}}
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00051\ \ \ \ \ \textcolor{comment}{//\ add\ all\ forces}}
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aaba7013070b6d3aef804e2b41f8c3995}{addScaledForces}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ scale,\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\&\ force)\ =\ 0;}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00054\ \ \ \ \ \textcolor{comment}{//\ add\ damping\ df}}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_abada2ee21e4e467f963737ab395d8b7d}{addScaledDampingForceDifferential}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ scale,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\&\ dv,\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\&\ df)\ =\ 0;}
+\DoxyCodeLine{00056\ }
+\DoxyCodeLine{00057\ \ \ \ \ \textcolor{comment}{//\ build\ diagonal\ of\ A\ matrix}}
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a4f34c4037b2daee1847452f57e1c6b5c}{buildDampingForceDifferentialDiagonal}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ scale,\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\&\ diagA)\ =\ 0;}
+\DoxyCodeLine{00059\ }
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{comment}{//\ add\ elastic\ df}}
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_adf621517a7682d10a42985167b9f1535}{addScaledElasticForceDifferential}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ scale,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\&\ dx,\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\&\ df)\ =\ 0;}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ \ \ \ \ \textcolor{comment}{//\ add\ all\ forces\ that\ are\ explicit\ in\ explicit\ solve}}
+\DoxyCodeLine{00064\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a577fdbe0769b94d0ba300c10948dbd35}{addScaledExplicitForce}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ scale,\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\&\ force)\ =\ 0;}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{comment}{//\ add\ all\ damping\ forces}}
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aac3d0b47bd80d23908dd97e90269adf1}{addScaledDampingForce}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ scale,\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\&\ force)\ =\ 0;}
+\DoxyCodeLine{00068\ }
+\DoxyCodeLine{00069\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a8878ac844560d1401a414cb3e76e7137}{addScaledHessian}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ scale)\ \{\}}
+\DoxyCodeLine{00070\ }
+\DoxyCodeLine{00071\ \ \ \ \ \textcolor{keyword}{virtual}\ \mbox{\hyperlink{bt_deformable_lagrangian_force_8h_a3625d09e510427d96216d4b9e04f6e5f}{btDeformableLagrangianForceType}}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a64f40dc6149a5ddfed9a3ac7fd500409}{getForceType}}()\ =\ 0;}
+\DoxyCodeLine{00072\ }
+\DoxyCodeLine{00073\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a549023b21e275e5645161569a109fab2}{reinitialize}}(\textcolor{keywordtype}{bool}\ nodeUpdated)}
+\DoxyCodeLine{00074\ \ \ \ \ \{}
+\DoxyCodeLine{00075\ \ \ \ \ \}}
+\DoxyCodeLine{00076\ }
+\DoxyCodeLine{00077\ \ \ \ \ \textcolor{comment}{//\ get\ number\ of\ nodes\ that\ have\ the\ force}}
+\DoxyCodeLine{00078\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a95763646f16c485838b4b9ff297d6f5f}{getNumNodes}}()}
+\DoxyCodeLine{00079\ \ \ \ \ \{}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numNodes\ =\ 0;}
+\DoxyCodeLine{00081\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}.size();\ ++i)}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00083\ \ \ \ \ \ \ \ \ \ \ \ \ numNodes\ +=\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}[i]-\/>m\_nodes.size();}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ numNodes;}
+\DoxyCodeLine{00086\ \ \ \ \ \}}
+\DoxyCodeLine{00087\ }
+\DoxyCodeLine{00088\ \ \ \ \ \textcolor{comment}{//\ add\ a\ soft\ body\ to\ be\ affected\ by\ the\ particular\ lagrangian\ force}}
+\DoxyCodeLine{00089\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aff81742364a6d69c138559a106efdcde}{addSoftBody}}(\mbox{\hyperlink{classbt_soft_body}{btSoftBody}}*\ psb)}
+\DoxyCodeLine{00090\ \ \ \ \ \{}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}.push\_back(psb);}
+\DoxyCodeLine{00092\ \ \ \ \ \}}
+\DoxyCodeLine{00093\ }
+\DoxyCodeLine{00094\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a9077fc0a0fdcc2499c12ac5039abc0e5}{removeSoftBody}}(\mbox{\hyperlink{classbt_soft_body}{btSoftBody}}*\ psb)}
+\DoxyCodeLine{00095\ \ \ \ \ \{}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}.remove(psb);}
+\DoxyCodeLine{00097\ \ \ \ \ \}}
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a16433a2812c79aec6b6176d154e695b6}{setIndices}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btSoftBody::Node*>}}*\ nodes)}
+\DoxyCodeLine{00100\ \ \ \ \ \{}
+\DoxyCodeLine{00101\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a38ff342b7bc2a51dcd78a77fe7c9a44f}{m\_nodes}}\ =\ nodes;}
+\DoxyCodeLine{00102\ \ \ \ \ \}}
+\DoxyCodeLine{00103\ }
+\DoxyCodeLine{00104\ \ \ \ \ \textcolor{comment}{//\ Calculate\ the\ incremental\ deformable\ generated\ from\ the\ input\ dx}}
+\DoxyCodeLine{00105\ \ \ \ \ \textcolor{keyword}{virtual}\ \mbox{\hyperlink{bt_matrix3x3_8h_a8789e58a469e9c671c351d681306b4d7}{btMatrix3x3}}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a048211be6fa7b6e7676b38805387ca8c}{Ds}}(\textcolor{keywordtype}{int}\ id0,\ \textcolor{keywordtype}{int}\ id1,\ \textcolor{keywordtype}{int}\ id2,\ \textcolor{keywordtype}{int}\ id3,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\&\ dx)}
+\DoxyCodeLine{00106\ \ \ \ \ \{}
+\DoxyCodeLine{00107\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ c1\ =\ dx[id1]\ -\/\ dx[id0];}
+\DoxyCodeLine{00108\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ c2\ =\ dx[id2]\ -\/\ dx[id0];}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ c3\ =\ dx[id3]\ -\/\ dx[id0];}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_matrix3x3_8h_a8789e58a469e9c671c351d681306b4d7}{btMatrix3x3}}(c1,\ c2,\ c3).transpose();}
+\DoxyCodeLine{00111\ \ \ \ \ \}}
+\DoxyCodeLine{00112\ }
+\DoxyCodeLine{00113\ \ \ \ \ \textcolor{comment}{//\ Calculate\ the\ incremental\ deformable\ generated\ from\ the\ current\ velocity}}
+\DoxyCodeLine{00114\ \ \ \ \ \textcolor{keyword}{virtual}\ \mbox{\hyperlink{bt_matrix3x3_8h_a8789e58a469e9c671c351d681306b4d7}{btMatrix3x3}}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a2aa3549cdf986a897230a24a89f22e59}{DsFromVelocity}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_soft_body_1_1_node}{btSoftBody::Node}}*\ n0,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_soft_body_1_1_node}{btSoftBody::Node}}*\ n1,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_soft_body_1_1_node}{btSoftBody::Node}}*\ n2,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_soft_body_1_1_node}{btSoftBody::Node}}*\ n3)}
+\DoxyCodeLine{00115\ \ \ \ \ \{}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ c1\ =\ n1-\/>\mbox{\hyperlink{structbt_soft_body_1_1_node_ab286626ebbca7d0ab07fb5bf04232540}{m\_v}}\ -\/\ n0-\/>\mbox{\hyperlink{structbt_soft_body_1_1_node_ab286626ebbca7d0ab07fb5bf04232540}{m\_v}};}
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ c2\ =\ n2-\/>\mbox{\hyperlink{structbt_soft_body_1_1_node_ab286626ebbca7d0ab07fb5bf04232540}{m\_v}}\ -\/\ n0-\/>\mbox{\hyperlink{structbt_soft_body_1_1_node_ab286626ebbca7d0ab07fb5bf04232540}{m\_v}};}
+\DoxyCodeLine{00118\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ c3\ =\ n3-\/>\mbox{\hyperlink{structbt_soft_body_1_1_node_ab286626ebbca7d0ab07fb5bf04232540}{m\_v}}\ -\/\ n0-\/>\mbox{\hyperlink{structbt_soft_body_1_1_node_ab286626ebbca7d0ab07fb5bf04232540}{m\_v}};}
+\DoxyCodeLine{00119\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_matrix3x3_8h_a8789e58a469e9c671c351d681306b4d7}{btMatrix3x3}}(c1,\ c2,\ c3).transpose();}
+\DoxyCodeLine{00120\ \ \ \ \ \}}
+\DoxyCodeLine{00121\ }
+\DoxyCodeLine{00122\ \ \ \ \ \textcolor{comment}{//\ test\ for\ addScaledElasticForce\ function}}
+\DoxyCodeLine{00123\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_ae8eaeefae66a8d42495886a38d03a1bf}{testDerivative}}()}
+\DoxyCodeLine{00124\ \ \ \ \ \{}
+\DoxyCodeLine{00125\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}.size();\ ++i)}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_soft_body}{btSoftBody}}*\ psb\ =\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}[i];}
+\DoxyCodeLine{00128\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++j)}
+\DoxyCodeLine{00129\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00130\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}[j].m\_q\ +=\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(randomDouble(-\/.1,\ .1),\ randomDouble(-\/.1,\ .1),\ randomDouble(-\/.1,\ .1));}
+\DoxyCodeLine{00131\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_a8510828b4ba9f48e77b3d3896ce7e3e3}{updateDeformation}}();}
+\DoxyCodeLine{00133\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00134\ }
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\ dx;}
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ dx.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(\mbox{\hyperlink{classbt_deformable_lagrangian_force_a95763646f16c485838b4b9ff297d6f5f}{getNumNodes}}());}
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\ dphi\_dx;}
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \ \ dphi\_dx.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(dx.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00139\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ dphi\_dx.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ \ \ \ \ dphi\_dx[i].setZero();}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aaba7013070b6d3aef804e2b41f8c3995}{addScaledForces}}(-\/1,\ dphi\_dx);}
+\DoxyCodeLine{00144\ }
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ write\ down\ the\ current\ position}}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}};}
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}.resize(dx.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ counter\ =\ 0;}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}.size();\ ++i)}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_soft_body}{btSoftBody}}*\ psb\ =\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}[i];}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++j)}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00154\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}[counter]\ =\ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}[j].m\_q;}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ counter++;}
+\DoxyCodeLine{00156\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \ \ counter\ =\ 0;}
+\DoxyCodeLine{00159\ }
+\DoxyCodeLine{00160\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ populate\ dx\ with\ random\ vectors}}
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ dx.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \ \ \ \ dx[i].setX(randomDouble(-\/1,\ 1));}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \ \ \ \ dx[i].setY(randomDouble(-\/1,\ 1));}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ \ \ \ \ dx[i].setZ(randomDouble(-\/1,\ 1));}
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00167\ }
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<double>}}\ errors;}
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ it\ =\ 0;\ it\ <\ 10;\ ++it)}
+\DoxyCodeLine{00170\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00171\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ dx.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00172\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00173\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ dx[i]\ *=\ 0.5;}
+\DoxyCodeLine{00174\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00175\ }
+\DoxyCodeLine{00176\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ get\ dphi/dx\ *\ dx}}
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ dphi\ =\ 0;}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ dx.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ dphi\ +=\ dphi\_dx[i].dot(dx[i]);}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00182\ }
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}.size();\ ++i)}
+\DoxyCodeLine{00184\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_soft_body}{btSoftBody}}*\ psb\ =\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}[i];}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++j)}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}[j].m\_q\ =\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}[counter]\ +\ dx[counter];}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ counter++;}
+\DoxyCodeLine{00190\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00191\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_a8510828b4ba9f48e77b3d3896ce7e3e3}{updateDeformation}}();}
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00193\ \ \ \ \ \ \ \ \ \ \ \ \ counter\ =\ 0;}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ f1\ =\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a4ed7dfdea1ba30dd8e548e0ab79caf31}{totalElasticEnergy}}(0);}
+\DoxyCodeLine{00195\ }
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}.size();\ ++i)}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_soft_body}{btSoftBody}}*\ psb\ =\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}[i];}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++j)}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}[j].m\_q\ =\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}[counter]\ -\/\ dx[counter];}
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ counter++;}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_a8510828b4ba9f48e77b3d3896ce7e3e3}{updateDeformation}}();}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ \ \ \ \ counter\ =\ 0;}
+\DoxyCodeLine{00207\ }
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ f2\ =\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a4ed7dfdea1ba30dd8e548e0ab79caf31}{totalElasticEnergy}}(0);}
+\DoxyCodeLine{00209\ }
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//restore\ m\_q}}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}.size();\ ++i)}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_soft_body}{btSoftBody}}*\ psb\ =\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}[i];}
+\DoxyCodeLine{00214\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++j)}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}[j].m\_q\ =\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}[counter];}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ counter++;}
+\DoxyCodeLine{00218\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00219\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_a8510828b4ba9f48e77b3d3896ce7e3e3}{updateDeformation}}();}
+\DoxyCodeLine{00220\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00221\ \ \ \ \ \ \ \ \ \ \ \ \ counter\ =\ 0;}
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ error\ =\ f1\ -\/\ f2\ -\/\ 2\ *\ dphi;}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \ \ \ \ errors.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(error);}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Iteration\ =\ "{}}\ <<\ it\ <<\ \textcolor{stringliteral}{"{},\ f1\ =\ "{}}\ <<\ f1\ <<\ \textcolor{stringliteral}{"{},\ f2\ =\ "{}}\ <<\ f2\ <<\ \textcolor{stringliteral}{"{},\ error\ =\ "{}}\ <<\ error\ <<\ std::endl;}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 1;\ i\ <\ errors.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00227\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Iteration\ =\ "{}}\ <<\ i\ <<\ \textcolor{stringliteral}{"{},\ ratio\ =\ "{}}\ <<\ errors[i\ -\/\ 1]\ /\ errors[i]\ <<\ std::endl;}
+\DoxyCodeLine{00229\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00230\ \ \ \ \ \}}
+\DoxyCodeLine{00231\ }
+\DoxyCodeLine{00232\ \ \ \ \ \textcolor{comment}{//\ test\ for\ addScaledElasticForce\ function}}
+\DoxyCodeLine{00233\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a89a173b1a09d460d010f1c2612eb85a2}{testHessian}}()}
+\DoxyCodeLine{00234\ \ \ \ \ \{}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}.size();\ ++i)}
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_soft_body}{btSoftBody}}*\ psb\ =\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}[i];}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++j)}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}[j].m\_q\ +=\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(randomDouble(-\/.1,\ .1),\ randomDouble(-\/.1,\ .1),\ randomDouble(-\/.1,\ .1));}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_a8510828b4ba9f48e77b3d3896ce7e3e3}{updateDeformation}}();}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00244\ }
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\ dx;}
+\DoxyCodeLine{00246\ \ \ \ \ \ \ \ \ dx.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(\mbox{\hyperlink{classbt_deformable_lagrangian_force_a95763646f16c485838b4b9ff297d6f5f}{getNumNodes}}());}
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\ df;}
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ df.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(dx.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\ f1;}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ f1.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(dx.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\ f2;}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ f2.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(dx.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00253\ }
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ write\ down\ the\ current\ position}}
+\DoxyCodeLine{00255\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a0fd3ca1cfccd20ea58f129775e3650bc}{TVStack}}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}};}
+\DoxyCodeLine{00256\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}.resize(dx.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ counter\ =\ 0;}
+\DoxyCodeLine{00258\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}.size();\ ++i)}
+\DoxyCodeLine{00259\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00260\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_soft_body}{btSoftBody}}*\ psb\ =\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}[i];}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++j)}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00263\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}[counter]\ =\ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}[j].m\_q;}
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ counter++;}
+\DoxyCodeLine{00265\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00266\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00267\ \ \ \ \ \ \ \ \ counter\ =\ 0;}
+\DoxyCodeLine{00268\ }
+\DoxyCodeLine{00269\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ populate\ dx\ with\ random\ vectors}}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ dx.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00272\ \ \ \ \ \ \ \ \ \ \ \ \ dx[i].setX(randomDouble(-\/1,\ 1));}
+\DoxyCodeLine{00273\ \ \ \ \ \ \ \ \ \ \ \ \ dx[i].setY(randomDouble(-\/1,\ 1));}
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ \ \ \ \ dx[i].setZ(randomDouble(-\/1,\ 1));}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00276\ }
+\DoxyCodeLine{00277\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<double>}}\ errors;}
+\DoxyCodeLine{00278\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ it\ =\ 0;\ it\ <\ 10;\ ++it)}
+\DoxyCodeLine{00279\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00280\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ dx.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00281\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ dx[i]\ *=\ 0.5;}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00284\ }
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ get\ df}}
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ df.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ df[i].setZero();}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ f1[i].setZero();}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ f2[i].setZero();}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00292\ }
+\DoxyCodeLine{00293\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//set\ df}}
+\DoxyCodeLine{00294\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_adf621517a7682d10a42985167b9f1535}{addScaledElasticForceDifferential}}(-\/1,\ dx,\ df);}
+\DoxyCodeLine{00295\ }
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}.size();\ ++i)}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_soft_body}{btSoftBody}}*\ psb\ =\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}[i];}
+\DoxyCodeLine{00299\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++j)}
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00301\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}[j].m\_q\ =\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}[counter]\ +\ dx[counter];}
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ counter++;}
+\DoxyCodeLine{00303\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_a8510828b4ba9f48e77b3d3896ce7e3e3}{updateDeformation}}();}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00306\ \ \ \ \ \ \ \ \ \ \ \ \ counter\ =\ 0;}
+\DoxyCodeLine{00307\ }
+\DoxyCodeLine{00308\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//set\ f1}}
+\DoxyCodeLine{00309\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aaba7013070b6d3aef804e2b41f8c3995}{addScaledForces}}(-\/1,\ f1);}
+\DoxyCodeLine{00310\ }
+\DoxyCodeLine{00311\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}.size();\ ++i)}
+\DoxyCodeLine{00312\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00313\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_soft_body}{btSoftBody}}*\ psb\ =\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}[i];}
+\DoxyCodeLine{00314\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++j)}
+\DoxyCodeLine{00315\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00316\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}[j].m\_q\ =\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}[counter]\ -\/\ dx[counter];}
+\DoxyCodeLine{00317\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ counter++;}
+\DoxyCodeLine{00318\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_a8510828b4ba9f48e77b3d3896ce7e3e3}{updateDeformation}}();}
+\DoxyCodeLine{00320\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00321\ \ \ \ \ \ \ \ \ \ \ \ \ counter\ =\ 0;}
+\DoxyCodeLine{00322\ }
+\DoxyCodeLine{00323\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//set\ f2}}
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aaba7013070b6d3aef804e2b41f8c3995}{addScaledForces}}(-\/1,\ f2);}
+\DoxyCodeLine{00325\ }
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//restore\ m\_q}}
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}.size();\ ++i)}
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_soft_body}{btSoftBody}}*\ psb\ =\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_aa85f9d1e51d1abafec19dc3a798232d2}{m\_softBodies}}[i];}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++j)}
+\DoxyCodeLine{00331\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00332\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_ad53c95f39d517c1b72db24f175e92fb5}{m\_nodes}}[j].m\_q\ =\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}[counter];}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ counter++;}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ psb-\/>\mbox{\hyperlink{classbt_soft_body_a8510828b4ba9f48e77b3d3896ce7e3e3}{updateDeformation}}();}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \ \ \ \ \ \ counter\ =\ 0;}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}\ error\ =\ 0;}
+\DoxyCodeLine{00339\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ df.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ error\_vector\ =\ f1[i]\ -\/\ f2[i]\ -\/\ 2\ *\ df[i];}
+\DoxyCodeLine{00342\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ error\ +=\ error\_vector.length2();}
+\DoxyCodeLine{00343\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \ \ \ \ \ \ error\ =\ \mbox{\hyperlink{bt_scalar_8h_a6b200a8d26a49406ca13329be909ec10}{btSqrt}}(error);}
+\DoxyCodeLine{00345\ \ \ \ \ \ \ \ \ \ \ \ \ errors.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(error);}
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Iteration\ =\ "{}}\ <<\ it\ <<\ \textcolor{stringliteral}{"{},\ error\ =\ "{}}\ <<\ error\ <<\ std::endl;}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00348\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 1;\ i\ <\ errors.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00349\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00350\ \ \ \ \ \ \ \ \ \ \ \ \ std::cout\ <<\ \textcolor{stringliteral}{"{}Iteration\ =\ "{}}\ <<\ i\ <<\ \textcolor{stringliteral}{"{},\ ratio\ =\ "{}}\ <<\ errors[i\ -\/\ 1]\ /\ errors[i]\ <<\ std::endl;}
+\DoxyCodeLine{00351\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00352\ \ \ \ \ \}}
+\DoxyCodeLine{00353\ }
+\DoxyCodeLine{00354\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00355\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a4ed7dfdea1ba30dd8e548e0ab79caf31}{totalElasticEnergy}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ dt)}
+\DoxyCodeLine{00356\ \ \ \ \ \{}
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00358\ \ \ \ \ \}}
+\DoxyCodeLine{00359\ }
+\DoxyCodeLine{00360\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00361\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a01ac87a12cc9fe58023fb9203fad4c4d}{totalDampingEnergy}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ dt)}
+\DoxyCodeLine{00362\ \ \ \ \ \{}
+\DoxyCodeLine{00363\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00364\ \ \ \ \ \}}
+\DoxyCodeLine{00365\ }
+\DoxyCodeLine{00366\ \ \ \ \ \textcolor{comment}{//\ total\ Energy\ takes\ dt\ as\ input\ because\ certain\ energies\ depend\ on\ dt}}
+\DoxyCodeLine{00367\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a117ce1decaf75556419054f7df63827f}{totalEnergy}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ dt)}
+\DoxyCodeLine{00368\ \ \ \ \ \{}
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a4ed7dfdea1ba30dd8e548e0ab79caf31}{totalElasticEnergy}}(dt)\ +\ \mbox{\hyperlink{classbt_deformable_lagrangian_force_a01ac87a12cc9fe58023fb9203fad4c4d}{totalDampingEnergy}}(dt);}
+\DoxyCodeLine{00370\ \ \ \ \ \}}
+\DoxyCodeLine{00371\ \};}
+\DoxyCodeLine{00372\ \textcolor{preprocessor}{\#endif\ }\textcolor{comment}{/*\ BT\_DEFORMABLE\_LAGRANGIAN\_FORCE\ */}\textcolor{preprocessor}{}}
+
+\end{DoxyCode}

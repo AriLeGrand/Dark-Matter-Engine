@@ -1,0 +1,1332 @@
+\doxysection{bt\+Quantized\+Bvh.\+cpp}
+\hypertarget{bt_quantized_bvh_8cpp_source}{}\label{bt_quantized_bvh_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/BroadphaseCollision/btQuantizedBvh.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/BroadphaseCollision/btQuantizedBvh.cpp}}
+\mbox{\hyperlink{bt_quantized_bvh_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2006\ Erwin\ Coumans\ \ https://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_quantized_bvh_8h}{btQuantizedBvh.h}}"{}}}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_aabb_util2_8h}{LinearMath/btAabbUtil2.h}}"{}}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_i_debug_draw_8h}{LinearMath/btIDebugDraw.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_serializer_8h}{LinearMath/btSerializer.h}}"{}}}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#define\ RAYAABB2}}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ btQuantizedBvh::btQuantizedBvh()\ :\ \mbox{\hyperlink{b3_quantized_bvh_8h_ae64ac4824e8d126af18a95df382a8492}{m\_bulletVersion}}(\mbox{\hyperlink{bt_scalar_8h_acdcfe44a281881cbd298ecdee240ea46}{BT\_BULLET\_VERSION}}),}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}}(false),}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//m\_traversalMode(TRAVERSAL\_STACKLESS\_CACHE\_FRIENDLY)}}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a07a124b62d60a2b80978c48a623b3e63}{m\_traversalMode}}(TRAVERSAL\_STACKLESS)}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//m\_traversalMode(TRAVERSAL\_RECURSIVE)}}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ,}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab1bad7cd82c166372e5a43580b6b722f}{m\_subtreeHeaderCount}}(0)\ \ \textcolor{comment}{//PCK:\ add\ this\ line}}
+\DoxyCodeLine{00031\ \{}
+\DoxyCodeLine{00032\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}}.setValue(-\/\mbox{\hyperlink{bt_scalar_8h_a87dcd463392e45ddb5350989e566f34a}{SIMD\_INFINITY}},\ -\/\mbox{\hyperlink{bt_scalar_8h_a87dcd463392e45ddb5350989e566f34a}{SIMD\_INFINITY}},\ -\/\mbox{\hyperlink{bt_scalar_8h_a87dcd463392e45ddb5350989e566f34a}{SIMD\_INFINITY}});}
+\DoxyCodeLine{00033\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}}.setValue(\mbox{\hyperlink{bt_scalar_8h_a87dcd463392e45ddb5350989e566f34a}{SIMD\_INFINITY}},\ \mbox{\hyperlink{bt_scalar_8h_a87dcd463392e45ddb5350989e566f34a}{SIMD\_INFINITY}},\ \mbox{\hyperlink{bt_scalar_8h_a87dcd463392e45ddb5350989e566f34a}{SIMD\_INFINITY}});}
+\DoxyCodeLine{00034\ \}}
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00036\ \textcolor{keywordtype}{void}\ btQuantizedBvh::buildInternal()}
+\DoxyCodeLine{00037\ \{}
+\DoxyCodeLine{00039\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00040\ \ \ \ \ \textcolor{keywordtype}{int}\ numLeafNodes\ =\ 0;}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}})}
+\DoxyCodeLine{00043\ \ \ \ \ \{}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ \textcolor{comment}{//now\ we\ have\ an\ array\ of\ leafnodes\ in\ m\_leafNodes}}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ numLeafNodes\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ae5bb720a0addebe1f2a87eadfa66b16b}{m\_quantizedLeafNodes}}.size();}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}.resize(2\ *\ numLeafNodes);}
+\DoxyCodeLine{00048\ \ \ \ \ \}}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}}\ =\ 0;}
+\DoxyCodeLine{00051\ }
+\DoxyCodeLine{00052\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a39e9d658763d269817395cd1a0d04fc3}{buildTree}}(0,\ numLeafNodes);}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}}\ \&\&\ !\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}.size())}
+\DoxyCodeLine{00056\ \ \ \ \ \{}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_a94ae5afe9ac6021dd186784a611eb027}{btBvhSubtreeInfo}}\&\ subtree\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}.expand();}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ subtree.setAabbFromQuantizeNode(\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[0]);}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ subtree.m\_rootNodeIndex\ =\ 0;}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ subtree.m\_subtreeSize\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[0].isLeafNode()\ ?\ 1\ :\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[0].getEscapeIndex();}
+\DoxyCodeLine{00061\ \ \ \ \ \}}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ \ \ \ \ \textcolor{comment}{//PCK:\ update\ the\ copy\ of\ the\ size}}
+\DoxyCodeLine{00064\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab1bad7cd82c166372e5a43580b6b722f}{m\_subtreeHeaderCount}}\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}.size();}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{comment}{//PCK:\ clear\ m\_quantizedLeafNodes\ and\ m\_leafNodes,\ they\ are\ temporary}}
+\DoxyCodeLine{00067\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ae5bb720a0addebe1f2a87eadfa66b16b}{m\_quantizedLeafNodes}}.clear();}
+\DoxyCodeLine{00068\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a1532648525e18a05c7e73c85829579ac}{m\_leafNodes}}.clear();}
+\DoxyCodeLine{00069\ \}}
+\DoxyCodeLine{00070\ }
+\DoxyCodeLine{00072\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_PATCH\_COLORS}}
+\DoxyCodeLine{00073\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{glad_8h_a69995a929d818b8b467d4593c24d98bc}{color}}[4]\ =}
+\DoxyCodeLine{00074\ \ \ \ \ \{}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(1,\ 0,\ 0),}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0,\ 1,\ 0),}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0,\ 0,\ 1),}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0,\ 1,\ 1)\};}
+\DoxyCodeLine{00079\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_PATCH\_COLORS}}
+\DoxyCodeLine{00080\ }
+\DoxyCodeLine{00081\ \textcolor{keywordtype}{void}\ btQuantizedBvh::setQuantizationValues(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ bvhAabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ bvhAabbMax,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ quantizationMargin)}
+\DoxyCodeLine{00082\ \{}
+\DoxyCodeLine{00083\ \ \ \ \ \textcolor{comment}{//enlarge\ the\ AABB\ to\ avoid\ division\ by\ zero\ when\ initializing\ the\ quantization\ values}}
+\DoxyCodeLine{00084\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ clampValue(quantizationMargin,\ quantizationMargin,\ quantizationMargin);}
+\DoxyCodeLine{00085\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}}\ =\ bvhAabbMin\ -\/\ clampValue;}
+\DoxyCodeLine{00086\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}}\ =\ bvhAabbMax\ +\ clampValue;}
+\DoxyCodeLine{00087\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ aabbSize\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}}\ -\/\ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}};}
+\DoxyCodeLine{00088\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ad5f16f2793ae00951e81729fc4943e04}{m\_bvhQuantization}}\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(65533.0),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(65533.0),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(65533.0))\ /\ aabbSize;}
+\DoxyCodeLine{00089\ }
+\DoxyCodeLine{00090\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00091\ }
+\DoxyCodeLine{00092\ \ \ \ \ \{}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ vecIn[3];}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}};}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a13ca4a67063f4affe28dd3d15367c16a}{quantize}}(vecIn,\ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}},\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00097\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_adb624cd0f6cc615d3dc525e25fc7fe14}{unQuantize}}(vecIn);}
+\DoxyCodeLine{00098\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}}.setMin(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ -\/\ clampValue);}
+\DoxyCodeLine{00099\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00100\ \ \ \ \ \ \ \ \ aabbSize\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}}\ -\/\ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}};}
+\DoxyCodeLine{00101\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ad5f16f2793ae00951e81729fc4943e04}{m\_bvhQuantization}}\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(65533.0),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(65533.0),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(65533.0))\ /\ aabbSize;}
+\DoxyCodeLine{00102\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00103\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a13ca4a67063f4affe28dd3d15367c16a}{quantize}}(vecIn,\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}},\ \textcolor{keyword}{true});}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_adb624cd0f6cc615d3dc525e25fc7fe14}{unQuantize}}(vecIn);}
+\DoxyCodeLine{00105\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}}.setMax(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ +\ clampValue);}
+\DoxyCodeLine{00106\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00107\ \ \ \ \ \ \ \ \ aabbSize\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}}\ -\/\ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}};}
+\DoxyCodeLine{00108\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ad5f16f2793ae00951e81729fc4943e04}{m\_bvhQuantization}}\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(65533.0),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(65533.0),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(65533.0))\ /\ aabbSize;}
+\DoxyCodeLine{00109\ \ \ \ \ \}}
+\DoxyCodeLine{00110\ \}}
+\DoxyCodeLine{00111\ }
+\DoxyCodeLine{00112\ btQuantizedBvh::\string~btQuantizedBvh()}
+\DoxyCodeLine{00113\ \{}
+\DoxyCodeLine{00114\ \}}
+\DoxyCodeLine{00115\ }
+\DoxyCodeLine{00116\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_TREE\_BUILDING}}
+\DoxyCodeLine{00117\ \textcolor{keywordtype}{int}\ gStackDepth\ =\ 0;}
+\DoxyCodeLine{00118\ \textcolor{keywordtype}{int}\ gMaxStackDepth\ =\ 0;}
+\DoxyCodeLine{00119\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_TREE\_BUILDING}}
+\DoxyCodeLine{00120\ }
+\DoxyCodeLine{00121\ \textcolor{keywordtype}{void}\ btQuantizedBvh::buildTree(\textcolor{keywordtype}{int}\ startIndex,\ \textcolor{keywordtype}{int}\ endIndex)}
+\DoxyCodeLine{00122\ \{}
+\DoxyCodeLine{00123\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_TREE\_BUILDING}}
+\DoxyCodeLine{00124\ \ \ \ \ gStackDepth++;}
+\DoxyCodeLine{00125\ \ \ \ \ \textcolor{keywordflow}{if}\ (gStackDepth\ >\ gMaxStackDepth)}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ gMaxStackDepth\ =\ gStackDepth;}
+\DoxyCodeLine{00127\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_TREE\_BUILDING}}
+\DoxyCodeLine{00128\ }
+\DoxyCodeLine{00129\ \ \ \ \ \textcolor{keywordtype}{int}\ splitAxis,\ splitIndex,\ i;}
+\DoxyCodeLine{00130\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}\ =\ endIndex\ -\/\ startIndex;}
+\DoxyCodeLine{00131\ \ \ \ \ \textcolor{keywordtype}{int}\ curIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}};}
+\DoxyCodeLine{00132\ }
+\DoxyCodeLine{00133\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}\ >\ 0);}
+\DoxyCodeLine{00134\ }
+\DoxyCodeLine{00135\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}\ ==\ 1)}
+\DoxyCodeLine{00136\ \ \ \ \ \{}
+\DoxyCodeLine{00137\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_TREE\_BUILDING}}
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \ \ gStackDepth-\/-\/;}
+\DoxyCodeLine{00139\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_TREE\_BUILDING}}
+\DoxyCodeLine{00140\ }
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab7a6d761116ab558c8a5c54feb0221c2}{assignInternalNodeFromLeafNode}}(\mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}},\ startIndex);}
+\DoxyCodeLine{00142\ }
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}}++;}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00145\ \ \ \ \ \}}
+\DoxyCodeLine{00146\ \ \ \ \ \textcolor{comment}{//calculate\ Best\ Splitting\ Axis\ and\ where\ to\ split\ it.\ Sort\ the\ incoming\ 'leafNodes'\ array\ within\ range\ 'startIndex/endIndex'.}}
+\DoxyCodeLine{00147\ }
+\DoxyCodeLine{00148\ \ \ \ \ splitAxis\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ad09a0236cbc4ce0bd195197419e043f8}{calcSplittingAxis}}(startIndex,\ endIndex);}
+\DoxyCodeLine{00149\ }
+\DoxyCodeLine{00150\ \ \ \ \ splitIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ac5bdcccbeaaa9df0e8a51f7031ac7b52}{sortAndCalcSplittingIndex}}(startIndex,\ endIndex,\ splitAxis);}
+\DoxyCodeLine{00151\ }
+\DoxyCodeLine{00152\ \ \ \ \ \textcolor{keywordtype}{int}\ internalNodeIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}};}
+\DoxyCodeLine{00153\ }
+\DoxyCodeLine{00154\ \ \ \ \ \textcolor{comment}{//set\ the\ min\ aabb\ to\ 'inf'\ or\ a\ max\ value,\ and\ set\ the\ max\ aabb\ to\ a\ -\/inf/minimum\ value.}}
+\DoxyCodeLine{00155\ \ \ \ \ \textcolor{comment}{//the\ aabb\ will\ be\ expanded\ during\ buildTree/mergeInternalNodeAabb\ with\ actual\ node\ values}}
+\DoxyCodeLine{00156\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ae369c4b09f3ffffce8f21fd131acc810}{setInternalNodeAabbMin}}(\mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}},\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}});\ \ \textcolor{comment}{//can't\ use\ btVector3(SIMD\_INFINITY,SIMD\_INFINITY,SIMD\_INFINITY))\ because\ of\ quantization}}
+\DoxyCodeLine{00157\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ae80ab07ccb3017a9e60130d1444a25af}{setInternalNodeAabbMax}}(\mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}},\ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}});\ \ \textcolor{comment}{//can't\ use\ btVector3(-\/SIMD\_INFINITY,-\/SIMD\_INFINITY,-\/SIMD\_INFINITY))\ because\ of\ quantization}}
+\DoxyCodeLine{00158\ }
+\DoxyCodeLine{00159\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ startIndex;\ i\ <\ endIndex;\ i++)}
+\DoxyCodeLine{00160\ \ \ \ \ \{}
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a103594173d7d4c9d25ab2b3613516169}{mergeInternalNodeAabb}}(\mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}},\ \mbox{\hyperlink{bt_convex_concave_collision_algorithm_8h_a7c9d9a53d3f740b107c64a34cd0b7453}{getAabbMin}}(i),\ \mbox{\hyperlink{bt_convex_concave_collision_algorithm_8h_a862613998b07da3f67a2262fc10be775}{getAabbMax}}(i));}
+\DoxyCodeLine{00162\ \ \ \ \ \}}
+\DoxyCodeLine{00163\ }
+\DoxyCodeLine{00164\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}}++;}
+\DoxyCodeLine{00165\ }
+\DoxyCodeLine{00166\ \ \ \ \ \textcolor{comment}{//internalNode-\/>m\_escapeIndex;}}
+\DoxyCodeLine{00167\ }
+\DoxyCodeLine{00168\ \ \ \ \ \textcolor{keywordtype}{int}\ leftChildNodexIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}};}
+\DoxyCodeLine{00169\ }
+\DoxyCodeLine{00170\ \ \ \ \ \textcolor{comment}{//build\ left\ child\ tree}}
+\DoxyCodeLine{00171\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a39e9d658763d269817395cd1a0d04fc3}{buildTree}}(startIndex,\ splitIndex);}
+\DoxyCodeLine{00172\ }
+\DoxyCodeLine{00173\ \ \ \ \ \textcolor{keywordtype}{int}\ rightChildNodexIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}};}
+\DoxyCodeLine{00174\ \ \ \ \ \textcolor{comment}{//build\ right\ child\ tree}}
+\DoxyCodeLine{00175\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a39e9d658763d269817395cd1a0d04fc3}{buildTree}}(splitIndex,\ endIndex);}
+\DoxyCodeLine{00176\ }
+\DoxyCodeLine{00177\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_TREE\_BUILDING}}
+\DoxyCodeLine{00178\ \ \ \ \ gStackDepth-\/-\/;}
+\DoxyCodeLine{00179\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_TREE\_BUILDING}}
+\DoxyCodeLine{00180\ }
+\DoxyCodeLine{00181\ \ \ \ \ \textcolor{keywordtype}{int}\ escapeIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}}\ -\/\ curIndex;}
+\DoxyCodeLine{00182\ }
+\DoxyCodeLine{00183\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}})}
+\DoxyCodeLine{00184\ \ \ \ \ \{}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \textcolor{comment}{//escapeIndex\ is\ the\ number\ of\ nodes\ of\ this\ subtree}}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ sizeQuantizedNode\ =\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_quantized_bvh_8h_a9ae5ed44b8f4f4918b7538bb5b5fd2ea}{btQuantizedBvhNode}});}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ treeSizeInBytes\ =\ escapeIndex\ *\ sizeQuantizedNode;}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (treeSizeInBytes\ >\ \mbox{\hyperlink{b3_quantized_bvh_8h_a79aa628a71fb2520e8be93de7db9f60c}{MAX\_SUBTREE\_SIZE\_IN\_BYTES}})}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00190\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a33d660f9c0164fe22e1f437b7016b23a}{updateSubtreeHeaders}}(leftChildNodexIndex,\ rightChildNodexIndex);}
+\DoxyCodeLine{00191\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00192\ \ \ \ \ \}}
+\DoxyCodeLine{00193\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00194\ \ \ \ \ \{}
+\DoxyCodeLine{00195\ \ \ \ \ \}}
+\DoxyCodeLine{00196\ }
+\DoxyCodeLine{00197\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a3994f1d4d16bce346baf0bc6a4a215e7}{setInternalNodeEscapeIndex}}(internalNodeIndex,\ escapeIndex);}
+\DoxyCodeLine{00198\ \}}
+\DoxyCodeLine{00199\ }
+\DoxyCodeLine{00200\ \textcolor{keywordtype}{void}\ btQuantizedBvh::updateSubtreeHeaders(\textcolor{keywordtype}{int}\ leftChildNodexIndex,\ \textcolor{keywordtype}{int}\ rightChildNodexIndex)}
+\DoxyCodeLine{00201\ \{}
+\DoxyCodeLine{00202\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}});}
+\DoxyCodeLine{00203\ }
+\DoxyCodeLine{00204\ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_a9ae5ed44b8f4f4918b7538bb5b5fd2ea}{btQuantizedBvhNode}}\&\ leftChildNode\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[leftChildNodexIndex];}
+\DoxyCodeLine{00205\ \ \ \ \ \textcolor{keywordtype}{int}\ leftSubTreeSize\ =\ leftChildNode.isLeafNode()\ ?\ 1\ :\ leftChildNode.getEscapeIndex();}
+\DoxyCodeLine{00206\ \ \ \ \ \textcolor{keywordtype}{int}\ leftSubTreeSizeInBytes\ =\ leftSubTreeSize\ *\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_quantized_bvh_8h_a9ae5ed44b8f4f4918b7538bb5b5fd2ea}{btQuantizedBvhNode}}));}
+\DoxyCodeLine{00207\ }
+\DoxyCodeLine{00208\ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_a9ae5ed44b8f4f4918b7538bb5b5fd2ea}{btQuantizedBvhNode}}\&\ rightChildNode\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[rightChildNodexIndex];}
+\DoxyCodeLine{00209\ \ \ \ \ \textcolor{keywordtype}{int}\ rightSubTreeSize\ =\ rightChildNode.isLeafNode()\ ?\ 1\ :\ rightChildNode.getEscapeIndex();}
+\DoxyCodeLine{00210\ \ \ \ \ \textcolor{keywordtype}{int}\ rightSubTreeSizeInBytes\ =\ rightSubTreeSize\ *\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_quantized_bvh_8h_a9ae5ed44b8f4f4918b7538bb5b5fd2ea}{btQuantizedBvhNode}}));}
+\DoxyCodeLine{00211\ }
+\DoxyCodeLine{00212\ \ \ \ \ \textcolor{keywordflow}{if}\ (leftSubTreeSizeInBytes\ <=\ \mbox{\hyperlink{b3_quantized_bvh_8h_a79aa628a71fb2520e8be93de7db9f60c}{MAX\_SUBTREE\_SIZE\_IN\_BYTES}})}
+\DoxyCodeLine{00213\ \ \ \ \ \{}
+\DoxyCodeLine{00214\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_a94ae5afe9ac6021dd186784a611eb027}{btBvhSubtreeInfo}}\&\ subtree\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}.expand();}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ subtree.setAabbFromQuantizeNode(leftChildNode);}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ subtree.m\_rootNodeIndex\ =\ leftChildNodexIndex;}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ subtree.m\_subtreeSize\ =\ leftSubTreeSize;}
+\DoxyCodeLine{00218\ \ \ \ \ \}}
+\DoxyCodeLine{00219\ }
+\DoxyCodeLine{00220\ \ \ \ \ \textcolor{keywordflow}{if}\ (rightSubTreeSizeInBytes\ <=\ \mbox{\hyperlink{b3_quantized_bvh_8h_a79aa628a71fb2520e8be93de7db9f60c}{MAX\_SUBTREE\_SIZE\_IN\_BYTES}})}
+\DoxyCodeLine{00221\ \ \ \ \ \{}
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_a94ae5afe9ac6021dd186784a611eb027}{btBvhSubtreeInfo}}\&\ subtree\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}.expand();}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ subtree.setAabbFromQuantizeNode(rightChildNode);}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ subtree.m\_rootNodeIndex\ =\ rightChildNodexIndex;}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ subtree.m\_subtreeSize\ =\ rightSubTreeSize;}
+\DoxyCodeLine{00226\ \ \ \ \ \}}
+\DoxyCodeLine{00227\ }
+\DoxyCodeLine{00228\ \ \ \ \ \textcolor{comment}{//PCK:\ update\ the\ copy\ of\ the\ size}}
+\DoxyCodeLine{00229\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab1bad7cd82c166372e5a43580b6b722f}{m\_subtreeHeaderCount}}\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}.size();}
+\DoxyCodeLine{00230\ \}}
+\DoxyCodeLine{00231\ }
+\DoxyCodeLine{00232\ \textcolor{keywordtype}{int}\ btQuantizedBvh::sortAndCalcSplittingIndex(\textcolor{keywordtype}{int}\ startIndex,\ \textcolor{keywordtype}{int}\ endIndex,\ \textcolor{keywordtype}{int}\ splitAxis)}
+\DoxyCodeLine{00233\ \{}
+\DoxyCodeLine{00234\ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00235\ \ \ \ \ \textcolor{keywordtype}{int}\ splitIndex\ =\ startIndex;}
+\DoxyCodeLine{00236\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}\ =\ endIndex\ -\/\ startIndex;}
+\DoxyCodeLine{00237\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ splitValue;}
+\DoxyCodeLine{00238\ }
+\DoxyCodeLine{00239\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ means(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.));}
+\DoxyCodeLine{00240\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ startIndex;\ i\ <\ endIndex;\ i++)}
+\DoxyCodeLine{00241\ \ \ \ \ \{}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ center\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5)\ *\ (\mbox{\hyperlink{bt_convex_concave_collision_algorithm_8h_a862613998b07da3f67a2262fc10be775}{getAabbMax}}(i)\ +\ \mbox{\hyperlink{bt_convex_concave_collision_algorithm_8h_a7c9d9a53d3f740b107c64a34cd0b7453}{getAabbMin}}(i));}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ means\ +=\ center;}
+\DoxyCodeLine{00244\ \ \ \ \ \}}
+\DoxyCodeLine{00245\ \ \ \ \ means\ *=\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.)\ /\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})\mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}});}
+\DoxyCodeLine{00246\ }
+\DoxyCodeLine{00247\ \ \ \ \ splitValue\ =\ means[splitAxis];}
+\DoxyCodeLine{00248\ }
+\DoxyCodeLine{00249\ \ \ \ \ \textcolor{comment}{//sort\ leafNodes\ so\ all\ values\ larger\ then\ splitValue\ comes\ first,\ and\ smaller\ values\ start\ from\ 'splitIndex'.}}
+\DoxyCodeLine{00250\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ startIndex;\ i\ <\ endIndex;\ i++)}
+\DoxyCodeLine{00251\ \ \ \ \ \{}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ center\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5)\ *\ (\mbox{\hyperlink{bt_convex_concave_collision_algorithm_8h_a862613998b07da3f67a2262fc10be775}{getAabbMax}}(i)\ +\ \mbox{\hyperlink{bt_convex_concave_collision_algorithm_8h_a7c9d9a53d3f740b107c64a34cd0b7453}{getAabbMin}}(i));}
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (center[splitAxis]\ >\ splitValue)}
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00255\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//swap}}
+\DoxyCodeLine{00256\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a17efb5ba358f1d4ac7d2ce0e346fa286}{swapLeafNodes}}(i,\ splitIndex);}
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ \ \ \ \ splitIndex++;}
+\DoxyCodeLine{00258\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00259\ \ \ \ \ \}}
+\DoxyCodeLine{00260\ }
+\DoxyCodeLine{00261\ \ \ \ \ \textcolor{comment}{//if\ the\ splitIndex\ causes\ unbalanced\ trees,\ fix\ this\ by\ using\ the\ center\ in\ between\ startIndex\ and\ endIndex}}
+\DoxyCodeLine{00262\ \ \ \ \ \textcolor{comment}{//otherwise\ the\ tree-\/building\ might\ fail\ due\ to\ stack-\/overflows\ in\ certain\ cases.}}
+\DoxyCodeLine{00263\ \ \ \ \ \textcolor{comment}{//unbalanced1\ is\ unsafe:\ it\ can\ cause\ stack\ overflows}}
+\DoxyCodeLine{00264\ \ \ \ \ \textcolor{comment}{//bool\ unbalanced1\ =\ ((splitIndex==startIndex)\ ||\ (splitIndex\ ==\ (endIndex-\/1)));}}
+\DoxyCodeLine{00265\ }
+\DoxyCodeLine{00266\ \ \ \ \ \textcolor{comment}{//unbalanced2\ should\ work\ too:\ always\ use\ center\ (perfect\ balanced\ trees)}}
+\DoxyCodeLine{00267\ \ \ \ \ \textcolor{comment}{//bool\ unbalanced2\ =\ true;}}
+\DoxyCodeLine{00268\ }
+\DoxyCodeLine{00269\ \ \ \ \ \textcolor{comment}{//this\ should\ be\ safe\ too:}}
+\DoxyCodeLine{00270\ \ \ \ \ \textcolor{keywordtype}{int}\ rangeBalancedIndices\ =\ \mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}\ /\ 3;}
+\DoxyCodeLine{00271\ \ \ \ \ \textcolor{keywordtype}{bool}\ unbalanced\ =\ ((splitIndex\ <=\ (startIndex\ +\ rangeBalancedIndices))\ ||\ (splitIndex\ >=\ (endIndex\ -\/\ 1\ -\/\ rangeBalancedIndices)));}
+\DoxyCodeLine{00272\ }
+\DoxyCodeLine{00273\ \ \ \ \ \textcolor{keywordflow}{if}\ (unbalanced)}
+\DoxyCodeLine{00274\ \ \ \ \ \{}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ splitIndex\ =\ startIndex\ +\ (\mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}\ >>\ 1);}
+\DoxyCodeLine{00276\ \ \ \ \ \}}
+\DoxyCodeLine{00277\ }
+\DoxyCodeLine{00278\ \ \ \ \ \textcolor{keywordtype}{bool}\ unbal\ =\ (splitIndex\ ==\ startIndex)\ ||\ (splitIndex\ ==\ (endIndex));}
+\DoxyCodeLine{00279\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})unbal;}
+\DoxyCodeLine{00280\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(!unbal);}
+\DoxyCodeLine{00281\ }
+\DoxyCodeLine{00282\ \ \ \ \ \textcolor{keywordflow}{return}\ splitIndex;}
+\DoxyCodeLine{00283\ \}}
+\DoxyCodeLine{00284\ }
+\DoxyCodeLine{00285\ \textcolor{keywordtype}{int}\ btQuantizedBvh::calcSplittingAxis(\textcolor{keywordtype}{int}\ startIndex,\ \textcolor{keywordtype}{int}\ endIndex)}
+\DoxyCodeLine{00286\ \{}
+\DoxyCodeLine{00287\ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00288\ }
+\DoxyCodeLine{00289\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ means(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.));}
+\DoxyCodeLine{00290\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ variance(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.));}
+\DoxyCodeLine{00291\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}\ =\ endIndex\ -\/\ startIndex;}
+\DoxyCodeLine{00292\ }
+\DoxyCodeLine{00293\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ startIndex;\ i\ <\ endIndex;\ i++)}
+\DoxyCodeLine{00294\ \ \ \ \ \{}
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ center\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5)\ *\ (\mbox{\hyperlink{bt_convex_concave_collision_algorithm_8h_a862613998b07da3f67a2262fc10be775}{getAabbMax}}(i)\ +\ \mbox{\hyperlink{bt_convex_concave_collision_algorithm_8h_a7c9d9a53d3f740b107c64a34cd0b7453}{getAabbMin}}(i));}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ means\ +=\ center;}
+\DoxyCodeLine{00297\ \ \ \ \ \}}
+\DoxyCodeLine{00298\ \ \ \ \ means\ *=\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.)\ /\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})\mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}});}
+\DoxyCodeLine{00299\ }
+\DoxyCodeLine{00300\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ startIndex;\ i\ <\ endIndex;\ i++)}
+\DoxyCodeLine{00301\ \ \ \ \ \{}
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ center\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5)\ *\ (\mbox{\hyperlink{bt_convex_concave_collision_algorithm_8h_a862613998b07da3f67a2262fc10be775}{getAabbMax}}(i)\ +\ \mbox{\hyperlink{bt_convex_concave_collision_algorithm_8h_a7c9d9a53d3f740b107c64a34cd0b7453}{getAabbMin}}(i));}
+\DoxyCodeLine{00303\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ diff2\ =\ center\ -\/\ means;}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ diff2\ =\ diff2\ *\ diff2;}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ variance\ +=\ diff2;}
+\DoxyCodeLine{00306\ \ \ \ \ \}}
+\DoxyCodeLine{00307\ \ \ \ \ variance\ *=\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.)\ /\ ((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})\mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}\ -\/\ 1));}
+\DoxyCodeLine{00308\ }
+\DoxyCodeLine{00309\ \ \ \ \ \textcolor{keywordflow}{return}\ variance.maxAxis();}
+\DoxyCodeLine{00310\ \}}
+\DoxyCodeLine{00311\ }
+\DoxyCodeLine{00312\ \textcolor{keywordtype}{void}\ btQuantizedBvh::reportAabbOverlappingNodex(\mbox{\hyperlink{classbt_node_overlap_callback}{btNodeOverlapCallback}}*\ nodeCallback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00313\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00314\ \ \ \ \ \textcolor{comment}{//either\ choose\ recursive\ traversal\ (walkTree)\ or\ stackless\ (walkStacklessTree)}}
+\DoxyCodeLine{00315\ }
+\DoxyCodeLine{00316\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}})}
+\DoxyCodeLine{00317\ \ \ \ \ \{}
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}\ quantizedQueryAabbMin[3];}
+\DoxyCodeLine{00320\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}\ quantizedQueryAabbMax[3];}
+\DoxyCodeLine{00321\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_acb1580a436c9633459102a1096ca6671}{quantizeWithClamp}}(quantizedQueryAabbMin,\ aabbMin,\ 0);}
+\DoxyCodeLine{00322\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_acb1580a436c9633459102a1096ca6671}{quantizeWithClamp}}(quantizedQueryAabbMax,\ aabbMax,\ 1);}
+\DoxyCodeLine{00323\ }
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a07a124b62d60a2b80978c48a623b3e63}{m\_traversalMode}})}
+\DoxyCodeLine{00325\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ TRAVERSAL\_STACKLESS:}
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a5e9923e760adfefa590e2023a4f33a95}{walkStacklessQuantizedTree}}(nodeCallback,\ quantizedQueryAabbMin,\ quantizedQueryAabbMax,\ 0,\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}});}
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ TRAVERSAL\_STACKLESS\_CACHE\_FRIENDLY:}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a02707d5b410fe80d8d4a1871021f8189}{walkStacklessQuantizedTreeCacheFriendly}}(nodeCallback,\ quantizedQueryAabbMin,\ quantizedQueryAabbMax);}
+\DoxyCodeLine{00331\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00332\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ TRAVERSAL\_RECURSIVE:}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_quantized_bvh_8h_a9ae5ed44b8f4f4918b7538bb5b5fd2ea}{btQuantizedBvhNode}}*\ rootNode\ =\ \&\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[0];}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a81f4bb681c38e77e08cbaf322023ac54}{walkRecursiveQuantizedTreeAgainstQueryAabb}}(rootNode,\ nodeCallback,\ quantizedQueryAabbMin,\ quantizedQueryAabbMax);}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00339\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//unsupported}}
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(0);}
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00342\ \ \ \ \ \}}
+\DoxyCodeLine{00343\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00344\ \ \ \ \ \{}
+\DoxyCodeLine{00345\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a71c77bb71900b075d2a06719634718b2}{walkStacklessTree}}(nodeCallback,\ aabbMin,\ aabbMax);}
+\DoxyCodeLine{00346\ \ \ \ \ \}}
+\DoxyCodeLine{00347\ \}}
+\DoxyCodeLine{00348\ }
+\DoxyCodeLine{00349\ \textcolor{keywordtype}{void}\ btQuantizedBvh::walkStacklessTree(\mbox{\hyperlink{classbt_node_overlap_callback}{btNodeOverlapCallback}}*\ nodeCallback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00350\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00351\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(!\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}});}
+\DoxyCodeLine{00352\ }
+\DoxyCodeLine{00353\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_quantized_bvh_8h_a9c10959d29b0982d4c7a5a1c3553b979}{btOptimizedBvhNode}}*\ rootNode\ =\ \&\mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[0];}
+\DoxyCodeLine{00354\ \ \ \ \ \textcolor{keywordtype}{int}\ escapeIndex,\ curIndex\ =\ 0;}
+\DoxyCodeLine{00355\ \ \ \ \ \textcolor{keywordtype}{int}\ walkIterations\ =\ 0;}
+\DoxyCodeLine{00356\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}};}
+\DoxyCodeLine{00357\ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00358\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ aabbOverlap;}
+\DoxyCodeLine{00359\ }
+\DoxyCodeLine{00360\ \ \ \ \ \textcolor{keywordflow}{while}\ (curIndex\ <\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}})}
+\DoxyCodeLine{00361\ \ \ \ \ \{}
+\DoxyCodeLine{00362\ \ \ \ \ \ \ \ \ \textcolor{comment}{//catch\ bugs\ in\ tree\ data}}
+\DoxyCodeLine{00363\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(walkIterations\ <\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}});}
+\DoxyCodeLine{00364\ }
+\DoxyCodeLine{00365\ \ \ \ \ \ \ \ \ walkIterations++;}
+\DoxyCodeLine{00366\ \ \ \ \ \ \ \ \ aabbOverlap\ =\ TestAabbAgainstAabb2(aabbMin,\ aabbMax,\ rootNode-\/>m\_aabbMinOrg,\ rootNode-\/>m\_aabbMaxOrg);}
+\DoxyCodeLine{00367\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}\ =\ rootNode-\/>m\_escapeIndex\ ==\ -\/1;}
+\DoxyCodeLine{00368\ }
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00370\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}\ \&\&\ (aabbOverlap\ !=\ 0))}
+\DoxyCodeLine{00371\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \ \ \ \ nodeCallback-\/>\mbox{\hyperlink{classbt_node_overlap_callback_aaad327d468e3ce197c133367ec15baf1}{processNode}}(rootNode-\/>m\_subPart,\ rootNode-\/>m\_triangleIndex);}
+\DoxyCodeLine{00373\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00374\ }
+\DoxyCodeLine{00375\ \ \ \ \ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00376\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((aabbOverlap\ !=\ 0)\ ||\ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}})}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ \ \ \ \ rootNode++;}
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ \ \ \ \ curIndex++;}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00381\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00383\ \ \ \ \ \ \ \ \ \ \ \ \ escapeIndex\ =\ rootNode-\/>m\_escapeIndex;}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ \ \ \ \ rootNode\ +=\ escapeIndex;}
+\DoxyCodeLine{00385\ \ \ \ \ \ \ \ \ \ \ \ \ curIndex\ +=\ escapeIndex;}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00387\ \ \ \ \ \}}
+\DoxyCodeLine{00388\ \}}
+\DoxyCodeLine{00389\ }
+\DoxyCodeLine{00390\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00392\ void\ \ \ \ btQuantizedBvh::walkTree(btOptimizedBvhNode*\ rootNode,btNodeOverlapCallback*\ nodeCallback,const\ btVector3\&\ aabbMin,const\ btVector3\&\ aabbMax)\ const}
+\DoxyCodeLine{00393\ \{}
+\DoxyCodeLine{00394\ \ \ \ \ bool\ isLeafNode,\ aabbOverlap\ =\ TestAabbAgainstAabb2(aabbMin,aabbMax,rootNode-\/>m\_aabbMin,rootNode-\/>m\_aabbMax);}
+\DoxyCodeLine{00395\ \ \ \ \ if\ (aabbOverlap)}
+\DoxyCodeLine{00396\ \ \ \ \ \{}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ isLeafNode\ =\ (!rootNode-\/>m\_leftChild\ \&\&\ !rootNode-\/>m\_rightChild);}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ if\ (isLeafNode)}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ \ \ \ \ nodeCallback-\/>processNode(rootNode);}
+\DoxyCodeLine{00401\ \ \ \ \ \ \ \ \ \}\ else}
+\DoxyCodeLine{00402\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00403\ \ \ \ \ \ \ \ \ \ \ \ \ walkTree(rootNode-\/>m\_leftChild,nodeCallback,aabbMin,aabbMax);}
+\DoxyCodeLine{00404\ \ \ \ \ \ \ \ \ \ \ \ \ walkTree(rootNode-\/>m\_rightChild,nodeCallback,aabbMin,aabbMax);}
+\DoxyCodeLine{00405\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00406\ \ \ \ \ \}}
+\DoxyCodeLine{00407\ }
+\DoxyCodeLine{00408\ \}}
+\DoxyCodeLine{00409\ */}
+\DoxyCodeLine{00410\ }
+\DoxyCodeLine{00411\ \textcolor{keywordtype}{void}\ btQuantizedBvh::walkRecursiveQuantizedTreeAgainstQueryAabb(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_quantized_bvh_8h_a9ae5ed44b8f4f4918b7538bb5b5fd2ea}{btQuantizedBvhNode}}*\ currentNode,\ \mbox{\hyperlink{classbt_node_overlap_callback}{btNodeOverlapCallback}}*\ nodeCallback,\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ quantizedQueryAabbMin,\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ quantizedQueryAabbMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00412\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00413\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}});}
+\DoxyCodeLine{00414\ }
+\DoxyCodeLine{00415\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}};}
+\DoxyCodeLine{00416\ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00417\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ aabbOverlap;}
+\DoxyCodeLine{00418\ }
+\DoxyCodeLine{00419\ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00420\ \ \ \ \ aabbOverlap\ =\ \mbox{\hyperlink{bt_aabb_util2_8h_a4cd063bddd76e6a7b1cde0d19364d6a0}{testQuantizedAabbAgainstQuantizedAabb}}(quantizedQueryAabbMin,\ quantizedQueryAabbMax,\ currentNode-\/>m\_quantizedAabbMin,\ currentNode-\/>m\_quantizedAabbMax);}
+\DoxyCodeLine{00421\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}\ =\ currentNode-\/>isLeafNode();}
+\DoxyCodeLine{00422\ }
+\DoxyCodeLine{00423\ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00424\ \ \ \ \ \textcolor{keywordflow}{if}\ (aabbOverlap\ !=\ 0)}
+\DoxyCodeLine{00425\ \ \ \ \ \{}
+\DoxyCodeLine{00426\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}})}
+\DoxyCodeLine{00427\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00428\ \ \ \ \ \ \ \ \ \ \ \ \ nodeCallback-\/>\mbox{\hyperlink{classbt_node_overlap_callback_aaad327d468e3ce197c133367ec15baf1}{processNode}}(currentNode-\/>getPartId(),\ currentNode-\/>getTriangleIndex());}
+\DoxyCodeLine{00429\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00430\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00431\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00432\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//process\ left\ and\ right\ children}}
+\DoxyCodeLine{00433\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_quantized_bvh_8h_a9ae5ed44b8f4f4918b7538bb5b5fd2ea}{btQuantizedBvhNode}}*\ leftChildNode\ =\ currentNode\ +\ 1;}
+\DoxyCodeLine{00434\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a81f4bb681c38e77e08cbaf322023ac54}{walkRecursiveQuantizedTreeAgainstQueryAabb}}(leftChildNode,\ nodeCallback,\ quantizedQueryAabbMin,\ quantizedQueryAabbMax);}
+\DoxyCodeLine{00435\ }
+\DoxyCodeLine{00436\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_quantized_bvh_8h_a9ae5ed44b8f4f4918b7538bb5b5fd2ea}{btQuantizedBvhNode}}*\ rightChildNode\ =\ leftChildNode-\/>isLeafNode()\ ?\ leftChildNode\ +\ 1\ :\ leftChildNode\ +\ leftChildNode-\/>getEscapeIndex();}
+\DoxyCodeLine{00437\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a81f4bb681c38e77e08cbaf322023ac54}{walkRecursiveQuantizedTreeAgainstQueryAabb}}(rightChildNode,\ nodeCallback,\ quantizedQueryAabbMin,\ quantizedQueryAabbMax);}
+\DoxyCodeLine{00438\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00439\ \ \ \ \ \}}
+\DoxyCodeLine{00440\ \}}
+\DoxyCodeLine{00441\ }
+\DoxyCodeLine{00442\ \textcolor{keywordtype}{void}\ btQuantizedBvh::walkStacklessTreeAgainstRay(\mbox{\hyperlink{classbt_node_overlap_callback}{btNodeOverlapCallback}}*\ nodeCallback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ raySource,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ rayTarget,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax,\ \textcolor{keywordtype}{int}\ startNodeIndex,\ \textcolor{keywordtype}{int}\ endNodeIndex)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00443\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00444\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(!\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}});}
+\DoxyCodeLine{00445\ }
+\DoxyCodeLine{00446\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_quantized_bvh_8h_a9c10959d29b0982d4c7a5a1c3553b979}{btOptimizedBvhNode}}*\ rootNode\ =\ \&\mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[0];}
+\DoxyCodeLine{00447\ \ \ \ \ \textcolor{keywordtype}{int}\ escapeIndex,\ curIndex\ =\ 0;}
+\DoxyCodeLine{00448\ \ \ \ \ \textcolor{keywordtype}{int}\ walkIterations\ =\ 0;}
+\DoxyCodeLine{00449\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}};}
+\DoxyCodeLine{00450\ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00451\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ aabbOverlap\ =\ 0;}
+\DoxyCodeLine{00452\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ rayBoxOverlap\ =\ 0;}
+\DoxyCodeLine{00453\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ lambda\_max\ =\ 1.0;}
+\DoxyCodeLine{00454\ }
+\DoxyCodeLine{00455\ \ \ \ \ \textcolor{comment}{/*\ Quick\ pruning\ by\ quantized\ box\ */}}
+\DoxyCodeLine{00456\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ rayAabbMin\ =\ raySource;}
+\DoxyCodeLine{00457\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ rayAabbMax\ =\ raySource;}
+\DoxyCodeLine{00458\ \ \ \ \ rayAabbMin.setMin(rayTarget);}
+\DoxyCodeLine{00459\ \ \ \ \ rayAabbMax.setMax(rayTarget);}
+\DoxyCodeLine{00460\ }
+\DoxyCodeLine{00461\ \ \ \ \ \textcolor{comment}{/*\ Add\ box\ cast\ extents\ to\ bounding\ box\ */}}
+\DoxyCodeLine{00462\ \ \ \ \ rayAabbMin\ +=\ aabbMin;}
+\DoxyCodeLine{00463\ \ \ \ \ rayAabbMax\ +=\ aabbMax;}
+\DoxyCodeLine{00464\ }
+\DoxyCodeLine{00465\ \textcolor{preprocessor}{\#ifdef\ RAYAABB2}}
+\DoxyCodeLine{00466\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ rayDir\ =\ (rayTarget\ -\/\ raySource);}
+\DoxyCodeLine{00467\ \ \ \ \ rayDir.safeNormalize();\textcolor{comment}{//\ stephengold\ changed\ normalize\ to\ safeNormalize\ 2020-\/02-\/17}}
+\DoxyCodeLine{00468\ \ \ \ \ lambda\_max\ =\ rayDir.dot(rayTarget\ -\/\ raySource);}
+\DoxyCodeLine{00470\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ rayDirectionInverse;}
+\DoxyCodeLine{00471\ \ \ \ \ rayDirectionInverse[0]\ =\ rayDir[0]\ ==\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0)\ ?\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}})\ :\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0)\ /\ rayDir[0];}
+\DoxyCodeLine{00472\ \ \ \ \ rayDirectionInverse[1]\ =\ rayDir[1]\ ==\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0)\ ?\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}})\ :\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0)\ /\ rayDir[1];}
+\DoxyCodeLine{00473\ \ \ \ \ rayDirectionInverse[2]\ =\ rayDir[2]\ ==\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0)\ ?\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}})\ :\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0)\ /\ rayDir[2];}
+\DoxyCodeLine{00474\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ sign[3]\ =\ \{rayDirectionInverse[0]\ <\ 0.0,\ rayDirectionInverse[1]\ <\ 0.0,\ rayDirectionInverse[2]\ <\ 0.0\};}
+\DoxyCodeLine{00475\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00476\ }
+\DoxyCodeLine{00477\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ bounds[2];}
+\DoxyCodeLine{00478\ }
+\DoxyCodeLine{00479\ \ \ \ \ \textcolor{keywordflow}{while}\ (curIndex\ <\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}})}
+\DoxyCodeLine{00480\ \ \ \ \ \{}
+\DoxyCodeLine{00481\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a630cfbd3157b61ef7097600d4b7885b7}{param}}\ =\ 1.0;}
+\DoxyCodeLine{00482\ \ \ \ \ \ \ \ \ \textcolor{comment}{//catch\ bugs\ in\ tree\ data}}
+\DoxyCodeLine{00483\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(walkIterations\ <\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}});}
+\DoxyCodeLine{00484\ }
+\DoxyCodeLine{00485\ \ \ \ \ \ \ \ \ walkIterations++;}
+\DoxyCodeLine{00486\ }
+\DoxyCodeLine{00487\ \ \ \ \ \ \ \ \ bounds[0]\ =\ rootNode-\/>m\_aabbMinOrg;}
+\DoxyCodeLine{00488\ \ \ \ \ \ \ \ \ bounds[1]\ =\ rootNode-\/>m\_aabbMaxOrg;}
+\DoxyCodeLine{00489\ \ \ \ \ \ \ \ \ \textcolor{comment}{/*\ Add\ box\ cast\ extents\ */}}
+\DoxyCodeLine{00490\ \ \ \ \ \ \ \ \ bounds[0]\ -\/=\ aabbMax;}
+\DoxyCodeLine{00491\ \ \ \ \ \ \ \ \ bounds[1]\ -\/=\ aabbMin;}
+\DoxyCodeLine{00492\ }
+\DoxyCodeLine{00493\ \ \ \ \ \ \ \ \ aabbOverlap\ =\ TestAabbAgainstAabb2(rayAabbMin,\ rayAabbMax,\ rootNode-\/>m\_aabbMinOrg,\ rootNode-\/>m\_aabbMaxOrg);}
+\DoxyCodeLine{00494\ \ \ \ \ \ \ \ \ \textcolor{comment}{//perhaps\ profile\ if\ it\ is\ worth\ doing\ the\ aabbOverlap\ test\ first}}
+\DoxyCodeLine{00495\ }
+\DoxyCodeLine{00496\ \textcolor{preprocessor}{\#ifdef\ RAYAABB2}}
+\DoxyCodeLine{00500\ \ \ \ \ \ \ \ \ rayBoxOverlap\ =\ aabbOverlap\ ?\ \mbox{\hyperlink{bt_aabb_util2_8h_a2f2ddcfbbd8616e29f2bc076b662888f}{btRayAabb2}}(raySource,\ rayDirectionInverse,\ sign,\ bounds,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a630cfbd3157b61ef7097600d4b7885b7}{param}},\ 0.0f,\ lambda\_max)\ :\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00501\ }
+\DoxyCodeLine{00502\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00503\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ normal;}
+\DoxyCodeLine{00504\ \ \ \ \ \ \ \ \ rayBoxOverlap\ =\ \mbox{\hyperlink{bt_aabb_util2_8h_a95cb06fa47fcf91a1bd36d675d23a241}{btRayAabb}}(raySource,\ rayTarget,\ bounds[0],\ bounds[1],\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a630cfbd3157b61ef7097600d4b7885b7}{param}},\ normal);}
+\DoxyCodeLine{00505\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00506\ }
+\DoxyCodeLine{00507\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}\ =\ rootNode-\/>m\_escapeIndex\ ==\ -\/1;}
+\DoxyCodeLine{00508\ }
+\DoxyCodeLine{00509\ \ \ \ \ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00510\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}\ \&\&\ (rayBoxOverlap\ !=\ 0))}
+\DoxyCodeLine{00511\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00512\ \ \ \ \ \ \ \ \ \ \ \ \ nodeCallback-\/>\mbox{\hyperlink{classbt_node_overlap_callback_aaad327d468e3ce197c133367ec15baf1}{processNode}}(rootNode-\/>m\_subPart,\ rootNode-\/>m\_triangleIndex);}
+\DoxyCodeLine{00513\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00514\ }
+\DoxyCodeLine{00515\ \ \ \ \ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00516\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((rayBoxOverlap\ !=\ 0)\ ||\ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}})}
+\DoxyCodeLine{00517\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00518\ \ \ \ \ \ \ \ \ \ \ \ \ rootNode++;}
+\DoxyCodeLine{00519\ \ \ \ \ \ \ \ \ \ \ \ \ curIndex++;}
+\DoxyCodeLine{00520\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00521\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00522\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00523\ \ \ \ \ \ \ \ \ \ \ \ \ escapeIndex\ =\ rootNode-\/>m\_escapeIndex;}
+\DoxyCodeLine{00524\ \ \ \ \ \ \ \ \ \ \ \ \ rootNode\ +=\ escapeIndex;}
+\DoxyCodeLine{00525\ \ \ \ \ \ \ \ \ \ \ \ \ curIndex\ +=\ escapeIndex;}
+\DoxyCodeLine{00526\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00527\ \ \ \ \ \}}
+\DoxyCodeLine{00528\ \}}
+\DoxyCodeLine{00529\ }
+\DoxyCodeLine{00530\ \textcolor{keywordtype}{void}\ btQuantizedBvh::walkStacklessQuantizedTreeAgainstRay(\mbox{\hyperlink{classbt_node_overlap_callback}{btNodeOverlapCallback}}*\ nodeCallback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ raySource,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ rayTarget,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax,\ \textcolor{keywordtype}{int}\ startNodeIndex,\ \textcolor{keywordtype}{int}\ endNodeIndex)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00531\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00532\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}});}
+\DoxyCodeLine{00533\ }
+\DoxyCodeLine{00534\ \ \ \ \ \textcolor{keywordtype}{int}\ curIndex\ =\ startNodeIndex;}
+\DoxyCodeLine{00535\ \ \ \ \ \textcolor{keywordtype}{int}\ walkIterations\ =\ 0;}
+\DoxyCodeLine{00536\ \ \ \ \ \textcolor{keywordtype}{int}\ subTreeSize\ =\ endNodeIndex\ -\/\ startNodeIndex;}
+\DoxyCodeLine{00537\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})subTreeSize;}
+\DoxyCodeLine{00538\ }
+\DoxyCodeLine{00539\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_quantized_bvh_8h_a9ae5ed44b8f4f4918b7538bb5b5fd2ea}{btQuantizedBvhNode}}*\ rootNode\ =\ \&\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[startNodeIndex];}
+\DoxyCodeLine{00540\ \ \ \ \ \textcolor{keywordtype}{int}\ escapeIndex;}
+\DoxyCodeLine{00541\ }
+\DoxyCodeLine{00542\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}};}
+\DoxyCodeLine{00543\ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00544\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ boxBoxOverlap\ =\ 0;}
+\DoxyCodeLine{00545\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ rayBoxOverlap\ =\ 0;}
+\DoxyCodeLine{00546\ }
+\DoxyCodeLine{00547\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ lambda\_max\ =\ 1.0;}
+\DoxyCodeLine{00548\ }
+\DoxyCodeLine{00549\ \textcolor{preprocessor}{\#ifdef\ RAYAABB2}}
+\DoxyCodeLine{00550\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ rayDirection\ =\ (rayTarget\ -\/\ raySource);}
+\DoxyCodeLine{00551\ \ \ \ \ rayDirection.safeNormalize();\textcolor{comment}{//\ stephengold\ changed\ normalize\ to\ safeNormalize\ 2020-\/02-\/17}}
+\DoxyCodeLine{00552\ \ \ \ \ lambda\_max\ =\ rayDirection.dot(rayTarget\ -\/\ raySource);}
+\DoxyCodeLine{00554\ \ \ \ \ rayDirection[0]\ =\ rayDirection[0]\ ==\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0)\ ?\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}})\ :\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0)\ /\ rayDirection[0];}
+\DoxyCodeLine{00555\ \ \ \ \ rayDirection[1]\ =\ rayDirection[1]\ ==\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0)\ ?\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}})\ :\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0)\ /\ rayDirection[1];}
+\DoxyCodeLine{00556\ \ \ \ \ rayDirection[2]\ =\ rayDirection[2]\ ==\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0)\ ?\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}})\ :\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0)\ /\ rayDirection[2];}
+\DoxyCodeLine{00557\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ sign[3]\ =\ \{rayDirection[0]\ <\ 0.0,\ rayDirection[1]\ <\ 0.0,\ rayDirection[2]\ <\ 0.0\};}
+\DoxyCodeLine{00558\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00559\ }
+\DoxyCodeLine{00560\ \ \ \ \ \textcolor{comment}{/*\ Quick\ pruning\ by\ quantized\ box\ */}}
+\DoxyCodeLine{00561\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ rayAabbMin\ =\ raySource;}
+\DoxyCodeLine{00562\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ rayAabbMax\ =\ raySource;}
+\DoxyCodeLine{00563\ \ \ \ \ rayAabbMin.setMin(rayTarget);}
+\DoxyCodeLine{00564\ \ \ \ \ rayAabbMax.setMax(rayTarget);}
+\DoxyCodeLine{00565\ }
+\DoxyCodeLine{00566\ \ \ \ \ \textcolor{comment}{/*\ Add\ box\ cast\ extents\ to\ bounding\ box\ */}}
+\DoxyCodeLine{00567\ \ \ \ \ rayAabbMin\ +=\ aabbMin;}
+\DoxyCodeLine{00568\ \ \ \ \ rayAabbMax\ +=\ aabbMax;}
+\DoxyCodeLine{00569\ }
+\DoxyCodeLine{00570\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}\ quantizedQueryAabbMin[3];}
+\DoxyCodeLine{00571\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}\ quantizedQueryAabbMax[3];}
+\DoxyCodeLine{00572\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_acb1580a436c9633459102a1096ca6671}{quantizeWithClamp}}(quantizedQueryAabbMin,\ rayAabbMin,\ 0);}
+\DoxyCodeLine{00573\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_acb1580a436c9633459102a1096ca6671}{quantizeWithClamp}}(quantizedQueryAabbMax,\ rayAabbMax,\ 1);}
+\DoxyCodeLine{00574\ }
+\DoxyCodeLine{00575\ \ \ \ \ \textcolor{keywordflow}{while}\ (curIndex\ <\ endNodeIndex)}
+\DoxyCodeLine{00576\ \ \ \ \ \{}
+\DoxyCodeLine{00577\ \textcolor{comment}{//\#define\ VISUALLY\_ANALYZE\_BVH\ 1}}
+\DoxyCodeLine{00578\ \textcolor{preprocessor}{\#ifdef\ VISUALLY\_ANALYZE\_BVH}}
+\DoxyCodeLine{00579\ \ \ \ \ \ \ \ \ \textcolor{comment}{//some\ code\ snippet\ to\ debugDraw\ aabb,\ to\ visually\ analyze\ bvh\ structure}}
+\DoxyCodeLine{00580\ \ \ \ \ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{int}\ drawPatch\ =\ 0;}
+\DoxyCodeLine{00581\ \ \ \ \ \ \ \ \ \textcolor{comment}{//need\ some\ global\ access\ to\ a\ debugDrawer}}
+\DoxyCodeLine{00582\ \ \ \ \ \ \ \ \ \textcolor{keyword}{extern}\ \mbox{\hyperlink{classbt_i_debug_draw}{btIDebugDraw}}*\ debugDrawerPtr;}
+\DoxyCodeLine{00583\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (curIndex\ ==\ drawPatch)}
+\DoxyCodeLine{00584\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00585\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ aabbMin,\ aabbMax;}
+\DoxyCodeLine{00586\ \ \ \ \ \ \ \ \ \ \ \ \ aabbMin\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_adb624cd0f6cc615d3dc525e25fc7fe14}{unQuantize}}(rootNode-\/>m\_quantizedAabbMin);}
+\DoxyCodeLine{00587\ \ \ \ \ \ \ \ \ \ \ \ \ aabbMax\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_adb624cd0f6cc615d3dc525e25fc7fe14}{unQuantize}}(rootNode-\/>m\_quantizedAabbMax);}
+\DoxyCodeLine{00588\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{glad_8h_a69995a929d818b8b467d4593c24d98bc}{color}}(1,\ 0,\ 0);}
+\DoxyCodeLine{00589\ \ \ \ \ \ \ \ \ \ \ \ \ debugDrawerPtr-\/>\mbox{\hyperlink{classbt_i_debug_draw_ae60d3fc7f75c75712261d970dbd87fb9}{drawAabb}}(aabbMin,\ aabbMax,\ \mbox{\hyperlink{glad_8h_a69995a929d818b8b467d4593c24d98bc}{color}});}
+\DoxyCodeLine{00590\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00591\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//VISUALLY\_ANALYZE\_BVH}}
+\DoxyCodeLine{00592\ }
+\DoxyCodeLine{00593\ \ \ \ \ \ \ \ \ \textcolor{comment}{//catch\ bugs\ in\ tree\ data}}
+\DoxyCodeLine{00594\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(walkIterations\ <\ subTreeSize);}
+\DoxyCodeLine{00595\ }
+\DoxyCodeLine{00596\ \ \ \ \ \ \ \ \ walkIterations++;}
+\DoxyCodeLine{00597\ \ \ \ \ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00598\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ only\ interested\ if\ this\ is\ closer\ than\ any\ previous\ hit}}
+\DoxyCodeLine{00599\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a630cfbd3157b61ef7097600d4b7885b7}{param}}\ =\ 1.0;}
+\DoxyCodeLine{00600\ \ \ \ \ \ \ \ \ rayBoxOverlap\ =\ 0;}
+\DoxyCodeLine{00601\ \ \ \ \ \ \ \ \ boxBoxOverlap\ =\ \mbox{\hyperlink{bt_aabb_util2_8h_a4cd063bddd76e6a7b1cde0d19364d6a0}{testQuantizedAabbAgainstQuantizedAabb}}(quantizedQueryAabbMin,\ quantizedQueryAabbMax,\ rootNode-\/>m\_quantizedAabbMin,\ rootNode-\/>m\_quantizedAabbMax);}
+\DoxyCodeLine{00602\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}\ =\ rootNode-\/>isLeafNode();}
+\DoxyCodeLine{00603\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (boxBoxOverlap)}
+\DoxyCodeLine{00604\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00605\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ bounds[2];}
+\DoxyCodeLine{00606\ \ \ \ \ \ \ \ \ \ \ \ \ bounds[0]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_adb624cd0f6cc615d3dc525e25fc7fe14}{unQuantize}}(rootNode-\/>m\_quantizedAabbMin);}
+\DoxyCodeLine{00607\ \ \ \ \ \ \ \ \ \ \ \ \ bounds[1]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_adb624cd0f6cc615d3dc525e25fc7fe14}{unQuantize}}(rootNode-\/>m\_quantizedAabbMax);}
+\DoxyCodeLine{00608\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{/*\ Add\ box\ cast\ extents\ */}}
+\DoxyCodeLine{00609\ \ \ \ \ \ \ \ \ \ \ \ \ bounds[0]\ -\/=\ aabbMax;}
+\DoxyCodeLine{00610\ \ \ \ \ \ \ \ \ \ \ \ \ bounds[1]\ -\/=\ aabbMin;}
+\DoxyCodeLine{00611\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ normal;}
+\DoxyCodeLine{00612\ \textcolor{preprocessor}{\#if\ 0}}
+\DoxyCodeLine{00613\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ ra2\ =\ \mbox{\hyperlink{bt_aabb_util2_8h_a2f2ddcfbbd8616e29f2bc076b662888f}{btRayAabb2}}\ (raySource,\ rayDirection,\ sign,\ bounds,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a630cfbd3157b61ef7097600d4b7885b7}{param}},\ 0.0,\ lambda\_max);}
+\DoxyCodeLine{00614\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ ra\ =\ \mbox{\hyperlink{bt_aabb_util2_8h_a95cb06fa47fcf91a1bd36d675d23a241}{btRayAabb}}\ (raySource,\ rayTarget,\ bounds[0],\ bounds[1],\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a630cfbd3157b61ef7097600d4b7885b7}{param}},\ normal);}
+\DoxyCodeLine{00615\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (ra2\ !=\ ra)}
+\DoxyCodeLine{00616\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00617\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}functions\ don't\ match\(\backslash\)n"{}});}
+\DoxyCodeLine{00618\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00619\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00620\ \textcolor{preprocessor}{\#ifdef\ RAYAABB2}}
+\DoxyCodeLine{00624\ }
+\DoxyCodeLine{00625\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//BT\_PROFILE("{}btRayAabb2"{});}}
+\DoxyCodeLine{00626\ \ \ \ \ \ \ \ \ \ \ \ \ rayBoxOverlap\ =\ \mbox{\hyperlink{bt_aabb_util2_8h_a2f2ddcfbbd8616e29f2bc076b662888f}{btRayAabb2}}(raySource,\ rayDirection,\ sign,\ bounds,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a630cfbd3157b61ef7097600d4b7885b7}{param}},\ 0.0f,\ lambda\_max);}
+\DoxyCodeLine{00627\ }
+\DoxyCodeLine{00628\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00629\ \ \ \ \ \ \ \ \ \ \ \ \ rayBoxOverlap\ =\ \textcolor{keyword}{true};\ \ \textcolor{comment}{//btRayAabb(raySource,\ rayTarget,\ bounds[0],\ bounds[1],\ param,\ normal);}}
+\DoxyCodeLine{00630\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00631\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00632\ }
+\DoxyCodeLine{00633\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}\ \&\&\ rayBoxOverlap)}
+\DoxyCodeLine{00634\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00635\ \ \ \ \ \ \ \ \ \ \ \ \ nodeCallback-\/>\mbox{\hyperlink{classbt_node_overlap_callback_aaad327d468e3ce197c133367ec15baf1}{processNode}}(rootNode-\/>getPartId(),\ rootNode-\/>getTriangleIndex());}
+\DoxyCodeLine{00636\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00637\ }
+\DoxyCodeLine{00638\ \ \ \ \ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00639\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((rayBoxOverlap\ !=\ 0)\ ||\ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}})}
+\DoxyCodeLine{00640\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00641\ \ \ \ \ \ \ \ \ \ \ \ \ rootNode++;}
+\DoxyCodeLine{00642\ \ \ \ \ \ \ \ \ \ \ \ \ curIndex++;}
+\DoxyCodeLine{00643\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00644\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00645\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00646\ \ \ \ \ \ \ \ \ \ \ \ \ escapeIndex\ =\ rootNode-\/>getEscapeIndex();}
+\DoxyCodeLine{00647\ \ \ \ \ \ \ \ \ \ \ \ \ rootNode\ +=\ escapeIndex;}
+\DoxyCodeLine{00648\ \ \ \ \ \ \ \ \ \ \ \ \ curIndex\ +=\ escapeIndex;}
+\DoxyCodeLine{00649\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00650\ \ \ \ \ \}}
+\DoxyCodeLine{00651\ \}}
+\DoxyCodeLine{00652\ }
+\DoxyCodeLine{00653\ \textcolor{keywordtype}{void}\ btQuantizedBvh::walkStacklessQuantizedTree(\mbox{\hyperlink{classbt_node_overlap_callback}{btNodeOverlapCallback}}*\ nodeCallback,\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ quantizedQueryAabbMin,\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ quantizedQueryAabbMax,\ \textcolor{keywordtype}{int}\ startNodeIndex,\ \textcolor{keywordtype}{int}\ endNodeIndex)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00654\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00655\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}});}
+\DoxyCodeLine{00656\ }
+\DoxyCodeLine{00657\ \ \ \ \ \textcolor{keywordtype}{int}\ curIndex\ =\ startNodeIndex;}
+\DoxyCodeLine{00658\ \ \ \ \ \textcolor{keywordtype}{int}\ walkIterations\ =\ 0;}
+\DoxyCodeLine{00659\ \ \ \ \ \textcolor{keywordtype}{int}\ subTreeSize\ =\ endNodeIndex\ -\/\ startNodeIndex;}
+\DoxyCodeLine{00660\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})subTreeSize;}
+\DoxyCodeLine{00661\ }
+\DoxyCodeLine{00662\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_quantized_bvh_8h_a9ae5ed44b8f4f4918b7538bb5b5fd2ea}{btQuantizedBvhNode}}*\ rootNode\ =\ \&\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[startNodeIndex];}
+\DoxyCodeLine{00663\ \ \ \ \ \textcolor{keywordtype}{int}\ escapeIndex;}
+\DoxyCodeLine{00664\ }
+\DoxyCodeLine{00665\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}};}
+\DoxyCodeLine{00666\ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00667\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ aabbOverlap;}
+\DoxyCodeLine{00668\ }
+\DoxyCodeLine{00669\ \ \ \ \ \textcolor{keywordflow}{while}\ (curIndex\ <\ endNodeIndex)}
+\DoxyCodeLine{00670\ \ \ \ \ \{}
+\DoxyCodeLine{00671\ \textcolor{comment}{//\#define\ VISUALLY\_ANALYZE\_BVH\ 1}}
+\DoxyCodeLine{00672\ \textcolor{preprocessor}{\#ifdef\ VISUALLY\_ANALYZE\_BVH}}
+\DoxyCodeLine{00673\ \ \ \ \ \ \ \ \ \textcolor{comment}{//some\ code\ snippet\ to\ debugDraw\ aabb,\ to\ visually\ analyze\ bvh\ structure}}
+\DoxyCodeLine{00674\ \ \ \ \ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{int}\ drawPatch\ =\ 0;}
+\DoxyCodeLine{00675\ \ \ \ \ \ \ \ \ \textcolor{comment}{//need\ some\ global\ access\ to\ a\ debugDrawer}}
+\DoxyCodeLine{00676\ \ \ \ \ \ \ \ \ \textcolor{keyword}{extern}\ \mbox{\hyperlink{classbt_i_debug_draw}{btIDebugDraw}}*\ debugDrawerPtr;}
+\DoxyCodeLine{00677\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (curIndex\ ==\ drawPatch)}
+\DoxyCodeLine{00678\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00679\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ aabbMin,\ aabbMax;}
+\DoxyCodeLine{00680\ \ \ \ \ \ \ \ \ \ \ \ \ aabbMin\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_adb624cd0f6cc615d3dc525e25fc7fe14}{unQuantize}}(rootNode-\/>m\_quantizedAabbMin);}
+\DoxyCodeLine{00681\ \ \ \ \ \ \ \ \ \ \ \ \ aabbMax\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_adb624cd0f6cc615d3dc525e25fc7fe14}{unQuantize}}(rootNode-\/>m\_quantizedAabbMax);}
+\DoxyCodeLine{00682\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{glad_8h_a69995a929d818b8b467d4593c24d98bc}{color}}(1,\ 0,\ 0);}
+\DoxyCodeLine{00683\ \ \ \ \ \ \ \ \ \ \ \ \ debugDrawerPtr-\/>\mbox{\hyperlink{classbt_i_debug_draw_ae60d3fc7f75c75712261d970dbd87fb9}{drawAabb}}(aabbMin,\ aabbMax,\ \mbox{\hyperlink{glad_8h_a69995a929d818b8b467d4593c24d98bc}{color}});}
+\DoxyCodeLine{00684\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00685\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//VISUALLY\_ANALYZE\_BVH}}
+\DoxyCodeLine{00686\ }
+\DoxyCodeLine{00687\ \ \ \ \ \ \ \ \ \textcolor{comment}{//catch\ bugs\ in\ tree\ data}}
+\DoxyCodeLine{00688\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(walkIterations\ <\ subTreeSize);}
+\DoxyCodeLine{00689\ }
+\DoxyCodeLine{00690\ \ \ \ \ \ \ \ \ walkIterations++;}
+\DoxyCodeLine{00691\ \ \ \ \ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00692\ \ \ \ \ \ \ \ \ aabbOverlap\ =\ \mbox{\hyperlink{bt_aabb_util2_8h_a4cd063bddd76e6a7b1cde0d19364d6a0}{testQuantizedAabbAgainstQuantizedAabb}}(quantizedQueryAabbMin,\ quantizedQueryAabbMax,\ rootNode-\/>m\_quantizedAabbMin,\ rootNode-\/>m\_quantizedAabbMax);}
+\DoxyCodeLine{00693\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}\ =\ rootNode-\/>isLeafNode();}
+\DoxyCodeLine{00694\ }
+\DoxyCodeLine{00695\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}\ \&\&\ aabbOverlap)}
+\DoxyCodeLine{00696\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00697\ \ \ \ \ \ \ \ \ \ \ \ \ nodeCallback-\/>\mbox{\hyperlink{classbt_node_overlap_callback_aaad327d468e3ce197c133367ec15baf1}{processNode}}(rootNode-\/>getPartId(),\ rootNode-\/>getTriangleIndex());}
+\DoxyCodeLine{00698\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00699\ }
+\DoxyCodeLine{00700\ \ \ \ \ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00701\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((aabbOverlap\ !=\ 0)\ ||\ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}})}
+\DoxyCodeLine{00702\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00703\ \ \ \ \ \ \ \ \ \ \ \ \ rootNode++;}
+\DoxyCodeLine{00704\ \ \ \ \ \ \ \ \ \ \ \ \ curIndex++;}
+\DoxyCodeLine{00705\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00706\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00707\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00708\ \ \ \ \ \ \ \ \ \ \ \ \ escapeIndex\ =\ rootNode-\/>getEscapeIndex();}
+\DoxyCodeLine{00709\ \ \ \ \ \ \ \ \ \ \ \ \ rootNode\ +=\ escapeIndex;}
+\DoxyCodeLine{00710\ \ \ \ \ \ \ \ \ \ \ \ \ curIndex\ +=\ escapeIndex;}
+\DoxyCodeLine{00711\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00712\ \ \ \ \ \}}
+\DoxyCodeLine{00713\ \}}
+\DoxyCodeLine{00714\ }
+\DoxyCodeLine{00715\ \textcolor{comment}{//This\ traversal\ can\ be\ called\ from\ Playstation\ 3\ SPU}}
+\DoxyCodeLine{00716\ \textcolor{keywordtype}{void}\ btQuantizedBvh::walkStacklessQuantizedTreeCacheFriendly(\mbox{\hyperlink{classbt_node_overlap_callback}{btNodeOverlapCallback}}*\ nodeCallback,\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ quantizedQueryAabbMin,\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ quantizedQueryAabbMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00717\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00718\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}});}
+\DoxyCodeLine{00719\ }
+\DoxyCodeLine{00720\ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00721\ }
+\DoxyCodeLine{00722\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ this-\/>\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}.size();\ i++)}
+\DoxyCodeLine{00723\ \ \ \ \ \{}
+\DoxyCodeLine{00724\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_quantized_bvh_8h_a94ae5afe9ac6021dd186784a611eb027}{btBvhSubtreeInfo}}\&\ subtree\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i];}
+\DoxyCodeLine{00725\ }
+\DoxyCodeLine{00726\ \ \ \ \ \ \ \ \ \textcolor{comment}{//PCK:\ unsigned\ instead\ of\ bool}}
+\DoxyCodeLine{00727\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ overlap\ =\ \mbox{\hyperlink{bt_aabb_util2_8h_a4cd063bddd76e6a7b1cde0d19364d6a0}{testQuantizedAabbAgainstQuantizedAabb}}(quantizedQueryAabbMin,\ quantizedQueryAabbMax,\ subtree.m\_quantizedAabbMin,\ subtree.m\_quantizedAabbMax);}
+\DoxyCodeLine{00728\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (overlap\ !=\ 0)}
+\DoxyCodeLine{00729\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00730\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a5e9923e760adfefa590e2023a4f33a95}{walkStacklessQuantizedTree}}(nodeCallback,\ quantizedQueryAabbMin,\ quantizedQueryAabbMax,}
+\DoxyCodeLine{00731\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ subtree.m\_rootNodeIndex,}
+\DoxyCodeLine{00732\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ subtree.m\_rootNodeIndex\ +\ subtree.m\_subtreeSize);}
+\DoxyCodeLine{00733\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00734\ \ \ \ \ \}}
+\DoxyCodeLine{00735\ \}}
+\DoxyCodeLine{00736\ }
+\DoxyCodeLine{00737\ \textcolor{keywordtype}{void}\ btQuantizedBvh::reportRayOverlappingNodex(\mbox{\hyperlink{classbt_node_overlap_callback}{btNodeOverlapCallback}}*\ nodeCallback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ raySource,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ rayTarget)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00738\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00739\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a3630795a49affd08fa5795f4d250b6b6}{reportBoxCastOverlappingNodex}}(nodeCallback,\ raySource,\ rayTarget,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0,\ 0,\ 0),\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0,\ 0,\ 0));}
+\DoxyCodeLine{00740\ \}}
+\DoxyCodeLine{00741\ }
+\DoxyCodeLine{00742\ \textcolor{keywordtype}{void}\ btQuantizedBvh::reportBoxCastOverlappingNodex(\mbox{\hyperlink{classbt_node_overlap_callback}{btNodeOverlapCallback}}*\ nodeCallback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ raySource,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ rayTarget,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00743\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00744\ \ \ \ \ \textcolor{comment}{//always\ use\ stackless}}
+\DoxyCodeLine{00745\ }
+\DoxyCodeLine{00746\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}})}
+\DoxyCodeLine{00747\ \ \ \ \ \{}
+\DoxyCodeLine{00748\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a30d73a2b381023704f5b51ff72bd0272}{walkStacklessQuantizedTreeAgainstRay}}(nodeCallback,\ raySource,\ rayTarget,\ aabbMin,\ aabbMax,\ 0,\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}});}
+\DoxyCodeLine{00749\ \ \ \ \ \}}
+\DoxyCodeLine{00750\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00751\ \ \ \ \ \{}
+\DoxyCodeLine{00752\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa14e71f499787530ffc6c1f3565b7288}{walkStacklessTreeAgainstRay}}(nodeCallback,\ raySource,\ rayTarget,\ aabbMin,\ aabbMax,\ 0,\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}});}
+\DoxyCodeLine{00753\ \ \ \ \ \}}
+\DoxyCodeLine{00754\ \ \ \ \ \textcolor{comment}{/*}}
+\DoxyCodeLine{00755\ \textcolor{comment}{\ \ \ \ \{}}
+\DoxyCodeLine{00756\ \textcolor{comment}{\ \ \ \ \ \ \ \ //recursive\ traversal}}
+\DoxyCodeLine{00757\ \textcolor{comment}{\ \ \ \ \ \ \ \ btVector3\ qaabbMin\ =\ raySource;}}
+\DoxyCodeLine{00758\ \textcolor{comment}{\ \ \ \ \ \ \ \ btVector3\ qaabbMax\ =\ raySource;}}
+\DoxyCodeLine{00759\ \textcolor{comment}{\ \ \ \ \ \ \ \ qaabbMin.setMin(rayTarget);}}
+\DoxyCodeLine{00760\ \textcolor{comment}{\ \ \ \ \ \ \ \ qaabbMax.setMax(rayTarget);}}
+\DoxyCodeLine{00761\ \textcolor{comment}{\ \ \ \ \ \ \ \ qaabbMin\ +=\ aabbMin;}}
+\DoxyCodeLine{00762\ \textcolor{comment}{\ \ \ \ \ \ \ \ qaabbMax\ +=\ aabbMax;}}
+\DoxyCodeLine{00763\ \textcolor{comment}{\ \ \ \ \ \ \ \ reportAabbOverlappingNodex(nodeCallback,qaabbMin,qaabbMax);}}
+\DoxyCodeLine{00764\ \textcolor{comment}{\ \ \ \ \}}}
+\DoxyCodeLine{00765\ \textcolor{comment}{\ \ \ \ */}}
+\DoxyCodeLine{00766\ \}}
+\DoxyCodeLine{00767\ }
+\DoxyCodeLine{00768\ \textcolor{keywordtype}{void}\ btQuantizedBvh::swapLeafNodes(\textcolor{keywordtype}{int}\ i,\ \textcolor{keywordtype}{int}\ splitIndex)}
+\DoxyCodeLine{00769\ \{}
+\DoxyCodeLine{00770\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}})}
+\DoxyCodeLine{00771\ \ \ \ \ \{}
+\DoxyCodeLine{00772\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_a9ae5ed44b8f4f4918b7538bb5b5fd2ea}{btQuantizedBvhNode}}\ tmp\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ae5bb720a0addebe1f2a87eadfa66b16b}{m\_quantizedLeafNodes}}[i];}
+\DoxyCodeLine{00773\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ae5bb720a0addebe1f2a87eadfa66b16b}{m\_quantizedLeafNodes}}[i]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ae5bb720a0addebe1f2a87eadfa66b16b}{m\_quantizedLeafNodes}}[splitIndex];}
+\DoxyCodeLine{00774\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ae5bb720a0addebe1f2a87eadfa66b16b}{m\_quantizedLeafNodes}}[splitIndex]\ =\ tmp;}
+\DoxyCodeLine{00775\ \ \ \ \ \}}
+\DoxyCodeLine{00776\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00777\ \ \ \ \ \{}
+\DoxyCodeLine{00778\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_a9c10959d29b0982d4c7a5a1c3553b979}{btOptimizedBvhNode}}\ tmp\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a1532648525e18a05c7e73c85829579ac}{m\_leafNodes}}[i];}
+\DoxyCodeLine{00779\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a1532648525e18a05c7e73c85829579ac}{m\_leafNodes}}[i]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a1532648525e18a05c7e73c85829579ac}{m\_leafNodes}}[splitIndex];}
+\DoxyCodeLine{00780\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a1532648525e18a05c7e73c85829579ac}{m\_leafNodes}}[splitIndex]\ =\ tmp;}
+\DoxyCodeLine{00781\ \ \ \ \ \}}
+\DoxyCodeLine{00782\ \}}
+\DoxyCodeLine{00783\ }
+\DoxyCodeLine{00784\ \textcolor{keywordtype}{void}\ btQuantizedBvh::assignInternalNodeFromLeafNode(\textcolor{keywordtype}{int}\ internalNode,\ \textcolor{keywordtype}{int}\ leafNodeIndex)}
+\DoxyCodeLine{00785\ \{}
+\DoxyCodeLine{00786\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}})}
+\DoxyCodeLine{00787\ \ \ \ \ \{}
+\DoxyCodeLine{00788\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[internalNode]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ae5bb720a0addebe1f2a87eadfa66b16b}{m\_quantizedLeafNodes}}[leafNodeIndex];}
+\DoxyCodeLine{00789\ \ \ \ \ \}}
+\DoxyCodeLine{00790\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00791\ \ \ \ \ \{}
+\DoxyCodeLine{00792\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[internalNode]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a1532648525e18a05c7e73c85829579ac}{m\_leafNodes}}[leafNodeIndex];}
+\DoxyCodeLine{00793\ \ \ \ \ \}}
+\DoxyCodeLine{00794\ \}}
+\DoxyCodeLine{00795\ }
+\DoxyCodeLine{00796\ \textcolor{comment}{//PCK:\ include}}
+\DoxyCodeLine{00797\ \textcolor{preprocessor}{\#include\ <new>}}
+\DoxyCodeLine{00798\ }
+\DoxyCodeLine{00799\ \textcolor{preprocessor}{\#if\ 0}}
+\DoxyCodeLine{00800\ \textcolor{comment}{//PCK:\ consts}}
+\DoxyCodeLine{00801\ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ BVH\_ALIGNMENT\ =\ 16;}
+\DoxyCodeLine{00802\ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ BVH\_ALIGNMENT\_MASK\ =\ BVH\_ALIGNMENT-\/1;}
+\DoxyCodeLine{00803\ }
+\DoxyCodeLine{00804\ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ BVH\_ALIGNMENT\_BLOCKS\ =\ 2;}
+\DoxyCodeLine{00805\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00806\ }
+\DoxyCodeLine{00807\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ btQuantizedBvh::getAlignmentSerializationPadding()}
+\DoxyCodeLine{00808\ \{}
+\DoxyCodeLine{00809\ \ \ \ \ \textcolor{comment}{//\ I\ changed\ this\ to\ 0\ since\ the\ extra\ padding\ is\ not\ needed\ or\ used.}}
+\DoxyCodeLine{00810\ \ \ \ \ \textcolor{keywordflow}{return}\ 0;\ \ \textcolor{comment}{//BVH\_ALIGNMENT\_BLOCKS\ *\ BVH\_ALIGNMENT;}}
+\DoxyCodeLine{00811\ \}}
+\DoxyCodeLine{00812\ }
+\DoxyCodeLine{00813\ \textcolor{keywordtype}{unsigned}\ btQuantizedBvh::calculateSerializeBufferSize()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00814\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00815\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ baseSize\ =\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_quantized_bvh_8h_a2f78d9c5cc713b30778ead8409b78101}{btQuantizedBvh}})\ +\ getAlignmentSerializationPadding();}
+\DoxyCodeLine{00816\ \ \ \ \ baseSize\ +=\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_quantized_bvh_8h_a94ae5afe9ac6021dd186784a611eb027}{btBvhSubtreeInfo}})\ *\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab1bad7cd82c166372e5a43580b6b722f}{m\_subtreeHeaderCount}};}
+\DoxyCodeLine{00817\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}})}
+\DoxyCodeLine{00818\ \ \ \ \ \{}
+\DoxyCodeLine{00819\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ baseSize\ +\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}}\ *\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_quantized_bvh_8h_a9ae5ed44b8f4f4918b7538bb5b5fd2ea}{btQuantizedBvhNode}});}
+\DoxyCodeLine{00820\ \ \ \ \ \}}
+\DoxyCodeLine{00821\ \ \ \ \ \textcolor{keywordflow}{return}\ baseSize\ +\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}}\ *\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_quantized_bvh_8h_a9c10959d29b0982d4c7a5a1c3553b979}{btOptimizedBvhNode}});}
+\DoxyCodeLine{00822\ \}}
+\DoxyCodeLine{00823\ }
+\DoxyCodeLine{00824\ \textcolor{keywordtype}{bool}\ btQuantizedBvh::serialize(\textcolor{keywordtype}{void}*\ o\_alignedDataBuffer,\ \textcolor{keywordtype}{unsigned}\ \textcolor{comment}{/*i\_dataBufferSize\ */},\ \textcolor{keywordtype}{bool}\ i\_swapEndian)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00825\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00826\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{b3_quantized_bvh_8h_ab1bad7cd82c166372e5a43580b6b722f}{m\_subtreeHeaderCount}}\ ==\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}.size());}
+\DoxyCodeLine{00827\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab1bad7cd82c166372e5a43580b6b722f}{m\_subtreeHeaderCount}}\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}.size();}
+\DoxyCodeLine{00828\ }
+\DoxyCodeLine{00829\ \ \ \ \ \textcolor{comment}{/*\ \ if\ (i\_dataBufferSize\ <\ calculateSerializeBufferSize()\ ||\ o\_alignedDataBuffer\ ==\ NULL\ ||\ (((unsigned)o\_alignedDataBuffer\ \&\ BVH\_ALIGNMENT\_MASK)\ !=\ 0))}}
+\DoxyCodeLine{00830\ \textcolor{comment}{\ \ \ \ \{}}
+\DoxyCodeLine{00832\ \ \ \ \ \ \ \ \ btAssert(0);}
+\DoxyCodeLine{00833\ \ \ \ \ \ \ \ \ return\ false;}
+\DoxyCodeLine{00834\ \ \ \ \ \}}
+\DoxyCodeLine{00835\ */}
+\DoxyCodeLine{00836\ }
+\DoxyCodeLine{00837\ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_a2f78d9c5cc713b30778ead8409b78101}{btQuantizedBvh}}*\ targetBvh\ =\ (\mbox{\hyperlink{bt_quantized_bvh_8h_a2f78d9c5cc713b30778ead8409b78101}{btQuantizedBvh}}*)o\_alignedDataBuffer;}
+\DoxyCodeLine{00838\ }
+\DoxyCodeLine{00839\ \ \ \ \ \textcolor{comment}{//\ construct\ the\ class\ so\ the\ virtual\ function\ table,\ etc\ will\ be\ set\ up}}
+\DoxyCodeLine{00840\ \ \ \ \ \textcolor{comment}{//\ Also,\ m\_leafNodes\ and\ m\_quantizedLeafNodes\ will\ be\ initialized\ to\ default\ values\ by\ the\ constructor}}
+\DoxyCodeLine{00841\ \ \ \ \ \textcolor{keyword}{new}\ (targetBvh)\ \mbox{\hyperlink{bt_quantized_bvh_8h_a2f78d9c5cc713b30778ead8409b78101}{btQuantizedBvh}};}
+\DoxyCodeLine{00842\ }
+\DoxyCodeLine{00843\ \ \ \ \ \textcolor{keywordflow}{if}\ (i\_swapEndian)}
+\DoxyCodeLine{00844\ \ \ \ \ \{}
+\DoxyCodeLine{00845\ \ \ \ \ \ \ \ \ targetBvh-\/>m\_curNodeIndex\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}}));}
+\DoxyCodeLine{00846\ }
+\DoxyCodeLine{00847\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a96dc28c8355164ad9a4736ad2fe99e2c}{btSwapVector3Endian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}},\ targetBvh-\/>m\_bvhAabbMin);}
+\DoxyCodeLine{00848\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a96dc28c8355164ad9a4736ad2fe99e2c}{btSwapVector3Endian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}},\ targetBvh-\/>m\_bvhAabbMax);}
+\DoxyCodeLine{00849\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a96dc28c8355164ad9a4736ad2fe99e2c}{btSwapVector3Endian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_ad5f16f2793ae00951e81729fc4943e04}{m\_bvhQuantization}},\ targetBvh-\/>m\_bvhQuantization);}
+\DoxyCodeLine{00850\ }
+\DoxyCodeLine{00851\ \ \ \ \ \ \ \ \ targetBvh-\/>m\_traversalMode\ =\ (btTraversalMode)\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_a07a124b62d60a2b80978c48a623b3e63}{m\_traversalMode}});}
+\DoxyCodeLine{00852\ \ \ \ \ \ \ \ \ targetBvh-\/>m\_subtreeHeaderCount\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_ab1bad7cd82c166372e5a43580b6b722f}{m\_subtreeHeaderCount}}));}
+\DoxyCodeLine{00853\ \ \ \ \ \}}
+\DoxyCodeLine{00854\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00855\ \ \ \ \ \{}
+\DoxyCodeLine{00856\ \ \ \ \ \ \ \ \ targetBvh-\/>m\_curNodeIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}};}
+\DoxyCodeLine{00857\ \ \ \ \ \ \ \ \ targetBvh-\/>m\_bvhAabbMin\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}};}
+\DoxyCodeLine{00858\ \ \ \ \ \ \ \ \ targetBvh-\/>m\_bvhAabbMax\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}};}
+\DoxyCodeLine{00859\ \ \ \ \ \ \ \ \ targetBvh-\/>m\_bvhQuantization\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ad5f16f2793ae00951e81729fc4943e04}{m\_bvhQuantization}};}
+\DoxyCodeLine{00860\ \ \ \ \ \ \ \ \ targetBvh-\/>m\_traversalMode\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a07a124b62d60a2b80978c48a623b3e63}{m\_traversalMode}};}
+\DoxyCodeLine{00861\ \ \ \ \ \ \ \ \ targetBvh-\/>m\_subtreeHeaderCount\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab1bad7cd82c166372e5a43580b6b722f}{m\_subtreeHeaderCount}};}
+\DoxyCodeLine{00862\ \ \ \ \ \}}
+\DoxyCodeLine{00863\ }
+\DoxyCodeLine{00864\ \ \ \ \ targetBvh-\/>m\_useQuantization\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}};}
+\DoxyCodeLine{00865\ }
+\DoxyCodeLine{00866\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*\ nodeData\ =\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*)targetBvh;}
+\DoxyCodeLine{00867\ \ \ \ \ nodeData\ +=\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_quantized_bvh_8h_a2f78d9c5cc713b30778ead8409b78101}{btQuantizedBvh}});}
+\DoxyCodeLine{00868\ }
+\DoxyCodeLine{00869\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ sizeToAdd\ =\ 0;\ \ \textcolor{comment}{//(BVH\_ALIGNMENT-\/((unsigned)nodeData\ \&\ BVH\_ALIGNMENT\_MASK))\&BVH\_ALIGNMENT\_MASK;}}
+\DoxyCodeLine{00870\ \ \ \ \ nodeData\ +=\ sizeToAdd;}
+\DoxyCodeLine{00871\ }
+\DoxyCodeLine{00872\ \ \ \ \ \textcolor{keywordtype}{int}\ nodeCount\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}};}
+\DoxyCodeLine{00873\ }
+\DoxyCodeLine{00874\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}})}
+\DoxyCodeLine{00875\ \ \ \ \ \{}
+\DoxyCodeLine{00876\ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes.initializeFromBuffer(nodeData,\ nodeCount,\ nodeCount);}
+\DoxyCodeLine{00877\ }
+\DoxyCodeLine{00878\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (i\_swapEndian)}
+\DoxyCodeLine{00879\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00880\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ nodeIndex\ =\ 0;\ nodeIndex\ <\ nodeCount;\ nodeIndex++)}
+\DoxyCodeLine{00881\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00882\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMin[0]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].\mbox{\hyperlink{bt_quantized_bvh_8h_a44008ca92d33ef2bb8f224503ff2156a}{m\_quantizedAabbMin}}[0]);}
+\DoxyCodeLine{00883\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMin[1]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].\mbox{\hyperlink{bt_quantized_bvh_8h_a44008ca92d33ef2bb8f224503ff2156a}{m\_quantizedAabbMin}}[1]);}
+\DoxyCodeLine{00884\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMin[2]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].\mbox{\hyperlink{bt_quantized_bvh_8h_a44008ca92d33ef2bb8f224503ff2156a}{m\_quantizedAabbMin}}[2]);}
+\DoxyCodeLine{00885\ }
+\DoxyCodeLine{00886\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMax[0]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].\mbox{\hyperlink{bt_quantized_bvh_8h_aae0adaa420186b3ecfe1cf128b0e305f}{m\_quantizedAabbMax}}[0]);}
+\DoxyCodeLine{00887\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMax[1]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].\mbox{\hyperlink{bt_quantized_bvh_8h_aae0adaa420186b3ecfe1cf128b0e305f}{m\_quantizedAabbMax}}[1]);}
+\DoxyCodeLine{00888\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMax[2]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].\mbox{\hyperlink{bt_quantized_bvh_8h_aae0adaa420186b3ecfe1cf128b0e305f}{m\_quantizedAabbMax}}[2]);}
+\DoxyCodeLine{00889\ }
+\DoxyCodeLine{00890\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_escapeIndexOrTriangleIndex\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].\mbox{\hyperlink{bt_quantized_bvh_8h_a19d5413e91f64cfda90cca0a2d206dfb}{m\_escapeIndexOrTriangleIndex}}));}
+\DoxyCodeLine{00891\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00892\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00893\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00894\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00895\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ nodeIndex\ =\ 0;\ nodeIndex\ <\ nodeCount;\ nodeIndex++)}
+\DoxyCodeLine{00896\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00897\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMin[0]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].m\_quantizedAabbMin[0];}
+\DoxyCodeLine{00898\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMin[1]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].m\_quantizedAabbMin[1];}
+\DoxyCodeLine{00899\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMin[2]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].m\_quantizedAabbMin[2];}
+\DoxyCodeLine{00900\ }
+\DoxyCodeLine{00901\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMax[0]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].m\_quantizedAabbMax[0];}
+\DoxyCodeLine{00902\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMax[1]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].m\_quantizedAabbMax[1];}
+\DoxyCodeLine{00903\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMax[2]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].m\_quantizedAabbMax[2];}
+\DoxyCodeLine{00904\ }
+\DoxyCodeLine{00905\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_escapeIndexOrTriangleIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].m\_escapeIndexOrTriangleIndex;}
+\DoxyCodeLine{00906\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00907\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00908\ \ \ \ \ \ \ \ \ nodeData\ +=\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_quantized_bvh_8h_a9ae5ed44b8f4f4918b7538bb5b5fd2ea}{btQuantizedBvhNode}})\ *\ nodeCount;}
+\DoxyCodeLine{00909\ }
+\DoxyCodeLine{00910\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ this\ clears\ the\ pointer\ in\ the\ member\ variable\ it\ doesn't\ really\ do\ anything\ to\ the\ data}}
+\DoxyCodeLine{00911\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ it\ does\ call\ the\ destructor\ on\ the\ contained\ objects,\ but\ they\ are\ all\ classes\ with\ no\ destructor\ defined}}
+\DoxyCodeLine{00912\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ so\ the\ memory\ (which\ is\ not\ freed)\ is\ left\ alone}}
+\DoxyCodeLine{00913\ \ \ \ \ \ \ \ \ targetBvh-\/>m\_quantizedContiguousNodes.initializeFromBuffer(\mbox{\hyperlink{module___n_u_l_l}{NULL}},\ 0,\ 0);}
+\DoxyCodeLine{00914\ \ \ \ \ \}}
+\DoxyCodeLine{00915\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00916\ \ \ \ \ \{}
+\DoxyCodeLine{00917\ \ \ \ \ \ \ \ \ targetBvh-\/>m\_contiguousNodes.initializeFromBuffer(nodeData,\ nodeCount,\ nodeCount);}
+\DoxyCodeLine{00918\ }
+\DoxyCodeLine{00919\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (i\_swapEndian)}
+\DoxyCodeLine{00920\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00921\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ nodeIndex\ =\ 0;\ nodeIndex\ <\ nodeCount;\ nodeIndex++)}
+\DoxyCodeLine{00922\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00923\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a96dc28c8355164ad9a4736ad2fe99e2c}{btSwapVector3Endian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[nodeIndex].\mbox{\hyperlink{b3_quantized_bvh_8h_a457f51956ccf51e7f485cb7fabf9253d}{m\_aabbMinOrg}},\ targetBvh-\/>m\_contiguousNodes[nodeIndex].m\_aabbMinOrg);}
+\DoxyCodeLine{00924\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a96dc28c8355164ad9a4736ad2fe99e2c}{btSwapVector3Endian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[nodeIndex].\mbox{\hyperlink{b3_quantized_bvh_8h_a35cee5640c5d10262f7f75cd06221ca1}{m\_aabbMaxOrg}},\ targetBvh-\/>m\_contiguousNodes[nodeIndex].m\_aabbMaxOrg);}
+\DoxyCodeLine{00925\ }
+\DoxyCodeLine{00926\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_contiguousNodes[nodeIndex].m\_escapeIndex\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[nodeIndex].\mbox{\hyperlink{b3_quantized_bvh_8h_ae9053ae668449575accbfd720fbad89b}{m\_escapeIndex}}));}
+\DoxyCodeLine{00927\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_contiguousNodes[nodeIndex].m\_subPart\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[nodeIndex].\mbox{\hyperlink{b3_quantized_bvh_8h_a63ab2dad0a04f368bfb67b4f9acfb323}{m\_subPart}}));}
+\DoxyCodeLine{00928\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_contiguousNodes[nodeIndex].m\_triangleIndex\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[nodeIndex].\mbox{\hyperlink{b3_quantized_bvh_8h_a42b30f94d6dffe9f97c06323bbecb7b4}{m\_triangleIndex}}));}
+\DoxyCodeLine{00929\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00930\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00931\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00932\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00933\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ nodeIndex\ =\ 0;\ nodeIndex\ <\ nodeCount;\ nodeIndex++)}
+\DoxyCodeLine{00934\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00935\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_contiguousNodes[nodeIndex].m\_aabbMinOrg\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[nodeIndex].m\_aabbMinOrg;}
+\DoxyCodeLine{00936\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_contiguousNodes[nodeIndex].m\_aabbMaxOrg\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[nodeIndex].m\_aabbMaxOrg;}
+\DoxyCodeLine{00937\ }
+\DoxyCodeLine{00938\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_contiguousNodes[nodeIndex].m\_escapeIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[nodeIndex].m\_escapeIndex;}
+\DoxyCodeLine{00939\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_contiguousNodes[nodeIndex].m\_subPart\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[nodeIndex].m\_subPart;}
+\DoxyCodeLine{00940\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_contiguousNodes[nodeIndex].m\_triangleIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[nodeIndex].m\_triangleIndex;}
+\DoxyCodeLine{00941\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00942\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00943\ \ \ \ \ \ \ \ \ nodeData\ +=\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_quantized_bvh_8h_a9c10959d29b0982d4c7a5a1c3553b979}{btOptimizedBvhNode}})\ *\ nodeCount;}
+\DoxyCodeLine{00944\ }
+\DoxyCodeLine{00945\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ this\ clears\ the\ pointer\ in\ the\ member\ variable\ it\ doesn't\ really\ do\ anything\ to\ the\ data}}
+\DoxyCodeLine{00946\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ it\ does\ call\ the\ destructor\ on\ the\ contained\ objects,\ but\ they\ are\ all\ classes\ with\ no\ destructor\ defined}}
+\DoxyCodeLine{00947\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ so\ the\ memory\ (which\ is\ not\ freed)\ is\ left\ alone}}
+\DoxyCodeLine{00948\ \ \ \ \ \ \ \ \ targetBvh-\/>m\_contiguousNodes.initializeFromBuffer(\mbox{\hyperlink{module___n_u_l_l}{NULL}},\ 0,\ 0);}
+\DoxyCodeLine{00949\ \ \ \ \ \}}
+\DoxyCodeLine{00950\ }
+\DoxyCodeLine{00951\ \ \ \ \ sizeToAdd\ =\ 0;\ \ \textcolor{comment}{//(BVH\_ALIGNMENT-\/((unsigned)nodeData\ \&\ BVH\_ALIGNMENT\_MASK))\&BVH\_ALIGNMENT\_MASK;}}
+\DoxyCodeLine{00952\ \ \ \ \ nodeData\ +=\ sizeToAdd;}
+\DoxyCodeLine{00953\ }
+\DoxyCodeLine{00954\ \ \ \ \ \textcolor{comment}{//\ Now\ serialize\ the\ subtree\ headers}}
+\DoxyCodeLine{00955\ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders.initializeFromBuffer(nodeData,\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab1bad7cd82c166372e5a43580b6b722f}{m\_subtreeHeaderCount}},\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab1bad7cd82c166372e5a43580b6b722f}{m\_subtreeHeaderCount}});}
+\DoxyCodeLine{00956\ \ \ \ \ \textcolor{keywordflow}{if}\ (i\_swapEndian)}
+\DoxyCodeLine{00957\ \ \ \ \ \{}
+\DoxyCodeLine{00958\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab1bad7cd82c166372e5a43580b6b722f}{m\_subtreeHeaderCount}};\ i++)}
+\DoxyCodeLine{00959\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00960\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMin[0]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].\mbox{\hyperlink{bt_quantized_bvh_8h_a44008ca92d33ef2bb8f224503ff2156a}{m\_quantizedAabbMin}}[0]);}
+\DoxyCodeLine{00961\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMin[1]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].\mbox{\hyperlink{bt_quantized_bvh_8h_a44008ca92d33ef2bb8f224503ff2156a}{m\_quantizedAabbMin}}[1]);}
+\DoxyCodeLine{00962\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMin[2]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].\mbox{\hyperlink{bt_quantized_bvh_8h_a44008ca92d33ef2bb8f224503ff2156a}{m\_quantizedAabbMin}}[2]);}
+\DoxyCodeLine{00963\ }
+\DoxyCodeLine{00964\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMax[0]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].\mbox{\hyperlink{bt_quantized_bvh_8h_aae0adaa420186b3ecfe1cf128b0e305f}{m\_quantizedAabbMax}}[0]);}
+\DoxyCodeLine{00965\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMax[1]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].\mbox{\hyperlink{bt_quantized_bvh_8h_aae0adaa420186b3ecfe1cf128b0e305f}{m\_quantizedAabbMax}}[1]);}
+\DoxyCodeLine{00966\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMax[2]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].\mbox{\hyperlink{bt_quantized_bvh_8h_aae0adaa420186b3ecfe1cf128b0e305f}{m\_quantizedAabbMax}}[2]);}
+\DoxyCodeLine{00967\ }
+\DoxyCodeLine{00968\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_rootNodeIndex\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].\mbox{\hyperlink{bt_quantized_bvh_8h_a91b4a0bfff87367d18f6aa2c0d61ec02}{m\_rootNodeIndex}}));}
+\DoxyCodeLine{00969\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_subtreeSize\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].\mbox{\hyperlink{bt_quantized_bvh_8h_a7e57db1835c65199b5efb78923ce8347}{m\_subtreeSize}}));}
+\DoxyCodeLine{00970\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00971\ \ \ \ \ \}}
+\DoxyCodeLine{00972\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00973\ \ \ \ \ \{}
+\DoxyCodeLine{00974\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab1bad7cd82c166372e5a43580b6b722f}{m\_subtreeHeaderCount}};\ i++)}
+\DoxyCodeLine{00975\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00976\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMin[0]\ =\ (\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMin[0]);}
+\DoxyCodeLine{00977\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMin[1]\ =\ (\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMin[1]);}
+\DoxyCodeLine{00978\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMin[2]\ =\ (\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMin[2]);}
+\DoxyCodeLine{00979\ }
+\DoxyCodeLine{00980\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMax[0]\ =\ (\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMax[0]);}
+\DoxyCodeLine{00981\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMax[1]\ =\ (\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMax[1]);}
+\DoxyCodeLine{00982\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMax[2]\ =\ (\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMax[2]);}
+\DoxyCodeLine{00983\ }
+\DoxyCodeLine{00984\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_rootNodeIndex\ =\ (\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_rootNodeIndex);}
+\DoxyCodeLine{00985\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_subtreeSize\ =\ (\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_subtreeSize);}
+\DoxyCodeLine{00986\ }
+\DoxyCodeLine{00987\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ need\ to\ clear\ padding\ in\ destination\ buffer}}
+\DoxyCodeLine{00988\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_padding[0]\ =\ 0;}
+\DoxyCodeLine{00989\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_padding[1]\ =\ 0;}
+\DoxyCodeLine{00990\ \ \ \ \ \ \ \ \ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders[i].m\_padding[2]\ =\ 0;}
+\DoxyCodeLine{00991\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00992\ \ \ \ \ \}}
+\DoxyCodeLine{00993\ \ \ \ \ nodeData\ +=\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_quantized_bvh_8h_a94ae5afe9ac6021dd186784a611eb027}{btBvhSubtreeInfo}})\ *\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab1bad7cd82c166372e5a43580b6b722f}{m\_subtreeHeaderCount}};}
+\DoxyCodeLine{00994\ }
+\DoxyCodeLine{00995\ \ \ \ \ \textcolor{comment}{//\ this\ clears\ the\ pointer\ in\ the\ member\ variable\ it\ doesn't\ really\ do\ anything\ to\ the\ data}}
+\DoxyCodeLine{00996\ \ \ \ \ \textcolor{comment}{//\ it\ does\ call\ the\ destructor\ on\ the\ contained\ objects,\ but\ they\ are\ all\ classes\ with\ no\ destructor\ defined}}
+\DoxyCodeLine{00997\ \ \ \ \ \textcolor{comment}{//\ so\ the\ memory\ (which\ is\ not\ freed)\ is\ left\ alone}}
+\DoxyCodeLine{00998\ \ \ \ \ targetBvh-\/>m\_SubtreeHeaders.initializeFromBuffer(\mbox{\hyperlink{module___n_u_l_l}{NULL}},\ 0,\ 0);}
+\DoxyCodeLine{00999\ }
+\DoxyCodeLine{01000\ \ \ \ \ \textcolor{comment}{//\ this\ wipes\ the\ virtual\ function\ table\ pointer\ at\ the\ start\ of\ the\ buffer\ for\ the\ class}}
+\DoxyCodeLine{01001\ \ \ \ \ *((\textcolor{keywordtype}{void}**)o\_alignedDataBuffer)\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{01002\ }
+\DoxyCodeLine{01003\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{01004\ \}}
+\DoxyCodeLine{01005\ }
+\DoxyCodeLine{01006\ \mbox{\hyperlink{bt_quantized_bvh_8h_a2f78d9c5cc713b30778ead8409b78101}{btQuantizedBvh}}*\ btQuantizedBvh::deSerializeInPlace(\textcolor{keywordtype}{void}*\ i\_alignedDataBuffer,\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ i\_dataBufferSize,\ \textcolor{keywordtype}{bool}\ i\_swapEndian)}
+\DoxyCodeLine{01007\ \{}
+\DoxyCodeLine{01008\ \ \ \ \ \textcolor{keywordflow}{if}\ (i\_alignedDataBuffer\ ==\ \mbox{\hyperlink{module___n_u_l_l}{NULL}})\ \ \textcolor{comment}{//\ ||\ (((unsigned)i\_alignedDataBuffer\ \&\ BVH\_ALIGNMENT\_MASK)\ !=\ 0))}}
+\DoxyCodeLine{01009\ \ \ \ \ \{}
+\DoxyCodeLine{01010\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{01011\ \ \ \ \ \}}
+\DoxyCodeLine{01012\ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_a2f78d9c5cc713b30778ead8409b78101}{btQuantizedBvh}}*\ bvh\ =\ (\mbox{\hyperlink{bt_quantized_bvh_8h_a2f78d9c5cc713b30778ead8409b78101}{btQuantizedBvh}}*)i\_alignedDataBuffer;}
+\DoxyCodeLine{01013\ }
+\DoxyCodeLine{01014\ \ \ \ \ \textcolor{keywordflow}{if}\ (i\_swapEndian)}
+\DoxyCodeLine{01015\ \ \ \ \ \{}
+\DoxyCodeLine{01016\ \ \ \ \ \ \ \ \ bvh-\/>m\_curNodeIndex\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_curNodeIndex));}
+\DoxyCodeLine{01017\ }
+\DoxyCodeLine{01018\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a111b328c4d76341871adb4712477ad21}{btUnSwapVector3Endian}}(bvh-\/>m\_bvhAabbMin);}
+\DoxyCodeLine{01019\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a111b328c4d76341871adb4712477ad21}{btUnSwapVector3Endian}}(bvh-\/>m\_bvhAabbMax);}
+\DoxyCodeLine{01020\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a111b328c4d76341871adb4712477ad21}{btUnSwapVector3Endian}}(bvh-\/>m\_bvhQuantization);}
+\DoxyCodeLine{01021\ }
+\DoxyCodeLine{01022\ \ \ \ \ \ \ \ \ bvh-\/>m\_traversalMode\ =\ (btTraversalMode)\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_traversalMode);}
+\DoxyCodeLine{01023\ \ \ \ \ \ \ \ \ bvh-\/>m\_subtreeHeaderCount\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_subtreeHeaderCount));}
+\DoxyCodeLine{01024\ \ \ \ \ \}}
+\DoxyCodeLine{01025\ }
+\DoxyCodeLine{01026\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ calculatedBufSize\ =\ bvh-\/>calculateSerializeBufferSize();}
+\DoxyCodeLine{01027\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(calculatedBufSize\ <=\ i\_dataBufferSize);}
+\DoxyCodeLine{01028\ }
+\DoxyCodeLine{01029\ \ \ \ \ \textcolor{keywordflow}{if}\ (calculatedBufSize\ >\ i\_dataBufferSize)}
+\DoxyCodeLine{01030\ \ \ \ \ \{}
+\DoxyCodeLine{01031\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{01032\ \ \ \ \ \}}
+\DoxyCodeLine{01033\ }
+\DoxyCodeLine{01034\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*\ nodeData\ =\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*)bvh;}
+\DoxyCodeLine{01035\ \ \ \ \ nodeData\ +=\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_quantized_bvh_8h_a2f78d9c5cc713b30778ead8409b78101}{btQuantizedBvh}});}
+\DoxyCodeLine{01036\ }
+\DoxyCodeLine{01037\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ sizeToAdd\ =\ 0;\ \ \textcolor{comment}{//(BVH\_ALIGNMENT-\/((unsigned)nodeData\ \&\ BVH\_ALIGNMENT\_MASK))\&BVH\_ALIGNMENT\_MASK;}}
+\DoxyCodeLine{01038\ \ \ \ \ nodeData\ +=\ sizeToAdd;}
+\DoxyCodeLine{01039\ }
+\DoxyCodeLine{01040\ \ \ \ \ \textcolor{keywordtype}{int}\ nodeCount\ =\ bvh-\/>m\_curNodeIndex;}
+\DoxyCodeLine{01041\ }
+\DoxyCodeLine{01042\ \ \ \ \ \textcolor{comment}{//\ Must\ call\ placement\ new\ to\ fill\ in\ virtual\ function\ table,\ etc,\ but\ we\ don't\ want\ to\ overwrite\ most\ data,\ so\ call\ a\ special\ version\ of\ the\ constructor}}
+\DoxyCodeLine{01043\ \ \ \ \ \textcolor{comment}{//\ Also,\ m\_leafNodes\ and\ m\_quantizedLeafNodes\ will\ be\ initialized\ to\ default\ values\ by\ the\ constructor}}
+\DoxyCodeLine{01044\ \ \ \ \ \textcolor{keyword}{new}\ (bvh)\ \mbox{\hyperlink{bt_quantized_bvh_8h_a2f78d9c5cc713b30778ead8409b78101}{btQuantizedBvh}}(*bvh,\ \textcolor{keyword}{false});}
+\DoxyCodeLine{01045\ }
+\DoxyCodeLine{01046\ \ \ \ \ \textcolor{keywordflow}{if}\ (bvh-\/>m\_useQuantization)}
+\DoxyCodeLine{01047\ \ \ \ \ \{}
+\DoxyCodeLine{01048\ \ \ \ \ \ \ \ \ bvh-\/>m\_quantizedContiguousNodes.initializeFromBuffer(nodeData,\ nodeCount,\ nodeCount);}
+\DoxyCodeLine{01049\ }
+\DoxyCodeLine{01050\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (i\_swapEndian)}
+\DoxyCodeLine{01051\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01052\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ nodeIndex\ =\ 0;\ nodeIndex\ <\ nodeCount;\ nodeIndex++)}
+\DoxyCodeLine{01053\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01054\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMin[0]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMin[0]);}
+\DoxyCodeLine{01055\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMin[1]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMin[1]);}
+\DoxyCodeLine{01056\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMin[2]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMin[2]);}
+\DoxyCodeLine{01057\ }
+\DoxyCodeLine{01058\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMax[0]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMax[0]);}
+\DoxyCodeLine{01059\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMax[1]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMax[1]);}
+\DoxyCodeLine{01060\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMax[2]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_quantizedAabbMax[2]);}
+\DoxyCodeLine{01061\ }
+\DoxyCodeLine{01062\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_escapeIndexOrTriangleIndex\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_quantizedContiguousNodes[nodeIndex].m\_escapeIndexOrTriangleIndex));}
+\DoxyCodeLine{01063\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01064\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01065\ \ \ \ \ \ \ \ \ nodeData\ +=\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_quantized_bvh_8h_a9ae5ed44b8f4f4918b7538bb5b5fd2ea}{btQuantizedBvhNode}})\ *\ nodeCount;}
+\DoxyCodeLine{01066\ \ \ \ \ \}}
+\DoxyCodeLine{01067\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{01068\ \ \ \ \ \{}
+\DoxyCodeLine{01069\ \ \ \ \ \ \ \ \ bvh-\/>m\_contiguousNodes.initializeFromBuffer(nodeData,\ nodeCount,\ nodeCount);}
+\DoxyCodeLine{01070\ }
+\DoxyCodeLine{01071\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (i\_swapEndian)}
+\DoxyCodeLine{01072\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01073\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ nodeIndex\ =\ 0;\ nodeIndex\ <\ nodeCount;\ nodeIndex++)}
+\DoxyCodeLine{01074\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01075\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a111b328c4d76341871adb4712477ad21}{btUnSwapVector3Endian}}(bvh-\/>m\_contiguousNodes[nodeIndex].m\_aabbMinOrg);}
+\DoxyCodeLine{01076\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a111b328c4d76341871adb4712477ad21}{btUnSwapVector3Endian}}(bvh-\/>m\_contiguousNodes[nodeIndex].m\_aabbMaxOrg);}
+\DoxyCodeLine{01077\ }
+\DoxyCodeLine{01078\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_contiguousNodes[nodeIndex].m\_escapeIndex\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_contiguousNodes[nodeIndex].m\_escapeIndex));}
+\DoxyCodeLine{01079\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_contiguousNodes[nodeIndex].m\_subPart\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_contiguousNodes[nodeIndex].m\_subPart));}
+\DoxyCodeLine{01080\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_contiguousNodes[nodeIndex].m\_triangleIndex\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_contiguousNodes[nodeIndex].m\_triangleIndex));}
+\DoxyCodeLine{01081\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01082\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01083\ \ \ \ \ \ \ \ \ nodeData\ +=\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_quantized_bvh_8h_a9c10959d29b0982d4c7a5a1c3553b979}{btOptimizedBvhNode}})\ *\ nodeCount;}
+\DoxyCodeLine{01084\ \ \ \ \ \}}
+\DoxyCodeLine{01085\ }
+\DoxyCodeLine{01086\ \ \ \ \ sizeToAdd\ =\ 0;\ \ \textcolor{comment}{//(BVH\_ALIGNMENT-\/((unsigned)nodeData\ \&\ BVH\_ALIGNMENT\_MASK))\&BVH\_ALIGNMENT\_MASK;}}
+\DoxyCodeLine{01087\ \ \ \ \ nodeData\ +=\ sizeToAdd;}
+\DoxyCodeLine{01088\ }
+\DoxyCodeLine{01089\ \ \ \ \ \textcolor{comment}{//\ Now\ serialize\ the\ subtree\ headers}}
+\DoxyCodeLine{01090\ \ \ \ \ bvh-\/>m\_SubtreeHeaders.initializeFromBuffer(nodeData,\ bvh-\/>m\_subtreeHeaderCount,\ bvh-\/>m\_subtreeHeaderCount);}
+\DoxyCodeLine{01091\ \ \ \ \ \textcolor{keywordflow}{if}\ (i\_swapEndian)}
+\DoxyCodeLine{01092\ \ \ \ \ \{}
+\DoxyCodeLine{01093\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ bvh-\/>m\_subtreeHeaderCount;\ i++)}
+\DoxyCodeLine{01094\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01095\ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMin[0]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMin[0]);}
+\DoxyCodeLine{01096\ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMin[1]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMin[1]);}
+\DoxyCodeLine{01097\ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMin[2]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMin[2]);}
+\DoxyCodeLine{01098\ }
+\DoxyCodeLine{01099\ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMax[0]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMax[0]);}
+\DoxyCodeLine{01100\ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMax[1]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMax[1]);}
+\DoxyCodeLine{01101\ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMax[2]\ =\ \mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_SubtreeHeaders[i].m\_quantizedAabbMax[2]);}
+\DoxyCodeLine{01102\ }
+\DoxyCodeLine{01103\ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_SubtreeHeaders[i].m\_rootNodeIndex\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_SubtreeHeaders[i].m\_rootNodeIndex));}
+\DoxyCodeLine{01104\ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>m\_SubtreeHeaders[i].m\_subtreeSize\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{bt_scalar_8h_a21b4d7889e86774c7f56b4a9da21e4f9}{btSwapEndian}}(bvh-\/>m\_SubtreeHeaders[i].m\_subtreeSize));}
+\DoxyCodeLine{01105\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01106\ \ \ \ \ \}}
+\DoxyCodeLine{01107\ }
+\DoxyCodeLine{01108\ \ \ \ \ \textcolor{keywordflow}{return}\ bvh;}
+\DoxyCodeLine{01109\ \}}
+\DoxyCodeLine{01110\ }
+\DoxyCodeLine{01111\ \textcolor{comment}{//\ Constructor\ that\ prevents\ btVector3's\ default\ constructor\ from\ being\ called}}
+\DoxyCodeLine{01112\ btQuantizedBvh::btQuantizedBvh(\mbox{\hyperlink{bt_quantized_bvh_8h_a2f78d9c5cc713b30778ead8409b78101}{btQuantizedBvh}}\&\ self,\ \textcolor{keywordtype}{bool}\ \textcolor{comment}{/*\ ownsMemory\ */})\ :\ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}}(self.\mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}}),}
+\DoxyCodeLine{01113\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}}(self.\mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}}),}
+\DoxyCodeLine{01114\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ad5f16f2793ae00951e81729fc4943e04}{m\_bvhQuantization}}(self.\mbox{\hyperlink{b3_quantized_bvh_8h_ad5f16f2793ae00951e81729fc4943e04}{m\_bvhQuantization}}),}
+\DoxyCodeLine{01115\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ae64ac4824e8d126af18a95df382a8492}{m\_bulletVersion}}(\mbox{\hyperlink{bt_scalar_8h_acdcfe44a281881cbd298ecdee240ea46}{BT\_BULLET\_VERSION}})}
+\DoxyCodeLine{01116\ \{}
+\DoxyCodeLine{01117\ \}}
+\DoxyCodeLine{01118\ }
+\DoxyCodeLine{01119\ \textcolor{keywordtype}{void}\ btQuantizedBvh::deSerializeFloat(\textcolor{keyword}{struct}\ btQuantizedBvhFloatData\&\ quantizedBvhFloatData)}
+\DoxyCodeLine{01120\ \{}
+\DoxyCodeLine{01121\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}}.deSerializeFloat(quantizedBvhFloatData.m\_bvhAabbMax);}
+\DoxyCodeLine{01122\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}}.deSerializeFloat(quantizedBvhFloatData.m\_bvhAabbMin);}
+\DoxyCodeLine{01123\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ad5f16f2793ae00951e81729fc4943e04}{m\_bvhQuantization}}.deSerializeFloat(quantizedBvhFloatData.m\_bvhQuantization);}
+\DoxyCodeLine{01124\ }
+\DoxyCodeLine{01125\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}}\ =\ quantizedBvhFloatData.m\_curNodeIndex;}
+\DoxyCodeLine{01126\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}}\ =\ quantizedBvhFloatData.m\_useQuantization\ !=\ 0;}
+\DoxyCodeLine{01127\ }
+\DoxyCodeLine{01128\ \ \ \ \ \{}
+\DoxyCodeLine{01129\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numElem\ =\ quantizedBvhFloatData.m\_numContiguousLeafNodes;}
+\DoxyCodeLine{01130\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}.resize(numElem);}
+\DoxyCodeLine{01131\ }
+\DoxyCodeLine{01132\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numElem)}
+\DoxyCodeLine{01133\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01134\ \ \ \ \ \ \ \ \ \ \ \ \ btOptimizedBvhNodeFloatData*\ memPtr\ =\ quantizedBvhFloatData.m\_contiguousNodesPtr;}
+\DoxyCodeLine{01135\ }
+\DoxyCodeLine{01136\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numElem;\ i++,\ memPtr++)}
+\DoxyCodeLine{01137\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01138\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[i].m\_aabbMaxOrg.deSerializeFloat(memPtr-\/>m\_aabbMaxOrg);}
+\DoxyCodeLine{01139\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[i].m\_aabbMinOrg.deSerializeFloat(memPtr-\/>m\_aabbMinOrg);}
+\DoxyCodeLine{01140\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[i].m\_escapeIndex\ =\ memPtr-\/>m\_escapeIndex;}
+\DoxyCodeLine{01141\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[i].m\_subPart\ =\ memPtr-\/>m\_subPart;}
+\DoxyCodeLine{01142\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[i].m\_triangleIndex\ =\ memPtr-\/>m\_triangleIndex;}
+\DoxyCodeLine{01143\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01144\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01145\ \ \ \ \ \}}
+\DoxyCodeLine{01146\ }
+\DoxyCodeLine{01147\ \ \ \ \ \{}
+\DoxyCodeLine{01148\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numElem\ =\ quantizedBvhFloatData.m\_numQuantizedContiguousNodes;}
+\DoxyCodeLine{01149\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}.resize(numElem);}
+\DoxyCodeLine{01150\ }
+\DoxyCodeLine{01151\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numElem)}
+\DoxyCodeLine{01152\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01153\ \ \ \ \ \ \ \ \ \ \ \ \ btQuantizedBvhNodeData*\ memPtr\ =\ quantizedBvhFloatData.m\_quantizedContiguousNodesPtr;}
+\DoxyCodeLine{01154\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numElem;\ i++,\ memPtr++)}
+\DoxyCodeLine{01155\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01156\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_escapeIndexOrTriangleIndex\ =\ memPtr-\/>m\_escapeIndexOrTriangleIndex;}
+\DoxyCodeLine{01157\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMax[0]\ =\ memPtr-\/>m\_quantizedAabbMax[0];}
+\DoxyCodeLine{01158\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMax[1]\ =\ memPtr-\/>m\_quantizedAabbMax[1];}
+\DoxyCodeLine{01159\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMax[2]\ =\ memPtr-\/>m\_quantizedAabbMax[2];}
+\DoxyCodeLine{01160\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMin[0]\ =\ memPtr-\/>m\_quantizedAabbMin[0];}
+\DoxyCodeLine{01161\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMin[1]\ =\ memPtr-\/>m\_quantizedAabbMin[1];}
+\DoxyCodeLine{01162\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMin[2]\ =\ memPtr-\/>m\_quantizedAabbMin[2];}
+\DoxyCodeLine{01163\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01164\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01165\ \ \ \ \ \}}
+\DoxyCodeLine{01166\ }
+\DoxyCodeLine{01167\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a07a124b62d60a2b80978c48a623b3e63}{m\_traversalMode}}\ =\ btTraversalMode(quantizedBvhFloatData.m\_traversalMode);}
+\DoxyCodeLine{01168\ }
+\DoxyCodeLine{01169\ \ \ \ \ \{}
+\DoxyCodeLine{01170\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numElem\ =\ quantizedBvhFloatData.m\_numSubtreeHeaders;}
+\DoxyCodeLine{01171\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}.resize(numElem);}
+\DoxyCodeLine{01172\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numElem)}
+\DoxyCodeLine{01173\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01174\ \ \ \ \ \ \ \ \ \ \ \ \ btBvhSubtreeInfoData*\ memPtr\ =\ quantizedBvhFloatData.m\_subTreeInfoPtr;}
+\DoxyCodeLine{01175\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numElem;\ i++,\ memPtr++)}
+\DoxyCodeLine{01176\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01177\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMax[0]\ =\ memPtr-\/>m\_quantizedAabbMax[0];}
+\DoxyCodeLine{01178\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMax[1]\ =\ memPtr-\/>m\_quantizedAabbMax[1];}
+\DoxyCodeLine{01179\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMax[2]\ =\ memPtr-\/>m\_quantizedAabbMax[2];}
+\DoxyCodeLine{01180\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMin[0]\ =\ memPtr-\/>m\_quantizedAabbMin[0];}
+\DoxyCodeLine{01181\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMin[1]\ =\ memPtr-\/>m\_quantizedAabbMin[1];}
+\DoxyCodeLine{01182\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMin[2]\ =\ memPtr-\/>m\_quantizedAabbMin[2];}
+\DoxyCodeLine{01183\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_rootNodeIndex\ =\ memPtr-\/>m\_rootNodeIndex;}
+\DoxyCodeLine{01184\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_subtreeSize\ =\ memPtr-\/>m\_subtreeSize;}
+\DoxyCodeLine{01185\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01186\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01187\ \ \ \ \ \}}
+\DoxyCodeLine{01188\ \}}
+\DoxyCodeLine{01189\ }
+\DoxyCodeLine{01190\ \textcolor{keywordtype}{void}\ btQuantizedBvh::deSerializeDouble(\textcolor{keyword}{struct}\ btQuantizedBvhDoubleData\&\ quantizedBvhDoubleData)}
+\DoxyCodeLine{01191\ \{}
+\DoxyCodeLine{01192\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}}.deSerializeDouble(quantizedBvhDoubleData.m\_bvhAabbMax);}
+\DoxyCodeLine{01193\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}}.deSerializeDouble(quantizedBvhDoubleData.m\_bvhAabbMin);}
+\DoxyCodeLine{01194\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ad5f16f2793ae00951e81729fc4943e04}{m\_bvhQuantization}}.deSerializeDouble(quantizedBvhDoubleData.m\_bvhQuantization);}
+\DoxyCodeLine{01195\ }
+\DoxyCodeLine{01196\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}}\ =\ quantizedBvhDoubleData.m\_curNodeIndex;}
+\DoxyCodeLine{01197\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}}\ =\ quantizedBvhDoubleData.m\_useQuantization\ !=\ 0;}
+\DoxyCodeLine{01198\ }
+\DoxyCodeLine{01199\ \ \ \ \ \{}
+\DoxyCodeLine{01200\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numElem\ =\ quantizedBvhDoubleData.m\_numContiguousLeafNodes;}
+\DoxyCodeLine{01201\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}.resize(numElem);}
+\DoxyCodeLine{01202\ }
+\DoxyCodeLine{01203\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numElem)}
+\DoxyCodeLine{01204\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01205\ \ \ \ \ \ \ \ \ \ \ \ \ btOptimizedBvhNodeDoubleData*\ memPtr\ =\ quantizedBvhDoubleData.m\_contiguousNodesPtr;}
+\DoxyCodeLine{01206\ }
+\DoxyCodeLine{01207\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numElem;\ i++,\ memPtr++)}
+\DoxyCodeLine{01208\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01209\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[i].m\_aabbMaxOrg.deSerializeDouble(memPtr-\/>m\_aabbMaxOrg);}
+\DoxyCodeLine{01210\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[i].m\_aabbMinOrg.deSerializeDouble(memPtr-\/>m\_aabbMinOrg);}
+\DoxyCodeLine{01211\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[i].m\_escapeIndex\ =\ memPtr-\/>m\_escapeIndex;}
+\DoxyCodeLine{01212\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[i].m\_subPart\ =\ memPtr-\/>m\_subPart;}
+\DoxyCodeLine{01213\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[i].m\_triangleIndex\ =\ memPtr-\/>m\_triangleIndex;}
+\DoxyCodeLine{01214\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01215\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01216\ \ \ \ \ \}}
+\DoxyCodeLine{01217\ }
+\DoxyCodeLine{01218\ \ \ \ \ \{}
+\DoxyCodeLine{01219\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numElem\ =\ quantizedBvhDoubleData.m\_numQuantizedContiguousNodes;}
+\DoxyCodeLine{01220\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}.resize(numElem);}
+\DoxyCodeLine{01221\ }
+\DoxyCodeLine{01222\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numElem)}
+\DoxyCodeLine{01223\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01224\ \ \ \ \ \ \ \ \ \ \ \ \ btQuantizedBvhNodeData*\ memPtr\ =\ quantizedBvhDoubleData.m\_quantizedContiguousNodesPtr;}
+\DoxyCodeLine{01225\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numElem;\ i++,\ memPtr++)}
+\DoxyCodeLine{01226\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01227\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_escapeIndexOrTriangleIndex\ =\ memPtr-\/>m\_escapeIndexOrTriangleIndex;}
+\DoxyCodeLine{01228\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMax[0]\ =\ memPtr-\/>m\_quantizedAabbMax[0];}
+\DoxyCodeLine{01229\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMax[1]\ =\ memPtr-\/>m\_quantizedAabbMax[1];}
+\DoxyCodeLine{01230\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMax[2]\ =\ memPtr-\/>m\_quantizedAabbMax[2];}
+\DoxyCodeLine{01231\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMin[0]\ =\ memPtr-\/>m\_quantizedAabbMin[0];}
+\DoxyCodeLine{01232\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMin[1]\ =\ memPtr-\/>m\_quantizedAabbMin[1];}
+\DoxyCodeLine{01233\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMin[2]\ =\ memPtr-\/>m\_quantizedAabbMin[2];}
+\DoxyCodeLine{01234\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01235\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01236\ \ \ \ \ \}}
+\DoxyCodeLine{01237\ }
+\DoxyCodeLine{01238\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a07a124b62d60a2b80978c48a623b3e63}{m\_traversalMode}}\ =\ btTraversalMode(quantizedBvhDoubleData.m\_traversalMode);}
+\DoxyCodeLine{01239\ }
+\DoxyCodeLine{01240\ \ \ \ \ \{}
+\DoxyCodeLine{01241\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numElem\ =\ quantizedBvhDoubleData.m\_numSubtreeHeaders;}
+\DoxyCodeLine{01242\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}.resize(numElem);}
+\DoxyCodeLine{01243\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numElem)}
+\DoxyCodeLine{01244\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01245\ \ \ \ \ \ \ \ \ \ \ \ \ btBvhSubtreeInfoData*\ memPtr\ =\ quantizedBvhDoubleData.m\_subTreeInfoPtr;}
+\DoxyCodeLine{01246\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numElem;\ i++,\ memPtr++)}
+\DoxyCodeLine{01247\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01248\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMax[0]\ =\ memPtr-\/>m\_quantizedAabbMax[0];}
+\DoxyCodeLine{01249\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMax[1]\ =\ memPtr-\/>m\_quantizedAabbMax[1];}
+\DoxyCodeLine{01250\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMax[2]\ =\ memPtr-\/>m\_quantizedAabbMax[2];}
+\DoxyCodeLine{01251\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMin[0]\ =\ memPtr-\/>m\_quantizedAabbMin[0];}
+\DoxyCodeLine{01252\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMin[1]\ =\ memPtr-\/>m\_quantizedAabbMin[1];}
+\DoxyCodeLine{01253\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMin[2]\ =\ memPtr-\/>m\_quantizedAabbMin[2];}
+\DoxyCodeLine{01254\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_rootNodeIndex\ =\ memPtr-\/>m\_rootNodeIndex;}
+\DoxyCodeLine{01255\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_subtreeSize\ =\ memPtr-\/>m\_subtreeSize;}
+\DoxyCodeLine{01256\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01257\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01258\ \ \ \ \ \}}
+\DoxyCodeLine{01259\ \}}
+\DoxyCodeLine{01260\ }
+\DoxyCodeLine{01262\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ btQuantizedBvh::serialize(\textcolor{keywordtype}{void}*\ dataBuffer,\ \mbox{\hyperlink{classbt_serializer}{btSerializer}}*\ serializer)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{01263\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{01264\ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_af8a8884a18ea31ae62ef1039794ef512}{btQuantizedBvhData}}*\ quantizedData\ =\ (\mbox{\hyperlink{bt_quantized_bvh_8h_af8a8884a18ea31ae62ef1039794ef512}{btQuantizedBvhData}}*)dataBuffer;}
+\DoxyCodeLine{01265\ }
+\DoxyCodeLine{01266\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}}.serialize(quantizedData-\/>m\_bvhAabbMax);}
+\DoxyCodeLine{01267\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}}.serialize(quantizedData-\/>m\_bvhAabbMin);}
+\DoxyCodeLine{01268\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ad5f16f2793ae00951e81729fc4943e04}{m\_bvhQuantization}}.serialize(quantizedData-\/>m\_bvhQuantization);}
+\DoxyCodeLine{01269\ }
+\DoxyCodeLine{01270\ \ \ \ \ quantizedData-\/>m\_curNodeIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}};}
+\DoxyCodeLine{01271\ \ \ \ \ quantizedData-\/>m\_useQuantization\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}};}
+\DoxyCodeLine{01272\ }
+\DoxyCodeLine{01273\ \ \ \ \ quantizedData-\/>m\_numContiguousLeafNodes\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}.size();}
+\DoxyCodeLine{01274\ \ \ \ \ quantizedData-\/>m\_contiguousNodesPtr\ =\ (\mbox{\hyperlink{bt_quantized_bvh_8h_a1c60988d362d6ee6606960f25860ac4a}{btOptimizedBvhNodeData}}*)(\mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}.size()\ ?\ serializer-\/>\mbox{\hyperlink{classbt_serializer_a58b09aa556a85cfcbeb06d741f333d29}{getUniquePointer}}((\textcolor{keywordtype}{void}*)\&\mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[0])\ :\ 0);}
+\DoxyCodeLine{01275\ \ \ \ \ \textcolor{keywordflow}{if}\ (quantizedData-\/>m\_contiguousNodesPtr)}
+\DoxyCodeLine{01276\ \ \ \ \ \{}
+\DoxyCodeLine{01277\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ sz\ =\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_quantized_bvh_8h_a1c60988d362d6ee6606960f25860ac4a}{btOptimizedBvhNodeData}});}
+\DoxyCodeLine{01278\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numElem\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}.size();}
+\DoxyCodeLine{01279\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_chunk}{btChunk}}*\ chunk\ =\ serializer-\/>\mbox{\hyperlink{classbt_serializer_a1b87e5239b884db0686f778d01c1a69a}{allocate}}(sz,\ numElem);}
+\DoxyCodeLine{01280\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_a1c60988d362d6ee6606960f25860ac4a}{btOptimizedBvhNodeData}}*\ memPtr\ =\ (\mbox{\hyperlink{bt_quantized_bvh_8h_a1c60988d362d6ee6606960f25860ac4a}{btOptimizedBvhNodeData}}*)chunk-\/>\mbox{\hyperlink{classbt_chunk_aa9c3adc50e121d98bbb7e8c91c472fa5}{m\_oldPtr}};}
+\DoxyCodeLine{01281\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numElem;\ i++,\ memPtr++)}
+\DoxyCodeLine{01282\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01283\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[i].m\_aabbMaxOrg.serialize(memPtr-\/>m\_aabbMaxOrg);}
+\DoxyCodeLine{01284\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[i].m\_aabbMinOrg.serialize(memPtr-\/>m\_aabbMinOrg);}
+\DoxyCodeLine{01285\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_escapeIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[i].m\_escapeIndex;}
+\DoxyCodeLine{01286\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_subPart\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[i].m\_subPart;}
+\DoxyCodeLine{01287\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_triangleIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[i].m\_triangleIndex;}
+\DoxyCodeLine{01288\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Fill\ padding\ with\ zeros\ to\ appease\ msan.}}
+\DoxyCodeLine{01289\ \ \ \ \ \ \ \ \ \ \ \ \ memset(memPtr-\/>m\_pad,\ 0,\ \textcolor{keyword}{sizeof}(memPtr-\/>m\_pad));}
+\DoxyCodeLine{01290\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01291\ \ \ \ \ \ \ \ \ serializer-\/>\mbox{\hyperlink{classbt_serializer_ac98913802b276eed28d745ef422ac724}{finalizeChunk}}(chunk,\ \textcolor{stringliteral}{"{}btOptimizedBvhNodeData"{}},\ \mbox{\hyperlink{bt_serializer_8h_ad9334757d82f4dece09b300be73b6bbf}{BT\_ARRAY\_CODE}},\ (\textcolor{keywordtype}{void}*)\&\mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[0]);}
+\DoxyCodeLine{01292\ \ \ \ \ \}}
+\DoxyCodeLine{01293\ }
+\DoxyCodeLine{01294\ \ \ \ \ quantizedData-\/>m\_numQuantizedContiguousNodes\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}.size();}
+\DoxyCodeLine{01295\ \ \ \ \ \textcolor{comment}{//\ \ printf("{}quantizedData-\/>m\_numQuantizedContiguousNodes=\%d\(\backslash\)n"{},quantizedData-\/>m\_numQuantizedContiguousNodes);}}
+\DoxyCodeLine{01296\ \ \ \ \ quantizedData-\/>m\_quantizedContiguousNodesPtr\ =\ (btQuantizedBvhNodeData*)(\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}.size()\ ?\ serializer-\/>\mbox{\hyperlink{classbt_serializer_a58b09aa556a85cfcbeb06d741f333d29}{getUniquePointer}}((\textcolor{keywordtype}{void}*)\&\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[0])\ :\ 0);}
+\DoxyCodeLine{01297\ \ \ \ \ \textcolor{keywordflow}{if}\ (quantizedData-\/>m\_quantizedContiguousNodesPtr)}
+\DoxyCodeLine{01298\ \ \ \ \ \{}
+\DoxyCodeLine{01299\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ sz\ =\ \textcolor{keyword}{sizeof}(btQuantizedBvhNodeData);}
+\DoxyCodeLine{01300\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numElem\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}.size();}
+\DoxyCodeLine{01301\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_chunk}{btChunk}}*\ chunk\ =\ serializer-\/>\mbox{\hyperlink{classbt_serializer_a1b87e5239b884db0686f778d01c1a69a}{allocate}}(sz,\ numElem);}
+\DoxyCodeLine{01302\ \ \ \ \ \ \ \ \ btQuantizedBvhNodeData*\ memPtr\ =\ (btQuantizedBvhNodeData*)chunk-\/>\mbox{\hyperlink{classbt_chunk_aa9c3adc50e121d98bbb7e8c91c472fa5}{m\_oldPtr}};}
+\DoxyCodeLine{01303\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numElem;\ i++,\ memPtr++)}
+\DoxyCodeLine{01304\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01305\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_escapeIndexOrTriangleIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_escapeIndexOrTriangleIndex;}
+\DoxyCodeLine{01306\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_quantizedAabbMax[0]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMax[0];}
+\DoxyCodeLine{01307\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_quantizedAabbMax[1]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMax[1];}
+\DoxyCodeLine{01308\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_quantizedAabbMax[2]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMax[2];}
+\DoxyCodeLine{01309\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_quantizedAabbMin[0]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMin[0];}
+\DoxyCodeLine{01310\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_quantizedAabbMin[1]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMin[1];}
+\DoxyCodeLine{01311\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_quantizedAabbMin[2]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[i].m\_quantizedAabbMin[2];}
+\DoxyCodeLine{01312\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01313\ \ \ \ \ \ \ \ \ serializer-\/>\mbox{\hyperlink{classbt_serializer_ac98913802b276eed28d745ef422ac724}{finalizeChunk}}(chunk,\ \textcolor{stringliteral}{"{}btQuantizedBvhNodeData"{}},\ \mbox{\hyperlink{bt_serializer_8h_ad9334757d82f4dece09b300be73b6bbf}{BT\_ARRAY\_CODE}},\ (\textcolor{keywordtype}{void}*)\&\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[0]);}
+\DoxyCodeLine{01314\ \ \ \ \ \}}
+\DoxyCodeLine{01315\ }
+\DoxyCodeLine{01316\ \ \ \ \ quantizedData-\/>m\_traversalMode\ =\ int(\mbox{\hyperlink{b3_quantized_bvh_8h_a07a124b62d60a2b80978c48a623b3e63}{m\_traversalMode}});}
+\DoxyCodeLine{01317\ \ \ \ \ quantizedData-\/>m\_numSubtreeHeaders\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}.size();}
+\DoxyCodeLine{01318\ }
+\DoxyCodeLine{01319\ \ \ \ \ quantizedData-\/>m\_subTreeInfoPtr\ =\ (btBvhSubtreeInfoData*)(\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}.size()\ ?\ serializer-\/>\mbox{\hyperlink{classbt_serializer_a58b09aa556a85cfcbeb06d741f333d29}{getUniquePointer}}((\textcolor{keywordtype}{void}*)\&\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[0])\ :\ 0);}
+\DoxyCodeLine{01320\ \ \ \ \ \textcolor{keywordflow}{if}\ (quantizedData-\/>m\_subTreeInfoPtr)}
+\DoxyCodeLine{01321\ \ \ \ \ \{}
+\DoxyCodeLine{01322\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ sz\ =\ \textcolor{keyword}{sizeof}(btBvhSubtreeInfoData);}
+\DoxyCodeLine{01323\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numElem\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}.size();}
+\DoxyCodeLine{01324\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_chunk}{btChunk}}*\ chunk\ =\ serializer-\/>\mbox{\hyperlink{classbt_serializer_a1b87e5239b884db0686f778d01c1a69a}{allocate}}(sz,\ numElem);}
+\DoxyCodeLine{01325\ \ \ \ \ \ \ \ \ btBvhSubtreeInfoData*\ memPtr\ =\ (btBvhSubtreeInfoData*)chunk-\/>\mbox{\hyperlink{classbt_chunk_aa9c3adc50e121d98bbb7e8c91c472fa5}{m\_oldPtr}};}
+\DoxyCodeLine{01326\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numElem;\ i++,\ memPtr++)}
+\DoxyCodeLine{01327\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01328\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_quantizedAabbMax[0]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMax[0];}
+\DoxyCodeLine{01329\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_quantizedAabbMax[1]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMax[1];}
+\DoxyCodeLine{01330\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_quantizedAabbMax[2]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMax[2];}
+\DoxyCodeLine{01331\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_quantizedAabbMin[0]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMin[0];}
+\DoxyCodeLine{01332\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_quantizedAabbMin[1]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMin[1];}
+\DoxyCodeLine{01333\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_quantizedAabbMin[2]\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_quantizedAabbMin[2];}
+\DoxyCodeLine{01334\ }
+\DoxyCodeLine{01335\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_rootNodeIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_rootNodeIndex;}
+\DoxyCodeLine{01336\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_subtreeSize\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[i].m\_subtreeSize;}
+\DoxyCodeLine{01337\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01338\ \ \ \ \ \ \ \ \ serializer-\/>\mbox{\hyperlink{classbt_serializer_ac98913802b276eed28d745ef422ac724}{finalizeChunk}}(chunk,\ \textcolor{stringliteral}{"{}btBvhSubtreeInfoData"{}},\ \mbox{\hyperlink{bt_serializer_8h_ad9334757d82f4dece09b300be73b6bbf}{BT\_ARRAY\_CODE}},\ (\textcolor{keywordtype}{void}*)\&\mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}}[0]);}
+\DoxyCodeLine{01339\ \ \ \ \ \}}
+\DoxyCodeLine{01340\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_quantized_bvh_8h_af32d83035d9c2486e9994b81a3211494}{btQuantizedBvhDataName}};}
+\DoxyCodeLine{01341\ \}}
+
+\end{DoxyCode}

@@ -1,0 +1,108 @@
+\doxysection{b3\+Gpu\+Parallel\+Linear\+Bvh Class Reference}
+\hypertarget{classb3_gpu_parallel_linear_bvh}{}\label{classb3_gpu_parallel_linear_bvh}\index{b3GpuParallelLinearBvh@{b3GpuParallelLinearBvh}}
+
+
+GPU Parallel Linearized Bounding Volume Heirarchy(\+LBVH) that is reconstructed every frame.  
+
+
+
+
+{\ttfamily \#include $<$b3\+Gpu\+Parallel\+Linear\+Bvh.\+h$>$}
+
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classb3_gpu_parallel_linear_bvh_a17df08ba24e5b89716fcfd3b0d464195}{b3\+Gpu\+Parallel\+Linear\+Bvh}} (\mbox{\hyperlink{clew_8h_a96a7d9b65e8319e2f8c751455ae92ec8}{cl\+\_\+context}} context, \mbox{\hyperlink{clew_8h_abf58c686ce1c1e363fc1c219416bae3b}{cl\+\_\+device\+\_\+id}} device, \mbox{\hyperlink{clew_8h_ac0eceefed5ddf03f817f9c9a20fdc616}{cl\+\_\+command\+\_\+queue}} queue)
+\item 
+virtual \mbox{\hyperlink{classb3_gpu_parallel_linear_bvh_a1559deb0c826ba3953cfaa08a5ed147d}{\texorpdfstring{$\sim$}{\string~}b3\+Gpu\+Parallel\+Linear\+Bvh}} ()
+\item 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} \mbox{\hyperlink{classb3_gpu_parallel_linear_bvh_ac6e619d22cc2bd9c979900cf83d59143}{build}} (const \mbox{\hyperlink{classb3_open_c_l_array}{b3\+Open\+CLArray}}$<$ b3\+Sap\+Aabb $>$ \&world\+Space\+Aabbs, const \mbox{\hyperlink{classb3_open_c_l_array}{b3\+Open\+CLArray}}$<$ int $>$ \&small\+Aabb\+Indices, const \mbox{\hyperlink{classb3_open_c_l_array}{b3\+Open\+CLArray}}$<$ int $>$ \&large\+Aabb\+Indices)
+\begin{DoxyCompactList}\small\item\em Must be called before any other function. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} \mbox{\hyperlink{classb3_gpu_parallel_linear_bvh_ac0208fca9279bdfd66eabd321d98420b}{calculate\+Overlapping\+Pairs}} (\mbox{\hyperlink{classb3_open_c_l_array}{b3\+Open\+CLArray}}$<$ \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3\+Int4}} $>$ \&out\+\_\+overlapping\+Pairs)
+\item 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} \mbox{\hyperlink{classb3_gpu_parallel_linear_bvh_aa2e73543c39fe8a8ba65394fbc33e8bb}{test\+Rays\+Against\+Bvh\+Aabbs}} (const \mbox{\hyperlink{classb3_open_c_l_array}{b3\+Open\+CLArray}}$<$ \mbox{\hyperlink{b3_raycast_info_8h_ac92fd3373c90c7b25cd1dae5906f46af}{b3\+Ray\+Info}} $>$ \&rays, \mbox{\hyperlink{classb3_open_c_l_array}{b3\+Open\+CLArray}}$<$ int $>$ \&out\+\_\+num\+Ray\+Rigid\+Pairs, \mbox{\hyperlink{classb3_open_c_l_array}{b3\+Open\+CLArray}}$<$ \mbox{\hyperlink{b3_int2_8h_a33f933f23ea955f968abad08870bc5fd}{b3\+Int2}} $>$ \&out\+\_\+ray\+Rigid\+Pairs)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+GPU Parallel Linearized Bounding Volume Heirarchy(\+LBVH) that is reconstructed every frame. 
+
+\begin{DoxyRemark}{Remarks}
+See presentation in docs/b3\+Gpu\+Parallel\+Linear\+Bvh.\+pdf for algorithm details. 
+\end{DoxyRemark}
+\begin{DoxyParagraph}{}
+Related papers\+: ~\newline
+"{}\+Fast BVH Construction on GPUs"{} \mbox{[}Lauterbach et al. 2009\mbox{]} ~\newline
+"{}\+Maximizing Parallelism in the Construction of BVHs, Octrees, and k-\/d trees"{} \mbox{[}Karras 2012\mbox{]} ~\newline
+ 
+\end{DoxyParagraph}
+\begin{DoxyParagraph}{}
+The basic algorithm for building the BVH as presented in \mbox{[}Lauterbach et al. 2009\mbox{]} consists of 4 stages\+:
+\begin{DoxyItemize}
+\item \mbox{[}fully parallel\mbox{]} Assign morton codes for each AABB using its center (after quantizing the AABB centers into a virtual grid)
+\item \mbox{[}fully parallel\mbox{]} Sort morton codes
+\item \mbox{[}somewhat parallel\mbox{]} Build binary radix tree (assign parent/child pointers for internal nodes of the BVH)
+\item \mbox{[}somewhat parallel\mbox{]} Set internal node AABBs 
+\end{DoxyItemize}
+\end{DoxyParagraph}
+\begin{DoxyParagraph}{}
+\mbox{[}Karras 2012\mbox{]} improves on the algorithm by introducing fully parallel methods for the last 2 stages. The BVH implementation here shares many concepts with \mbox{[}Karras 2012\mbox{]}, but a different method is used for constructing the tree. Instead of searching for the child nodes of each internal node, we search for the parent node of each node. Additionally, a non-\/atomic traversal that starts from the leaf nodes and moves towards the root node is used to set the AABBs. 
+\end{DoxyParagraph}
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{classb3_gpu_parallel_linear_bvh_a17df08ba24e5b89716fcfd3b0d464195}\index{b3GpuParallelLinearBvh@{b3GpuParallelLinearBvh}!b3GpuParallelLinearBvh@{b3GpuParallelLinearBvh}}
+\index{b3GpuParallelLinearBvh@{b3GpuParallelLinearBvh}!b3GpuParallelLinearBvh@{b3GpuParallelLinearBvh}}
+\doxysubsubsection{\texorpdfstring{b3GpuParallelLinearBvh()}{b3GpuParallelLinearBvh()}}
+{\footnotesize\ttfamily \label{classb3_gpu_parallel_linear_bvh_a17df08ba24e5b89716fcfd3b0d464195} 
+b3\+Gpu\+Parallel\+Linear\+Bvh\+::b3\+Gpu\+Parallel\+Linear\+Bvh (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{clew_8h_a96a7d9b65e8319e2f8c751455ae92ec8}{cl\+\_\+context}}}]{context}{, }\item[{\mbox{\hyperlink{clew_8h_abf58c686ce1c1e363fc1c219416bae3b}{cl\+\_\+device\+\_\+id}}}]{device}{, }\item[{\mbox{\hyperlink{clew_8h_ac0eceefed5ddf03f817f9c9a20fdc616}{cl\+\_\+command\+\_\+queue}}}]{queue}{}\end{DoxyParamCaption})}
+
+\Hypertarget{classb3_gpu_parallel_linear_bvh_a1559deb0c826ba3953cfaa08a5ed147d}\index{b3GpuParallelLinearBvh@{b3GpuParallelLinearBvh}!````~b3GpuParallelLinearBvh@{\texorpdfstring{$\sim$}{\string~}b3GpuParallelLinearBvh}}
+\index{````~b3GpuParallelLinearBvh@{\texorpdfstring{$\sim$}{\string~}b3GpuParallelLinearBvh}!b3GpuParallelLinearBvh@{b3GpuParallelLinearBvh}}
+\doxysubsubsection{\texorpdfstring{\texorpdfstring{$\sim$}{\string~}b3GpuParallelLinearBvh()}{\string~b3GpuParallelLinearBvh()}}
+{\footnotesize\ttfamily \label{classb3_gpu_parallel_linear_bvh_a1559deb0c826ba3953cfaa08a5ed147d} 
+b3\+Gpu\+Parallel\+Linear\+Bvh\+::\texorpdfstring{$\sim$}{\string~}b3\+Gpu\+Parallel\+Linear\+Bvh (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [virtual]}}
+
+
+
+\doxysubsection{Member Function Documentation}
+\Hypertarget{classb3_gpu_parallel_linear_bvh_ac6e619d22cc2bd9c979900cf83d59143}\index{b3GpuParallelLinearBvh@{b3GpuParallelLinearBvh}!build@{build}}
+\index{build@{build}!b3GpuParallelLinearBvh@{b3GpuParallelLinearBvh}}
+\doxysubsubsection{\texorpdfstring{build()}{build()}}
+{\footnotesize\ttfamily \label{classb3_gpu_parallel_linear_bvh_ac6e619d22cc2bd9c979900cf83d59143} 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} b3\+Gpu\+Parallel\+Linear\+Bvh\+::build (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{classb3_open_c_l_array}{b3\+Open\+CLArray}}$<$ b3\+Sap\+Aabb $>$ \&}]{world\+Space\+Aabbs}{, }\item[{const \mbox{\hyperlink{classb3_open_c_l_array}{b3\+Open\+CLArray}}$<$ int $>$ \&}]{small\+Aabb\+Indices}{, }\item[{const \mbox{\hyperlink{classb3_open_c_l_array}{b3\+Open\+CLArray}}$<$ int $>$ \&}]{large\+Aabb\+Indices}{}\end{DoxyParamCaption})}
+
+
+
+Must be called before any other function. 
+
+\Hypertarget{classb3_gpu_parallel_linear_bvh_ac0208fca9279bdfd66eabd321d98420b}\index{b3GpuParallelLinearBvh@{b3GpuParallelLinearBvh}!calculateOverlappingPairs@{calculateOverlappingPairs}}
+\index{calculateOverlappingPairs@{calculateOverlappingPairs}!b3GpuParallelLinearBvh@{b3GpuParallelLinearBvh}}
+\doxysubsubsection{\texorpdfstring{calculateOverlappingPairs()}{calculateOverlappingPairs()}}
+{\footnotesize\ttfamily \label{classb3_gpu_parallel_linear_bvh_ac0208fca9279bdfd66eabd321d98420b} 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} b3\+Gpu\+Parallel\+Linear\+Bvh\+::calculate\+Overlapping\+Pairs (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classb3_open_c_l_array}{b3\+Open\+CLArray}}$<$ \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3\+Int4}} $>$ \&}]{out\+\_\+overlapping\+Pairs}{}\end{DoxyParamCaption})}
+
+\doxylink{classb3_gpu_parallel_linear_bvh_ac0208fca9279bdfd66eabd321d98420b}{calculate\+Overlapping\+Pairs()} uses the world\+Space\+Aabbs parameter of \doxylink{classb3_gpu_parallel_linear_bvh_ac6e619d22cc2bd9c979900cf83d59143}{b3\+Gpu\+Parallel\+Linear\+Bvh\+::build()} as the query AABBs. 
+\begin{DoxyParams}{Parameters}
+{\em out\+\_\+overlapping\+Pairs} & The \doxylink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size()} of this array is used to determine the max number of pairs. If the number of overlapping pairs is \texorpdfstring{$<$}{<} out\+\_\+overlapping\+Pairs.\+size(), out\+\_\+overlapping\+Pairs is resized. \\
+\hline
+\end{DoxyParams}
+\Hypertarget{classb3_gpu_parallel_linear_bvh_aa2e73543c39fe8a8ba65394fbc33e8bb}\index{b3GpuParallelLinearBvh@{b3GpuParallelLinearBvh}!testRaysAgainstBvhAabbs@{testRaysAgainstBvhAabbs}}
+\index{testRaysAgainstBvhAabbs@{testRaysAgainstBvhAabbs}!b3GpuParallelLinearBvh@{b3GpuParallelLinearBvh}}
+\doxysubsubsection{\texorpdfstring{testRaysAgainstBvhAabbs()}{testRaysAgainstBvhAabbs()}}
+{\footnotesize\ttfamily \label{classb3_gpu_parallel_linear_bvh_aa2e73543c39fe8a8ba65394fbc33e8bb} 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} b3\+Gpu\+Parallel\+Linear\+Bvh\+::test\+Rays\+Against\+Bvh\+Aabbs (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{classb3_open_c_l_array}{b3\+Open\+CLArray}}$<$ \mbox{\hyperlink{b3_raycast_info_8h_ac92fd3373c90c7b25cd1dae5906f46af}{b3\+Ray\+Info}} $>$ \&}]{rays}{, }\item[{\mbox{\hyperlink{classb3_open_c_l_array}{b3\+Open\+CLArray}}$<$ int $>$ \&}]{out\+\_\+num\+Ray\+Rigid\+Pairs}{, }\item[{\mbox{\hyperlink{classb3_open_c_l_array}{b3\+Open\+CLArray}}$<$ \mbox{\hyperlink{b3_int2_8h_a33f933f23ea955f968abad08870bc5fd}{b3\+Int2}} $>$ \&}]{out\+\_\+ray\+Rigid\+Pairs}{}\end{DoxyParamCaption})}
+
+
+\begin{DoxyParams}{Parameters}
+{\em out\+\_\+num\+Rigid\+Ray\+Pairs} & Array of length 1; contains the number of detected ray-\/rigid AABB intersections; this value may be greater than out\+\_\+ray\+Rigid\+Pairs.\+size() if out\+\_\+ray\+Rigid\+Pairs is not large enough. \\
+\hline
+{\em out\+\_\+ray\+Rigid\+Pairs} & Contains an array of rays intersecting rigid AABBs; x == ray index, y == rigid body index. If the size of this array is insufficient to hold all ray-\/rigid AABB intersections, additional intersections are discarded. \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/quant/source/repos/\+Dark-\/\+Matter-\/\+Engine/\+ENGINE/\+Libraries/include/\+Bullet/\+Bullet3\+Open\+CL/\+Broadphase\+Collision/\mbox{\hyperlink{b3_gpu_parallel_linear_bvh_8h}{b3\+Gpu\+Parallel\+Linear\+Bvh.\+h}}\item 
+C\+:/\+Users/quant/source/repos/\+Dark-\/\+Matter-\/\+Engine/\+ENGINE/\+Libraries/include/\+Bullet/\+Bullet3\+Open\+CL/\+Broadphase\+Collision/\mbox{\hyperlink{b3_gpu_parallel_linear_bvh_8cpp}{b3\+Gpu\+Parallel\+Linear\+Bvh.\+cpp}}\end{DoxyCompactItemize}

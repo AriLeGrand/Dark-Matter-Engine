@@ -1,0 +1,489 @@
+\doxysection{b3\+Quantized\+Bvh.\+h}
+\hypertarget{b3_quantized_bvh_8h_source}{}\label{b3_quantized_bvh_8h_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/Bullet3OpenCL/NarrowphaseCollision/b3QuantizedBvh.h@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/Bullet3OpenCL/NarrowphaseCollision/b3QuantizedBvh.h}}
+\mbox{\hyperlink{b3_quantized_bvh_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2006\ Erwin\ Coumans\ \ https://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#ifndef\ B3\_QUANTIZED\_BVH\_H}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#define\ B3\_QUANTIZED\_BVH\_H}}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classb3_serializer}{b3Serializer}};}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{comment}{//\#define\ DEBUG\_CHECK\_DEQUANTIZATION\ 1}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_CHECK\_DEQUANTIZATION}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#ifdef\ \_\_SPU\_\_}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#define\ printf\ spu\_printf}}
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\_\_SPU\_\_}}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_CHECK\_DEQUANTIZATION}}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_vector3_8h}{Bullet3Common/b3Vector3.h}}"{}}}
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_aligned_allocator_8h}{Bullet3Common/b3AlignedAllocator.h}}"{}}}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#ifdef\ B3\_USE\_DOUBLE\_PRECISION}}
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#define\ b3QuantizedBvhData\ b3QuantizedBvhDoubleData}}
+\DoxyCodeLine{00036\ \textcolor{preprocessor}{\#define\ b3OptimizedBvhNodeData\ b3OptimizedBvhNodeDoubleData}}
+\DoxyCodeLine{00037\ \textcolor{preprocessor}{\#define\ b3QuantizedBvhDataName\ "{}b3QuantizedBvhDoubleData"{}}}
+\DoxyCodeLine{00038\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00039\ \textcolor{preprocessor}{\#define\ b3QuantizedBvhData\ b3QuantizedBvhFloatData}}
+\DoxyCodeLine{00040\ \textcolor{preprocessor}{\#define\ b3OptimizedBvhNodeData\ b3OptimizedBvhNodeFloatData}}
+\DoxyCodeLine{00041\ \textcolor{preprocessor}{\#define\ b3QuantizedBvhDataName\ "{}b3QuantizedBvhFloatData"{}}}
+\DoxyCodeLine{00042\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00044\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_quantized_bvh_node_data_8h}{Bullet3Collision/NarrowPhaseCollision/shared/b3QuantizedBvhNodeData.h}}"{}}}
+\DoxyCodeLine{00045\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_bvh_subtree_info_data_8h}{Bullet3Collision/NarrowPhaseCollision/shared/b3BvhSubtreeInfoData.h}}"{}}}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \textcolor{comment}{//http://msdn.microsoft.com/library/default.asp?url=/library/en-\/us/vclang/html/vclrf\_\_m128.asp}}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \textcolor{comment}{//Note:\ currently\ we\ have\ 16\ bytes\ per\ quantized\ node}}
+\DoxyCodeLine{00050\ \textcolor{preprocessor}{\#define\ MAX\_SUBTREE\_SIZE\_IN\_BYTES\ 2048}}
+\DoxyCodeLine{00051\ }
+\DoxyCodeLine{00052\ \textcolor{comment}{//\ 10\ gives\ the\ potential\ for\ 1024\ parts,\ with\ at\ most\ 2\string^21\ (2097152)\ (minus\ one}}
+\DoxyCodeLine{00053\ \textcolor{comment}{//\ actually)\ triangles\ each\ (since\ the\ sign\ bit\ is\ reserved}}
+\DoxyCodeLine{00054\ \textcolor{preprocessor}{\#define\ MAX\_NUM\_PARTS\_IN\_BITS\ 10}}
+\DoxyCodeLine{00055\ }
+\DoxyCodeLine{00058\ \mbox{\hyperlink{b3_scalar_8h_ac5e6b050aeb4ddfacbc6f7c4ac541a7d}{B3\_ATTRIBUTE\_ALIGNED16}}(\textcolor{keyword}{struct})}
+\DoxyCodeLine{00059\ b3QuantizedBvhNode\ :\ public\ \mbox{\hyperlink{structb3_quantized_bvh_node_data}{b3QuantizedBvhNodeData}}}
+\DoxyCodeLine{00060\ \{}
+\DoxyCodeLine{00061\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a5756234c44d219923d64b9d76f20382e}{B3\_DECLARE\_ALIGNED\_ALLOCATOR}}();}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00064\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ \textcolor{comment}{//skipindex\ is\ negative\ (internal\ node),\ triangleindex\ >=0\ (leafnode)}}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ (\mbox{\hyperlink{bt_quantized_bvh_8h_a19d5413e91f64cfda90cca0a2d206dfb}{m\_escapeIndexOrTriangleIndex}}\ >=\ 0);}
+\DoxyCodeLine{00067\ \ \ \ \ \}}
+\DoxyCodeLine{00068\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ac972940e7f5e709bab2729befd2c17cd}{getEscapeIndex}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00069\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ae16d9ef41518a5080c80d7378741cce6}{b3Assert}}(!\mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}());}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ -\/\mbox{\hyperlink{bt_quantized_bvh_8h_a19d5413e91f64cfda90cca0a2d206dfb}{m\_escapeIndexOrTriangleIndex}};}
+\DoxyCodeLine{00072\ \ \ \ \ \}}
+\DoxyCodeLine{00073\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a285152d49f529c110316e01f40c81432}{getTriangleIndex}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00074\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ae16d9ef41518a5080c80d7378741cce6}{b3Assert}}(\mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}());}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ =\ 0;}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}\ =\ (\string~(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ \&\ 0))\ <<\ (31\ -\/\ \mbox{\hyperlink{b3_quantized_bvh_8h_a8b797d4ff577b5e4d6ddaa695a2953fa}{MAX\_NUM\_PARTS\_IN\_BITS}});}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Get\ only\ the\ lower\ bits\ where\ the\ triangle\ index\ is\ stored}}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ (\mbox{\hyperlink{bt_quantized_bvh_8h_a19d5413e91f64cfda90cca0a2d206dfb}{m\_escapeIndexOrTriangleIndex}}\ \&\ \string~(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}));}
+\DoxyCodeLine{00080\ \ \ \ \ \}}
+\DoxyCodeLine{00081\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a4e8e9f4b7318722b2c0e8c19c9db5dd3}{getPartId}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00082\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00083\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ae16d9ef41518a5080c80d7378741cce6}{b3Assert}}(\mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}());}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Get\ only\ the\ highest\ bits\ where\ the\ part\ index\ is\ stored}}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ (\mbox{\hyperlink{bt_quantized_bvh_8h_a19d5413e91f64cfda90cca0a2d206dfb}{m\_escapeIndexOrTriangleIndex}}\ >>\ (31\ -\/\ \mbox{\hyperlink{b3_quantized_bvh_8h_a8b797d4ff577b5e4d6ddaa695a2953fa}{MAX\_NUM\_PARTS\_IN\_BITS}}));}
+\DoxyCodeLine{00086\ \ \ \ \ \}}
+\DoxyCodeLine{00087\ \};}
+\DoxyCodeLine{00088\ }
+\DoxyCodeLine{00091\ \mbox{\hyperlink{b3_scalar_8h_ac5e6b050aeb4ddfacbc6f7c4ac541a7d}{B3\_ATTRIBUTE\_ALIGNED16}}(\textcolor{keyword}{struct})}
+\DoxyCodeLine{00092\ \mbox{\hyperlink{b3_quantized_bvh_8h_a215fd37d034a31495dc9f3f93641669b}{b3OptimizedBvhNode}}}
+\DoxyCodeLine{00093\ \{}
+\DoxyCodeLine{00094\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a5756234c44d219923d64b9d76f20382e}{B3\_DECLARE\_ALIGNED\_ALLOCATOR}}();}
+\DoxyCodeLine{00095\ }
+\DoxyCodeLine{00096\ \ \ \ \ \textcolor{comment}{//32\ bytes}}
+\DoxyCodeLine{00097\ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a457f51956ccf51e7f485cb7fabf9253d}{m\_aabbMinOrg}};}
+\DoxyCodeLine{00098\ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a35cee5640c5d10262f7f75cd06221ca1}{m\_aabbMaxOrg}};}
+\DoxyCodeLine{00099\ }
+\DoxyCodeLine{00100\ \ \ \ \ \textcolor{comment}{//4}}
+\DoxyCodeLine{00101\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ae9053ae668449575accbfd720fbad89b}{m\_escapeIndex}};}
+\DoxyCodeLine{00102\ }
+\DoxyCodeLine{00103\ \ \ \ \ \textcolor{comment}{//8}}
+\DoxyCodeLine{00104\ \ \ \ \ \textcolor{comment}{//for\ child\ nodes}}
+\DoxyCodeLine{00105\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a63ab2dad0a04f368bfb67b4f9acfb323}{m\_subPart}};}
+\DoxyCodeLine{00106\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a42b30f94d6dffe9f97c06323bbecb7b4}{m\_triangleIndex}};}
+\DoxyCodeLine{00107\ }
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{comment}{//pad\ the\ size\ to\ 64\ bytes}}
+\DoxyCodeLine{00109\ \ \ \ \ \textcolor{keywordtype}{char}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a6769bf563310acb176d69c2d413a4c9d}{m\_padding}}[20];}
+\DoxyCodeLine{00110\ \};}
+\DoxyCodeLine{00111\ }
+\DoxyCodeLine{00113\ \mbox{\hyperlink{b3_scalar_8h_ac5e6b050aeb4ddfacbc6f7c4ac541a7d}{B3\_ATTRIBUTE\_ALIGNED16}}(\textcolor{keyword}{class})}
+\DoxyCodeLine{00114\ \mbox{\hyperlink{b3_quantized_bvh_8h_a03e2ef5394bdd4fc7b7e0c1c85e7475c}{b3BvhSubtreeInfo}}\ :\ public\ \mbox{\hyperlink{structb3_bvh_subtree_info_data}{b3BvhSubtreeInfoData}}}
+\DoxyCodeLine{00115\ \{}
+\DoxyCodeLine{00116\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00117\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a5756234c44d219923d64b9d76f20382e}{B3\_DECLARE\_ALIGNED\_ALLOCATOR}}();}
+\DoxyCodeLine{00118\ }
+\DoxyCodeLine{00119\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a03e2ef5394bdd4fc7b7e0c1c85e7475c}{b3BvhSubtreeInfo}}()}
+\DoxyCodeLine{00120\ \ \ \ \ \{}
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ \textcolor{comment}{//memset(\&m\_padding[0],\ 0,\ sizeof(m\_padding));}}
+\DoxyCodeLine{00122\ \ \ \ \ \}}
+\DoxyCodeLine{00123\ }
+\DoxyCodeLine{00124\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a94dc98d3b2816649f5b36d80f805c9ee}{setAabbFromQuantizeNode}}(\textcolor{keyword}{const}\ b3QuantizedBvhNode\&\ quantizedNode)}
+\DoxyCodeLine{00125\ \ \ \ \ \{}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_a44008ca92d33ef2bb8f224503ff2156a}{m\_quantizedAabbMin}}[0]\ =\ quantizedNode.m\_quantizedAabbMin[0];}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_a44008ca92d33ef2bb8f224503ff2156a}{m\_quantizedAabbMin}}[1]\ =\ quantizedNode.m\_quantizedAabbMin[1];}
+\DoxyCodeLine{00128\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_a44008ca92d33ef2bb8f224503ff2156a}{m\_quantizedAabbMin}}[2]\ =\ quantizedNode.m\_quantizedAabbMin[2];}
+\DoxyCodeLine{00129\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_aae0adaa420186b3ecfe1cf128b0e305f}{m\_quantizedAabbMax}}[0]\ =\ quantizedNode.m\_quantizedAabbMax[0];}
+\DoxyCodeLine{00130\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_aae0adaa420186b3ecfe1cf128b0e305f}{m\_quantizedAabbMax}}[1]\ =\ quantizedNode.m\_quantizedAabbMax[1];}
+\DoxyCodeLine{00131\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quantized_bvh_8h_aae0adaa420186b3ecfe1cf128b0e305f}{m\_quantizedAabbMax}}[2]\ =\ quantizedNode.m\_quantizedAabbMax[2];}
+\DoxyCodeLine{00132\ \ \ \ \ \}}
+\DoxyCodeLine{00133\ \};}
+\DoxyCodeLine{00134\ }
+\DoxyCodeLine{00135\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classb3_node_overlap_callback}{b3NodeOverlapCallback}}}
+\DoxyCodeLine{00136\ \{}
+\DoxyCodeLine{00137\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00138\ \ \ \ \ \textcolor{keyword}{virtual}\ \mbox{\hyperlink{classb3_node_overlap_callback_ae7d77caaa63e2fe54b4adee76cbc496f}{\string~b3NodeOverlapCallback}}()\{\};}
+\DoxyCodeLine{00139\ }
+\DoxyCodeLine{00140\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classb3_node_overlap_callback_a74eeb77ead3d79bae65224eb63514694}{processNode}}(\textcolor{keywordtype}{int}\ subPart,\ \textcolor{keywordtype}{int}\ triangleIndex)\ =\ 0;}
+\DoxyCodeLine{00141\ \};}
+\DoxyCodeLine{00142\ }
+\DoxyCodeLine{00143\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_aligned_allocator_8h}{Bullet3Common/b3AlignedAllocator.h}}"{}}}
+\DoxyCodeLine{00144\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_aligned_object_array_8h}{Bullet3Common/b3AlignedObjectArray.h}}"{}}}
+\DoxyCodeLine{00145\ }
+\DoxyCodeLine{00147\ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{classb3_aligned_object_array}{b3AlignedObjectArray<b3OptimizedBvhNode>}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a3bc174afb8ebdad6dee8b3a65caa9158}{NodeArray}};}
+\DoxyCodeLine{00148\ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{classb3_aligned_object_array}{b3AlignedObjectArray<b3QuantizedBvhNode>}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a105add4f8b263c68520c55ebdf218c17}{QuantizedNodeArray}};}
+\DoxyCodeLine{00149\ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{classb3_aligned_object_array}{b3AlignedObjectArray<b3BvhSubtreeInfo>}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a16cf0dae063e052f97c595beb707c81e}{BvhSubtreeInfoArray}};}
+\DoxyCodeLine{00150\ }
+\DoxyCodeLine{00154\ \mbox{\hyperlink{b3_scalar_8h_ac5e6b050aeb4ddfacbc6f7c4ac541a7d}{B3\_ATTRIBUTE\_ALIGNED16}}(\textcolor{keyword}{class})}
+\DoxyCodeLine{00155\ \mbox{\hyperlink{b3_quantized_bvh_8h_a73c9debdbe8dff469695899ea435ec5a}{b3QuantizedBvh}}}
+\DoxyCodeLine{00156\ \{}
+\DoxyCodeLine{00157\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00158\ \ \ \ \ \textcolor{keyword}{enum}\ b3TraversalMode}
+\DoxyCodeLine{00159\ \ \ \ \ \{}
+\DoxyCodeLine{00160\ \ \ \ \ \ \ \ \ TRAVERSAL\_STACKLESS\ =\ 0,}
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ TRAVERSAL\_STACKLESS\_CACHE\_FRIENDLY,}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ TRAVERSAL\_RECURSIVE}
+\DoxyCodeLine{00163\ \ \ \ \ \};}
+\DoxyCodeLine{00164\ }
+\DoxyCodeLine{00165\ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}};}
+\DoxyCodeLine{00166\ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}};}
+\DoxyCodeLine{00167\ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ad5f16f2793ae00951e81729fc4943e04}{m\_bvhQuantization}};}
+\DoxyCodeLine{00168\ }
+\DoxyCodeLine{00169\ \textcolor{keyword}{protected}:}
+\DoxyCodeLine{00170\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ae64ac4824e8d126af18a95df382a8492}{m\_bulletVersion}};\ \ \textcolor{comment}{//for\ serialization\ versioning.\ It\ could\ also\ be\ used\ to\ detect\ endianess.}}
+\DoxyCodeLine{00171\ }
+\DoxyCodeLine{00172\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa4f858dd450ae87831d13c7902cba3d1}{m\_curNodeIndex}};}
+\DoxyCodeLine{00173\ \ \ \ \ \textcolor{comment}{//quantization\ data}}
+\DoxyCodeLine{00174\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}};}
+\DoxyCodeLine{00175\ }
+\DoxyCodeLine{00176\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a3bc174afb8ebdad6dee8b3a65caa9158}{NodeArray}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a1532648525e18a05c7e73c85829579ac}{m\_leafNodes}};}
+\DoxyCodeLine{00177\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a3bc174afb8ebdad6dee8b3a65caa9158}{NodeArray}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}};}
+\DoxyCodeLine{00178\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a105add4f8b263c68520c55ebdf218c17}{QuantizedNodeArray}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ae5bb720a0addebe1f2a87eadfa66b16b}{m\_quantizedLeafNodes}};}
+\DoxyCodeLine{00179\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a105add4f8b263c68520c55ebdf218c17}{QuantizedNodeArray}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}};}
+\DoxyCodeLine{00180\ }
+\DoxyCodeLine{00181\ \ \ \ \ b3TraversalMode\ \mbox{\hyperlink{b3_quantized_bvh_8h_a07a124b62d60a2b80978c48a623b3e63}{m\_traversalMode}};}
+\DoxyCodeLine{00182\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a16cf0dae063e052f97c595beb707c81e}{BvhSubtreeInfoArray}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}};}
+\DoxyCodeLine{00183\ }
+\DoxyCodeLine{00184\ \ \ \ \ \textcolor{comment}{//This\ is\ only\ used\ for\ serialization\ so\ we\ don't\ have\ to\ add\ serialization\ directly\ to\ b3AlignedObjectArray}}
+\DoxyCodeLine{00185\ \ \ \ \ \textcolor{keyword}{mutable}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab1bad7cd82c166372e5a43580b6b722f}{m\_subtreeHeaderCount}};}
+\DoxyCodeLine{00186\ }
+\DoxyCodeLine{00189\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ae369c4b09f3ffffce8f21fd131acc810}{setInternalNodeAabbMin}}(\textcolor{keywordtype}{int}\ nodeIndex,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ aabbMin)}
+\DoxyCodeLine{00190\ \ \ \ \ \{}
+\DoxyCodeLine{00191\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}})}
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00193\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a13ca4a67063f4affe28dd3d15367c16a}{quantize}}(\&\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].\mbox{\hyperlink{bt_quantized_bvh_8h_a44008ca92d33ef2bb8f224503ff2156a}{m\_quantizedAabbMin}}[0],\ aabbMin,\ 0);}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[nodeIndex].m\_aabbMinOrg\ =\ aabbMin;}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00199\ \ \ \ \ \}}
+\DoxyCodeLine{00200\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ae80ab07ccb3017a9e60130d1444a25af}{setInternalNodeAabbMax}}(\textcolor{keywordtype}{int}\ nodeIndex,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ aabbMax)}
+\DoxyCodeLine{00201\ \ \ \ \ \{}
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}})}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a13ca4a67063f4affe28dd3d15367c16a}{quantize}}(\&\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].\mbox{\hyperlink{bt_quantized_bvh_8h_aae0adaa420186b3ecfe1cf128b0e305f}{m\_quantizedAabbMax}}[0],\ aabbMax,\ 1);}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[nodeIndex].m\_aabbMaxOrg\ =\ aabbMax;}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00210\ \ \ \ \ \}}
+\DoxyCodeLine{00211\ }
+\DoxyCodeLine{00212\ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\ \mbox{\hyperlink{bt_convex_concave_collision_algorithm_8h_a7c9d9a53d3f740b107c64a34cd0b7453}{getAabbMin}}(\textcolor{keywordtype}{int}\ nodeIndex)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00213\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00214\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}})}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{b3_quantized_bvh_8h_adb624cd0f6cc615d3dc525e25fc7fe14}{unQuantize}}(\&\mbox{\hyperlink{b3_quantized_bvh_8h_ae5bb720a0addebe1f2a87eadfa66b16b}{m\_quantizedLeafNodes}}[nodeIndex].\mbox{\hyperlink{bt_quantized_bvh_8h_a44008ca92d33ef2bb8f224503ff2156a}{m\_quantizedAabbMin}}[0]);}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00218\ \ \ \ \ \ \ \ \ \textcolor{comment}{//non-\/quantized}}
+\DoxyCodeLine{00219\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a1532648525e18a05c7e73c85829579ac}{m\_leafNodes}}[nodeIndex].m\_aabbMinOrg;}
+\DoxyCodeLine{00220\ \ \ \ \ \}}
+\DoxyCodeLine{00221\ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\ \mbox{\hyperlink{bt_convex_concave_collision_algorithm_8h_a862613998b07da3f67a2262fc10be775}{getAabbMax}}(\textcolor{keywordtype}{int}\ nodeIndex)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00222\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}})}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{b3_quantized_bvh_8h_adb624cd0f6cc615d3dc525e25fc7fe14}{unQuantize}}(\&\mbox{\hyperlink{b3_quantized_bvh_8h_ae5bb720a0addebe1f2a87eadfa66b16b}{m\_quantizedLeafNodes}}[nodeIndex].\mbox{\hyperlink{bt_quantized_bvh_8h_aae0adaa420186b3ecfe1cf128b0e305f}{m\_quantizedAabbMax}}[0]);}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00227\ \ \ \ \ \ \ \ \ \textcolor{comment}{//non-\/quantized}}
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a1532648525e18a05c7e73c85829579ac}{m\_leafNodes}}[nodeIndex].m\_aabbMaxOrg;}
+\DoxyCodeLine{00229\ \ \ \ \ \}}
+\DoxyCodeLine{00230\ }
+\DoxyCodeLine{00231\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a3994f1d4d16bce346baf0bc6a4a215e7}{setInternalNodeEscapeIndex}}(\textcolor{keywordtype}{int}\ nodeIndex,\ \textcolor{keywordtype}{int}\ escapeIndex)}
+\DoxyCodeLine{00232\ \ \ \ \ \{}
+\DoxyCodeLine{00233\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}})}
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].m\_escapeIndexOrTriangleIndex\ =\ -\/escapeIndex;}
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[nodeIndex].m\_escapeIndex\ =\ escapeIndex;}
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00241\ \ \ \ \ \}}
+\DoxyCodeLine{00242\ }
+\DoxyCodeLine{00243\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a103594173d7d4c9d25ab2b3613516169}{mergeInternalNodeAabb}}(\textcolor{keywordtype}{int}\ nodeIndex,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ newAabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ newAabbMax)}
+\DoxyCodeLine{00244\ \ \ \ \ \{}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}})}
+\DoxyCodeLine{00246\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}\ quantizedAabbMin[3];}
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}\ quantizedAabbMax[3];}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a13ca4a67063f4affe28dd3d15367c16a}{quantize}}(quantizedAabbMin,\ newAabbMin,\ 0);}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a13ca4a67063f4affe28dd3d15367c16a}{quantize}}(quantizedAabbMax,\ newAabbMax,\ 1);}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 3;\ i++)}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].\mbox{\hyperlink{bt_quantized_bvh_8h_a44008ca92d33ef2bb8f224503ff2156a}{m\_quantizedAabbMin}}[i]\ >\ quantizedAabbMin[i])}
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].m\_quantizedAabbMin[i]\ =\ quantizedAabbMin[i];}
+\DoxyCodeLine{00255\ }
+\DoxyCodeLine{00256\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].\mbox{\hyperlink{bt_quantized_bvh_8h_aae0adaa420186b3ecfe1cf128b0e305f}{m\_quantizedAabbMax}}[i]\ <\ quantizedAabbMax[i])}
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}}[nodeIndex].m\_quantizedAabbMax[i]\ =\ quantizedAabbMax[i];}
+\DoxyCodeLine{00258\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00259\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00260\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//non-\/quantized}}
+\DoxyCodeLine{00263\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[nodeIndex].m\_aabbMinOrg.setMin(newAabbMin);}
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a4dc9f039ddab6fb2e6f12fe4ea4f050f}{m\_contiguousNodes}}[nodeIndex].m\_aabbMaxOrg.setMax(newAabbMax);}
+\DoxyCodeLine{00265\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00266\ \ \ \ \ \}}
+\DoxyCodeLine{00267\ }
+\DoxyCodeLine{00268\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a17efb5ba358f1d4ac7d2ce0e346fa286}{swapLeafNodes}}(\textcolor{keywordtype}{int}\ firstIndex,\ \textcolor{keywordtype}{int}\ secondIndex);}
+\DoxyCodeLine{00269\ }
+\DoxyCodeLine{00270\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab7a6d761116ab558c8a5c54feb0221c2}{assignInternalNodeFromLeafNode}}(\textcolor{keywordtype}{int}\ internalNode,\ \textcolor{keywordtype}{int}\ leafNodeIndex);}
+\DoxyCodeLine{00271\ }
+\DoxyCodeLine{00272\ \textcolor{keyword}{protected}:}
+\DoxyCodeLine{00273\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a39e9d658763d269817395cd1a0d04fc3}{buildTree}}(\textcolor{keywordtype}{int}\ startIndex,\ \textcolor{keywordtype}{int}\ endIndex);}
+\DoxyCodeLine{00274\ }
+\DoxyCodeLine{00275\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ad09a0236cbc4ce0bd195197419e043f8}{calcSplittingAxis}}(\textcolor{keywordtype}{int}\ startIndex,\ \textcolor{keywordtype}{int}\ endIndex);}
+\DoxyCodeLine{00276\ }
+\DoxyCodeLine{00277\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ac5bdcccbeaaa9df0e8a51f7031ac7b52}{sortAndCalcSplittingIndex}}(\textcolor{keywordtype}{int}\ startIndex,\ \textcolor{keywordtype}{int}\ endIndex,\ \textcolor{keywordtype}{int}\ splitAxis);}
+\DoxyCodeLine{00278\ }
+\DoxyCodeLine{00279\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a71c77bb71900b075d2a06719634718b2}{walkStacklessTree}}(\mbox{\hyperlink{classb3_node_overlap_callback}{b3NodeOverlapCallback}}\ *\ nodeCallback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ aabbMax)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00280\ }
+\DoxyCodeLine{00281\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a30d73a2b381023704f5b51ff72bd0272}{walkStacklessQuantizedTreeAgainstRay}}(\mbox{\hyperlink{classb3_node_overlap_callback}{b3NodeOverlapCallback}}\ *\ nodeCallback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ raySource,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ rayTarget,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ aabbMax,\ \textcolor{keywordtype}{int}\ startNodeIndex,\ \textcolor{keywordtype}{int}\ endNodeIndex)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00282\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a5e9923e760adfefa590e2023a4f33a95}{walkStacklessQuantizedTree}}(\mbox{\hyperlink{classb3_node_overlap_callback}{b3NodeOverlapCallback}}\ *\ nodeCallback,\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ quantizedQueryAabbMin,\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ quantizedQueryAabbMax,\ \textcolor{keywordtype}{int}\ startNodeIndex,\ \textcolor{keywordtype}{int}\ endNodeIndex)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00283\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa14e71f499787530ffc6c1f3565b7288}{walkStacklessTreeAgainstRay}}(\mbox{\hyperlink{classb3_node_overlap_callback}{b3NodeOverlapCallback}}\ *\ nodeCallback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ raySource,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ rayTarget,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ aabbMax,\ \textcolor{keywordtype}{int}\ startNodeIndex,\ \textcolor{keywordtype}{int}\ endNodeIndex)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00284\ }
+\DoxyCodeLine{00286\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a02707d5b410fe80d8d4a1871021f8189}{walkStacklessQuantizedTreeCacheFriendly}}(\mbox{\hyperlink{classb3_node_overlap_callback}{b3NodeOverlapCallback}}\ *\ nodeCallback,\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ quantizedQueryAabbMin,\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ quantizedQueryAabbMax)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00287\ }
+\DoxyCodeLine{00289\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a81f4bb681c38e77e08cbaf322023ac54}{walkRecursiveQuantizedTreeAgainstQueryAabb}}(\textcolor{keyword}{const}\ b3QuantizedBvhNode*\ currentNode,\ \mbox{\hyperlink{classb3_node_overlap_callback}{b3NodeOverlapCallback}}*\ nodeCallback,\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ quantizedQueryAabbMin,\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ quantizedQueryAabbMax)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00290\ }
+\DoxyCodeLine{00292\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a5e6798c3f7c268115eb18cf4b4e6790c}{walkRecursiveQuantizedTreeAgainstQuantizedTree}}(\textcolor{keyword}{const}\ b3QuantizedBvhNode*\ treeNodeA,\ \textcolor{keyword}{const}\ b3QuantizedBvhNode*\ treeNodeB,\ \mbox{\hyperlink{classb3_node_overlap_callback}{b3NodeOverlapCallback}}*\ nodeCallback)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00293\ }
+\DoxyCodeLine{00294\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a33d660f9c0164fe22e1f437b7016b23a}{updateSubtreeHeaders}}(\textcolor{keywordtype}{int}\ leftChildNodexIndex,\ \textcolor{keywordtype}{int}\ rightChildNodexIndex);}
+\DoxyCodeLine{00295\ }
+\DoxyCodeLine{00296\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00297\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a5756234c44d219923d64b9d76f20382e}{B3\_DECLARE\_ALIGNED\_ALLOCATOR}}();}
+\DoxyCodeLine{00298\ }
+\DoxyCodeLine{00299\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a73c9debdbe8dff469695899ea435ec5a}{b3QuantizedBvh}}();}
+\DoxyCodeLine{00300\ }
+\DoxyCodeLine{00301\ \ \ \ \ \textcolor{keyword}{virtual}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a476eeb5e6cb3c4c65eaf0a629941eac8}{\string~b3QuantizedBvh}}();}
+\DoxyCodeLine{00302\ }
+\DoxyCodeLine{00304\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a916e0da7f9685b5fb7f6006649258a9f}{setQuantizationValues}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ bvhAabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ bvhAabbMax,\ \mbox{\hyperlink{b3_scalar_8h_ac6f45f3fb4d0d50710cdaa55e5ddd6ac}{b3Scalar}}\ quantizationMargin\ =\ \mbox{\hyperlink{b3_scalar_8h_ac6f45f3fb4d0d50710cdaa55e5ddd6ac}{b3Scalar}}(1.0));}
+\DoxyCodeLine{00305\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a105add4f8b263c68520c55ebdf218c17}{QuantizedNodeArray}}\&\ \mbox{\hyperlink{b3_quantized_bvh_8h_a6eeb54897be46959a16b29a24db87680}{getLeafNodeArray}}()\ \{\ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ae5bb720a0addebe1f2a87eadfa66b16b}{m\_quantizedLeafNodes}};\ \}}
+\DoxyCodeLine{00307\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ae23565baa0951ff2bfe36e23896e0a70}{buildInternal}}();}
+\DoxyCodeLine{00309\ }
+\DoxyCodeLine{00310\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a58c12a1c55e170a2e4bc49dfaeabcb23}{reportAabbOverlappingNodex}}(\mbox{\hyperlink{classb3_node_overlap_callback}{b3NodeOverlapCallback}}\ *\ nodeCallback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ aabbMax)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00311\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a0961a1f1fa3fe014f85691e6fd74ec2b}{reportRayOverlappingNodex}}(\mbox{\hyperlink{classb3_node_overlap_callback}{b3NodeOverlapCallback}}\ *\ nodeCallback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ raySource,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ rayTarget)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00312\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a3630795a49affd08fa5795f4d250b6b6}{reportBoxCastOverlappingNodex}}(\mbox{\hyperlink{classb3_node_overlap_callback}{b3NodeOverlapCallback}}\ *\ nodeCallback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ raySource,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ rayTarget,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ aabbMax)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00313\ }
+\DoxyCodeLine{00314\ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ab997474f47bfdddf0d8c9b25dca2566f}{B3\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a13ca4a67063f4affe28dd3d15367c16a}{quantize}}(\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}*\ out,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ point,\ \textcolor{keywordtype}{int}\ isMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00315\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00316\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ae16d9ef41518a5080c80d7378741cce6}{b3Assert}}(\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}});}
+\DoxyCodeLine{00317\ }
+\DoxyCodeLine{00318\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ae16d9ef41518a5080c80d7378741cce6}{b3Assert}}(point.getX()\ <=\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}}.getX());}
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ae16d9ef41518a5080c80d7378741cce6}{b3Assert}}(point.getY()\ <=\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}}.getY());}
+\DoxyCodeLine{00320\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ae16d9ef41518a5080c80d7378741cce6}{b3Assert}}(point.getZ()\ <=\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}}.getZ());}
+\DoxyCodeLine{00321\ }
+\DoxyCodeLine{00322\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ae16d9ef41518a5080c80d7378741cce6}{b3Assert}}(point.getX()\ >=\ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}}.getX());}
+\DoxyCodeLine{00323\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ae16d9ef41518a5080c80d7378741cce6}{b3Assert}}(point.getY()\ >=\ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}}.getY());}
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ae16d9ef41518a5080c80d7378741cce6}{b3Assert}}(point.getZ()\ >=\ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}}.getZ());}
+\DoxyCodeLine{00325\ }
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ =\ (point\ -\/\ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}})\ *\ \mbox{\hyperlink{b3_quantized_bvh_8h_ad5f16f2793ae00951e81729fc4943e04}{m\_bvhQuantization}};}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (isMax)}
+\DoxyCodeLine{00331\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00332\ \ \ \ \ \ \ \ \ \ \ \ \ out[0]\ =\ (\textcolor{keywordtype}{unsigned}\ short)(((\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short})(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}.getX()\ +\ \mbox{\hyperlink{b3_scalar_8h_ac6f45f3fb4d0d50710cdaa55e5ddd6ac}{b3Scalar}}(1.))\ |\ 1));}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \ \ \ \ \ \ out[1]\ =\ (\textcolor{keywordtype}{unsigned}\ short)(((\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short})(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}.getY()\ +\ \mbox{\hyperlink{b3_scalar_8h_ac6f45f3fb4d0d50710cdaa55e5ddd6ac}{b3Scalar}}(1.))\ |\ 1));}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ \ \ \ \ out[2]\ =\ (\textcolor{keywordtype}{unsigned}\ short)(((\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short})(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}.getZ()\ +\ \mbox{\hyperlink{b3_scalar_8h_ac6f45f3fb4d0d50710cdaa55e5ddd6ac}{b3Scalar}}(1.))\ |\ 1));}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \ \ \ \ \ \ out[0]\ =\ (\textcolor{keywordtype}{unsigned}\ short)(((\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short})(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}.getX())\ \&\ 0xfffe));}
+\DoxyCodeLine{00339\ \ \ \ \ \ \ \ \ \ \ \ \ out[1]\ =\ (\textcolor{keywordtype}{unsigned}\ short)(((\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short})(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}.getY())\ \&\ 0xfffe));}
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \ \ \ \ \ \ out[2]\ =\ (\textcolor{keywordtype}{unsigned}\ short)(((\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short})(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}.getZ())\ \&\ 0xfffe));}
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00342\ }
+\DoxyCodeLine{00343\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_CHECK\_DEQUANTIZATION}}
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\ newPoint\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_adb624cd0f6cc615d3dc525e25fc7fe14}{unQuantize}}(out);}
+\DoxyCodeLine{00345\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (isMax)}
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (newPoint.getX()\ <\ point.getX())}
+\DoxyCodeLine{00348\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00349\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}unconservative\ X,\ diffX\ =\ \%f,\ oldX=\%f,newX=\%f\(\backslash\)n"{}},\ newPoint.getX()\ -\/\ point.getX(),\ newPoint.getX(),\ point.getX());}
+\DoxyCodeLine{00350\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00351\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (newPoint.getY()\ <\ point.getY())}
+\DoxyCodeLine{00352\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00353\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}unconservative\ Y,\ diffY\ =\ \%f,\ oldY=\%f,newY=\%f\(\backslash\)n"{}},\ newPoint.getY()\ -\/\ point.getY(),\ newPoint.getY(),\ point.getY());}
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (newPoint.getZ()\ <\ point.getZ())}
+\DoxyCodeLine{00356\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}unconservative\ Z,\ diffZ\ =\ \%f,\ oldZ=\%f,newZ=\%f\(\backslash\)n"{}},\ newPoint.getZ()\ -\/\ point.getZ(),\ newPoint.getZ(),\ point.getZ());}
+\DoxyCodeLine{00358\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00359\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00360\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00361\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00362\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (newPoint.getX()\ >\ point.getX())}
+\DoxyCodeLine{00363\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00364\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}unconservative\ X,\ diffX\ =\ \%f,\ oldX=\%f,newX=\%f\(\backslash\)n"{}},\ newPoint.getX()\ -\/\ point.getX(),\ newPoint.getX(),\ point.getX());}
+\DoxyCodeLine{00365\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00366\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (newPoint.getY()\ >\ point.getY())}
+\DoxyCodeLine{00367\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00368\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}unconservative\ Y,\ diffY\ =\ \%f,\ oldY=\%f,newY=\%f\(\backslash\)n"{}},\ newPoint.getY()\ -\/\ point.getY(),\ newPoint.getY(),\ point.getY());}
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00370\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (newPoint.getZ()\ >\ point.getZ())}
+\DoxyCodeLine{00371\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}unconservative\ Z,\ diffZ\ =\ \%f,\ oldZ=\%f,newZ=\%f\(\backslash\)n"{}},\ newPoint.getZ()\ -\/\ point.getZ(),\ newPoint.getZ(),\ point.getZ());}
+\DoxyCodeLine{00373\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00375\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_CHECK\_DEQUANTIZATION}}
+\DoxyCodeLine{00376\ \ \ \ \ \}}
+\DoxyCodeLine{00377\ }
+\DoxyCodeLine{00378\ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ab997474f47bfdddf0d8c9b25dca2566f}{B3\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_acb1580a436c9633459102a1096ca6671}{quantizeWithClamp}}(\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}*\ out,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\&\ point2,\ \textcolor{keywordtype}{int}\ isMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00379\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ae16d9ef41518a5080c80d7378741cce6}{b3Assert}}(\mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}});}
+\DoxyCodeLine{00381\ }
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\ clampedPoint(point2);}
+\DoxyCodeLine{00383\ \ \ \ \ \ \ \ \ clampedPoint.setMax(\mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}});}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ clampedPoint.setMin(\mbox{\hyperlink{b3_quantized_bvh_8h_ab9070c553f161c5b277db8a28625fa28}{m\_bvhAabbMax}});}
+\DoxyCodeLine{00385\ }
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a13ca4a67063f4affe28dd3d15367c16a}{quantize}}(out,\ clampedPoint,\ isMax);}
+\DoxyCodeLine{00387\ \ \ \ \ \}}
+\DoxyCodeLine{00388\ }
+\DoxyCodeLine{00389\ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ab997474f47bfdddf0d8c9b25dca2566f}{B3\_FORCE\_INLINE}}\ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_adb624cd0f6cc615d3dc525e25fc7fe14}{unQuantize}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}*\ vecIn)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00390\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00391\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3Vector3}}\ vecOut;}
+\DoxyCodeLine{00392\ \ \ \ \ \ \ \ \ vecOut.setValue(}
+\DoxyCodeLine{00393\ \ \ \ \ \ \ \ \ \ \ \ \ (\mbox{\hyperlink{b3_scalar_8h_ac6f45f3fb4d0d50710cdaa55e5ddd6ac}{b3Scalar}})(vecIn[0])\ /\ (\mbox{\hyperlink{b3_quantized_bvh_8h_ad5f16f2793ae00951e81729fc4943e04}{m\_bvhQuantization}}.getX()),}
+\DoxyCodeLine{00394\ \ \ \ \ \ \ \ \ \ \ \ \ (\mbox{\hyperlink{b3_scalar_8h_ac6f45f3fb4d0d50710cdaa55e5ddd6ac}{b3Scalar}})(vecIn[1])\ /\ (\mbox{\hyperlink{b3_quantized_bvh_8h_ad5f16f2793ae00951e81729fc4943e04}{m\_bvhQuantization}}.getY()),}
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ \ \ \ \ (\mbox{\hyperlink{b3_scalar_8h_ac6f45f3fb4d0d50710cdaa55e5ddd6ac}{b3Scalar}})(vecIn[2])\ /\ (\mbox{\hyperlink{b3_quantized_bvh_8h_ad5f16f2793ae00951e81729fc4943e04}{m\_bvhQuantization}}.getZ()));}
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ vecOut\ +=\ \mbox{\hyperlink{b3_quantized_bvh_8h_a6cbd82d83d11562e83a4ec5f02541b6e}{m\_bvhAabbMin}};}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ vecOut;}
+\DoxyCodeLine{00398\ \ \ \ \ \}}
+\DoxyCodeLine{00399\ }
+\DoxyCodeLine{00401\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a0d8c037d45329c01cdeb66dd6f0f6252}{setTraversalMode}}(b3TraversalMode\ traversalMode)}
+\DoxyCodeLine{00402\ \ \ \ \ \{}
+\DoxyCodeLine{00403\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a07a124b62d60a2b80978c48a623b3e63}{m\_traversalMode}}\ =\ traversalMode;}
+\DoxyCodeLine{00404\ \ \ \ \ \}}
+\DoxyCodeLine{00405\ }
+\DoxyCodeLine{00406\ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ab997474f47bfdddf0d8c9b25dca2566f}{B3\_FORCE\_INLINE}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a105add4f8b263c68520c55ebdf218c17}{QuantizedNodeArray}}\&\ \mbox{\hyperlink{b3_quantized_bvh_8h_a87d48441f192bf9d196a554997d04305}{getQuantizedNodeArray}}()}
+\DoxyCodeLine{00407\ \ \ \ \ \{}
+\DoxyCodeLine{00408\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ab8c30b57e66964c65e8964318f762725}{m\_quantizedContiguousNodes}};}
+\DoxyCodeLine{00409\ \ \ \ \ \}}
+\DoxyCodeLine{00410\ }
+\DoxyCodeLine{00411\ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ab997474f47bfdddf0d8c9b25dca2566f}{B3\_FORCE\_INLINE}}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a16cf0dae063e052f97c595beb707c81e}{BvhSubtreeInfoArray}}\&\ \mbox{\hyperlink{b3_quantized_bvh_8h_ac9ea112f230d6608a529e822870ae94b}{getSubtreeInfoArray}}()}
+\DoxyCodeLine{00412\ \ \ \ \ \{}
+\DoxyCodeLine{00413\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa511dbca4f180b5a4153cada79555639}{m\_SubtreeHeaders}};}
+\DoxyCodeLine{00414\ \ \ \ \ \}}
+\DoxyCodeLine{00415\ }
+\DoxyCodeLine{00417\ }
+\DoxyCodeLine{00419\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a84772bd25edae763278338fd08688ba5}{calculateSerializeBufferSize}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00420\ }
+\DoxyCodeLine{00422\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a9e9a0fa15ae9cfa1f140a2b7da94dd3f}{serialize}}(\textcolor{keywordtype}{void}*\ o\_alignedDataBuffer,\ \textcolor{keywordtype}{unsigned}\ i\_dataBufferSize,\ \textcolor{keywordtype}{bool}\ i\_swapEndian)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00423\ }
+\DoxyCodeLine{00425\ \ \ \ \ \textcolor{keyword}{static}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a73c9debdbe8dff469695899ea435ec5a}{b3QuantizedBvh}}*\ deSerializeInPlace(\textcolor{keywordtype}{void}*\ i\_alignedDataBuffer,\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ i\_dataBufferSize,\ \textcolor{keywordtype}{bool}\ i\_swapEndian);}
+\DoxyCodeLine{00426\ }
+\DoxyCodeLine{00427\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ getAlignmentSerializationPadding();}
+\DoxyCodeLine{00429\ }
+\DoxyCodeLine{00430\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a1661a1b40ad00fe97ecf63889e140288}{calculateSerializeBufferSizeNew}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00431\ }
+\DoxyCodeLine{00433\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{b3_quantized_bvh_8h_a9e9a0fa15ae9cfa1f140a2b7da94dd3f}{serialize}}(\textcolor{keywordtype}{void}*\ dataBuffer,\ \mbox{\hyperlink{classb3_serializer}{b3Serializer}}*\ serializer)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00434\ }
+\DoxyCodeLine{00435\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_ad4b2f2bd5fa2d56557ce8fd50cba03c1}{deSerializeFloat}}(\textcolor{keyword}{struct}\ b3QuantizedBvhFloatData\ \&\ quantizedBvhFloatData);}
+\DoxyCodeLine{00436\ }
+\DoxyCodeLine{00437\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a87b79958a984d921575858afa63e87fb}{deSerializeDouble}}(\textcolor{keyword}{struct}\ b3QuantizedBvhDoubleData\ \&\ quantizedBvhDoubleData);}
+\DoxyCodeLine{00438\ }
+\DoxyCodeLine{00440\ }
+\DoxyCodeLine{00441\ \ \ \ \ \mbox{\hyperlink{b3_scalar_8h_ab997474f47bfdddf0d8c9b25dca2566f}{B3\_FORCE\_INLINE}}\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{b3_quantized_bvh_8h_aa932b409102c9daeb03d865c1cc7e282}{isQuantized}}()}
+\DoxyCodeLine{00442\ \ \ \ \ \{}
+\DoxyCodeLine{00443\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a2fb9f697f1030df6a367712f26e3f918}{m\_useQuantization}};}
+\DoxyCodeLine{00444\ \ \ \ \ \}}
+\DoxyCodeLine{00445\ }
+\DoxyCodeLine{00446\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00447\ \ \ \ \ \textcolor{comment}{//\ Special\ "{}copy"{}\ constructor\ that\ allows\ for\ in-\/place\ deserialization}}
+\DoxyCodeLine{00448\ \ \ \ \ \textcolor{comment}{//\ Prevents\ b3Vector3's\ default\ constructor\ from\ being\ called,\ but\ doesn't\ inialize\ much\ else}}
+\DoxyCodeLine{00449\ \ \ \ \ \textcolor{comment}{//\ ownsMemory\ should\ most\ likely\ be\ false\ if\ deserializing,\ and\ if\ you\ are\ not,\ don't\ call\ this\ (it\ also\ changes\ the\ function\ signature,\ which\ we\ need)}}
+\DoxyCodeLine{00450\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a73c9debdbe8dff469695899ea435ec5a}{b3QuantizedBvh}}(\mbox{\hyperlink{b3_quantized_bvh_8h_a73c9debdbe8dff469695899ea435ec5a}{b3QuantizedBvh}}\ \&\ other,\ \textcolor{keywordtype}{bool}\ ownsMemory);}
+\DoxyCodeLine{00451\ \};}
+\DoxyCodeLine{00452\ }
+\DoxyCodeLine{00453\ \textcolor{keyword}{struct\ }b3OptimizedBvhNodeFloatData}
+\DoxyCodeLine{00454\ \{}
+\DoxyCodeLine{00455\ \ \ \ \ b3Vector3FloatData\ m\_aabbMinOrg;}
+\DoxyCodeLine{00456\ \ \ \ \ b3Vector3FloatData\ m\_aabbMaxOrg;}
+\DoxyCodeLine{00457\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_escapeIndex;}
+\DoxyCodeLine{00458\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_subPart;}
+\DoxyCodeLine{00459\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_triangleIndex;}
+\DoxyCodeLine{00460\ \ \ \ \ \textcolor{keywordtype}{char}\ m\_pad[4];}
+\DoxyCodeLine{00461\ \};}
+\DoxyCodeLine{00462\ }
+\DoxyCodeLine{00463\ \textcolor{keyword}{struct\ }b3OptimizedBvhNodeDoubleData}
+\DoxyCodeLine{00464\ \{}
+\DoxyCodeLine{00465\ \ \ \ \ b3Vector3DoubleData\ m\_aabbMinOrg;}
+\DoxyCodeLine{00466\ \ \ \ \ b3Vector3DoubleData\ m\_aabbMaxOrg;}
+\DoxyCodeLine{00467\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_escapeIndex;}
+\DoxyCodeLine{00468\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_subPart;}
+\DoxyCodeLine{00469\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_triangleIndex;}
+\DoxyCodeLine{00470\ \ \ \ \ \textcolor{keywordtype}{char}\ m\_pad[4];}
+\DoxyCodeLine{00471\ \};}
+\DoxyCodeLine{00472\ }
+\DoxyCodeLine{00473\ \textcolor{keyword}{struct\ }b3QuantizedBvhFloatData}
+\DoxyCodeLine{00474\ \{}
+\DoxyCodeLine{00475\ \ \ \ \ b3Vector3FloatData\ m\_bvhAabbMin;}
+\DoxyCodeLine{00476\ \ \ \ \ b3Vector3FloatData\ m\_bvhAabbMax;}
+\DoxyCodeLine{00477\ \ \ \ \ b3Vector3FloatData\ m\_bvhQuantization;}
+\DoxyCodeLine{00478\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_curNodeIndex;}
+\DoxyCodeLine{00479\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_useQuantization;}
+\DoxyCodeLine{00480\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_numContiguousLeafNodes;}
+\DoxyCodeLine{00481\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_numQuantizedContiguousNodes;}
+\DoxyCodeLine{00482\ \ \ \ \ b3OptimizedBvhNodeFloatData*\ m\_contiguousNodesPtr;}
+\DoxyCodeLine{00483\ \ \ \ \ b3QuantizedBvhNodeData*\ m\_quantizedContiguousNodesPtr;}
+\DoxyCodeLine{00484\ \ \ \ \ b3BvhSubtreeInfoData*\ m\_subTreeInfoPtr;}
+\DoxyCodeLine{00485\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_traversalMode;}
+\DoxyCodeLine{00486\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_numSubtreeHeaders;}
+\DoxyCodeLine{00487\ \};}
+\DoxyCodeLine{00488\ }
+\DoxyCodeLine{00489\ \textcolor{keyword}{struct\ }b3QuantizedBvhDoubleData}
+\DoxyCodeLine{00490\ \{}
+\DoxyCodeLine{00491\ \ \ \ \ b3Vector3DoubleData\ m\_bvhAabbMin;}
+\DoxyCodeLine{00492\ \ \ \ \ b3Vector3DoubleData\ m\_bvhAabbMax;}
+\DoxyCodeLine{00493\ \ \ \ \ b3Vector3DoubleData\ m\_bvhQuantization;}
+\DoxyCodeLine{00494\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_curNodeIndex;}
+\DoxyCodeLine{00495\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_useQuantization;}
+\DoxyCodeLine{00496\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_numContiguousLeafNodes;}
+\DoxyCodeLine{00497\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_numQuantizedContiguousNodes;}
+\DoxyCodeLine{00498\ \ \ \ \ b3OptimizedBvhNodeDoubleData*\ m\_contiguousNodesPtr;}
+\DoxyCodeLine{00499\ \ \ \ \ b3QuantizedBvhNodeData*\ m\_quantizedContiguousNodesPtr;}
+\DoxyCodeLine{00500\ }
+\DoxyCodeLine{00501\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_traversalMode;}
+\DoxyCodeLine{00502\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_numSubtreeHeaders;}
+\DoxyCodeLine{00503\ \ \ \ \ b3BvhSubtreeInfoData*\ m\_subTreeInfoPtr;}
+\DoxyCodeLine{00504\ \};}
+\DoxyCodeLine{00505\ }
+\DoxyCodeLine{00506\ \mbox{\hyperlink{b3_scalar_8h_ab997474f47bfdddf0d8c9b25dca2566f}{B3\_FORCE\_INLINE}}\ \textcolor{keywordtype}{int}\ b3QuantizedBvh::calculateSerializeBufferSizeNew()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00507\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00508\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{b3_quantized_bvh_8h_a5539da896a79f34b5cecbb773a82b7be}{b3QuantizedBvhData}});}
+\DoxyCodeLine{00509\ \}}
+\DoxyCodeLine{00510\ }
+\DoxyCodeLine{00511\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//B3\_QUANTIZED\_BVH\_H}}
+
+\end{DoxyCode}

@@ -1,0 +1,79 @@
+\doxysection{bt\+Dantzig\+LCP.\+h}
+\hypertarget{bt_dantzig_l_c_p_8h_source}{}\label{bt_dantzig_l_c_p_8h_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/MLCPSolvers/btDantzigLCP.h@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/MLCPSolvers/btDantzigLCP.h}}
+\mbox{\hyperlink{bt_dantzig_l_c_p_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*************************************************************************}}
+\DoxyCodeLine{00002\ \textcolor{comment}{\ *\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00003\ \textcolor{comment}{\ *\ Open\ Dynamics\ Engine,\ Copyright\ (C)\ 2001,2002\ Russell\ L.\ Smith.\ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00004\ \textcolor{comment}{\ *\ All\ rights\ reserved.\ \ Email:\ russ@q12.org\ \ \ Web:\ www.q12.org\ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00005\ \textcolor{comment}{\ *\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00006\ \textcolor{comment}{\ *\ This\ library\ is\ free\ software;\ you\ can\ redistribute\ it\ and/or\ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00007\ \textcolor{comment}{\ *\ modify\ it\ under\ the\ terms\ of\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{\ *\ \ \ The\ BSD-\/style\ license\ that\ is\ included\ with\ this\ library\ in\ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00009\ \textcolor{comment}{\ *\ \ \ the\ file\ LICENSE-\/BSD.TXT.\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00010\ \textcolor{comment}{\ *\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00011\ \textcolor{comment}{\ *\ This\ library\ is\ distributed\ in\ the\ hope\ that\ it\ will\ be\ useful,\ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00012\ \textcolor{comment}{\ *\ but\ WITHOUT\ ANY\ WARRANTY;\ without\ even\ the\ implied\ warranty\ of\ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00013\ \textcolor{comment}{\ *\ MERCHANTABILITY\ or\ FITNESS\ FOR\ A\ PARTICULAR\ PURPOSE.\ See\ the\ files\ \ \ \ *}}
+\DoxyCodeLine{00014\ \textcolor{comment}{\ *\ LICENSE.TXT\ and\ LICENSE-\/BSD.TXT\ for\ more\ details.\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00015\ \textcolor{comment}{\ *\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00016\ \textcolor{comment}{\ *************************************************************************/}}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00019\ \textcolor{comment}{}}
+\DoxyCodeLine{00020\ \textcolor{comment}{given\ (A,b,lo,hi),\ solve\ the\ LCP\ problem:\ A*x\ =\ b+w,\ where\ each\ x(i),w(i)}}
+\DoxyCodeLine{00021\ \textcolor{comment}{satisfies\ one\ of}}
+\DoxyCodeLine{00022\ \textcolor{comment}{\ \ \ \ (1)\ x\ =\ lo,\ w\ >=\ 0}}
+\DoxyCodeLine{00023\ \textcolor{comment}{\ \ \ \ (2)\ x\ =\ hi,\ w\ <=\ 0}}
+\DoxyCodeLine{00024\ \textcolor{comment}{\ \ \ \ (3)\ lo\ <\ x\ <\ hi,\ w\ =\ 0}}
+\DoxyCodeLine{00025\ \textcolor{comment}{A\ is\ a\ matrix\ of\ dimension\ n*n,\ everything\ else\ is\ a\ vector\ of\ size\ n*1.}}
+\DoxyCodeLine{00026\ \textcolor{comment}{lo\ and\ hi\ can\ be\ +/-\/\ dInfinity\ as\ needed.\ the\ first\ \`{}nub'\ variables\ are}}
+\DoxyCodeLine{00027\ \textcolor{comment}{unbounded,\ i.e.\ hi\ and\ lo\ are\ assumed\ to\ be\ +/-\/\ dInfinity.}}
+\DoxyCodeLine{00028\ \textcolor{comment}{}}
+\DoxyCodeLine{00029\ \textcolor{comment}{we\ restrict\ lo(i)\ <=\ 0\ and\ hi(i)\ >=\ 0.}}
+\DoxyCodeLine{00030\ \textcolor{comment}{}}
+\DoxyCodeLine{00031\ \textcolor{comment}{the\ original\ data\ (A,b)\ may\ be\ modified\ by\ this\ function.}}
+\DoxyCodeLine{00032\ \textcolor{comment}{}}
+\DoxyCodeLine{00033\ \textcolor{comment}{if\ the\ \`{}findex'\ (friction\ index)\ parameter\ is\ nonzero,\ it\ points\ to\ an\ array}}
+\DoxyCodeLine{00034\ \textcolor{comment}{of\ index\ values.\ in\ this\ case\ constraints\ that\ have\ findex[i]\ >=\ 0\ are}}
+\DoxyCodeLine{00035\ \textcolor{comment}{special.\ all\ non-\/special\ constraints\ are\ solved\ for,\ then\ the\ lo\ and\ hi\ values}}
+\DoxyCodeLine{00036\ \textcolor{comment}{for\ the\ special\ constraints\ are\ set:}}
+\DoxyCodeLine{00037\ \textcolor{comment}{\ \ hi[i]\ =\ abs(\ hi[i]\ *\ x[findex[i]]\ )}}
+\DoxyCodeLine{00038\ \textcolor{comment}{\ \ lo[i]\ =\ -\/hi[i]}}
+\DoxyCodeLine{00039\ \textcolor{comment}{and\ the\ solution\ continues.\ this\ mechanism\ allows\ a\ friction\ approximation}}
+\DoxyCodeLine{00040\ \textcolor{comment}{to\ be\ implemented.\ the\ first\ \`{}nub'\ variables\ are\ assumed\ to\ have\ findex\ <\ 0.}}
+\DoxyCodeLine{00041\ \textcolor{comment}{}}
+\DoxyCodeLine{00042\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00044\ \textcolor{preprocessor}{\#ifndef\ \_BT\_LCP\_H\_}}
+\DoxyCodeLine{00045\ \textcolor{preprocessor}{\#define\ \_BT\_LCP\_H\_}}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00048\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00049\ \textcolor{preprocessor}{\#include\ <assert.h>}}
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00051\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_scalar_8h}{LinearMath/btScalar.h}}"{}}}
+\DoxyCodeLine{00052\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_aligned_object_array_8h}{LinearMath/btAlignedObjectArray.h}}"{}}}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00054\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structbt_dantzig_scratch_memory}{btDantzigScratchMemory}}}
+\DoxyCodeLine{00055\ \{}
+\DoxyCodeLine{00056\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btScalar>}}\ \mbox{\hyperlink{structbt_dantzig_scratch_memory_aaa6478f084f57ac97b8ff025cf58af23}{m\_scratch}};}
+\DoxyCodeLine{00057\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btScalar>}}\ \mbox{\hyperlink{structbt_dantzig_scratch_memory_a74bb1dac417d62d8b2543e30c92acba0}{L}};}
+\DoxyCodeLine{00058\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btScalar>}}\ \mbox{\hyperlink{structbt_dantzig_scratch_memory_a7146f0f3b14b713fb1b53b522ce2d503}{d}};}
+\DoxyCodeLine{00059\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btScalar>}}\ \mbox{\hyperlink{structbt_dantzig_scratch_memory_a1b5dea782943c0f28846a76fd585ccb1}{delta\_w}};}
+\DoxyCodeLine{00060\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btScalar>}}\ \mbox{\hyperlink{structbt_dantzig_scratch_memory_a21e95a21f726f4d7585e5f360d983f4b}{delta\_x}};}
+\DoxyCodeLine{00061\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btScalar>}}\ \mbox{\hyperlink{structbt_dantzig_scratch_memory_a5edc78e724e08192c2d1309abd6a49e6}{Dell}};}
+\DoxyCodeLine{00062\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btScalar>}}\ \mbox{\hyperlink{structbt_dantzig_scratch_memory_a365217e1cb41e0d67de949ee6c59df5d}{ell}};}
+\DoxyCodeLine{00063\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btScalar\ *>}}\ \mbox{\hyperlink{structbt_dantzig_scratch_memory_ad7615a7d4182027a5425a8f2febbc783}{Arows}};}
+\DoxyCodeLine{00064\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<int>}}\ \mbox{\hyperlink{structbt_dantzig_scratch_memory_ab01a3ac861ada8a5cb08c9f00706e8c6}{p}};}
+\DoxyCodeLine{00065\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<int>}}\ \mbox{\hyperlink{structbt_dantzig_scratch_memory_a1b0fabeb0d733ddb51c5165f54893c8e}{C}};}
+\DoxyCodeLine{00066\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<bool>}}\ \mbox{\hyperlink{structbt_dantzig_scratch_memory_aa15ba6ab13b6a89746340934fd124409}{state}};}
+\DoxyCodeLine{00067\ \};}
+\DoxyCodeLine{00068\ }
+\DoxyCodeLine{00069\ \textcolor{comment}{//return\ false\ if\ solving\ failed}}
+\DoxyCodeLine{00070\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_dantzig_l_c_p_8h_a7521b0d80a9a93fac0b202da9bc418ee}{btSolveDantzigLCP}}(\textcolor{keywordtype}{int}\ n,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ *\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}},\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ *\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ *\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ *\mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}},}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ nub,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ *lo,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ *hi,\ \textcolor{keywordtype}{int}\ *findex,\ \mbox{\hyperlink{structbt_dantzig_scratch_memory}{btDantzigScratchMemory}}\ \&scratch);}
+\DoxyCodeLine{00072\ }
+\DoxyCodeLine{00073\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\_BT\_LCP\_H\_}}
+
+\end{DoxyCode}

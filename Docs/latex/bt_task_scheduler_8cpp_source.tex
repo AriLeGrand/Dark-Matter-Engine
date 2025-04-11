@@ -1,0 +1,798 @@
+\doxysection{bt\+Task\+Scheduler.\+cpp}
+\hypertarget{bt_task_scheduler_8cpp_source}{}\label{bt_task_scheduler_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/LinearMath/TaskScheduler/btTaskScheduler.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/LinearMath/TaskScheduler/btTaskScheduler.cpp}}
+\mbox{\hyperlink{bt_task_scheduler_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ }
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_min_max_8h}{LinearMath/btMinMax.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_aligned_object_array_8h}{LinearMath/btAlignedObjectArray.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_threads_8h}{LinearMath/btThreads.h}}"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_quickprof_8h}{LinearMath/btQuickprof.h}}"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <algorithm>}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#if\ BT\_THREADSAFE}}
+\DoxyCodeLine{00010\ }
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_thread_support_interface_8h}{btThreadSupportInterface.h}}"{}}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{preprocessor}{\#if\ defined(\_WIN32)}}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \textcolor{preprocessor}{\#define\ WIN32\_LEAN\_AND\_MEAN}}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ <windows.h>}}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{keyword}{typedef}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{long}\ btU64;}
+\DoxyCodeLine{00022\ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ kCacheLineSize\ =\ 64;}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \textcolor{keywordtype}{void}\ btSpinPause()}
+\DoxyCodeLine{00025\ \{}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#if\ defined(\_WIN32)}}
+\DoxyCodeLine{00027\ \ \ \ \ YieldProcessor();}
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00029\ \}}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{keyword}{struct\ }WorkerThreadStatus}
+\DoxyCodeLine{00032\ \{}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keyword}{enum}\ Type}
+\DoxyCodeLine{00034\ \ \ \ \ \{}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ kInvalid,}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ kWaitingForWork,}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ kWorking,}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ kSleeping,}
+\DoxyCodeLine{00039\ \ \ \ \ \};}
+\DoxyCodeLine{00040\ \};}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00042\ \mbox{\hyperlink{bt_scalar_8h_af70e8b45dc0ad52b962f128ce45365dc}{ATTRIBUTE\_ALIGNED64}}(\textcolor{keyword}{class})}
+\DoxyCodeLine{00043\ WorkerThreadDirectives}
+\DoxyCodeLine{00044\ \{}
+\DoxyCodeLine{00045\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ kMaxThreadCount\ =\ \mbox{\hyperlink{bt_threads_8h_af4a20042975cd43aa629b3bc4591db6e}{BT\_MAX\_THREAD\_COUNT}};}
+\DoxyCodeLine{00046\ \ \ \ \ \textcolor{comment}{//\ directives\ for\ all\ worker\ threads\ packed\ into\ a\ single\ cacheline}}
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{keywordtype}{char}\ m\_threadDirs[kMaxThreadCount];}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{keyword}{enum}\ Type}
+\DoxyCodeLine{00051\ \ \ \ \ \{}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ \ \ kInvalid,}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ kGoToSleep,\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ go\ to\ sleep}}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ kStayAwakeButIdle,\ \ \textcolor{comment}{//\ wait\ for\ not\ checking\ job\ queue}}
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \ \ kScanForJobs,\ \ \ \ \ \ \ \textcolor{comment}{//\ actively\ scan\ job\ queue\ for\ jobs}}
+\DoxyCodeLine{00056\ \ \ \ \ \};}
+\DoxyCodeLine{00057\ \ \ \ \ WorkerThreadDirectives()}
+\DoxyCodeLine{00058\ \ \ \ \ \{}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ kMaxThreadCount;\ ++i)}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ \ \ \ \ m\_threadDirs[i]\ =\ 0;}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00063\ \ \ \ \ \}}
+\DoxyCodeLine{00064\ }
+\DoxyCodeLine{00065\ \ \ \ \ Type\ getDirective(\textcolor{keywordtype}{int}\ threadId)}
+\DoxyCodeLine{00066\ \ \ \ \ \{}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(threadId\ <\ kMaxThreadCount);}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{static\_cast<}Type\textcolor{keyword}{>}(m\_threadDirs[threadId]);}
+\DoxyCodeLine{00069\ \ \ \ \ \}}
+\DoxyCodeLine{00070\ }
+\DoxyCodeLine{00071\ \ \ \ \ \textcolor{keywordtype}{void}\ setDirectiveByRange(\textcolor{keywordtype}{int}\ threadBegin,\ \textcolor{keywordtype}{int}\ threadEnd,\ Type\ dir)}
+\DoxyCodeLine{00072\ \ \ \ \ \{}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(threadBegin\ <\ threadEnd);}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(threadEnd\ <=\ kMaxThreadCount);}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{char}\ dirChar\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{char}\textcolor{keyword}{>}(dir);}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ threadBegin;\ i\ <\ threadEnd;\ ++i)}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ \ \ \ \ m\_threadDirs[i]\ =\ dirChar;}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00080\ \ \ \ \ \}}
+\DoxyCodeLine{00081\ \};}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00083\ \textcolor{keyword}{class\ }JobQueue;}
+\DoxyCodeLine{00084\ }
+\DoxyCodeLine{00085\ \mbox{\hyperlink{bt_scalar_8h_af70e8b45dc0ad52b962f128ce45365dc}{ATTRIBUTE\_ALIGNED64}}(\textcolor{keyword}{struct})}
+\DoxyCodeLine{00086\ ThreadLocalStorage}
+\DoxyCodeLine{00087\ \{}
+\DoxyCodeLine{00088\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_threadId;}
+\DoxyCodeLine{00089\ \ \ \ \ WorkerThreadStatus::Type\ m\_status;}
+\DoxyCodeLine{00090\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_numJobsFinished;}
+\DoxyCodeLine{00091\ \ \ \ \ \mbox{\hyperlink{classbt_spin_mutex}{btSpinMutex}}\ m\_mutex;}
+\DoxyCodeLine{00092\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ m\_sumResult;}
+\DoxyCodeLine{00093\ \ \ \ \ WorkerThreadDirectives*\ m\_directive;}
+\DoxyCodeLine{00094\ \ \ \ \ JobQueue*\ m\_queue;}
+\DoxyCodeLine{00095\ \ \ \ \ \mbox{\hyperlink{classbt_clock}{btClock}}*\ m\_clock;}
+\DoxyCodeLine{00096\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ m\_cooldownTime;}
+\DoxyCodeLine{00097\ \};}
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00099\ \textcolor{keyword}{struct\ }IJob}
+\DoxyCodeLine{00100\ \{}
+\DoxyCodeLine{00101\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ executeJob(\textcolor{keywordtype}{int}\ threadId)\ =\ 0;}
+\DoxyCodeLine{00102\ \};}
+\DoxyCodeLine{00103\ }
+\DoxyCodeLine{00104\ \textcolor{keyword}{class\ }ParallelForJob\ :\ \textcolor{keyword}{public}\ IJob}
+\DoxyCodeLine{00105\ \{}
+\DoxyCodeLine{00106\ \ \ \ \ \textcolor{keyword}{const}\ btIParallelForBody*\ m\_body;}
+\DoxyCodeLine{00107\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_begin;}
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_end;}
+\DoxyCodeLine{00109\ }
+\DoxyCodeLine{00110\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00111\ \ \ \ \ ParallelForJob(\textcolor{keywordtype}{int}\ iBegin,\ \textcolor{keywordtype}{int}\ iEnd,\ \textcolor{keyword}{const}\ btIParallelForBody\&\ body)}
+\DoxyCodeLine{00112\ \ \ \ \ \{}
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \ \ m\_body\ =\ \&body;}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ m\_begin\ =\ iBegin;}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \ \ m\_end\ =\ iEnd;}
+\DoxyCodeLine{00116\ \ \ \ \ \}}
+\DoxyCodeLine{00117\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ executeJob(\textcolor{keywordtype}{int}\ threadId)\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}}
+\DoxyCodeLine{00118\ \ \ \ \ \{}
+\DoxyCodeLine{00119\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}executeJob"{}});}
+\DoxyCodeLine{00120\ }
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ call\ the\ functor\ body\ to\ do\ the\ work}}
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ m\_body-\/>\mbox{\hyperlink{classbt_i_parallel_for_body_a422a683eb8597d798d7bc09ae9ec0472}{forLoop}}(m\_begin,\ m\_end);}
+\DoxyCodeLine{00123\ \ \ \ \ \}}
+\DoxyCodeLine{00124\ \};}
+\DoxyCodeLine{00125\ }
+\DoxyCodeLine{00126\ \textcolor{keyword}{class\ }ParallelSumJob\ :\ \textcolor{keyword}{public}\ IJob}
+\DoxyCodeLine{00127\ \{}
+\DoxyCodeLine{00128\ \ \ \ \ \textcolor{keyword}{const}\ btIParallelSumBody*\ m\_body;}
+\DoxyCodeLine{00129\ \ \ \ \ ThreadLocalStorage*\ m\_threadLocalStoreArray;}
+\DoxyCodeLine{00130\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_begin;}
+\DoxyCodeLine{00131\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_end;}
+\DoxyCodeLine{00132\ }
+\DoxyCodeLine{00133\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00134\ \ \ \ \ ParallelSumJob(\textcolor{keywordtype}{int}\ iBegin,\ \textcolor{keywordtype}{int}\ iEnd,\ \textcolor{keyword}{const}\ btIParallelSumBody\&\ body,\ ThreadLocalStorage*\ tls)}
+\DoxyCodeLine{00135\ \ \ \ \ \{}
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ m\_body\ =\ \&body;}
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \ \ m\_threadLocalStoreArray\ =\ tls;}
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \ \ m\_begin\ =\ iBegin;}
+\DoxyCodeLine{00139\ \ \ \ \ \ \ \ \ m\_end\ =\ iEnd;}
+\DoxyCodeLine{00140\ \ \ \ \ \}}
+\DoxyCodeLine{00141\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ executeJob(\textcolor{keywordtype}{int}\ threadId)\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}}
+\DoxyCodeLine{00142\ \ \ \ \ \{}
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}executeJob"{}});}
+\DoxyCodeLine{00144\ }
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ call\ the\ functor\ body\ to\ do\ the\ work}}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{glad_8h_aa857b95cc76669c2a9109239ef40a47c}{val}}\ =\ m\_body-\/>\mbox{\hyperlink{classbt_i_parallel_sum_body_a34eeaab17e829f65e12029665671529d}{sumLoop}}(m\_begin,\ m\_end);}
+\DoxyCodeLine{00147\ \textcolor{preprocessor}{\#if\ BT\_PARALLEL\_SUM\_DETERMINISTISM}}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ by\ truncating\ bits\ of\ the\ result,\ we\ can\ make\ the\ parallelSum\ deterministic\ (at\ the\ expense\ of\ precision)}}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ TRUNC\_SCALE\ =\ float(1\ <<\ 19);}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_aa857b95cc76669c2a9109239ef40a47c}{val}}\ =\ \mbox{\hyperlink{group__core__func__common_gac433646923ab80af6d9964f1570855d5}{floor}}(\mbox{\hyperlink{glad_8h_aa857b95cc76669c2a9109239ef40a47c}{val}}\ *\ TRUNC\_SCALE\ +\ 0.5f)\ /\ TRUNC\_SCALE;\ \ \textcolor{comment}{//\ truncate\ some\ bits}}
+\DoxyCodeLine{00151\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ m\_threadLocalStoreArray[threadId].m\_sumResult\ +=\ \mbox{\hyperlink{glad_8h_aa857b95cc76669c2a9109239ef40a47c}{val}};}
+\DoxyCodeLine{00153\ \ \ \ \ \}}
+\DoxyCodeLine{00154\ \};}
+\DoxyCodeLine{00155\ }
+\DoxyCodeLine{00156\ \mbox{\hyperlink{bt_scalar_8h_af70e8b45dc0ad52b962f128ce45365dc}{ATTRIBUTE\_ALIGNED64}}(\textcolor{keyword}{class})}
+\DoxyCodeLine{00157\ JobQueue}
+\DoxyCodeLine{00158\ \{}
+\DoxyCodeLine{00159\ \ \ \ \ \mbox{\hyperlink{classbt_thread_support_interface}{btThreadSupportInterface}}*\ m\_threadSupport;}
+\DoxyCodeLine{00160\ \ \ \ \ \mbox{\hyperlink{classbt_critical_section}{btCriticalSection}}*\ m\_queueLock;}
+\DoxyCodeLine{00161\ \ \ \ \ \mbox{\hyperlink{classbt_spin_mutex}{btSpinMutex}}\ m\_mutex;}
+\DoxyCodeLine{00162\ }
+\DoxyCodeLine{00163\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<IJob*>}}\ m\_jobQueue;}
+\DoxyCodeLine{00164\ \ \ \ \ \textcolor{keywordtype}{char}*\ m\_jobMem;}
+\DoxyCodeLine{00165\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_jobMemSize;}
+\DoxyCodeLine{00166\ \ \ \ \ \textcolor{keywordtype}{bool}\ m\_queueIsEmpty;}
+\DoxyCodeLine{00167\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_tailIndex;}
+\DoxyCodeLine{00168\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_headIndex;}
+\DoxyCodeLine{00169\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_allocSize;}
+\DoxyCodeLine{00170\ \ \ \ \ \textcolor{keywordtype}{bool}\ m\_useSpinMutex;}
+\DoxyCodeLine{00171\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<JobQueue*>}}\ m\_neighborContexts;}
+\DoxyCodeLine{00172\ \ \ \ \ \textcolor{keywordtype}{char}\ m\_cachePadding[kCacheLineSize];\ \ \textcolor{comment}{//\ prevent\ false\ sharing}}
+\DoxyCodeLine{00173\ }
+\DoxyCodeLine{00174\ \ \ \ \ \textcolor{keywordtype}{void}\ freeJobMem()}
+\DoxyCodeLine{00175\ \ \ \ \ \{}
+\DoxyCodeLine{00176\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_jobMem)}
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ free\ old}}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_aligned_allocator_8h_a053f25687d0cd7a29571c8669cf9bcd4}{btAlignedFree}}(m\_jobMem);}
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ \ \ \ \ m\_jobMem\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00182\ \ \ \ \ \}}
+\DoxyCodeLine{00183\ \ \ \ \ \textcolor{keywordtype}{void}\ resizeJobMem(\textcolor{keywordtype}{int}\ newSize)}
+\DoxyCodeLine{00184\ \ \ \ \ \{}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (newSize\ >\ m\_jobMemSize)}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \ \ \ \ freeJobMem();}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \ \ \ \ m\_jobMem\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{char}*\textcolor{keyword}{>}(\mbox{\hyperlink{bt_aligned_allocator_8h_a5798ef3418d84a1761ef917ef6720db7}{btAlignedAlloc}}(newSize,\ kCacheLineSize));}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \ \ \ \ m\_jobMemSize\ =\ newSize;}
+\DoxyCodeLine{00190\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00191\ \ \ \ \ \}}
+\DoxyCodeLine{00192\ }
+\DoxyCodeLine{00193\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00194\ \ \ \ \ JobQueue()}
+\DoxyCodeLine{00195\ \ \ \ \ \{}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ m\_jobMem\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ m\_jobMemSize\ =\ 0;}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ m\_threadSupport\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ m\_queueLock\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ m\_headIndex\ =\ 0;}
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \ \ m\_tailIndex\ =\ 0;}
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ m\_useSpinMutex\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00203\ \ \ \ \ \}}
+\DoxyCodeLine{00204\ \ \ \ \ \string~JobQueue()}
+\DoxyCodeLine{00205\ \ \ \ \ \{}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ exit();}
+\DoxyCodeLine{00207\ \ \ \ \ \}}
+\DoxyCodeLine{00208\ \ \ \ \ \textcolor{keywordtype}{void}\ exit()}
+\DoxyCodeLine{00209\ \ \ \ \ \{}
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ freeJobMem();}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_queueLock\ \&\&\ m\_threadSupport)}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ \ \ \ \ m\_threadSupport-\/>\mbox{\hyperlink{classbt_thread_support_interface_abfacf16e211a97d4f52a14330133e780}{deleteCriticalSection}}(m\_queueLock);}
+\DoxyCodeLine{00214\ \ \ \ \ \ \ \ \ \ \ \ \ m\_queueLock\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ \ \ \ \ m\_threadSupport\ =\ 0;}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00217\ \ \ \ \ \}}
+\DoxyCodeLine{00218\ }
+\DoxyCodeLine{00219\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a02fd73d861ef2e4aabb38c0c9ff82947}{init}}(\mbox{\hyperlink{classbt_thread_support_interface}{btThreadSupportInterface}}\ *\ threadSup,\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<JobQueue>}}\ *\ contextArray)}
+\DoxyCodeLine{00220\ \ \ \ \ \{}
+\DoxyCodeLine{00221\ \ \ \ \ \ \ \ \ m\_threadSupport\ =\ threadSup;}
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (threadSup)}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ \ \ \ \ m\_queueLock\ =\ m\_threadSupport-\/>\mbox{\hyperlink{classbt_thread_support_interface_aea5380cb540b61ce0ad2da50fa9e63da}{createCriticalSection}}();}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ setupJobStealing(contextArray,\ contextArray-\/>\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00227\ \ \ \ \ \}}
+\DoxyCodeLine{00228\ \ \ \ \ \textcolor{keywordtype}{void}\ setupJobStealing(\mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<JobQueue>}}\ *\ contextArray,\ \textcolor{keywordtype}{int}\ numActiveContexts)}
+\DoxyCodeLine{00229\ \ \ \ \ \{}
+\DoxyCodeLine{00230\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<JobQueue>}}\&\ contexts\ =\ *contextArray;}
+\DoxyCodeLine{00231\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ selfIndex\ =\ 0;}
+\DoxyCodeLine{00232\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ contexts.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00233\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\textcolor{keyword}{this}\ ==\ \&contexts[i])}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ selfIndex\ =\ i;}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numNeighbors\ =\ \mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin}}(2,\ contexts.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ -\/\ 1);}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ neighborOffsets[]\ =\ \{-\/1,\ 1,\ -\/2,\ 2,\ -\/3,\ 3\};}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numOffsets\ =\ \textcolor{keyword}{sizeof}(neighborOffsets)\ /\ \textcolor{keyword}{sizeof}(neighborOffsets[0]);}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ m\_neighborContexts.\mbox{\hyperlink{classbt_aligned_object_array_a0bcdc850355c6742c66d50b16b102d9d}{reserve}}(numNeighbors);}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ m\_neighborContexts.\mbox{\hyperlink{classbt_aligned_object_array_a2cc58c74534181a7a10e5c6ab8b21227}{resizeNoInitialize}}(0);}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numOffsets\ \&\&\ m\_neighborContexts.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ <\ numNeighbors;\ i++)}
+\DoxyCodeLine{00246\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ neighborIndex\ =\ selfIndex\ +\ neighborOffsets[i];}
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (neighborIndex\ >=\ 0\ \&\&\ neighborIndex\ <\ numActiveContexts)}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_neighborContexts.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(\&contexts[neighborIndex]);}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00253\ \ \ \ \ \}}
+\DoxyCodeLine{00254\ }
+\DoxyCodeLine{00255\ \ \ \ \ \textcolor{keywordtype}{bool}\ isQueueEmpty()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ m\_queueIsEmpty;\ \}}
+\DoxyCodeLine{00256\ \ \ \ \ \textcolor{keywordtype}{void}\ lockQueue()}
+\DoxyCodeLine{00257\ \ \ \ \ \{}
+\DoxyCodeLine{00258\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_useSpinMutex)}
+\DoxyCodeLine{00259\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00260\ \ \ \ \ \ \ \ \ \ \ \ \ m\_mutex.\mbox{\hyperlink{classbt_spin_mutex_a2c0bdf45f358a628f7166de2a8dd6b3d}{lock}}();}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00263\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \ \ \ \ \ \ m\_queueLock-\/>\mbox{\hyperlink{classbt_critical_section_a272e306b93f74fe288da28b019446b03}{lock}}();}
+\DoxyCodeLine{00265\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00266\ \ \ \ \ \}}
+\DoxyCodeLine{00267\ \ \ \ \ \textcolor{keywordtype}{void}\ unlockQueue()}
+\DoxyCodeLine{00268\ \ \ \ \ \{}
+\DoxyCodeLine{00269\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_useSpinMutex)}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \ \ \ \ \ \ m\_mutex.\mbox{\hyperlink{classbt_spin_mutex_a8529a81cd85adfe631befe4025a0dcf1}{unlock}}();}
+\DoxyCodeLine{00272\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00273\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ \ \ \ \ m\_queueLock-\/>\mbox{\hyperlink{classbt_critical_section_acdfd8149ad4e36ce7ac7d13b2b220f44}{unlock}}();}
+\DoxyCodeLine{00276\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00277\ \ \ \ \ \}}
+\DoxyCodeLine{00278\ \ \ \ \ \textcolor{keywordtype}{void}\ clearQueue(\textcolor{keywordtype}{int}\ jobCount,\ \textcolor{keywordtype}{int}\ jobSize)}
+\DoxyCodeLine{00279\ \ \ \ \ \{}
+\DoxyCodeLine{00280\ \ \ \ \ \ \ \ \ lockQueue();}
+\DoxyCodeLine{00281\ \ \ \ \ \ \ \ \ m\_headIndex\ =\ 0;}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ m\_tailIndex\ =\ 0;}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ m\_allocSize\ =\ 0;}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ m\_queueIsEmpty\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ jobBufSize\ =\ jobSize\ *\ jobCount;}
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ make\ sure\ we\ have\ enough\ memory\ allocated\ to\ store\ jobs}}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (jobBufSize\ >\ m\_jobMemSize)}
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \ \ \ \ resizeJobMem(jobBufSize);}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ make\ sure\ job\ queue\ is\ big\ enough}}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (jobCount\ >\ m\_jobQueue.\mbox{\hyperlink{classbt_aligned_object_array_a1baf76f9f52df3c2d742194ba33e8788}{capacity}}())}
+\DoxyCodeLine{00293\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00294\ \ \ \ \ \ \ \ \ \ \ \ \ m\_jobQueue.\mbox{\hyperlink{classbt_aligned_object_array_a0bcdc850355c6742c66d50b16b102d9d}{reserve}}(jobCount);}
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ unlockQueue();}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ m\_jobQueue.\mbox{\hyperlink{classbt_aligned_object_array_a2cc58c74534181a7a10e5c6ab8b21227}{resizeNoInitialize}}(0);}
+\DoxyCodeLine{00298\ \ \ \ \ \}}
+\DoxyCodeLine{00299\ \ \ \ \ \textcolor{keywordtype}{void}*\ allocJobMem(\textcolor{keywordtype}{int}\ jobSize)}
+\DoxyCodeLine{00300\ \ \ \ \ \{}
+\DoxyCodeLine{00301\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(m\_jobMemSize\ >=\ (m\_allocSize\ +\ jobSize));}
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}*\ jobMem\ =\ \&m\_jobMem[m\_allocSize];}
+\DoxyCodeLine{00303\ \ \ \ \ \ \ \ \ m\_allocSize\ +=\ jobSize;}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ jobMem;}
+\DoxyCodeLine{00305\ \ \ \ \ \}}
+\DoxyCodeLine{00306\ \ \ \ \ \textcolor{keywordtype}{void}\ submitJob(IJob\ *\ job)}
+\DoxyCodeLine{00307\ \ \ \ \ \{}
+\DoxyCodeLine{00308\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\textcolor{keyword}{reinterpret\_cast<}\textcolor{keywordtype}{char}*\textcolor{keyword}{>}(job)\ >=\ \&m\_jobMem[0]\ \&\&\ \textcolor{keyword}{reinterpret\_cast<}\textcolor{keywordtype}{char}*\textcolor{keyword}{>}(job)\ <\ \&m\_jobMem[0]\ +\ m\_allocSize);}
+\DoxyCodeLine{00309\ \ \ \ \ \ \ \ \ m\_jobQueue.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(job);}
+\DoxyCodeLine{00310\ \ \ \ \ \ \ \ \ lockQueue();}
+\DoxyCodeLine{00311\ \ \ \ \ \ \ \ \ m\_tailIndex++;}
+\DoxyCodeLine{00312\ \ \ \ \ \ \ \ \ m\_queueIsEmpty\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00313\ \ \ \ \ \ \ \ \ unlockQueue();}
+\DoxyCodeLine{00314\ \ \ \ \ \}}
+\DoxyCodeLine{00315\ \ \ \ \ IJob*\ consumeJobFromOwnQueue()}
+\DoxyCodeLine{00316\ \ \ \ \ \{}
+\DoxyCodeLine{00317\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_queueIsEmpty)}
+\DoxyCodeLine{00318\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ lock\ free\ path.\ even\ if\ this\ is\ taken\ erroneously\ it\ isn't\ harmful}}
+\DoxyCodeLine{00320\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00321\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00322\ \ \ \ \ \ \ \ \ IJob*\ job\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00323\ \ \ \ \ \ \ \ \ lockQueue();}
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!m\_queueIsEmpty)}
+\DoxyCodeLine{00325\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ \ \ \ \ job\ =\ m\_jobQueue[m\_headIndex++];}
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\textcolor{keyword}{reinterpret\_cast<}\textcolor{keywordtype}{char}*\textcolor{keyword}{>}(job)\ >=\ \&m\_jobMem[0]\ \&\&\ \textcolor{keyword}{reinterpret\_cast<}\textcolor{keywordtype}{char}*\textcolor{keyword}{>}(job)\ <\ \&m\_jobMem[0]\ +\ m\_allocSize);}
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_headIndex\ ==\ m\_tailIndex)}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_queueIsEmpty\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00331\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00332\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \ \ unlockQueue();}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ job;}
+\DoxyCodeLine{00335\ \ \ \ \ \}}
+\DoxyCodeLine{00336\ \ \ \ \ IJob*\ consumeJob()}
+\DoxyCodeLine{00337\ \ \ \ \ \{}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (IJob*\ job\ =\ consumeJobFromOwnQueue())}
+\DoxyCodeLine{00339\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ job;}
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00342\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ own\ queue\ is\ empty,\ try\ to\ steal\ from\ neighbor}}
+\DoxyCodeLine{00343\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ m\_neighborContexts.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00345\ \ \ \ \ \ \ \ \ \ \ \ \ JobQueue*\ otherContext\ =\ m\_neighborContexts[i];}
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (IJob*\ job\ =\ otherContext-\/>consumeJobFromOwnQueue())}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00348\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ job;}
+\DoxyCodeLine{00349\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00350\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00351\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00352\ \ \ \ \ \}}
+\DoxyCodeLine{00353\ \};}
+\DoxyCodeLine{00354\ }
+\DoxyCodeLine{00355\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ WorkerThreadFunc(\textcolor{keywordtype}{void}*\ userPtr)}
+\DoxyCodeLine{00356\ \{}
+\DoxyCodeLine{00357\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}WorkerThreadFunc"{}});}
+\DoxyCodeLine{00358\ \ \ \ \ ThreadLocalStorage*\ localStorage\ =\ (ThreadLocalStorage*)userPtr;}
+\DoxyCodeLine{00359\ \ \ \ \ JobQueue*\ jobQueue\ =\ localStorage-\/>m\_queue;}
+\DoxyCodeLine{00360\ }
+\DoxyCodeLine{00361\ \ \ \ \ \textcolor{keywordtype}{bool}\ shouldSleep\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00362\ \ \ \ \ \textcolor{keywordtype}{int}\ threadId\ =\ localStorage-\/>m\_threadId;}
+\DoxyCodeLine{00363\ \ \ \ \ \textcolor{keywordflow}{while}\ (!shouldSleep)}
+\DoxyCodeLine{00364\ \ \ \ \ \{}
+\DoxyCodeLine{00365\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ do\ work}}
+\DoxyCodeLine{00366\ \ \ \ \ \ \ \ \ localStorage-\/>m\_mutex.lock();}
+\DoxyCodeLine{00367\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (IJob*\ job\ =\ jobQueue-\/>consumeJob())}
+\DoxyCodeLine{00368\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \ \ \ \ \ \ localStorage-\/>m\_status\ =\ WorkerThreadStatus::kWorking;}
+\DoxyCodeLine{00370\ \ \ \ \ \ \ \ \ \ \ \ \ job-\/>executeJob(threadId);}
+\DoxyCodeLine{00371\ \ \ \ \ \ \ \ \ \ \ \ \ localStorage-\/>m\_numJobsFinished++;}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00373\ \ \ \ \ \ \ \ \ localStorage-\/>m\_status\ =\ WorkerThreadStatus::kWaitingForWork;}
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ localStorage-\/>m\_mutex.unlock();}
+\DoxyCodeLine{00375\ \ \ \ \ \ \ \ \ btU64\ clockStart\ =\ localStorage-\/>m\_clock-\/>getTimeMicroseconds();}
+\DoxyCodeLine{00376\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ while\ queue\ is\ empty,}}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (jobQueue-\/>isQueueEmpty())}
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ todo:\ spin\ wait\ a\ bit\ to\ avoid\ hammering\ the\ empty\ queue}}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ \ \ \ \ \ \ btSpinPause();}
+\DoxyCodeLine{00381\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (localStorage-\/>m\_directive-\/>getDirective(threadId)\ ==\ WorkerThreadDirectives::kGoToSleep)}
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00383\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shouldSleep\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00385\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ jobs\ are\ incoming,}}
+\DoxyCodeLine{00387\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (localStorage-\/>m\_directive-\/>getDirective(threadId)\ ==\ WorkerThreadDirectives::kScanForJobs)}
+\DoxyCodeLine{00388\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00389\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ clockStart\ =\ localStorage-\/>m\_clock-\/>getTimeMicroseconds();\ \ \textcolor{comment}{//\ reset\ clock}}
+\DoxyCodeLine{00390\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00391\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00392\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00393\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 50;\ ++i)}
+\DoxyCodeLine{00394\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ btSpinPause();}
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ btSpinPause();}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ btSpinPause();}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ btSpinPause();}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (localStorage-\/>m\_directive-\/>getDirective(threadId)\ ==\ WorkerThreadDirectives::kScanForJobs\ ||\ !jobQueue-\/>isQueueEmpty())}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00401\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00402\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00403\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00404\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ no\ jobs\ incoming\ and\ queue\ has\ been\ empty\ for\ the\ cooldown\ time,\ sleep}}
+\DoxyCodeLine{00405\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ btU64\ timeElapsed\ =\ localStorage-\/>m\_clock-\/>getTimeMicroseconds()\ -\/\ clockStart;}
+\DoxyCodeLine{00406\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (timeElapsed\ >\ localStorage-\/>m\_cooldownTime)}
+\DoxyCodeLine{00407\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00408\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shouldSleep\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00409\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00410\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00411\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00412\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00413\ \ \ \ \ \}}
+\DoxyCodeLine{00414\ \ \ \ \ \{}
+\DoxyCodeLine{00415\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}sleep"{}});}
+\DoxyCodeLine{00416\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ go\ sleep}}
+\DoxyCodeLine{00417\ \ \ \ \ \ \ \ \ localStorage-\/>m\_mutex.lock();}
+\DoxyCodeLine{00418\ \ \ \ \ \ \ \ \ localStorage-\/>m\_status\ =\ WorkerThreadStatus::kSleeping;}
+\DoxyCodeLine{00419\ \ \ \ \ \ \ \ \ localStorage-\/>m\_mutex.unlock();}
+\DoxyCodeLine{00420\ \ \ \ \ \}}
+\DoxyCodeLine{00421\ \}}
+\DoxyCodeLine{00422\ }
+\DoxyCodeLine{00423\ \textcolor{keyword}{class\ }btTaskSchedulerDefault\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{classbt_i_task_scheduler}{btITaskScheduler}}}
+\DoxyCodeLine{00424\ \{}
+\DoxyCodeLine{00425\ \ \ \ \ btThreadSupportInterface*\ m\_threadSupport;}
+\DoxyCodeLine{00426\ \ \ \ \ WorkerThreadDirectives*\ m\_workerDirective;}
+\DoxyCodeLine{00427\ \ \ \ \ btAlignedObjectArray<JobQueue>\ m\_jobQueues;}
+\DoxyCodeLine{00428\ \ \ \ \ btAlignedObjectArray<JobQueue*>\ m\_perThreadJobQueues;}
+\DoxyCodeLine{00429\ \ \ \ \ btAlignedObjectArray<ThreadLocalStorage>\ m\_threadLocalStorage;}
+\DoxyCodeLine{00430\ \ \ \ \ btSpinMutex\ m\_antiNestingLock;\ \ \textcolor{comment}{//\ prevent\ nested\ parallel-\/for}}
+\DoxyCodeLine{00431\ \ \ \ \ btClock\ m\_clock;}
+\DoxyCodeLine{00432\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_numThreads;}
+\DoxyCodeLine{00433\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_numWorkerThreads;}
+\DoxyCodeLine{00434\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_numActiveJobQueues;}
+\DoxyCodeLine{00435\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_maxNumThreads;}
+\DoxyCodeLine{00436\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_numJobs;}
+\DoxyCodeLine{00437\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ kFirstWorkerThreadId\ =\ 1;}
+\DoxyCodeLine{00438\ }
+\DoxyCodeLine{00439\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00440\ \ \ \ \ btTaskSchedulerDefault()\ :\ btITaskScheduler(\textcolor{stringliteral}{"{}ThreadSupport"{}})}
+\DoxyCodeLine{00441\ \ \ \ \ \{}
+\DoxyCodeLine{00442\ \ \ \ \ \ \ \ \ m\_threadSupport\ =\ \mbox{\hyperlink{_free_image_8h_a070d2ce7b6bb7e5c05602aa8c308d0c4}{NULL}};}
+\DoxyCodeLine{00443\ \ \ \ \ \ \ \ \ m\_workerDirective\ =\ \mbox{\hyperlink{_free_image_8h_a070d2ce7b6bb7e5c05602aa8c308d0c4}{NULL}};}
+\DoxyCodeLine{00444\ \ \ \ \ \}}
+\DoxyCodeLine{00445\ }
+\DoxyCodeLine{00446\ \ \ \ \ \textcolor{keyword}{virtual}\ \string~btTaskSchedulerDefault()}
+\DoxyCodeLine{00447\ \ \ \ \ \{}
+\DoxyCodeLine{00448\ \ \ \ \ \ \ \ \ waitForWorkersToSleep();}
+\DoxyCodeLine{00449\ }
+\DoxyCodeLine{00450\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ m\_jobQueues.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00451\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00452\ \ \ \ \ \ \ \ \ \ \ \ \ m\_jobQueues[i].exit();}
+\DoxyCodeLine{00453\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00454\ }
+\DoxyCodeLine{00455\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_threadSupport)}
+\DoxyCodeLine{00456\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00457\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}\ m\_threadSupport;}
+\DoxyCodeLine{00458\ \ \ \ \ \ \ \ \ \ \ \ \ m\_threadSupport\ =\ \mbox{\hyperlink{_free_image_8h_a070d2ce7b6bb7e5c05602aa8c308d0c4}{NULL}};}
+\DoxyCodeLine{00459\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00460\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_workerDirective)}
+\DoxyCodeLine{00461\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00462\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_aligned_allocator_8h_a053f25687d0cd7a29571c8669cf9bcd4}{btAlignedFree}}(m\_workerDirective);}
+\DoxyCodeLine{00463\ \ \ \ \ \ \ \ \ \ \ \ \ m\_workerDirective\ =\ \mbox{\hyperlink{_free_image_8h_a070d2ce7b6bb7e5c05602aa8c308d0c4}{NULL}};}
+\DoxyCodeLine{00464\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00465\ \ \ \ \ \}}
+\DoxyCodeLine{00466\ }
+\DoxyCodeLine{00467\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a02fd73d861ef2e4aabb38c0c9ff82947}{init}}()}
+\DoxyCodeLine{00468\ \ \ \ \ \{}
+\DoxyCodeLine{00469\ \ \ \ \ \ \ \ \ btThreadSupportInterface::ConstructionInfo\ constructionInfo(\textcolor{stringliteral}{"{}TaskScheduler"{}},\ WorkerThreadFunc);}
+\DoxyCodeLine{00470\ \ \ \ \ \ \ \ \ m\_threadSupport\ =\ \mbox{\hyperlink{classbt_thread_support_interface_a371ad443ef21e4ccf0278b2326961898}{btThreadSupportInterface::create}}(constructionInfo);}
+\DoxyCodeLine{00471\ \ \ \ \ \ \ \ \ m\_workerDirective\ =\ \textcolor{keyword}{static\_cast<}WorkerThreadDirectives*\textcolor{keyword}{>}(\mbox{\hyperlink{bt_aligned_allocator_8h_a5798ef3418d84a1761ef917ef6720db7}{btAlignedAlloc}}(\textcolor{keyword}{sizeof}(*m\_workerDirective),\ 64));}
+\DoxyCodeLine{00472\ }
+\DoxyCodeLine{00473\ \ \ \ \ \ \ \ \ m\_numWorkerThreads\ =\ m\_threadSupport-\/>\mbox{\hyperlink{classbt_thread_support_interface_a92ea68bbbd51aba166f0b31d750507ab}{getNumWorkerThreads}}();}
+\DoxyCodeLine{00474\ \ \ \ \ \ \ \ \ m\_maxNumThreads\ =\ m\_threadSupport-\/>\mbox{\hyperlink{classbt_thread_support_interface_a92ea68bbbd51aba166f0b31d750507ab}{getNumWorkerThreads}}()\ +\ 1;}
+\DoxyCodeLine{00475\ \ \ \ \ \ \ \ \ m\_numThreads\ =\ m\_maxNumThreads;}
+\DoxyCodeLine{00476\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ ideal\ to\ have\ one\ job\ queue\ for\ each\ physical\ processor\ (except\ for\ the\ main\ thread\ which\ needs\ no\ queue)}}
+\DoxyCodeLine{00477\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numThreadsPerQueue\ =\ m\_threadSupport-\/>\mbox{\hyperlink{classbt_thread_support_interface_a0cba95f72f530a01f38de02308068376}{getLogicalToPhysicalCoreRatio}}();}
+\DoxyCodeLine{00478\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numJobQueues\ =\ (numThreadsPerQueue\ ==\ 1)\ ?\ (m\_maxNumThreads\ -\/\ 1)\ :\ (m\_maxNumThreads\ /\ numThreadsPerQueue);}
+\DoxyCodeLine{00479\ \ \ \ \ \ \ \ \ m\_jobQueues.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(numJobQueues);}
+\DoxyCodeLine{00480\ \ \ \ \ \ \ \ \ m\_numActiveJobQueues\ =\ numJobQueues;}
+\DoxyCodeLine{00481\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ m\_jobQueues.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00482\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00483\ \ \ \ \ \ \ \ \ \ \ \ \ m\_jobQueues[i].\mbox{\hyperlink{classbt_aligned_object_array_a336631607f9f5f08001866ed11b5fd64}{init}}(m\_threadSupport,\ \&m\_jobQueues);}
+\DoxyCodeLine{00484\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00485\ \ \ \ \ \ \ \ \ m\_perThreadJobQueues.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(m\_numThreads);}
+\DoxyCodeLine{00486\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ m\_numThreads;\ i++)}
+\DoxyCodeLine{00487\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00488\ \ \ \ \ \ \ \ \ \ \ \ \ JobQueue*\ jq\ =\ \mbox{\hyperlink{_free_image_8h_a070d2ce7b6bb7e5c05602aa8c308d0c4}{NULL}};}
+\DoxyCodeLine{00489\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ only\ worker\ threads\ get\ a\ job\ queue}}
+\DoxyCodeLine{00490\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (i\ >\ 0)}
+\DoxyCodeLine{00491\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00492\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numThreadsPerQueue\ ==\ 1)}
+\DoxyCodeLine{00493\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00494\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ one\ queue\ per\ worker\ thread}}
+\DoxyCodeLine{00495\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ jq\ =\ \&m\_jobQueues[i\ -\/\ kFirstWorkerThreadId];}
+\DoxyCodeLine{00496\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00497\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00498\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00499\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 2\ threads\ share\ each\ queue}}
+\DoxyCodeLine{00500\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ jq\ =\ \&m\_jobQueues[i\ /\ numThreadsPerQueue];}
+\DoxyCodeLine{00501\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00502\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00503\ \ \ \ \ \ \ \ \ \ \ \ \ m\_perThreadJobQueues[i]\ =\ jq;}
+\DoxyCodeLine{00504\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00505\ \ \ \ \ \ \ \ \ m\_threadLocalStorage.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(m\_numThreads);}
+\DoxyCodeLine{00506\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ m\_numThreads;\ i++)}
+\DoxyCodeLine{00507\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00508\ \ \ \ \ \ \ \ \ \ \ \ \ ThreadLocalStorage\&\ storage\ =\ m\_threadLocalStorage[i];}
+\DoxyCodeLine{00509\ \ \ \ \ \ \ \ \ \ \ \ \ storage.m\_threadId\ =\ i;}
+\DoxyCodeLine{00510\ \ \ \ \ \ \ \ \ \ \ \ \ storage.m\_directive\ =\ m\_workerDirective;}
+\DoxyCodeLine{00511\ \ \ \ \ \ \ \ \ \ \ \ \ storage.m\_status\ =\ WorkerThreadStatus::kSleeping;}
+\DoxyCodeLine{00512\ \ \ \ \ \ \ \ \ \ \ \ \ storage.m\_cooldownTime\ =\ 100;\ \ \textcolor{comment}{//\ 100\ microseconds,\ threads\ go\ to\ sleep\ after\ this\ long\ if\ they\ have\ nothing\ to\ do}}
+\DoxyCodeLine{00513\ \ \ \ \ \ \ \ \ \ \ \ \ storage.m\_clock\ =\ \&m\_clock;}
+\DoxyCodeLine{00514\ \ \ \ \ \ \ \ \ \ \ \ \ storage.m\_queue\ =\ m\_perThreadJobQueues[i];}
+\DoxyCodeLine{00515\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00516\ \ \ \ \ \ \ \ \ setWorkerDirectives(WorkerThreadDirectives::kGoToSleep);\ \ \textcolor{comment}{//\ no\ work\ for\ them\ yet}}
+\DoxyCodeLine{00517\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_i_task_scheduler_a7daebd63feb6e22cc36b40e127c204d3}{setNumThreads}}(m\_threadSupport-\/>\mbox{\hyperlink{classbt_thread_support_interface_a09ee3d08d6a87bce4f59c85b615f8442}{getCacheFriendlyNumThreads}}());}
+\DoxyCodeLine{00518\ \ \ \ \ \}}
+\DoxyCodeLine{00519\ }
+\DoxyCodeLine{00520\ \ \ \ \ \textcolor{keywordtype}{void}\ setWorkerDirectives(WorkerThreadDirectives::Type\ dir)}
+\DoxyCodeLine{00521\ \ \ \ \ \{}
+\DoxyCodeLine{00522\ \ \ \ \ \ \ \ \ m\_workerDirective-\/>setDirectiveByRange(kFirstWorkerThreadId,\ m\_numThreads,\ dir);}
+\DoxyCodeLine{00523\ \ \ \ \ \}}
+\DoxyCodeLine{00524\ }
+\DoxyCodeLine{00525\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_i_task_scheduler_a493725caadda82e66fb2a08811e6a31e}{getMaxNumThreads}}()\ const\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}}
+\DoxyCodeLine{00526\ \ \ \ \ \{}
+\DoxyCodeLine{00527\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ m\_maxNumThreads;}
+\DoxyCodeLine{00528\ \ \ \ \ \}}
+\DoxyCodeLine{00529\ }
+\DoxyCodeLine{00530\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_i_task_scheduler_a3e94628c386b198f939707b5308d2c70}{getNumThreads}}()\ const\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}}
+\DoxyCodeLine{00531\ \ \ \ \ \{}
+\DoxyCodeLine{00532\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ m\_numThreads;}
+\DoxyCodeLine{00533\ \ \ \ \ \}}
+\DoxyCodeLine{00534\ }
+\DoxyCodeLine{00535\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_i_task_scheduler_a7daebd63feb6e22cc36b40e127c204d3}{setNumThreads}}(\textcolor{keywordtype}{int}\ numThreads)\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}}
+\DoxyCodeLine{00536\ \ \ \ \ \{}
+\DoxyCodeLine{00537\ \ \ \ \ \ \ \ \ m\_numThreads\ =\ \mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(\mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin}}(numThreads,\ \textcolor{keywordtype}{int}(m\_maxNumThreads)),\ 1);}
+\DoxyCodeLine{00538\ \ \ \ \ \ \ \ \ m\_numWorkerThreads\ =\ m\_numThreads\ -\/\ 1;}
+\DoxyCodeLine{00539\ \ \ \ \ \ \ \ \ m\_numActiveJobQueues\ =\ 0;}
+\DoxyCodeLine{00540\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ there\ is\ at\ least\ 1\ worker,}}
+\DoxyCodeLine{00541\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_numWorkerThreads\ >\ 0)}
+\DoxyCodeLine{00542\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00543\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ re-\/setup\ job\ stealing\ between\ queues\ to\ avoid\ attempting\ to\ steal\ from\ an\ inactive\ job\ queue}}
+\DoxyCodeLine{00544\ \ \ \ \ \ \ \ \ \ \ \ \ JobQueue*\ lastActiveContext\ =\ m\_perThreadJobQueues[m\_numThreads\ -\/\ 1];}
+\DoxyCodeLine{00545\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iLastActiveContext\ =\ lastActiveContext\ -\/\ \&m\_jobQueues[0];}
+\DoxyCodeLine{00546\ \ \ \ \ \ \ \ \ \ \ \ \ m\_numActiveJobQueues\ =\ iLastActiveContext\ +\ 1;}
+\DoxyCodeLine{00547\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ m\_jobQueues.size();\ ++i)}
+\DoxyCodeLine{00548\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00549\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_jobQueues[i].setupJobStealing(\&m\_jobQueues,\ m\_numActiveJobQueues);}
+\DoxyCodeLine{00550\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00551\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00552\ \ \ \ \ \ \ \ \ m\_workerDirective-\/>setDirectiveByRange(m\_numThreads,\ \mbox{\hyperlink{bt_threads_8h_af4a20042975cd43aa629b3bc4591db6e}{BT\_MAX\_THREAD\_COUNT}},\ WorkerThreadDirectives::kGoToSleep);}
+\DoxyCodeLine{00553\ \ \ \ \ \}}
+\DoxyCodeLine{00554\ }
+\DoxyCodeLine{00555\ \ \ \ \ \textcolor{keywordtype}{void}\ waitJobs()}
+\DoxyCodeLine{00556\ \ \ \ \ \{}
+\DoxyCodeLine{00557\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}waitJobs"{}});}
+\DoxyCodeLine{00558\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ have\ the\ main\ thread\ work\ until\ the\ job\ queues\ are\ empty}}
+\DoxyCodeLine{00559\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numMainThreadJobsFinished\ =\ 0;}
+\DoxyCodeLine{00560\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ m\_numActiveJobQueues;\ ++i)}
+\DoxyCodeLine{00561\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00562\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (IJob*\ job\ =\ m\_jobQueues[i].consumeJob())}
+\DoxyCodeLine{00563\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00564\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ job-\/>executeJob(0);}
+\DoxyCodeLine{00565\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ numMainThreadJobsFinished++;}
+\DoxyCodeLine{00566\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00567\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00568\ }
+\DoxyCodeLine{00569\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ done\ with\ jobs\ for\ now,\ tell\ workers\ to\ rest\ (but\ not\ sleep)}}
+\DoxyCodeLine{00570\ \ \ \ \ \ \ \ \ setWorkerDirectives(WorkerThreadDirectives::kStayAwakeButIdle);}
+\DoxyCodeLine{00571\ }
+\DoxyCodeLine{00572\ \ \ \ \ \ \ \ \ btU64\ clockStart\ =\ m\_clock.\mbox{\hyperlink{classbt_clock_aa58b76bfde0b0f3f33d0cb91ec6b6938}{getTimeMicroseconds}}();}
+\DoxyCodeLine{00573\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ wait\ for\ workers\ to\ finish\ any\ jobs\ in\ progress}}
+\DoxyCodeLine{00574\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (\textcolor{keyword}{true})}
+\DoxyCodeLine{00575\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00576\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numWorkerJobsFinished\ =\ 0;}
+\DoxyCodeLine{00577\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iThread\ =\ kFirstWorkerThreadId;\ iThread\ <\ m\_numThreads;\ ++iThread)}
+\DoxyCodeLine{00578\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00579\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ThreadLocalStorage*\ storage\ =\ \&m\_threadLocalStorage[iThread];}
+\DoxyCodeLine{00580\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ storage-\/>m\_mutex.lock();}
+\DoxyCodeLine{00581\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ numWorkerJobsFinished\ +=\ storage-\/>m\_numJobsFinished;}
+\DoxyCodeLine{00582\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ storage-\/>m\_mutex.unlock();}
+\DoxyCodeLine{00583\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00584\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numWorkerJobsFinished\ +\ numMainThreadJobsFinished\ ==\ m\_numJobs)}
+\DoxyCodeLine{00585\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00586\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00587\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00588\ \ \ \ \ \ \ \ \ \ \ \ \ btU64\ timeElapsed\ =\ m\_clock.\mbox{\hyperlink{classbt_clock_aa58b76bfde0b0f3f33d0cb91ec6b6938}{getTimeMicroseconds}}()\ -\/\ clockStart;}
+\DoxyCodeLine{00589\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(timeElapsed\ <\ 1000);}
+\DoxyCodeLine{00590\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (timeElapsed\ >\ 100000)}
+\DoxyCodeLine{00591\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00592\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00593\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00594\ \ \ \ \ \ \ \ \ \ \ \ \ btSpinPause();}
+\DoxyCodeLine{00595\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00596\ \ \ \ \ \}}
+\DoxyCodeLine{00597\ }
+\DoxyCodeLine{00598\ \ \ \ \ \textcolor{keywordtype}{void}\ wakeWorkers(\textcolor{keywordtype}{int}\ numWorkersToWake)}
+\DoxyCodeLine{00599\ \ \ \ \ \{}
+\DoxyCodeLine{00600\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}wakeWorkers"{}});}
+\DoxyCodeLine{00601\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(m\_workerDirective-\/>getDirective(1)\ ==\ WorkerThreadDirectives::kScanForJobs);}
+\DoxyCodeLine{00602\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numDesiredWorkers\ =\ \mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin}}(numWorkersToWake,\ m\_numWorkerThreads);}
+\DoxyCodeLine{00603\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numActiveWorkers\ =\ 0;}
+\DoxyCodeLine{00604\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iWorker\ =\ 0;\ iWorker\ <\ m\_numWorkerThreads;\ ++iWorker)}
+\DoxyCodeLine{00605\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00606\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ note\ this\ count\ of\ active\ workers\ is\ not\ necessarily\ totally\ reliable,\ because\ a\ worker\ thread\ could\ be}}
+\DoxyCodeLine{00607\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ just\ about\ to\ put\ itself\ to\ sleep.\ So\ we\ may\ on\ occasion\ fail\ to\ wake\ up\ all\ the\ workers.\ It\ should\ be\ rare.}}
+\DoxyCodeLine{00608\ \ \ \ \ \ \ \ \ \ \ \ \ ThreadLocalStorage\&\ storage\ =\ m\_threadLocalStorage[kFirstWorkerThreadId\ +\ iWorker];}
+\DoxyCodeLine{00609\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (storage.m\_status\ !=\ WorkerThreadStatus::kSleeping)}
+\DoxyCodeLine{00610\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00611\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ numActiveWorkers++;}
+\DoxyCodeLine{00612\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00613\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00614\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iWorker\ =\ 0;\ iWorker\ <\ m\_numWorkerThreads\ \&\&\ numActiveWorkers\ <\ numDesiredWorkers;\ ++iWorker)}
+\DoxyCodeLine{00615\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00616\ \ \ \ \ \ \ \ \ \ \ \ \ ThreadLocalStorage\&\ storage\ =\ m\_threadLocalStorage[kFirstWorkerThreadId\ +\ iWorker];}
+\DoxyCodeLine{00617\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (storage.m\_status\ ==\ WorkerThreadStatus::kSleeping)}
+\DoxyCodeLine{00618\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00619\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_threadSupport-\/>\mbox{\hyperlink{classbt_thread_support_interface_a4c2659fd76b60adba85ba702bd96aba0}{runTask}}(iWorker,\ \&storage);}
+\DoxyCodeLine{00620\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ numActiveWorkers++;}
+\DoxyCodeLine{00621\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00622\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00623\ \ \ \ \ \}}
+\DoxyCodeLine{00624\ }
+\DoxyCodeLine{00625\ \ \ \ \ \textcolor{keywordtype}{void}\ waitForWorkersToSleep()}
+\DoxyCodeLine{00626\ \ \ \ \ \{}
+\DoxyCodeLine{00627\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}waitForWorkersToSleep"{}});}
+\DoxyCodeLine{00628\ \ \ \ \ \ \ \ \ setWorkerDirectives(WorkerThreadDirectives::kGoToSleep);}
+\DoxyCodeLine{00629\ \ \ \ \ \ \ \ \ m\_threadSupport-\/>\mbox{\hyperlink{classbt_thread_support_interface_a0cbb3a131f1cef397ec100f83743e102}{waitForAllTasks}}();}
+\DoxyCodeLine{00630\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ kFirstWorkerThreadId;\ i\ <\ m\_numThreads;\ i++)}
+\DoxyCodeLine{00631\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00632\ \ \ \ \ \ \ \ \ \ \ \ \ ThreadLocalStorage\&\ storage\ =\ m\_threadLocalStorage[i];}
+\DoxyCodeLine{00633\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(storage.m\_status\ ==\ WorkerThreadStatus::kSleeping);}
+\DoxyCodeLine{00634\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00635\ \ \ \ \ \}}
+\DoxyCodeLine{00636\ }
+\DoxyCodeLine{00637\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_i_task_scheduler_a5ce4cbdf0e4d8efc72d754636b75e137}{sleepWorkerThreadsHint}}()\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}}
+\DoxyCodeLine{00638\ \ \ \ \ \{}
+\DoxyCodeLine{00639\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}sleepWorkerThreadsHint"{}});}
+\DoxyCodeLine{00640\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ hint\ the\ task\ scheduler\ that\ we\ may\ not\ be\ using\ these\ threads\ for\ a\ little\ while}}
+\DoxyCodeLine{00641\ \ \ \ \ \ \ \ \ setWorkerDirectives(WorkerThreadDirectives::kGoToSleep);}
+\DoxyCodeLine{00642\ \ \ \ \ \}}
+\DoxyCodeLine{00643\ }
+\DoxyCodeLine{00644\ \ \ \ \ \textcolor{keywordtype}{void}\ prepareWorkerThreads()}
+\DoxyCodeLine{00645\ \ \ \ \ \{}
+\DoxyCodeLine{00646\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ kFirstWorkerThreadId;\ i\ <\ m\_numThreads;\ ++i)}
+\DoxyCodeLine{00647\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00648\ \ \ \ \ \ \ \ \ \ \ \ \ ThreadLocalStorage\&\ storage\ =\ m\_threadLocalStorage[i];}
+\DoxyCodeLine{00649\ \ \ \ \ \ \ \ \ \ \ \ \ storage.m\_mutex.lock();}
+\DoxyCodeLine{00650\ \ \ \ \ \ \ \ \ \ \ \ \ storage.m\_numJobsFinished\ =\ 0;}
+\DoxyCodeLine{00651\ \ \ \ \ \ \ \ \ \ \ \ \ storage.m\_mutex.unlock();}
+\DoxyCodeLine{00652\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00653\ \ \ \ \ \ \ \ \ setWorkerDirectives(WorkerThreadDirectives::kScanForJobs);}
+\DoxyCodeLine{00654\ \ \ \ \ \}}
+\DoxyCodeLine{00655\ }
+\DoxyCodeLine{00656\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_i_task_scheduler_a565bd644a9999126e1824947ee3de567}{parallelFor}}(\textcolor{keywordtype}{int}\ iBegin,\ \textcolor{keywordtype}{int}\ iEnd,\ \textcolor{keywordtype}{int}\ grainSize,\ \textcolor{keyword}{const}\ btIParallelForBody\&\ body)\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}}
+\DoxyCodeLine{00657\ \ \ \ \ \{}
+\DoxyCodeLine{00658\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}parallelFor\_ThreadSupport"{}});}
+\DoxyCodeLine{00659\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(iEnd\ >=\ iBegin);}
+\DoxyCodeLine{00660\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(grainSize\ >=\ 1);}
+\DoxyCodeLine{00661\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iterationCount\ =\ iEnd\ -\/\ iBegin;}
+\DoxyCodeLine{00662\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (iterationCount\ >\ grainSize\ \&\&\ m\_numWorkerThreads\ >\ 0\ \&\&\ m\_antiNestingLock.\mbox{\hyperlink{classbt_spin_mutex_a49d315a96d01631ea55366b29626b1a9}{tryLock}}())}
+\DoxyCodeLine{00663\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00664\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{typedef}\ ParallelForJob\ JobType;}
+\DoxyCodeLine{00665\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ jobCount\ =\ (iterationCount\ +\ grainSize\ -\/\ 1)\ /\ grainSize;}
+\DoxyCodeLine{00666\ \ \ \ \ \ \ \ \ \ \ \ \ m\_numJobs\ =\ jobCount;}
+\DoxyCodeLine{00667\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(jobCount\ >=\ 2);\ \ \textcolor{comment}{//\ need\ more\ than\ one\ job\ for\ multithreading}}
+\DoxyCodeLine{00668\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ jobSize\ =\ \textcolor{keyword}{sizeof}(JobType);}
+\DoxyCodeLine{00669\ }
+\DoxyCodeLine{00670\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ m\_numActiveJobQueues;\ ++i)}
+\DoxyCodeLine{00671\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00672\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_jobQueues[i].clearQueue(jobCount,\ jobSize);}
+\DoxyCodeLine{00673\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00674\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ prepare\ worker\ threads\ for\ incoming\ work}}
+\DoxyCodeLine{00675\ \ \ \ \ \ \ \ \ \ \ \ \ prepareWorkerThreads();}
+\DoxyCodeLine{00676\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ submit\ all\ of\ the\ jobs}}
+\DoxyCodeLine{00677\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iJob\ =\ 0;}
+\DoxyCodeLine{00678\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iThread\ =\ kFirstWorkerThreadId;\ \ \textcolor{comment}{//\ first\ worker\ thread}}
+\DoxyCodeLine{00679\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ iBegin;\ i\ <\ iEnd;\ i\ +=\ grainSize)}
+\DoxyCodeLine{00680\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00681\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(iJob\ <\ jobCount);}
+\DoxyCodeLine{00682\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iE\ =\ \mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin}}(i\ +\ grainSize,\ iEnd);}
+\DoxyCodeLine{00683\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ JobQueue*\ jq\ =\ m\_perThreadJobQueues[iThread];}
+\DoxyCodeLine{00684\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(jq);}
+\DoxyCodeLine{00685\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}((jq\ -\/\ \&m\_jobQueues[0])\ <\ m\_numActiveJobQueues);}
+\DoxyCodeLine{00686\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}*\ jobMem\ =\ jq-\/>allocJobMem(jobSize);}
+\DoxyCodeLine{00687\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ JobType*\ job\ =\ \textcolor{keyword}{new}\ (jobMem)\ ParallelForJob(i,\ iE,\ body);\ \ \textcolor{comment}{//\ placement\ new}}
+\DoxyCodeLine{00688\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ jq-\/>submitJob(job);}
+\DoxyCodeLine{00689\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ iJob++;}
+\DoxyCodeLine{00690\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ iThread++;}
+\DoxyCodeLine{00691\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (iThread\ >=\ m\_numThreads)}
+\DoxyCodeLine{00692\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00693\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ iThread\ =\ kFirstWorkerThreadId;\ \ \textcolor{comment}{//\ first\ worker\ thread}}
+\DoxyCodeLine{00694\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00695\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00696\ \ \ \ \ \ \ \ \ \ \ \ \ wakeWorkers(jobCount\ -\/\ 1);}
+\DoxyCodeLine{00697\ }
+\DoxyCodeLine{00698\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ put\ the\ main\ thread\ to\ work\ on\ emptying\ the\ job\ queue\ and\ then\ wait\ for\ all\ workers\ to\ finish}}
+\DoxyCodeLine{00699\ \ \ \ \ \ \ \ \ \ \ \ \ waitJobs();}
+\DoxyCodeLine{00700\ \ \ \ \ \ \ \ \ \ \ \ \ m\_antiNestingLock.\mbox{\hyperlink{classbt_spin_mutex_a8529a81cd85adfe631befe4025a0dcf1}{unlock}}();}
+\DoxyCodeLine{00701\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00702\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00703\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00704\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}parallelFor\_mainThread"{}});}
+\DoxyCodeLine{00705\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ just\ run\ on\ main\ thread}}
+\DoxyCodeLine{00706\ \ \ \ \ \ \ \ \ \ \ \ \ body.forLoop(iBegin,\ iEnd);}
+\DoxyCodeLine{00707\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00708\ \ \ \ \ \}}
+\DoxyCodeLine{00709\ \ \ \ \ \textcolor{keyword}{virtual}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_i_task_scheduler_a9e296927b7affa9d2eb3ca0d41565884}{parallelSum}}(\textcolor{keywordtype}{int}\ iBegin,\ \textcolor{keywordtype}{int}\ iEnd,\ \textcolor{keywordtype}{int}\ grainSize,\ \textcolor{keyword}{const}\ btIParallelSumBody\&\ body)\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}}
+\DoxyCodeLine{00710\ \ \ \ \ \{}
+\DoxyCodeLine{00711\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}parallelSum\_ThreadSupport"{}});}
+\DoxyCodeLine{00712\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(iEnd\ >=\ iBegin);}
+\DoxyCodeLine{00713\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(grainSize\ >=\ 1);}
+\DoxyCodeLine{00714\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iterationCount\ =\ iEnd\ -\/\ iBegin;}
+\DoxyCodeLine{00715\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (iterationCount\ >\ grainSize\ \&\&\ m\_numWorkerThreads\ >\ 0\ \&\&\ m\_antiNestingLock.\mbox{\hyperlink{classbt_spin_mutex_a49d315a96d01631ea55366b29626b1a9}{tryLock}}())}
+\DoxyCodeLine{00716\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00717\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{typedef}\ ParallelSumJob\ JobType;}
+\DoxyCodeLine{00718\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ jobCount\ =\ (iterationCount\ +\ grainSize\ -\/\ 1)\ /\ grainSize;}
+\DoxyCodeLine{00719\ \ \ \ \ \ \ \ \ \ \ \ \ m\_numJobs\ =\ jobCount;}
+\DoxyCodeLine{00720\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(jobCount\ >=\ 2);\ \ \textcolor{comment}{//\ need\ more\ than\ one\ job\ for\ multithreading}}
+\DoxyCodeLine{00721\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ jobSize\ =\ \textcolor{keyword}{sizeof}(JobType);}
+\DoxyCodeLine{00722\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ m\_numActiveJobQueues;\ ++i)}
+\DoxyCodeLine{00723\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00724\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_jobQueues[i].clearQueue(jobCount,\ jobSize);}
+\DoxyCodeLine{00725\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00726\ }
+\DoxyCodeLine{00727\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ initialize\ summation}}
+\DoxyCodeLine{00728\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iThread\ =\ 0;\ iThread\ <\ m\_numThreads;\ ++iThread)}
+\DoxyCodeLine{00729\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00730\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_threadLocalStorage[iThread].m\_sumResult\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0);}
+\DoxyCodeLine{00731\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00732\ }
+\DoxyCodeLine{00733\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ prepare\ worker\ threads\ for\ incoming\ work}}
+\DoxyCodeLine{00734\ \ \ \ \ \ \ \ \ \ \ \ \ prepareWorkerThreads();}
+\DoxyCodeLine{00735\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ submit\ all\ of\ the\ jobs}}
+\DoxyCodeLine{00736\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iJob\ =\ 0;}
+\DoxyCodeLine{00737\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iThread\ =\ kFirstWorkerThreadId;\ \ \textcolor{comment}{//\ first\ worker\ thread}}
+\DoxyCodeLine{00738\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ iBegin;\ i\ <\ iEnd;\ i\ +=\ grainSize)}
+\DoxyCodeLine{00739\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00740\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(iJob\ <\ jobCount);}
+\DoxyCodeLine{00741\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iE\ =\ \mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin}}(i\ +\ grainSize,\ iEnd);}
+\DoxyCodeLine{00742\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ JobQueue*\ jq\ =\ m\_perThreadJobQueues[iThread];}
+\DoxyCodeLine{00743\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(jq);}
+\DoxyCodeLine{00744\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}((jq\ -\/\ \&m\_jobQueues[0])\ <\ m\_numActiveJobQueues);}
+\DoxyCodeLine{00745\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}*\ jobMem\ =\ jq-\/>allocJobMem(jobSize);}
+\DoxyCodeLine{00746\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ JobType*\ job\ =\ \textcolor{keyword}{new}\ (jobMem)\ ParallelSumJob(i,\ iE,\ body,\ \&m\_threadLocalStorage[0]);\ \ \textcolor{comment}{//\ placement\ new}}
+\DoxyCodeLine{00747\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ jq-\/>submitJob(job);}
+\DoxyCodeLine{00748\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ iJob++;}
+\DoxyCodeLine{00749\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ iThread++;}
+\DoxyCodeLine{00750\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (iThread\ >=\ m\_numThreads)}
+\DoxyCodeLine{00751\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00752\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ iThread\ =\ kFirstWorkerThreadId;\ \ \textcolor{comment}{//\ first\ worker\ thread}}
+\DoxyCodeLine{00753\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00754\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00755\ \ \ \ \ \ \ \ \ \ \ \ \ wakeWorkers(jobCount\ -\/\ 1);}
+\DoxyCodeLine{00756\ }
+\DoxyCodeLine{00757\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ put\ the\ main\ thread\ to\ work\ on\ emptying\ the\ job\ queue\ and\ then\ wait\ for\ all\ workers\ to\ finish}}
+\DoxyCodeLine{00758\ \ \ \ \ \ \ \ \ \ \ \ \ waitJobs();}
+\DoxyCodeLine{00759\ }
+\DoxyCodeLine{00760\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ add\ up\ all\ the\ thread\ sums}}
+\DoxyCodeLine{00761\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sum\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0);}
+\DoxyCodeLine{00762\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iThread\ =\ 0;\ iThread\ <\ m\_numThreads;\ ++iThread)}
+\DoxyCodeLine{00763\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00764\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ sum\ +=\ m\_threadLocalStorage[iThread].m\_sumResult;}
+\DoxyCodeLine{00765\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00766\ \ \ \ \ \ \ \ \ \ \ \ \ m\_antiNestingLock.\mbox{\hyperlink{classbt_spin_mutex_a8529a81cd85adfe631befe4025a0dcf1}{unlock}}();}
+\DoxyCodeLine{00767\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ sum;}
+\DoxyCodeLine{00768\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00769\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00770\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00771\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}parallelSum\_mainThread"{}});}
+\DoxyCodeLine{00772\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ just\ run\ on\ main\ thread}}
+\DoxyCodeLine{00773\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ body.sumLoop(iBegin,\ iEnd);}
+\DoxyCodeLine{00774\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00775\ \ \ \ \ \}}
+\DoxyCodeLine{00776\ \};}
+\DoxyCodeLine{00777\ }
+\DoxyCodeLine{00778\ \mbox{\hyperlink{classbt_i_task_scheduler}{btITaskScheduler}}*\ \mbox{\hyperlink{bt_task_scheduler_8cpp_ab1ee6a9d9441913f8e3b99cb8bed1eee}{btCreateDefaultTaskScheduler}}()}
+\DoxyCodeLine{00779\ \{}
+\DoxyCodeLine{00780\ \ \ \ \ btTaskSchedulerDefault*\ ts\ =\ \textcolor{keyword}{new}\ btTaskSchedulerDefault();}
+\DoxyCodeLine{00781\ \ \ \ \ ts-\/>init();}
+\DoxyCodeLine{00782\ \ \ \ \ \textcolor{keywordflow}{return}\ ts;}
+\DoxyCodeLine{00783\ \}}
+\DoxyCodeLine{00784\ }
+\DoxyCodeLine{00785\ \textcolor{preprocessor}{\#else\ \ }\textcolor{comment}{//\ \#if\ BT\_THREADSAFE}}
+\DoxyCodeLine{00786\ }
+\DoxyCodeLine{00787\ \mbox{\hyperlink{classbt_i_task_scheduler}{btITaskScheduler}}*\ \mbox{\hyperlink{bt_task_scheduler_8cpp_ab1ee6a9d9441913f8e3b99cb8bed1eee}{btCreateDefaultTaskScheduler}}()}
+\DoxyCodeLine{00788\ \{}
+\DoxyCodeLine{00789\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00790\ \}}
+\DoxyCodeLine{00791\ }
+\DoxyCodeLine{00792\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\ \#else\ //\ \#if\ BT\_THREADSAFE}}
+
+\end{DoxyCode}

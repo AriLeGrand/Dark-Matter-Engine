@@ -1,0 +1,495 @@
+\doxysection{bt\+Aligned\+Object\+Array.\+h}
+\hypertarget{bt_aligned_object_array_8h_source}{}\label{bt_aligned_object_array_8h_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/LinearMath/btAlignedObjectArray.h@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/LinearMath/btAlignedObjectArray.h}}
+\mbox{\hyperlink{bt_aligned_object_array_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2006\ Erwin\ Coumans\ \ https://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#ifndef\ BT\_OBJECT\_ARRAY\_\_}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#define\ BT\_OBJECT\_ARRAY\_\_}}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_scalar_8h}{btScalar.h}}"{}}\ \ \textcolor{comment}{//\ has\ definitions\ like\ SIMD\_FORCE\_INLINE}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_aligned_allocator_8h}{btAlignedAllocator.h}}"{}}}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#define\ BT\_USE\_PLACEMENT\_NEW\ 1}}
+\DoxyCodeLine{00029\ \textcolor{comment}{//\#define\ BT\_USE\_MEMCPY\ 1\ //disable,\ because\ it\ is\ cumbersome\ to\ find\ out\ for\ each\ platform\ where\ memcpy\ is\ defined.\ It\ can\ be\ in\ <memory.h>\ or\ <string.h>\ or\ otherwise...}}
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#define\ BT\_ALLOW\_ARRAY\_COPY\_OPERATOR\ \ }\textcolor{comment}{//\ enabling\ this\ can\ accidently\ perform\ deep\ copies\ of\ data\ if\ you\ are\ not\ careful}}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_MEMCPY}}
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#include\ <memory.h>}}
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_USE\_MEMCPY}}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_PLACEMENT\_NEW}}
+\DoxyCodeLine{00038\ \textcolor{preprocessor}{\#include\ <new>}\ \ \textcolor{comment}{//for\ placement\ new}}
+\DoxyCodeLine{00039\ \textcolor{preprocessor}{\#endif\ \ \ \ \ \ \ \ \ \ }\textcolor{comment}{//BT\_USE\_PLACEMENT\_NEW}}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00043\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T>}
+\DoxyCodeLine{00044\ \textcolor{comment}{//template\ <class\ T>}}
+\DoxyCodeLine{00045\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_aligned_object_array_ad596d8e3e18bf81d9aa3fd21e57e5735}{btAlignedObjectArray}}}
+\DoxyCodeLine{00046\ \{}
+\DoxyCodeLine{00047\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_allocator}{btAlignedAllocator<T,\ 16>}}\ m\_allocator;}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_size;}
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_capacity;}
+\DoxyCodeLine{00051\ \ \ \ \ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}*\ m\_data;}
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{comment}{//PCK:\ added\ this\ line}}
+\DoxyCodeLine{00053\ \ \ \ \ \textcolor{keywordtype}{bool}\ m\_ownsMemory;}
+\DoxyCodeLine{00054\ }
+\DoxyCodeLine{00055\ \textcolor{preprocessor}{\#ifdef\ BT\_ALLOW\_ARRAY\_COPY\_OPERATOR}}
+\DoxyCodeLine{00056\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00057\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_aligned_object_array_ad596d8e3e18bf81d9aa3fd21e57e5735}{btAlignedObjectArray<T>}}\&\ \mbox{\hyperlink{classbt_aligned_object_array_a77c33d0fd4ae9786bbb4aceabe7f4044}{operator=}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array_ad596d8e3e18bf81d9aa3fd21e57e5735}{btAlignedObjectArray<T>}}\&\ other)}
+\DoxyCodeLine{00058\ \ \ \ \ \{}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a1464bd66b0e5e3880b4c7aa4a2ce13a1}{copyFromArray}}(other);}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00061\ \ \ \ \ \}}
+\DoxyCodeLine{00062\ \textcolor{preprocessor}{\#else\ \ \ }\textcolor{comment}{//BT\_ALLOW\_ARRAY\_COPY\_OPERATOR}}
+\DoxyCodeLine{00063\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00064\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<T>}}\&\ \mbox{\hyperlink{classbt_aligned_object_array_a77c33d0fd4ae9786bbb4aceabe7f4044}{operator=}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<T>}}\&\ other);}
+\DoxyCodeLine{00065\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_ALLOW\_ARRAY\_COPY\_OPERATOR}}
+\DoxyCodeLine{00066\ }
+\DoxyCodeLine{00067\ \textcolor{keyword}{protected}:}
+\DoxyCodeLine{00068\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_aligned_object_array_aedd4d8b9a38019cb1f98f794a6bb503d}{allocSize}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}})}
+\DoxyCodeLine{00069\ \ \ \ \ \{}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ (\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}\ ?\ \mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}\ *\ 2\ :\ 1);}
+\DoxyCodeLine{00071\ \ \ \ \ \}}
+\DoxyCodeLine{00072\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_aebd4754717ca52e5def692d42e5274c5}{copy}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_ac55adc720a3098c1b454d2a4647f4361}{start}},\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_a432111147038972f06e049e18a837002}{end}},\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}*\ dest)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00073\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ \mbox{\hyperlink{glad_8h_ac55adc720a3098c1b454d2a4647f4361}{start}};\ i\ <\ \mbox{\hyperlink{glad_8h_a432111147038972f06e049e18a837002}{end}};\ ++i)}
+\DoxyCodeLine{00076\ \#ifdef\ \mbox{\hyperlink{bt_aligned_object_array_8h_abbaa34c72a791d366573e6e25e0bf702}{BT\_USE\_PLACEMENT\_NEW}}}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{new}\ (\&dest[i])\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}(m\_data[i]);}
+\DoxyCodeLine{00078\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ \ \ \ \ dest[i]\ =\ m\_data[i];}
+\DoxyCodeLine{00080\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_USE\_PLACEMENT\_NEW}}
+\DoxyCodeLine{00081\ \ \ \ \ \}}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00083\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_a336631607f9f5f08001866ed11b5fd64}{init}}()}
+\DoxyCodeLine{00084\ \ \ \ \ \{}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ \textcolor{comment}{//PCK:\ added\ this\ line}}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ m\_ownsMemory\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ m\_data\ =\ 0;}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ m\_size\ =\ 0;}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ m\_capacity\ =\ 0;}
+\DoxyCodeLine{00090\ \ \ \ \ \}}
+\DoxyCodeLine{00091\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_a6dc404237b049258d12fb2ca62b934f7}{destroy}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_a1d06221983ffd8920e50099d6382e24f}{first}},\ \textcolor{keywordtype}{int}\ last)}
+\DoxyCodeLine{00092\ \ \ \ \ \{}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ \mbox{\hyperlink{glad_8h_a1d06221983ffd8920e50099d6382e24f}{first}};\ i\ <\ last;\ i++)}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \ \ \ \ m\_data[i].\string~T();}
+\DoxyCodeLine{00097\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00098\ \ \ \ \ \}}
+\DoxyCodeLine{00099\ }
+\DoxyCodeLine{00100\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}*\ \mbox{\hyperlink{classbt_aligned_object_array_ac8c9353a3b8f568964a9f91d43d2d668}{allocate}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}})}
+\DoxyCodeLine{00101\ \ \ \ \ \{}
+\DoxyCodeLine{00102\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}})}
+\DoxyCodeLine{00103\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ m\_allocator.allocate(\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}});}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00105\ \ \ \ \ \}}
+\DoxyCodeLine{00106\ }
+\DoxyCodeLine{00107\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_acebca91940aecdb1c11718bc08b511c9}{deallocate}}()}
+\DoxyCodeLine{00108\ \ \ \ \ \{}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_data)}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//PCK:\ enclosed\ the\ deallocation\ in\ this\ block}}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_ownsMemory)}
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_allocator.deallocate(m\_data);}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ \ \ \ \ m\_data\ =\ 0;}
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00118\ \ \ \ \ \}}
+\DoxyCodeLine{00119\ }
+\DoxyCodeLine{00120\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00121\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_ad596d8e3e18bf81d9aa3fd21e57e5735}{btAlignedObjectArray}}()}
+\DoxyCodeLine{00122\ \ \ \ \ \{}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a336631607f9f5f08001866ed11b5fd64}{init}}();}
+\DoxyCodeLine{00124\ \ \ \ \ \}}
+\DoxyCodeLine{00125\ }
+\DoxyCodeLine{00126\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a2a7ab868dd49dcf6e2e711d19eac9e54}{\string~btAlignedObjectArray}}()}
+\DoxyCodeLine{00127\ \ \ \ \ \{}
+\DoxyCodeLine{00128\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a12123db01dda7758f0df5e3bba10cc0a}{clear}}();}
+\DoxyCodeLine{00129\ \ \ \ \ \}}
+\DoxyCodeLine{00130\ }
+\DoxyCodeLine{00132\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_ae91d1383db8069a02d23caf915bc2ce3}{btAlignedObjectArray}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array_ad596d8e3e18bf81d9aa3fd21e57e5735}{btAlignedObjectArray}}\&\ otherArray)}
+\DoxyCodeLine{00133\ \ \ \ \ \{}
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a336631607f9f5f08001866ed11b5fd64}{init}}();}
+\DoxyCodeLine{00135\ }
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ otherSize\ =\ otherArray.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();}
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(otherSize);}
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \ \ otherArray.\mbox{\hyperlink{classbt_aligned_object_array_aebd4754717ca52e5def692d42e5274c5}{copy}}(0,\ otherSize,\ m\_data);}
+\DoxyCodeLine{00139\ \ \ \ \ \}}
+\DoxyCodeLine{00140\ }
+\DoxyCodeLine{00142\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00143\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ m\_size;}
+\DoxyCodeLine{00145\ \ \ \ \ \}}
+\DoxyCodeLine{00146\ }
+\DoxyCodeLine{00147\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keyword}{const}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\&\ \mbox{\hyperlink{classbt_aligned_object_array_ad11050a980c54793173c2bfb4c3ed1b0}{at}}(\textcolor{keywordtype}{int}\ n)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00148\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(n\ >=\ 0);}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(n\ <\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}());}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ m\_data[n];}
+\DoxyCodeLine{00152\ \ \ \ \ \}}
+\DoxyCodeLine{00153\ }
+\DoxyCodeLine{00154\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\&\ \mbox{\hyperlink{classbt_aligned_object_array_a7ee8c1e8f4e54b9b869917b570653c17}{at}}(\textcolor{keywordtype}{int}\ n)}
+\DoxyCodeLine{00155\ \ \ \ \ \{}
+\DoxyCodeLine{00156\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(n\ >=\ 0);}
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(n\ <\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}());}
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ m\_data[n];}
+\DoxyCodeLine{00159\ \ \ \ \ \}}
+\DoxyCodeLine{00160\ }
+\DoxyCodeLine{00161\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keyword}{const}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\&\ \mbox{\hyperlink{classbt_aligned_object_array_a37c7e0e5e781b34f4cb4d3b7cb922a12}{operator[]}}(\textcolor{keywordtype}{int}\ n)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00162\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(n\ >=\ 0);}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(n\ <\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}());}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ m\_data[n];}
+\DoxyCodeLine{00166\ \ \ \ \ \}}
+\DoxyCodeLine{00167\ }
+\DoxyCodeLine{00168\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\&\ \mbox{\hyperlink{classbt_aligned_object_array_ad7115fe848cd01d1fc575575a3788ea7}{operator[]}}(\textcolor{keywordtype}{int}\ n)}
+\DoxyCodeLine{00169\ \ \ \ \ \{}
+\DoxyCodeLine{00170\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(n\ >=\ 0);}
+\DoxyCodeLine{00171\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(n\ <\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}());}
+\DoxyCodeLine{00172\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ m\_data[n];}
+\DoxyCodeLine{00173\ \ \ \ \ \}}
+\DoxyCodeLine{00174\ }
+\DoxyCodeLine{00176\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_a12123db01dda7758f0df5e3bba10cc0a}{clear}}()}
+\DoxyCodeLine{00177\ \ \ \ \ \{}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a6dc404237b049258d12fb2ca62b934f7}{destroy}}(0,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}());}
+\DoxyCodeLine{00179\ }
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_acebca91940aecdb1c11718bc08b511c9}{deallocate}}();}
+\DoxyCodeLine{00181\ }
+\DoxyCodeLine{00182\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a336631607f9f5f08001866ed11b5fd64}{init}}();}
+\DoxyCodeLine{00183\ \ \ \ \ \}}
+\DoxyCodeLine{00184\ }
+\DoxyCodeLine{00185\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_a6169be905e03b84ea3bc8d8f7c7fc39d}{pop\_back}}()}
+\DoxyCodeLine{00186\ \ \ \ \ \{}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(m\_size\ >\ 0);}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ m\_size-\/-\/;}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ m\_data[m\_size].\string~T();}
+\DoxyCodeLine{00190\ \ \ \ \ \}}
+\DoxyCodeLine{00191\ }
+\DoxyCodeLine{00194\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_a2cc58c74534181a7a10e5c6ab8b21227}{resizeNoInitialize}}(\textcolor{keywordtype}{int}\ newsize)}
+\DoxyCodeLine{00195\ \ \ \ \ \{}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (newsize\ >\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}())}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a0bcdc850355c6742c66d50b16b102d9d}{reserve}}(newsize);}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ m\_size\ =\ newsize;}
+\DoxyCodeLine{00201\ \ \ \ \ \}}
+\DoxyCodeLine{00202\ }
+\DoxyCodeLine{00203\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(\textcolor{keywordtype}{int}\ newsize,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\&\ fillData\ =\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}())}
+\DoxyCodeLine{00204\ \ \ \ \ \{}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ curSize\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}();}
+\DoxyCodeLine{00206\ }
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (newsize\ <\ curSize)}
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ newsize;\ i\ <\ curSize;\ i++)}
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_data[i].\string~T();}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00214\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (newsize\ >\ curSize)}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00218\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a0bcdc850355c6742c66d50b16b102d9d}{reserve}}(newsize);}
+\DoxyCodeLine{00219\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00220\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_PLACEMENT\_NEW}}
+\DoxyCodeLine{00221\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ curSize;\ i\ <\ newsize;\ i++)}
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{new}\ (\&m\_data[i])\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}(fillData);}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00225\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_USE\_PLACEMENT\_NEW}}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00227\ }
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ m\_size\ =\ newsize;}
+\DoxyCodeLine{00229\ \ \ \ \ \}}
+\DoxyCodeLine{00230\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\&\ \mbox{\hyperlink{classbt_aligned_object_array_ab6bdca8ff3d966b2801bdab0256256f8}{expandNonInitializing}}()}
+\DoxyCodeLine{00231\ \ \ \ \ \{}
+\DoxyCodeLine{00232\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ sz\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}();}
+\DoxyCodeLine{00233\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (sz\ ==\ \mbox{\hyperlink{classbt_aligned_object_array_a1baf76f9f52df3c2d742194ba33e8788}{capacity}}())}
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a0bcdc850355c6742c66d50b16b102d9d}{reserve}}(\mbox{\hyperlink{classbt_aligned_object_array_aedd4d8b9a38019cb1f98f794a6bb503d}{allocSize}}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}()));}
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ m\_size++;}
+\DoxyCodeLine{00238\ }
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ m\_data[sz];}
+\DoxyCodeLine{00240\ \ \ \ \ \}}
+\DoxyCodeLine{00241\ }
+\DoxyCodeLine{00242\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\&\ \mbox{\hyperlink{classbt_aligned_object_array_a14f4d5d60db1742099c156d94acc3bd9}{expand}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\&\ fillValue\ =\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}())}
+\DoxyCodeLine{00243\ \ \ \ \ \{}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ sz\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}();}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (sz\ ==\ \mbox{\hyperlink{classbt_aligned_object_array_a1baf76f9f52df3c2d742194ba33e8788}{capacity}}())}
+\DoxyCodeLine{00246\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a0bcdc850355c6742c66d50b16b102d9d}{reserve}}(\mbox{\hyperlink{classbt_aligned_object_array_aedd4d8b9a38019cb1f98f794a6bb503d}{allocSize}}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}()));}
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ m\_size++;}
+\DoxyCodeLine{00250\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_PLACEMENT\_NEW}}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ \textcolor{keyword}{new}\ (\&m\_data[sz])\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}(fillValue);\ \ \textcolor{comment}{//use\ the\ in-\/place\ new\ (not\ really\ allocating\ heap\ memory)}}
+\DoxyCodeLine{00252\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00253\ }
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ m\_data[sz];}
+\DoxyCodeLine{00255\ \ \ \ \ \}}
+\DoxyCodeLine{00256\ }
+\DoxyCodeLine{00257\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\&\ \_Val)}
+\DoxyCodeLine{00258\ \ \ \ \ \{}
+\DoxyCodeLine{00259\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ sz\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}();}
+\DoxyCodeLine{00260\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (sz\ ==\ \mbox{\hyperlink{classbt_aligned_object_array_a1baf76f9f52df3c2d742194ba33e8788}{capacity}}())}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a0bcdc850355c6742c66d50b16b102d9d}{reserve}}(\mbox{\hyperlink{classbt_aligned_object_array_aedd4d8b9a38019cb1f98f794a6bb503d}{allocSize}}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}()));}
+\DoxyCodeLine{00263\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00264\ }
+\DoxyCodeLine{00265\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_PLACEMENT\_NEW}}
+\DoxyCodeLine{00266\ \ \ \ \ \ \ \ \ \textcolor{keyword}{new}\ (\&m\_data[m\_size])\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}(\_Val);}
+\DoxyCodeLine{00267\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00268\ \ \ \ \ \ \ \ \ m\_data[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}()]\ =\ \_Val;}
+\DoxyCodeLine{00269\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_USE\_PLACEMENT\_NEW}}
+\DoxyCodeLine{00270\ }
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \ \ m\_size++;}
+\DoxyCodeLine{00272\ \ \ \ \ \}}
+\DoxyCodeLine{00273\ }
+\DoxyCodeLine{00275\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_aligned_object_array_a1baf76f9f52df3c2d742194ba33e8788}{capacity}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00276\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00277\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ m\_capacity;}
+\DoxyCodeLine{00278\ \ \ \ \ \}}
+\DoxyCodeLine{00279\ }
+\DoxyCodeLine{00280\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_a0bcdc850355c6742c66d50b16b102d9d}{reserve}}(\textcolor{keywordtype}{int}\ \_Count)}
+\DoxyCodeLine{00281\ \ \ \ \ \{\ \ \textcolor{comment}{//\ determine\ new\ minimum\ length\ of\ allocated\ storage}}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_aligned_object_array_a1baf76f9f52df3c2d742194ba33e8788}{capacity}}()\ <\ \_Count)}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ \{\ \ \textcolor{comment}{//\ not\ enough\ room,\ reallocate}}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}*\ s\ =\ (\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}*)\mbox{\hyperlink{classbt_aligned_object_array_ac8c9353a3b8f568964a9f91d43d2d668}{allocate}}(\_Count);}
+\DoxyCodeLine{00285\ }
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_aebd4754717ca52e5def692d42e5274c5}{copy}}(0,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}(),\ s);}
+\DoxyCodeLine{00287\ }
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a6dc404237b049258d12fb2ca62b934f7}{destroy}}(0,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}());}
+\DoxyCodeLine{00289\ }
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_acebca91940aecdb1c11718bc08b511c9}{deallocate}}();}
+\DoxyCodeLine{00291\ }
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//PCK:\ added\ this\ line}}
+\DoxyCodeLine{00293\ \ \ \ \ \ \ \ \ \ \ \ \ m\_ownsMemory\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00294\ }
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ \ \ \ \ m\_data\ =\ s;}
+\DoxyCodeLine{00296\ }
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ \ \ \ \ m\_capacity\ =\ \_Count;}
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00299\ \ \ \ \ \}}
+\DoxyCodeLine{00300\ }
+\DoxyCodeLine{00301\ \ \ \ \ \textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_aligned_object_array_1_1less}{less}}}
+\DoxyCodeLine{00302\ \ \ \ \ \{}
+\DoxyCodeLine{00303\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_aligned_object_array_1_1less_abafee3ff9bd5738a408aa92871eb55eb}{operator()}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\&\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\&\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}})\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00305\ \textcolor{keyword}{\ \ \ \ \ \ \ \ }\{}
+\DoxyCodeLine{00306\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ (\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}\ <\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}});}
+\DoxyCodeLine{00307\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00308\ \ \ \ \ \};}
+\DoxyCodeLine{00309\ }
+\DoxyCodeLine{00310\ \ \ \ \ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ L>}
+\DoxyCodeLine{00311\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_afd02193777d3644c1202bd430cd47ec3}{quickSortInternal}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ad20caec3b48a1eef164cb4ca81ba2587}{L}}\&\ CompareFunc,\ \textcolor{keywordtype}{int}\ lo,\ \textcolor{keywordtype}{int}\ hi)}
+\DoxyCodeLine{00312\ \ \ \ \ \{}
+\DoxyCodeLine{00313\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ lo\ is\ the\ lower\ index,\ hi\ is\ the\ upper\ index}}
+\DoxyCodeLine{00314\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ of\ the\ region\ of\ array\ a\ that\ is\ to\ be\ sorted}}
+\DoxyCodeLine{00315\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ lo,\ j\ =\ hi;}
+\DoxyCodeLine{00316\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ =\ m\_data[(lo\ +\ hi)\ /\ 2];}
+\DoxyCodeLine{00317\ }
+\DoxyCodeLine{00318\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ partition}}
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{do}}
+\DoxyCodeLine{00320\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00321\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (CompareFunc(m\_data[i],\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}))}
+\DoxyCodeLine{00322\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ i++;}
+\DoxyCodeLine{00323\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (CompareFunc(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ m\_data[j]))}
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ j-\/-\/;}
+\DoxyCodeLine{00325\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (i\ <=\ j)}
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a4aeacaa461686c9394aabd3c139179b4}{swap}}(i,\ j);}
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ i++;}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ j-\/-\/;}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00331\ \ \ \ \ \ \ \ \ \}\ \textcolor{keywordflow}{while}\ (i\ <=\ j);}
+\DoxyCodeLine{00332\ }
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ recursion}}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (lo\ <\ j)}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_afd02193777d3644c1202bd430cd47ec3}{quickSortInternal}}(CompareFunc,\ lo,\ j);}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (i\ <\ hi)}
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_afd02193777d3644c1202bd430cd47ec3}{quickSortInternal}}(CompareFunc,\ i,\ hi);}
+\DoxyCodeLine{00338\ \ \ \ \ \}}
+\DoxyCodeLine{00339\ }
+\DoxyCodeLine{00340\ \ \ \ \ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ L>}
+\DoxyCodeLine{00341\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_a96e9890d9c406d43b53b0e5ff0723b2f}{quickSort}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ad20caec3b48a1eef164cb4ca81ba2587}{L}}\&\ CompareFunc)}
+\DoxyCodeLine{00342\ \ \ \ \ \{}
+\DoxyCodeLine{00343\ \ \ \ \ \ \ \ \ \textcolor{comment}{//don't\ sort\ 0\ or\ 1\ elements}}
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}()\ >\ 1)}
+\DoxyCodeLine{00345\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_afd02193777d3644c1202bd430cd47ec3}{quickSortInternal}}(CompareFunc,\ 0,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}()\ -\/\ 1);}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00348\ \ \ \ \ \}}
+\DoxyCodeLine{00349\ }
+\DoxyCodeLine{00351\ \ \ \ \ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ L>}
+\DoxyCodeLine{00352\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_af763a60de2f11089bb10ebff2c062642}{downHeap}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}*\ pArr,\ \textcolor{keywordtype}{int}\ k,\ \textcolor{keywordtype}{int}\ n,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ad20caec3b48a1eef164cb4ca81ba2587}{L}}\&\ CompareFunc)}
+\DoxyCodeLine{00353\ \ \ \ \ \{}
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ \textcolor{comment}{/*\ \ PRE:\ a[k+1..N]\ is\ a\ heap\ */}}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ \textcolor{comment}{/*\ POST:\ \ a[k..N]\ \ is\ a\ heap\ */}}
+\DoxyCodeLine{00356\ }
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\ temp\ =\ pArr[k\ -\/\ 1];}
+\DoxyCodeLine{00358\ \ \ \ \ \ \ \ \ \textcolor{comment}{/*\ k\ has\ child(s)\ */}}
+\DoxyCodeLine{00359\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (k\ <=\ n\ /\ 2)}
+\DoxyCodeLine{00360\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00361\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ child\ =\ 2\ *\ k;}
+\DoxyCodeLine{00362\ }
+\DoxyCodeLine{00363\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((child\ <\ n)\ \&\&\ CompareFunc(pArr[child\ -\/\ 1],\ pArr[child]))}
+\DoxyCodeLine{00364\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00365\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ child++;}
+\DoxyCodeLine{00366\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00367\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{/*\ pick\ larger\ child\ */}}
+\DoxyCodeLine{00368\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (CompareFunc(temp,\ pArr[child\ -\/\ 1]))}
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00370\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{/*\ move\ child\ up\ */}}
+\DoxyCodeLine{00371\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ pArr[k\ -\/\ 1]\ =\ pArr[child\ -\/\ 1];}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ k\ =\ child;}
+\DoxyCodeLine{00373\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00375\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00376\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ pArr[k\ -\/\ 1]\ =\ temp;}
+\DoxyCodeLine{00380\ \ \ \ \ \}\ \textcolor{comment}{/*downHeap*/}}
+\DoxyCodeLine{00381\ }
+\DoxyCodeLine{00382\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_a4aeacaa461686c9394aabd3c139179b4}{swap}}(\textcolor{keywordtype}{int}\ index0,\ \textcolor{keywordtype}{int}\ index1)}
+\DoxyCodeLine{00383\ \ \ \ \ \{}
+\DoxyCodeLine{00384\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_MEMCPY}}
+\DoxyCodeLine{00385\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{char}\ temp[\textcolor{keyword}{sizeof}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}})];}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ memcpy(temp,\ \&m\_data[index0],\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}));}
+\DoxyCodeLine{00387\ \ \ \ \ \ \ \ \ memcpy(\&m\_data[index0],\ \&m\_data[index1],\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}));}
+\DoxyCodeLine{00388\ \ \ \ \ \ \ \ \ memcpy(\&m\_data[index1],\ temp,\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}));}
+\DoxyCodeLine{00389\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00390\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\ temp\ =\ m\_data[index0];}
+\DoxyCodeLine{00391\ \ \ \ \ \ \ \ \ m\_data[index0]\ =\ m\_data[index1];}
+\DoxyCodeLine{00392\ \ \ \ \ \ \ \ \ m\_data[index1]\ =\ temp;}
+\DoxyCodeLine{00393\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_USE\_PLACEMENT\_NEW}}
+\DoxyCodeLine{00394\ \ \ \ \ \}}
+\DoxyCodeLine{00395\ }
+\DoxyCodeLine{00396\ \ \ \ \ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ L>}
+\DoxyCodeLine{00397\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_aa0979d77c9b1e397d656a0b1ef88b4e6}{heapSort}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ad20caec3b48a1eef164cb4ca81ba2587}{L}}\&\ CompareFunc)}
+\DoxyCodeLine{00398\ \ \ \ \ \{}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ \textcolor{comment}{/*\ sort\ a[0..N-\/1],\ \ N.B.\ 0\ to\ N-\/1\ */}}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ k;}
+\DoxyCodeLine{00401\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ n\ =\ m\_size;}
+\DoxyCodeLine{00402\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (k\ =\ n\ /\ 2;\ k\ >\ 0;\ k-\/-\/)}
+\DoxyCodeLine{00403\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00404\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_af763a60de2f11089bb10ebff2c062642}{downHeap}}(m\_data,\ k,\ n,\ CompareFunc);}
+\DoxyCodeLine{00405\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00406\ }
+\DoxyCodeLine{00407\ \ \ \ \ \ \ \ \ \textcolor{comment}{/*\ a[1..N]\ is\ now\ a\ heap\ */}}
+\DoxyCodeLine{00408\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (n\ >=\ 1)}
+\DoxyCodeLine{00409\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00410\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a4aeacaa461686c9394aabd3c139179b4}{swap}}(0,\ n\ -\/\ 1);\ \textcolor{comment}{/*\ largest\ of\ a[0..n-\/1]\ */}}
+\DoxyCodeLine{00411\ }
+\DoxyCodeLine{00412\ \ \ \ \ \ \ \ \ \ \ \ \ n\ =\ n\ -\/\ 1;}
+\DoxyCodeLine{00413\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{/*\ restore\ a[1..i-\/1]\ heap\ */}}
+\DoxyCodeLine{00414\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_af763a60de2f11089bb10ebff2c062642}{downHeap}}(m\_data,\ 1,\ n,\ CompareFunc);}
+\DoxyCodeLine{00415\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00416\ \ \ \ \ \}}
+\DoxyCodeLine{00417\ }
+\DoxyCodeLine{00419\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_aligned_object_array_ac63dc886b2cb46a2e1084b0d9d0dbdb3}{findBinarySearch}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\&\ key)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00420\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00421\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_a1d06221983ffd8920e50099d6382e24f}{first}}\ =\ 0;}
+\DoxyCodeLine{00422\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ last\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}()\ -\/\ 1;}
+\DoxyCodeLine{00423\ }
+\DoxyCodeLine{00424\ \ \ \ \ \ \ \ \ \textcolor{comment}{//assume\ sorted\ array}}
+\DoxyCodeLine{00425\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (\mbox{\hyperlink{glad_8h_a1d06221983ffd8920e50099d6382e24f}{first}}\ <=\ last)}
+\DoxyCodeLine{00426\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00427\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ mid\ =\ (\mbox{\hyperlink{glad_8h_a1d06221983ffd8920e50099d6382e24f}{first}}\ +\ last)\ /\ 2;\ \ \textcolor{comment}{//\ compute\ mid\ point.}}
+\DoxyCodeLine{00428\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (key\ >\ m\_data[mid])}
+\DoxyCodeLine{00429\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_a1d06221983ffd8920e50099d6382e24f}{first}}\ =\ mid\ +\ 1;\ \ \textcolor{comment}{//\ repeat\ search\ in\ top\ half.}}
+\DoxyCodeLine{00430\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (key\ <\ m\_data[mid])}
+\DoxyCodeLine{00431\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ last\ =\ mid\ -\/\ 1;\ \ \textcolor{comment}{//\ repeat\ search\ in\ bottom\ half.}}
+\DoxyCodeLine{00432\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00433\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ mid;\ \ \textcolor{comment}{//\ found\ it.\ return\ position\ /////}}
+\DoxyCodeLine{00434\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00435\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}();\ \ \textcolor{comment}{//\ failed\ to\ find\ key}}
+\DoxyCodeLine{00436\ \ \ \ \ \}}
+\DoxyCodeLine{00437\ }
+\DoxyCodeLine{00438\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_aligned_object_array_a2643f69d951072a370493392f9d13e5b}{findLinearSearch}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\&\ key)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00439\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00440\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}();}
+\DoxyCodeLine{00441\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00442\ }
+\DoxyCodeLine{00443\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}();\ i++)}
+\DoxyCodeLine{00444\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00445\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_data[i]\ ==\ key)}
+\DoxyCodeLine{00446\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00447\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}\ =\ i;}
+\DoxyCodeLine{00448\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00449\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00450\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00451\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}};}
+\DoxyCodeLine{00452\ \ \ \ \ \}}
+\DoxyCodeLine{00453\ }
+\DoxyCodeLine{00454\ \ \ \ \ \textcolor{comment}{//\ If\ the\ key\ is\ not\ in\ the\ array,\ return\ -\/1\ instead\ of\ 0,}}
+\DoxyCodeLine{00455\ \ \ \ \ \textcolor{comment}{//\ since\ 0\ also\ means\ the\ first\ element\ in\ the\ array.}}
+\DoxyCodeLine{00456\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_aligned_object_array_a0c5016713d0133d31723dd695c18cd55}{findLinearSearch2}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\&\ key)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00457\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00458\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}\ =\ -\/1;}
+\DoxyCodeLine{00459\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00460\ }
+\DoxyCodeLine{00461\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}();\ i++)}
+\DoxyCodeLine{00462\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00463\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_data[i]\ ==\ key)}
+\DoxyCodeLine{00464\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00465\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}\ =\ i;}
+\DoxyCodeLine{00466\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00467\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00468\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00469\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}};}
+\DoxyCodeLine{00470\ \ \ \ \ \}}
+\DoxyCodeLine{00471\ }
+\DoxyCodeLine{00472\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_a62aeb4dc572046a83a1f372930cea4c8}{removeAtIndex}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}})}
+\DoxyCodeLine{00473\ \ \ \ \ \{}
+\DoxyCodeLine{00474\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}\ <\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}())}
+\DoxyCodeLine{00475\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00476\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a4aeacaa461686c9394aabd3c139179b4}{swap}}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}},\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}()\ -\/\ 1);}
+\DoxyCodeLine{00477\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a6169be905e03b84ea3bc8d8f7c7fc39d}{pop\_back}}();}
+\DoxyCodeLine{00478\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00479\ \ \ \ \ \}}
+\DoxyCodeLine{00480\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_a6782242f06df5bab0cffbd23195cd9cd}{remove}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}\&\ key)}
+\DoxyCodeLine{00481\ \ \ \ \ \{}
+\DoxyCodeLine{00482\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ findIndex\ =\ \mbox{\hyperlink{classbt_aligned_object_array_a2643f69d951072a370493392f9d13e5b}{findLinearSearch}}(key);}
+\DoxyCodeLine{00483\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a62aeb4dc572046a83a1f372930cea4c8}{removeAtIndex}}(findIndex);}
+\DoxyCodeLine{00484\ \ \ \ \ \}}
+\DoxyCodeLine{00485\ }
+\DoxyCodeLine{00486\ \ \ \ \ \textcolor{comment}{//PCK:\ whole\ function}}
+\DoxyCodeLine{00487\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_aa8d21bd5fe47cfe0216990b78fef665e}{initializeFromBuffer}}(\textcolor{keywordtype}{void}*\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a7fc54503e1a1cf98d128b839ebc0b4d0}{buffer}},\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}},\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_aligned_object_array_a1baf76f9f52df3c2d742194ba33e8788}{capacity}})}
+\DoxyCodeLine{00488\ \ \ \ \ \{}
+\DoxyCodeLine{00489\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a12123db01dda7758f0df5e3bba10cc0a}{clear}}();}
+\DoxyCodeLine{00490\ \ \ \ \ \ \ \ \ m\_ownsMemory\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00491\ \ \ \ \ \ \ \ \ m\_data\ =\ (\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ab9ece18c950afbfa6b0fdbfa4ff731d3}{T}}*)\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a7fc54503e1a1cf98d128b839ebc0b4d0}{buffer}};}
+\DoxyCodeLine{00492\ \ \ \ \ \ \ \ \ m\_size\ =\ \mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}};}
+\DoxyCodeLine{00493\ \ \ \ \ \ \ \ \ m\_capacity\ =\ \mbox{\hyperlink{classbt_aligned_object_array_a1baf76f9f52df3c2d742194ba33e8788}{capacity}};}
+\DoxyCodeLine{00494\ \ \ \ \ \}}
+\DoxyCodeLine{00495\ }
+\DoxyCodeLine{00496\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_aligned_object_array_a1464bd66b0e5e3880b4c7aa4a2ce13a1}{copyFromArray}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array_ad596d8e3e18bf81d9aa3fd21e57e5735}{btAlignedObjectArray}}\&\ otherArray)}
+\DoxyCodeLine{00497\ \ \ \ \ \{}
+\DoxyCodeLine{00498\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ otherSize\ =\ otherArray.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();}
+\DoxyCodeLine{00499\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(otherSize);}
+\DoxyCodeLine{00500\ \ \ \ \ \ \ \ \ otherArray.\mbox{\hyperlink{classbt_aligned_object_array_aebd4754717ca52e5def692d42e5274c5}{copy}}(0,\ otherSize,\ m\_data);}
+\DoxyCodeLine{00501\ \ \ \ \ \}}
+\DoxyCodeLine{00502\ \};}
+\DoxyCodeLine{00503\ }
+\DoxyCodeLine{00504\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_OBJECT\_ARRAY\_\_}}
+
+\end{DoxyCode}

@@ -1,0 +1,176 @@
+\doxysection{bt\+Convex\+Plane\+Collision\+Algorithm.\+cpp}
+\hypertarget{bt_convex_plane_collision_algorithm_8cpp_source}{}\label{bt_convex_plane_collision_algorithm_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/CollisionDispatch/btConvexPlaneCollisionAlgorithm.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/CollisionDispatch/btConvexPlaneCollisionAlgorithm.cpp}}
+\mbox{\hyperlink{bt_convex_plane_collision_algorithm_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2006\ Erwin\ Coumans\ \ https://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,}}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,}}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_convex_plane_collision_algorithm_8h}{btConvexPlaneCollisionAlgorithm.h}}"{}}}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_dispatcher_8h}{BulletCollision/CollisionDispatch/btCollisionDispatcher.h}}"{}}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_object_8h}{BulletCollision/CollisionDispatch/btCollisionObject.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_convex_shape_8h}{BulletCollision/CollisionShapes/btConvexShape.h}}"{}}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_static_plane_shape_8h}{BulletCollision/CollisionShapes/btStaticPlaneShape.h}}"{}}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_object_wrapper_8h}{BulletCollision/CollisionDispatch/btCollisionObjectWrapper.h}}"{}}}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \textcolor{comment}{//\#include\ <stdio.h>}}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \mbox{\hyperlink{classbt_convex_plane_collision_algorithm_a60f101519c99326f756d07e1218291ca}{btConvexPlaneCollisionAlgorithm::btConvexPlaneCollisionAlgorithm}}(\mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}*\ mf,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_algorithm_construction_info}{btCollisionAlgorithmConstructionInfo}}\&\ ci,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ col0Wrap,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ col1Wrap,\ \textcolor{keywordtype}{bool}\ isSwapped,\ \textcolor{keywordtype}{int}\ numPerturbationIterations,\ \textcolor{keywordtype}{int}\ minimumPointsPerturbationThreshold)}
+\DoxyCodeLine{00027\ \ \ \ \ :\ \mbox{\hyperlink{classbt_collision_algorithm_a7c6fa933142f9fd7d195ef3c7a9e8473}{btCollisionAlgorithm}}(ci),}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ m\_ownManifold(false),}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ m\_manifoldPtr(mf),}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ m\_isSwapped(isSwapped),}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ m\_numPerturbationIterations(numPerturbationIterations),}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ m\_minimumPointsPerturbationThreshold(minimumPointsPerturbationThreshold)}
+\DoxyCodeLine{00033\ \{}
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ convexObjWrap\ =\ m\_isSwapped\ ?\ col1Wrap\ :\ col0Wrap;}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ planeObjWrap\ =\ m\_isSwapped\ ?\ col0Wrap\ :\ col1Wrap;}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ \ \ \ \ \textcolor{keywordflow}{if}\ (!m\_manifoldPtr\ \&\&\ \mbox{\hyperlink{classbt_collision_algorithm_a11004907cdf3028c635486b435302f90}{m\_dispatcher}}-\/>needsCollision(convexObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_ae58fab885d967232e8eb1096ef8c3215}{getCollisionObject}}(),\ planeObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_ae58fab885d967232e8eb1096ef8c3215}{getCollisionObject}}()))}
+\DoxyCodeLine{00038\ \ \ \ \ \{}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ m\_manifoldPtr\ =\ m\_dispatcher-\/>getNewManifold(convexObjWrap-\/>getCollisionObject(),\ planeObjWrap-\/>getCollisionObject());}
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \ \ m\_ownManifold\ =\ true;}
+\DoxyCodeLine{00041\ \ \ \ \ \}}
+\DoxyCodeLine{00042\ \}}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00044\ \mbox{\hyperlink{classbt_convex_plane_collision_algorithm_a298dbf2cb77037d6a383cb4a1c7ca0d9}{btConvexPlaneCollisionAlgorithm::\string~btConvexPlaneCollisionAlgorithm}}()}
+\DoxyCodeLine{00045\ \{}
+\DoxyCodeLine{00046\ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_ownManifold)}
+\DoxyCodeLine{00047\ \ \ \ \ \{}
+\DoxyCodeLine{00048\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_manifoldPtr)}
+\DoxyCodeLine{00049\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_algorithm_a11004907cdf3028c635486b435302f90}{m\_dispatcher}}-\/>releaseManifold(m\_manifoldPtr);}
+\DoxyCodeLine{00050\ \ \ \ \ \}}
+\DoxyCodeLine{00051\ \}}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00053\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_convex_plane_collision_algorithm_a79f8384fcdc2145be9fca0057edc8b69}{btConvexPlaneCollisionAlgorithm::collideSingleContact}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ perturbeRot,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ body0Wrap,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ body1Wrap,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_dispatcher_info}{btDispatcherInfo}}\&\ dispatchInfo,\ \mbox{\hyperlink{classbt_manifold_result}{btManifoldResult}}*\ resultOut)}
+\DoxyCodeLine{00054\ \{}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ convexObjWrap\ =\ m\_isSwapped\ ?\ body1Wrap\ :\ body0Wrap;}
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ planeObjWrap\ =\ m\_isSwapped\ ?\ body0Wrap\ :\ body1Wrap;}
+\DoxyCodeLine{00057\ }
+\DoxyCodeLine{00058\ \ \ \ \ \mbox{\hyperlink{bt_convex_shape_8h_a55a9d3eb9b332530624a2651ede0a28b}{btConvexShape}}*\ convexShape\ =\ (\mbox{\hyperlink{bt_convex_shape_8h_a55a9d3eb9b332530624a2651ede0a28b}{btConvexShape}}*)convexObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a4d0eab4572788c8627d8badff7312a67}{getCollisionShape}}();}
+\DoxyCodeLine{00059\ \ \ \ \ \mbox{\hyperlink{bt_static_plane_shape_8h_ae77a68ab5c1dcbde9294ebfaac68441f}{btStaticPlaneShape}}*\ planeShape\ =\ (\mbox{\hyperlink{bt_static_plane_shape_8h_ae77a68ab5c1dcbde9294ebfaac68441f}{btStaticPlaneShape}}*)planeObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a4d0eab4572788c8627d8badff7312a67}{getCollisionShape}}();}
+\DoxyCodeLine{00060\ }
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{keywordtype}{bool}\ hasCollision\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00062\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ planeNormal\ =\ planeShape-\/>getPlaneNormal();}
+\DoxyCodeLine{00063\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ planeConstant\ =\ planeShape-\/>getPlaneConstant();}
+\DoxyCodeLine{00064\ }
+\DoxyCodeLine{00065\ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ convexWorldTransform\ =\ convexObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a707b16ff995f2b7575bbdc2882b17b6f}{getWorldTransform}}();}
+\DoxyCodeLine{00066\ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ convexInPlaneTrans;}
+\DoxyCodeLine{00067\ \ \ \ \ convexInPlaneTrans\ =\ planeObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a707b16ff995f2b7575bbdc2882b17b6f}{getWorldTransform}}().inverse()\ *\ convexWorldTransform;}
+\DoxyCodeLine{00068\ \ \ \ \ \textcolor{comment}{//now\ perturbe\ the\ convex-\/world\ transform}}
+\DoxyCodeLine{00069\ \ \ \ \ convexWorldTransform.getBasis()\ *=\ \mbox{\hyperlink{bt_matrix3x3_8h_a8789e58a469e9c671c351d681306b4d7}{btMatrix3x3}}(perturbeRot);}
+\DoxyCodeLine{00070\ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ planeInConvex;}
+\DoxyCodeLine{00071\ \ \ \ \ planeInConvex\ =\ convexWorldTransform.inverse()\ *\ planeObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a707b16ff995f2b7575bbdc2882b17b6f}{getWorldTransform}}();}
+\DoxyCodeLine{00072\ }
+\DoxyCodeLine{00073\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vtx\ =\ convexShape-\/>localGetSupportingVertex(planeInConvex.getBasis()\ *\ -\/planeNormal);}
+\DoxyCodeLine{00074\ }
+\DoxyCodeLine{00075\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vtxInPlane\ =\ convexInPlaneTrans(vtx);}
+\DoxyCodeLine{00076\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}}\ =\ (planeNormal.dot(vtxInPlane)\ -\/\ planeConstant);}
+\DoxyCodeLine{00077\ }
+\DoxyCodeLine{00078\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vtxInPlaneProjected\ =\ vtxInPlane\ -\/\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}}\ *\ planeNormal;}
+\DoxyCodeLine{00079\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vtxInPlaneWorld\ =\ planeObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a707b16ff995f2b7575bbdc2882b17b6f}{getWorldTransform}}()\ *\ vtxInPlaneProjected;}
+\DoxyCodeLine{00080\ }
+\DoxyCodeLine{00081\ \ \ \ \ hasCollision\ =\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}}\ <\ m\_manifoldPtr-\/>getContactBreakingThreshold();}
+\DoxyCodeLine{00082\ \ \ \ \ resultOut-\/>\mbox{\hyperlink{classbt_manifold_result_a7a46d46b9a13c2896695e458c1d6df1f}{setPersistentManifold}}(m\_manifoldPtr);}
+\DoxyCodeLine{00083\ \ \ \ \ \textcolor{keywordflow}{if}\ (hasCollision)}
+\DoxyCodeLine{00084\ \ \ \ \ \{}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ normalOnSurfaceB\ =\ planeObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a707b16ff995f2b7575bbdc2882b17b6f}{getWorldTransform}}().getBasis()\ *\ planeNormal;}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ pOnB\ =\ vtxInPlaneWorld;}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ resultOut-\/>\mbox{\hyperlink{classbt_manifold_result_aebe32f0c202d988d0458e88d768602c6}{addContactPoint}}(normalOnSurfaceB,\ pOnB,\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}});}
+\DoxyCodeLine{00089\ \ \ \ \ \}}
+\DoxyCodeLine{00090\ \}}
+\DoxyCodeLine{00091\ }
+\DoxyCodeLine{00092\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_convex_plane_collision_algorithm_ace95b966a346d00f7666549220f6afb8}{btConvexPlaneCollisionAlgorithm::processCollision}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ body0Wrap,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ body1Wrap,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_dispatcher_info}{btDispatcherInfo}}\&\ dispatchInfo,\ \mbox{\hyperlink{classbt_manifold_result}{btManifoldResult}}*\ resultOut)}
+\DoxyCodeLine{00093\ \{}
+\DoxyCodeLine{00094\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})dispatchInfo;}
+\DoxyCodeLine{00095\ \ \ \ \ \textcolor{keywordflow}{if}\ (!m\_manifoldPtr)}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00097\ }
+\DoxyCodeLine{00098\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ convexObjWrap\ =\ m\_isSwapped\ ?\ body1Wrap\ :\ body0Wrap;}
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ planeObjWrap\ =\ m\_isSwapped\ ?\ body0Wrap\ :\ body1Wrap;}
+\DoxyCodeLine{00100\ }
+\DoxyCodeLine{00101\ \ \ \ \ \mbox{\hyperlink{bt_convex_shape_8h_a55a9d3eb9b332530624a2651ede0a28b}{btConvexShape}}*\ convexShape\ =\ (\mbox{\hyperlink{bt_convex_shape_8h_a55a9d3eb9b332530624a2651ede0a28b}{btConvexShape}}*)convexObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a4d0eab4572788c8627d8badff7312a67}{getCollisionShape}}();}
+\DoxyCodeLine{00102\ \ \ \ \ \mbox{\hyperlink{bt_static_plane_shape_8h_ae77a68ab5c1dcbde9294ebfaac68441f}{btStaticPlaneShape}}*\ planeShape\ =\ (\mbox{\hyperlink{bt_static_plane_shape_8h_ae77a68ab5c1dcbde9294ebfaac68441f}{btStaticPlaneShape}}*)planeObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a4d0eab4572788c8627d8badff7312a67}{getCollisionShape}}();}
+\DoxyCodeLine{00103\ }
+\DoxyCodeLine{00104\ \ \ \ \ \textcolor{keywordtype}{bool}\ hasCollision\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00105\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ planeNormal\ =\ planeShape-\/>getPlaneNormal();}
+\DoxyCodeLine{00106\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ planeConstant\ =\ planeShape-\/>getPlaneConstant();}
+\DoxyCodeLine{00107\ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ planeInConvex;}
+\DoxyCodeLine{00108\ \ \ \ \ planeInConvex\ =\ convexObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a707b16ff995f2b7575bbdc2882b17b6f}{getWorldTransform}}().inverse()\ *\ planeObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a707b16ff995f2b7575bbdc2882b17b6f}{getWorldTransform}}();}
+\DoxyCodeLine{00109\ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ convexInPlaneTrans;}
+\DoxyCodeLine{00110\ \ \ \ \ convexInPlaneTrans\ =\ planeObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a707b16ff995f2b7575bbdc2882b17b6f}{getWorldTransform}}().inverse()\ *\ convexObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a707b16ff995f2b7575bbdc2882b17b6f}{getWorldTransform}}();}
+\DoxyCodeLine{00111\ }
+\DoxyCodeLine{00112\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vtx\ =\ convexShape-\/>localGetSupportingVertex(planeInConvex.getBasis()\ *\ -\/planeNormal);}
+\DoxyCodeLine{00113\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vtxInPlane\ =\ convexInPlaneTrans(vtx);}
+\DoxyCodeLine{00114\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}}\ =\ (planeNormal.dot(vtxInPlane)\ -\/\ planeConstant);}
+\DoxyCodeLine{00115\ }
+\DoxyCodeLine{00116\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vtxInPlaneProjected\ =\ vtxInPlane\ -\/\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}}\ *\ planeNormal;}
+\DoxyCodeLine{00117\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vtxInPlaneWorld\ =\ planeObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a707b16ff995f2b7575bbdc2882b17b6f}{getWorldTransform}}()\ *\ vtxInPlaneProjected;}
+\DoxyCodeLine{00118\ }
+\DoxyCodeLine{00119\ \ \ \ \ hasCollision\ =\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}}\ <\ m\_manifoldPtr-\/>getContactBreakingThreshold()+\ resultOut-\/>\mbox{\hyperlink{classbt_manifold_result_aa582b802c2131a6072e313fb8b028b55}{m\_closestPointDistanceThreshold}};}
+\DoxyCodeLine{00120\ \ \ \ \ resultOut-\/>\mbox{\hyperlink{classbt_manifold_result_a7a46d46b9a13c2896695e458c1d6df1f}{setPersistentManifold}}(m\_manifoldPtr);}
+\DoxyCodeLine{00121\ \ \ \ \ \textcolor{keywordflow}{if}\ (hasCollision)}
+\DoxyCodeLine{00122\ \ \ \ \ \{}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ normalOnSurfaceB\ =\ planeObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a707b16ff995f2b7575bbdc2882b17b6f}{getWorldTransform}}().getBasis()\ *\ planeNormal;}
+\DoxyCodeLine{00125\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ pOnB\ =\ vtxInPlaneWorld;}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ resultOut-\/>\mbox{\hyperlink{classbt_manifold_result_aebe32f0c202d988d0458e88d768602c6}{addContactPoint}}(normalOnSurfaceB,\ pOnB,\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}});}
+\DoxyCodeLine{00127\ \ \ \ \ \}}
+\DoxyCodeLine{00128\ }
+\DoxyCodeLine{00129\ \ \ \ \ \textcolor{comment}{//the\ perturbation\ algorithm\ doesn't\ work\ well\ with\ implicit\ surfaces\ such\ as\ spheres,\ cylinder\ and\ cones:}}
+\DoxyCodeLine{00130\ \ \ \ \ \textcolor{comment}{//they\ keep\ on\ rolling\ forever\ because\ of\ the\ additional\ off-\/center\ contact\ points}}
+\DoxyCodeLine{00131\ \ \ \ \ \textcolor{comment}{//so\ only\ enable\ the\ feature\ for\ polyhedral\ shapes\ (btBoxShape,\ btConvexHullShape\ etc)}}
+\DoxyCodeLine{00132\ \ \ \ \ \textcolor{keywordflow}{if}\ (convexShape-\/>isPolyhedral()\ \&\&\ resultOut-\/>\mbox{\hyperlink{classbt_manifold_result_a3314d85aa117edfe05ffb30d009508be}{getPersistentManifold}}()-\/>getNumContacts()\ <\ m\_minimumPointsPerturbationThreshold)}
+\DoxyCodeLine{00133\ \ \ \ \ \{}
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a7062a23d1d434121d4a88f530703d06a}{v0}},\ \mbox{\hyperlink{glad_8h_a0779c3b73f9aa3a0ac5b0139b5d291d9}{v1}};}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a0682ea634178928396d78f27c87aec07}{btPlaneSpace1}}(planeNormal,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a7062a23d1d434121d4a88f530703d06a}{v0}},\ \mbox{\hyperlink{glad_8h_a0779c3b73f9aa3a0ac5b0139b5d291d9}{v1}});}
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ \textcolor{comment}{//now\ perform\ 'm\_numPerturbationIterations'\ collision\ queries\ with\ the\ perturbated\ collision\ objects}}
+\DoxyCodeLine{00137\ }
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ angleLimit\ =\ 0.125f\ *\ \mbox{\hyperlink{bt_scalar_8h_a1bdff187c878167505bcedbbbabf7b0a}{SIMD\_PI}};}
+\DoxyCodeLine{00139\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ perturbeAngle;}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ radius\ =\ convexShape-\/>getAngularMotionDisc();}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ perturbeAngle\ =\ \mbox{\hyperlink{b3_contact_cache_8h_a84eb28b9c3e6328f796088fe1f59bb9a}{gContactBreakingThreshold}}\ /\ radius;}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (perturbeAngle\ >\ angleLimit)}
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \ \ \ \ \ \ perturbeAngle\ =\ angleLimit;}
+\DoxyCodeLine{00144\ }
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\ perturbeRot(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a7062a23d1d434121d4a88f530703d06a}{v0}},\ perturbeAngle);}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ m\_numPerturbationIterations;\ i++)}
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ iterationAngle\ =\ i\ *\ (\mbox{\hyperlink{bt_scalar_8h_afa3dad5a5edb29663834714c0ef492bb}{SIMD\_2\_PI}}\ /\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(m\_numPerturbationIterations));}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\ rotq(planeNormal,\ iterationAngle);}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_convex_plane_collision_algorithm_a79f8384fcdc2145be9fca0057edc8b69}{collideSingleContact}}(rotq.inverse()\ *\ perturbeRot\ *\ rotq,\ body0Wrap,\ body1Wrap,\ dispatchInfo,\ resultOut);}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00152\ \ \ \ \ \}}
+\DoxyCodeLine{00153\ }
+\DoxyCodeLine{00154\ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_ownManifold)}
+\DoxyCodeLine{00155\ \ \ \ \ \{}
+\DoxyCodeLine{00156\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_manifoldPtr-\/>getNumContacts())}
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \ \ \ \ \ \ resultOut-\/>\mbox{\hyperlink{classbt_manifold_result_adbcfd865252ac9dc8a3543f404e2dcf1}{refreshContactPoints}}();}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00160\ \ \ \ \ \}}
+\DoxyCodeLine{00161\ \}}
+\DoxyCodeLine{00162\ }
+\DoxyCodeLine{00163\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_convex_plane_collision_algorithm_ad72bfddcee82521487ca61227d6d2073}{btConvexPlaneCollisionAlgorithm::calculateTimeOfImpact}}(\mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ col0,\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ col1,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_dispatcher_info}{btDispatcherInfo}}\&\ dispatchInfo,\ \mbox{\hyperlink{classbt_manifold_result}{btManifoldResult}}*\ resultOut)}
+\DoxyCodeLine{00164\ \{}
+\DoxyCodeLine{00165\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})resultOut;}
+\DoxyCodeLine{00166\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})dispatchInfo;}
+\DoxyCodeLine{00167\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})col0;}
+\DoxyCodeLine{00168\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})col1;}
+\DoxyCodeLine{00169\ }
+\DoxyCodeLine{00170\ \ \ \ \ \textcolor{comment}{//not\ yet}}
+\DoxyCodeLine{00171\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.);}
+\DoxyCodeLine{00172\ \}}
+
+\end{DoxyCode}

@@ -1,0 +1,623 @@
+\doxysection{bt\+MLCPSolver.\+cpp}
+\hypertarget{bt_m_l_c_p_solver_8cpp_source}{}\label{bt_m_l_c_p_solver_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/MLCPSolvers/btMLCPSolver.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/MLCPSolvers/btMLCPSolver.cpp}}
+\mbox{\hyperlink{bt_m_l_c_p_solver_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2013\ Erwin\ Coumans\ \ http://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_m_l_c_p_solver_8h}{btMLCPSolver.h}}"{}}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_matrix_x_8h}{LinearMath/btMatrixX.h}}"{}}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_quickprof_8h}{LinearMath/btQuickprof.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_solve_projected_gauss_seidel_8h}{btSolveProjectedGaussSeidel.h}}"{}}}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ac699f0a59f0b730ac39658ee2903b042}{btMLCPSolver::btMLCPSolver}}(\mbox{\hyperlink{classbt_m_l_c_p_solver_interface}{btMLCPSolverInterface}}*\ solver)}
+\DoxyCodeLine{00023\ \ \ \ \ :\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ad23da78a7d23630cea74f3d27eae915d}{m\_solver}}(solver),}
+\DoxyCodeLine{00024\ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ac3debefed2fe370fd95302fef37182bc}{m\_fallback}}(0)}
+\DoxyCodeLine{00025\ \{}
+\DoxyCodeLine{00026\ \}}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a2d9790d563e4b80be3dfc2c968d1f886}{btMLCPSolver::\string~btMLCPSolver}}()}
+\DoxyCodeLine{00029\ \{}
+\DoxyCodeLine{00030\ \}}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_m_l_c_p_solver_8cpp_acdb7cc96b460b65b2975aa68613e9c56}{gUseMatrixMultiply}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00033\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_m_l_c_p_solver_8cpp_a4a5a53d90445cbaf1e043026a1ac81e3}{interleaveContactAndFriction}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_m_l_c_p_solver_aa465e167537eceb89f7125d3bb2d5321}{btMLCPSolver::solveGroupCacheFriendlySetup}}(\mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}**\ bodies,\ \textcolor{keywordtype}{int}\ numBodiesUnUsed,\ \mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}**\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a6aba8beffdb0aa00dc0b0431e260aa91}{manifoldPtr}},\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ad78d14cac38555333ae536286a72c72b}{numManifolds}},\ \mbox{\hyperlink{bt_typed_constraint_8h_ac4d45dd414a1096579ca1009cb892163}{btTypedConstraint}}**\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_contact_solver_info}{btContactSolverInfo}}\&\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}},\ \mbox{\hyperlink{classbt_i_debug_draw}{btIDebugDraw}}*\ debugDrawer)}
+\DoxyCodeLine{00036\ \{}
+\DoxyCodeLine{00037\ \ \ \ \ btSequentialImpulseConstraintSolver::solveGroupCacheFriendlySetup(bodies,\ numBodiesUnUsed,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a6aba8beffdb0aa00dc0b0431e260aa91}{manifoldPtr}},\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ad78d14cac38555333ae536286a72c72b}{numManifolds}},\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}},\ debugDrawer);}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00039\ \ \ \ \ \{}
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}gather\ constraint\ data"{}});}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numFrictionPerContact\ =\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac71049f52d12f83d3109920ae1765978}{m\_tmpSolverContactConstraintPool}}.size()\ ==\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac247c1586cee367d19b677650b367e37}{m\_tmpSolverContactFrictionConstraintPool}}.size()\ ?\ 1\ :\ 2;}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ int\ numBodies\ =\ m\_tmpSolverBodyPool.size();}}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.resize(0);}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a5721c6db81b1958c5995225ac055077d}{m\_limitDependencies}}.resize(\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_afe1fa357648f93e7ba0322e18279f2ce}{m\_tmpSolverNonContactConstraintPool}}.size()\ +\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac71049f52d12f83d3109920ae1765978}{m\_tmpSolverContactConstraintPool}}.size()\ +\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac247c1586cee367d19b677650b367e37}{m\_tmpSolverContactFrictionConstraintPool}}.size());}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{classbt_m_l_c_p_solver_a5721c6db81b1958c5995225ac055077d}{m\_limitDependencies}}.size()\ ==\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_afe1fa357648f93e7ba0322e18279f2ce}{m\_tmpSolverNonContactConstraintPool}}.size()\ +\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac71049f52d12f83d3109920ae1765978}{m\_tmpSolverContactConstraintPool}}.size()\ +\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac247c1586cee367d19b677650b367e37}{m\_tmpSolverContactFrictionConstraintPool}}.size());}
+\DoxyCodeLine{00048\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ printf("{}m\_limitDependencies.size()\ =\ \%d\(\backslash\)n"{},m\_limitDependencies.size());}}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ dindex\ =\ 0;}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_afe1fa357648f93e7ba0322e18279f2ce}{m\_tmpSolverNonContactConstraintPool}}.size();\ i++)}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.push\_back(\&\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_afe1fa357648f93e7ba0322e18279f2ce}{m\_tmpSolverNonContactConstraintPool}}[i]);}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a5721c6db81b1958c5995225ac055077d}{m\_limitDependencies}}[dindex++]\ =\ -\/1;}
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00056\ }
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ firstContactConstraintOffset\ =\ dindex;}
+\DoxyCodeLine{00060\ }
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_m_l_c_p_solver_8cpp_a4a5a53d90445cbaf1e043026a1ac81e3}{interleaveContactAndFriction}})}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac71049f52d12f83d3109920ae1765978}{m\_tmpSolverContactConstraintPool}}.size();\ i++)}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.push\_back(\&\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac71049f52d12f83d3109920ae1765978}{m\_tmpSolverContactConstraintPool}}[i]);}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a5721c6db81b1958c5995225ac055077d}{m\_limitDependencies}}[dindex++]\ =\ -\/1;}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.push\_back(\&\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac247c1586cee367d19b677650b367e37}{m\_tmpSolverContactFrictionConstraintPool}}[i\ *\ numFrictionPerContact]);}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ findex\ =\ (\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac247c1586cee367d19b677650b367e37}{m\_tmpSolverContactFrictionConstraintPool}}[i\ *\ numFrictionPerContact].m\_frictionIndex\ *\ (1\ +\ numFrictionPerContact));}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a5721c6db81b1958c5995225ac055077d}{m\_limitDependencies}}[dindex++]\ =\ findex\ +\ firstContactConstraintOffset;}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numFrictionPerContact\ ==\ 2)}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.push\_back(\&\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac247c1586cee367d19b677650b367e37}{m\_tmpSolverContactFrictionConstraintPool}}[i\ *\ numFrictionPerContact\ +\ 1]);}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a5721c6db81b1958c5995225ac055077d}{m\_limitDependencies}}[dindex++]\ =\ findex\ +\ firstContactConstraintOffset;}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac71049f52d12f83d3109920ae1765978}{m\_tmpSolverContactConstraintPool}}.size();\ i++)}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00081\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.push\_back(\&\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac71049f52d12f83d3109920ae1765978}{m\_tmpSolverContactConstraintPool}}[i]);}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a5721c6db81b1958c5995225ac055077d}{m\_limitDependencies}}[dindex++]\ =\ -\/1;}
+\DoxyCodeLine{00083\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac247c1586cee367d19b677650b367e37}{m\_tmpSolverContactFrictionConstraintPool}}.size();\ i++)}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.push\_back(\&\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac247c1586cee367d19b677650b367e37}{m\_tmpSolverContactFrictionConstraintPool}}[i]);}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a5721c6db81b1958c5995225ac055077d}{m\_limitDependencies}}[dindex++]\ =\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_ac247c1586cee367d19b677650b367e37}{m\_tmpSolverContactFrictionConstraintPool}}[i].m\_frictionIndex\ +\ firstContactConstraintOffset;}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00090\ }
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!\mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.size())}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}.resize(0,\ 0);}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a102a9cbe5333f818bd57ab58a61c9fa3}{m\_b}}.resize(0);}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a79ad61721583b308de8be07cd33e67ae}{m\_x}}.resize(0);}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ae7a49a4a3ef55eadd59ec64a2d2dce0d}{m\_lo}}.resize(0);}
+\DoxyCodeLine{00097\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_aaa4243bdf7468736d75c9da113153832}{m\_hi}}.resize(0);}
+\DoxyCodeLine{00098\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 0.f;}
+\DoxyCodeLine{00099\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00100\ \ \ \ \ \}}
+\DoxyCodeLine{00101\ }
+\DoxyCodeLine{00102\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_m_l_c_p_solver_8cpp_acdb7cc96b460b65b2975aa68613e9c56}{gUseMatrixMultiply}})}
+\DoxyCodeLine{00103\ \ \ \ \ \{}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}createMLCP"{}});}
+\DoxyCodeLine{00105\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a83c6bc90a6a311204fccec04aa331aee}{createMLCP}}(\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}});}
+\DoxyCodeLine{00106\ \ \ \ \ \}}
+\DoxyCodeLine{00107\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00108\ \ \ \ \ \{}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}createMLCPFast"{}});}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab36b9b3bf2bbbd1de7db27ba109e0a8a}{createMLCPFast}}(\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}});}
+\DoxyCodeLine{00111\ \ \ \ \ \}}
+\DoxyCodeLine{00112\ }
+\DoxyCodeLine{00113\ \ \ \ \ \textcolor{keywordflow}{return}\ 0.f;}
+\DoxyCodeLine{00114\ \}}
+\DoxyCodeLine{00115\ }
+\DoxyCodeLine{00116\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a8b3955c50047184e0deb904242a66941}{btMLCPSolver::solveMLCP}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_contact_solver_info}{btContactSolverInfo}}\&\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}})}
+\DoxyCodeLine{00117\ \{}
+\DoxyCodeLine{00118\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00119\ }
+\DoxyCodeLine{00120\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}.rows()\ ==\ 0)}
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00122\ }
+\DoxyCodeLine{00123\ \ \ \ \ \textcolor{comment}{//if\ using\ split\ impulse,\ we\ solve\ 2\ separate\ (M)LCPs}}
+\DoxyCodeLine{00124\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}}.m\_splitImpulse)}
+\DoxyCodeLine{00125\ \ \ \ \ \{}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_a7f0aa262c0acd063c03ce408430ce8f4}{btMatrixXu}}\ Acopy\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}};}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<int>}}\ limitDependenciesCopy\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a5721c6db81b1958c5995225ac055077d}{m\_limitDependencies}};}
+\DoxyCodeLine{00128\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ printf("{}solve\ first\ LCP\(\backslash\)n"{});}}
+\DoxyCodeLine{00129\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ad23da78a7d23630cea74f3d27eae915d}{m\_solver}}-\/>solveMLCP(\mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}},\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a102a9cbe5333f818bd57ab58a61c9fa3}{m\_b}},\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a79ad61721583b308de8be07cd33e67ae}{m\_x}},\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ae7a49a4a3ef55eadd59ec64a2d2dce0d}{m\_lo}},\ \mbox{\hyperlink{classbt_m_l_c_p_solver_aaa4243bdf7468736d75c9da113153832}{m\_hi}},\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a5721c6db81b1958c5995225ac055077d}{m\_limitDependencies}},\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}}.m\_numIterations);}
+\DoxyCodeLine{00130\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}})}
+\DoxyCodeLine{00131\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ad23da78a7d23630cea74f3d27eae915d}{m\_solver}}-\/>solveMLCP(Acopy,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a9c1feb6855fa296c8ca582842f8e4fe3}{m\_bSplit}},\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a87e493a2efd02e6ec58cdfd6806fc01d}{m\_xSplit}},\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ae7a49a4a3ef55eadd59ec64a2d2dce0d}{m\_lo}},\ \mbox{\hyperlink{classbt_m_l_c_p_solver_aaa4243bdf7468736d75c9da113153832}{m\_hi}},\ limitDependenciesCopy,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}}.m\_numIterations);}
+\DoxyCodeLine{00132\ \ \ \ \ \}}
+\DoxyCodeLine{00133\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00134\ \ \ \ \ \{}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ad23da78a7d23630cea74f3d27eae915d}{m\_solver}}-\/>solveMLCP(\mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}},\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a102a9cbe5333f818bd57ab58a61c9fa3}{m\_b}},\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a79ad61721583b308de8be07cd33e67ae}{m\_x}},\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ae7a49a4a3ef55eadd59ec64a2d2dce0d}{m\_lo}},\ \mbox{\hyperlink{classbt_m_l_c_p_solver_aaa4243bdf7468736d75c9da113153832}{m\_hi}},\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a5721c6db81b1958c5995225ac055077d}{m\_limitDependencies}},\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}}.m\_numIterations);}
+\DoxyCodeLine{00136\ \ \ \ \ \}}
+\DoxyCodeLine{00137\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}};}
+\DoxyCodeLine{00138\ \}}
+\DoxyCodeLine{00139\ }
+\DoxyCodeLine{00140\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structbt_joint_node}{btJointNode}}}
+\DoxyCodeLine{00141\ \{}
+\DoxyCodeLine{00142\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{structbt_joint_node_a4d7a67a0f2ebb2ab55a8191c64bb6ae2}{jointIndex}};\ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ pointer\ to\ enclosing\ dxJoint\ object}}
+\DoxyCodeLine{00143\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{structbt_joint_node_aea089efa0de09dd98abb0153f2524b35}{otherBodyIndex}};\ \ \ \ \ \ \textcolor{comment}{//\ *other*\ body\ this\ joint\ is\ connected\ to}}
+\DoxyCodeLine{00144\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{structbt_joint_node_a1c050343ce885c74a420229ea6f0d066}{nextJointNodeIndex}};\ \ \textcolor{comment}{//-\/1\ for\ null}}
+\DoxyCodeLine{00145\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{structbt_joint_node_a3fb9ebc744005c5788a250eb17d813c3}{constraintRowIndex}};}
+\DoxyCodeLine{00146\ \};}
+\DoxyCodeLine{00147\ }
+\DoxyCodeLine{00148\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab36b9b3bf2bbbd1de7db27ba109e0a8a}{btMLCPSolver::createMLCPFast}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_contact_solver_info}{btContactSolverInfo}}\&\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}})}
+\DoxyCodeLine{00149\ \{}
+\DoxyCodeLine{00150\ \ \ \ \ \textcolor{keywordtype}{int}\ numContactRows\ =\ \mbox{\hyperlink{bt_m_l_c_p_solver_8cpp_a4a5a53d90445cbaf1e043026a1ac81e3}{interleaveContactAndFriction}}\ ?\ 3\ :\ 1;}
+\DoxyCodeLine{00151\ }
+\DoxyCodeLine{00152\ \ \ \ \ \textcolor{keywordtype}{int}\ numConstraintRows\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.size();}
+\DoxyCodeLine{00153\ \ \ \ \ \textcolor{keywordtype}{int}\ n\ =\ numConstraintRows;}
+\DoxyCodeLine{00154\ \ \ \ \ \{}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}init\ b\ (rhs)"{}});}
+\DoxyCodeLine{00156\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a102a9cbe5333f818bd57ab58a61c9fa3}{m\_b}}.resize(numConstraintRows);}
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a9c1feb6855fa296c8ca582842f8e4fe3}{m\_bSplit}}.resize(numConstraintRows);}
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a102a9cbe5333f818bd57ab58a61c9fa3}{m\_b}}.setZero();}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a9c1feb6855fa296c8ca582842f8e4fe3}{m\_bSplit}}.setZero();}
+\DoxyCodeLine{00160\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numConstraintRows;\ i++)}
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ jacDiag\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_jacDiagABInv;}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!\mbox{\hyperlink{bt_scalar_8h_a64883187cf63c81ef5fb15f6f0c7ae05}{btFuzzyZero}}(jacDiag))}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ rhs\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_rhs;}
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ rhsPenetration\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_rhsPenetration;}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a102a9cbe5333f818bd57ab58a61c9fa3}{m\_b}}[i]\ =\ rhs\ /\ jacDiag;}
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a9c1feb6855fa296c8ca582842f8e4fe3}{m\_bSplit}}[i]\ =\ rhsPenetration\ /\ jacDiag;}
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00170\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00171\ \ \ \ \ \}}
+\DoxyCodeLine{00172\ }
+\DoxyCodeLine{00173\ \ \ \ \ \textcolor{comment}{//\ \ btScalar*\ w\ =\ 0;}}
+\DoxyCodeLine{00174\ \ \ \ \ \textcolor{comment}{//\ \ int\ nub\ =\ 0;}}
+\DoxyCodeLine{00175\ }
+\DoxyCodeLine{00176\ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ae7a49a4a3ef55eadd59ec64a2d2dce0d}{m\_lo}}.resize(numConstraintRows);}
+\DoxyCodeLine{00177\ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_aaa4243bdf7468736d75c9da113153832}{m\_hi}}.resize(numConstraintRows);}
+\DoxyCodeLine{00178\ }
+\DoxyCodeLine{00179\ \ \ \ \ \{}
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}init\ lo/ho"{}});}
+\DoxyCodeLine{00181\ }
+\DoxyCodeLine{00182\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numConstraintRows;\ i++)}
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00184\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (0)\ \ \textcolor{comment}{//m\_limitDependencies[i]>=0)}}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ae7a49a4a3ef55eadd59ec64a2d2dce0d}{m\_lo}}[i]\ =\ -\/\mbox{\hyperlink{bt_scalar_8h_a8b1de685075c56bf7dadd613abd83d02}{BT\_INFINITY}};}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_aaa4243bdf7468736d75c9da113153832}{m\_hi}}[i]\ =\ \mbox{\hyperlink{bt_scalar_8h_a8b1de685075c56bf7dadd613abd83d02}{BT\_INFINITY}};}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00190\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00191\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ae7a49a4a3ef55eadd59ec64a2d2dce0d}{m\_lo}}[i]\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_lowerLimit;}
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_aaa4243bdf7468736d75c9da113153832}{m\_hi}}[i]\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_upperLimit;}
+\DoxyCodeLine{00193\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00195\ \ \ \ \ \}}
+\DoxyCodeLine{00196\ }
+\DoxyCodeLine{00197\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00198\ \ \ \ \ \textcolor{keywordtype}{int}\ m\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.size();}
+\DoxyCodeLine{00199\ }
+\DoxyCodeLine{00200\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}}\ =\ m\_tmpSolverBodyPool.size();}
+\DoxyCodeLine{00201\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<int>}}\ bodyJointNodeArray;}
+\DoxyCodeLine{00202\ \ \ \ \ \{}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}bodyJointNodeArray.resize"{}});}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ bodyJointNodeArray.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}},\ -\/1);}
+\DoxyCodeLine{00205\ \ \ \ \ \}}
+\DoxyCodeLine{00206\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btJointNode>}}\ jointNodeArray;}
+\DoxyCodeLine{00207\ \ \ \ \ \{}
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}jointNodeArray.reserve"{}});}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ jointNodeArray.\mbox{\hyperlink{classbt_aligned_object_array_a0bcdc850355c6742c66d50b16b102d9d}{reserve}}(2\ *\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.size());}
+\DoxyCodeLine{00210\ \ \ \ \ \}}
+\DoxyCodeLine{00211\ }
+\DoxyCodeLine{00212\ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_a7f0aa262c0acd063c03ce408430ce8f4}{btMatrixXu}}\&\ J3\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a8430698267e9572498e04e8dba3cda3b}{m\_scratchJ3}};}
+\DoxyCodeLine{00213\ \ \ \ \ \{}
+\DoxyCodeLine{00214\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}J3.resize"{}});}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ J3.resize(2\ *\ m,\ 8);}
+\DoxyCodeLine{00216\ \ \ \ \ \}}
+\DoxyCodeLine{00217\ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_a7f0aa262c0acd063c03ce408430ce8f4}{btMatrixXu}}\&\ JinvM3\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab347084e6a7ebf7549615d20b25b6578}{m\_scratchJInvM3}};}
+\DoxyCodeLine{00218\ \ \ \ \ \{}
+\DoxyCodeLine{00219\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}JinvM3.resize/setZero"{}});}
+\DoxyCodeLine{00220\ }
+\DoxyCodeLine{00221\ \ \ \ \ \ \ \ \ JinvM3.resize(2\ *\ m,\ 8);}
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ JinvM3.setZero();}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ J3.setZero();}
+\DoxyCodeLine{00224\ \ \ \ \ \}}
+\DoxyCodeLine{00225\ \ \ \ \ \textcolor{keywordtype}{int}\ cur\ =\ 0;}
+\DoxyCodeLine{00226\ \ \ \ \ \textcolor{keywordtype}{int}\ rowOffset\ =\ 0;}
+\DoxyCodeLine{00227\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<int>}}\&\ ofs\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab24ea5516362bd5f3681ac907c318231}{m\_scratchOfs}};}
+\DoxyCodeLine{00228\ \ \ \ \ \{}
+\DoxyCodeLine{00229\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}ofs\ resize"{}});}
+\DoxyCodeLine{00230\ \ \ \ \ \ \ \ \ ofs.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(0);}
+\DoxyCodeLine{00231\ \ \ \ \ \ \ \ \ ofs.\mbox{\hyperlink{classbt_aligned_object_array_a2cc58c74534181a7a10e5c6ab8b21227}{resizeNoInitialize}}(\mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.size());}
+\DoxyCodeLine{00232\ \ \ \ \ \}}
+\DoxyCodeLine{00233\ \ \ \ \ \{}
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}Compute\ J\ and\ JinvM"{}});}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ c\ =\ 0;}
+\DoxyCodeLine{00236\ }
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numRows\ =\ 0;}
+\DoxyCodeLine{00238\ }
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.size();\ i\ +=\ numRows,\ c++)}
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ \ \ \ \ ofs[c]\ =\ rowOffset;}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ sbA\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_solverBodyIdA;}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ sbB\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_solverBodyIdB;}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*\ orgBodyA\ =\ m\_tmpSolverBodyPool[sbA].m\_originalBody;}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*\ orgBodyB\ =\ m\_tmpSolverBodyPool[sbB].m\_originalBody;}
+\DoxyCodeLine{00246\ }
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ \ \ \ \ numRows\ =\ i\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_afe1fa357648f93e7ba0322e18279f2ce}{m\_tmpSolverNonContactConstraintPool}}.size()\ ?\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_affeccc05dcbdc8f81e03dc69bcbcf3f5}{m\_tmpConstraintSizesPool}}[c].m\_numConstraintRows\ :\ numContactRows;}
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (orgBodyA)}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ slotA\ =\ -\/1;}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//find\ free\ jointNode\ slot\ for\ sbA}}
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ slotA\ =\ jointNodeArray.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();}
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ jointNodeArray.\mbox{\hyperlink{classbt_aligned_object_array_a14f4d5d60db1742099c156d94acc3bd9}{expand}}();\ \ \textcolor{comment}{//NonInitializing();}}
+\DoxyCodeLine{00255\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ prevSlot\ =\ bodyJointNodeArray[sbA];}
+\DoxyCodeLine{00256\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bodyJointNodeArray[sbA]\ =\ slotA;}
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ jointNodeArray[slotA].nextJointNodeIndex\ =\ prevSlot;}
+\DoxyCodeLine{00258\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ jointNodeArray[slotA].jointIndex\ =\ c;}
+\DoxyCodeLine{00259\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ jointNodeArray[slotA].constraintRowIndex\ =\ i;}
+\DoxyCodeLine{00260\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ jointNodeArray[slotA].otherBodyIndex\ =\ orgBodyB\ ?\ sbB\ :\ -\/1;}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ row\ =\ 0;\ row\ <\ numRows;\ row++,\ cur++)}
+\DoxyCodeLine{00263\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ normalInvMass\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i\ +\ row]-\/>m\_contactNormal1\ *\ orgBodyA-\/>\mbox{\hyperlink{classbt_rigid_body_a4c67acaeab4799ffda7a0d8a63df7ae6}{getInvMass}}();}
+\DoxyCodeLine{00265\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ relPosCrossNormalInvInertia\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i\ +\ row]-\/>m\_relpos1CrossNormal\ *\ orgBodyA-\/>\mbox{\hyperlink{classbt_rigid_body_af7d00bfba6cf3f11d3112c0429d3d884}{getInvInertiaTensorWorld}}();}
+\DoxyCodeLine{00266\ }
+\DoxyCodeLine{00267\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}\ =\ 0;\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}\ <\ 3;\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}++)}
+\DoxyCodeLine{00268\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00269\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ J3.setElem(cur,\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}},\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i\ +\ row]-\/>\mbox{\hyperlink{bt_solver_constraint_8h_a5efed7975c0b0f2c65f9c9968c42d6ae}{m\_contactNormal1}}[\mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}]);}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ J3.setElem(cur,\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}\ +\ 4,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i\ +\ row]-\/>\mbox{\hyperlink{b3_solver_constraint_8h_a5b45376926aed1b113906e7726b1bfca}{m\_relpos1CrossNormal}}[\mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}]);}
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ JinvM3.setElem(cur,\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}},\ normalInvMass[\mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}]);}
+\DoxyCodeLine{00272\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ JinvM3.setElem(cur,\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}\ +\ 4,\ relPosCrossNormalInvInertia[\mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}]);}
+\DoxyCodeLine{00273\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ J3.setElem(cur,\ 3,\ 0);}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ JinvM3.setElem(cur,\ 3,\ 0);}
+\DoxyCodeLine{00276\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ J3.setElem(cur,\ 7,\ 0);}
+\DoxyCodeLine{00277\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ JinvM3.setElem(cur,\ 7,\ 0);}
+\DoxyCodeLine{00278\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00279\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00280\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00281\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cur\ +=\ numRows;}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (orgBodyB)}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ slotB\ =\ -\/1;}
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//find\ free\ jointNode\ slot\ for\ sbA}}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ slotB\ =\ jointNodeArray.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ jointNodeArray.\mbox{\hyperlink{classbt_aligned_object_array_a14f4d5d60db1742099c156d94acc3bd9}{expand}}();\ \ \textcolor{comment}{//NonInitializing();}}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ prevSlot\ =\ bodyJointNodeArray[sbB];}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bodyJointNodeArray[sbB]\ =\ slotB;}
+\DoxyCodeLine{00293\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ jointNodeArray[slotB].nextJointNodeIndex\ =\ prevSlot;}
+\DoxyCodeLine{00294\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ jointNodeArray[slotB].jointIndex\ =\ c;}
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ jointNodeArray[slotB].otherBodyIndex\ =\ orgBodyA\ ?\ sbA\ :\ -\/1;}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ jointNodeArray[slotB].constraintRowIndex\ =\ i;}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00298\ }
+\DoxyCodeLine{00299\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ row\ =\ 0;\ row\ <\ numRows;\ row++,\ cur++)}
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00301\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ normalInvMassB\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i\ +\ row]-\/>m\_contactNormal2\ *\ orgBodyB-\/>\mbox{\hyperlink{classbt_rigid_body_a4c67acaeab4799ffda7a0d8a63df7ae6}{getInvMass}}();}
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ relPosInvInertiaB\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i\ +\ row]-\/>m\_relpos2CrossNormal\ *\ orgBodyB-\/>\mbox{\hyperlink{classbt_rigid_body_af7d00bfba6cf3f11d3112c0429d3d884}{getInvInertiaTensorWorld}}();}
+\DoxyCodeLine{00303\ }
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}\ =\ 0;\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}\ <\ 3;\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}++)}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00306\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ J3.setElem(cur,\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}},\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i\ +\ row]-\/>\mbox{\hyperlink{bt_solver_constraint_8h_af447bf6701be7debcd4c85dc2a04bb0b}{m\_contactNormal2}}[\mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}]);}
+\DoxyCodeLine{00307\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ J3.setElem(cur,\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}\ +\ 4,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i\ +\ row]-\/>\mbox{\hyperlink{b3_solver_constraint_8h_aa54a6c3d5ccf26c0ee6dde53edfcdbe7}{m\_relpos2CrossNormal}}[\mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}]);}
+\DoxyCodeLine{00308\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ JinvM3.setElem(cur,\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}},\ normalInvMassB[\mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}]);}
+\DoxyCodeLine{00309\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ JinvM3.setElem(cur,\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}\ +\ 4,\ relPosInvInertiaB[\mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}]);}
+\DoxyCodeLine{00310\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00311\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ J3.setElem(cur,\ 3,\ 0);}
+\DoxyCodeLine{00312\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ JinvM3.setElem(cur,\ 3,\ 0);}
+\DoxyCodeLine{00313\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ J3.setElem(cur,\ 7,\ 0);}
+\DoxyCodeLine{00314\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ JinvM3.setElem(cur,\ 7,\ 0);}
+\DoxyCodeLine{00315\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00316\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00317\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00318\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cur\ +=\ numRows;}
+\DoxyCodeLine{00320\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00321\ \ \ \ \ \ \ \ \ \ \ \ \ rowOffset\ +=\ numRows;}
+\DoxyCodeLine{00322\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00323\ \ \ \ \ \}}
+\DoxyCodeLine{00324\ }
+\DoxyCodeLine{00325\ \ \ \ \ \textcolor{comment}{//compute\ JinvM\ =\ J*invM.}}
+\DoxyCodeLine{00326\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}*\ JinvM\ =\ JinvM3.getBufferPointer();}
+\DoxyCodeLine{00327\ }
+\DoxyCodeLine{00328\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}*\ Jptr\ =\ J3.getBufferPointer();}
+\DoxyCodeLine{00329\ \ \ \ \ \{}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}m\_A.resize"{}});}
+\DoxyCodeLine{00331\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}.resize(n,\ n);}
+\DoxyCodeLine{00332\ \ \ \ \ \}}
+\DoxyCodeLine{00333\ }
+\DoxyCodeLine{00334\ \ \ \ \ \{}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}m\_A.setZero"{}});}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}.setZero();}
+\DoxyCodeLine{00337\ \ \ \ \ \}}
+\DoxyCodeLine{00338\ \ \ \ \ \textcolor{keywordtype}{int}\ c\ =\ 0;}
+\DoxyCodeLine{00339\ \ \ \ \ \{}
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numRows\ =\ 0;}
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}Compute\ A"{}});}
+\DoxyCodeLine{00342\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.size();\ i\ +=\ numRows,\ c++)}
+\DoxyCodeLine{00343\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ row\_\_\ =\ ofs[c];}
+\DoxyCodeLine{00345\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ sbA\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_solverBodyIdA;}
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ sbB\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_solverBodyIdB;}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ btRigidBody*\ orgBodyA\ =\ m\_tmpSolverBodyPool[sbA].m\_originalBody;}}
+\DoxyCodeLine{00348\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ btRigidBody*\ orgBodyB\ =\ m\_tmpSolverBodyPool[sbB].m\_originalBody;}}
+\DoxyCodeLine{00349\ }
+\DoxyCodeLine{00350\ \ \ \ \ \ \ \ \ \ \ \ \ numRows\ =\ i\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_afe1fa357648f93e7ba0322e18279f2ce}{m\_tmpSolverNonContactConstraintPool}}.size()\ ?\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_affeccc05dcbdc8f81e03dc69bcbcf3f5}{m\_tmpConstraintSizesPool}}[c].m\_numConstraintRows\ :\ numContactRows;}
+\DoxyCodeLine{00351\ }
+\DoxyCodeLine{00352\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}*\ JinvMrow\ =\ JinvM\ +\ 2\ *\ 8\ *\ (size\_t)row\_\_;}
+\DoxyCodeLine{00353\ }
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ startJointNodeA\ =\ bodyJointNodeArray[sbA];}
+\DoxyCodeLine{00356\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (startJointNodeA\ >=\ 0)}
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00358\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ j0\ =\ jointNodeArray[startJointNodeA].jointIndex;}
+\DoxyCodeLine{00359\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ cr0\ =\ jointNodeArray[startJointNodeA].constraintRowIndex;}
+\DoxyCodeLine{00360\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (j0\ <\ c)}
+\DoxyCodeLine{00361\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00362\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numRowsOther\ =\ cr0\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_afe1fa357648f93e7ba0322e18279f2ce}{m\_tmpSolverNonContactConstraintPool}}.size()\ ?\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_affeccc05dcbdc8f81e03dc69bcbcf3f5}{m\_tmpConstraintSizesPool}}[j0].m\_numConstraintRows\ :\ numContactRows;}
+\DoxyCodeLine{00363\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ ofsother\ =\ (\mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[cr0]-\/>m\_solverBodyIdB\ ==\ sbA)\ ?\ 8\ *\ numRowsOther\ :\ 0;}
+\DoxyCodeLine{00364\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//printf("{}\%d\ joint\ i\ \%d\ and\ j0:\ \%d:\ "{},count++,i,j0);}}
+\DoxyCodeLine{00365\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}.multiplyAdd2\_p8r(JinvMrow,}
+\DoxyCodeLine{00366\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Jptr\ +\ 2\ *\ 8\ *\ (\textcolor{keywordtype}{size\_t})ofs[j0]\ +\ ofsother,\ numRows,\ numRowsOther,\ row\_\_,\ ofs[j0]);}
+\DoxyCodeLine{00367\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00368\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ startJointNodeA\ =\ jointNodeArray[startJointNodeA].nextJointNodeIndex;}
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00370\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00371\ }
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00373\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ startJointNodeB\ =\ bodyJointNodeArray[sbB];}
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (startJointNodeB\ >=\ 0)}
+\DoxyCodeLine{00375\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00376\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ j1\ =\ jointNodeArray[startJointNodeB].jointIndex;}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ cj1\ =\ jointNodeArray[startJointNodeB].constraintRowIndex;}
+\DoxyCodeLine{00378\ }
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (j1\ <\ c)}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00381\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numRowsOther\ =\ cj1\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_afe1fa357648f93e7ba0322e18279f2ce}{m\_tmpSolverNonContactConstraintPool}}.size()\ ?\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_affeccc05dcbdc8f81e03dc69bcbcf3f5}{m\_tmpConstraintSizesPool}}[j1].m\_numConstraintRows\ :\ numContactRows;}
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ ofsother\ =\ (\mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[cj1]-\/>m\_solverBodyIdB\ ==\ sbB)\ ?\ 8\ *\ numRowsOther\ :\ 0;}
+\DoxyCodeLine{00383\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}.multiplyAdd2\_p8r(JinvMrow\ +\ 8\ *\ (\textcolor{keywordtype}{size\_t})numRows,}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Jptr\ +\ 2\ *\ 8\ *\ (\textcolor{keywordtype}{size\_t})ofs[j1]\ +\ ofsother,\ numRows,\ numRowsOther,\ row\_\_,\ ofs[j1]);}
+\DoxyCodeLine{00385\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ startJointNodeB\ =\ jointNodeArray[startJointNodeB].nextJointNodeIndex;}
+\DoxyCodeLine{00387\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00388\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00389\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00390\ }
+\DoxyCodeLine{00391\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00392\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}compute\ diagonal"{}});}
+\DoxyCodeLine{00393\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ compute\ diagonal\ blocks\ of\ m\_A}}
+\DoxyCodeLine{00394\ }
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ row\_\_\ =\ 0;}
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numJointRows\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.size();}
+\DoxyCodeLine{00397\ }
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ jj\ =\ 0;}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (;\ row\_\_\ <\ numJointRows;)}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00401\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//int\ sbA\ =\ m\_allConstraintPtrArray[row\_\_]-\/>m\_solverBodyIdA;}}
+\DoxyCodeLine{00402\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ sbB\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[row\_\_]-\/>m\_solverBodyIdB;}
+\DoxyCodeLine{00403\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ btRigidBody*\ orgBodyA\ =\ m\_tmpSolverBodyPool[sbA].m\_originalBody;}}
+\DoxyCodeLine{00404\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*\ orgBodyB\ =\ m\_tmpSolverBodyPool[sbB].m\_originalBody;}
+\DoxyCodeLine{00405\ }
+\DoxyCodeLine{00406\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ infom\ =\ row\_\_\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_afe1fa357648f93e7ba0322e18279f2ce}{m\_tmpSolverNonContactConstraintPool}}.size()\ ?\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_8h_affeccc05dcbdc8f81e03dc69bcbcf3f5}{m\_tmpConstraintSizesPool}}[jj].m\_numConstraintRows\ :\ numContactRows;}
+\DoxyCodeLine{00407\ }
+\DoxyCodeLine{00408\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}*\ JinvMrow\ =\ JinvM\ +\ 2\ *\ 8\ *\ (size\_t)row\_\_;}
+\DoxyCodeLine{00409\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}*\ Jrow\ =\ Jptr\ +\ 2\ *\ 8\ *\ (size\_t)row\_\_;}
+\DoxyCodeLine{00410\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}.multiply2\_p8r(JinvMrow,\ Jrow,\ infom,\ infom,\ row\_\_,\ row\_\_);}
+\DoxyCodeLine{00411\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (orgBodyB)}
+\DoxyCodeLine{00412\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00413\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}.multiplyAdd2\_p8r(JinvMrow\ +\ 8\ *\ (\textcolor{keywordtype}{size\_t})infom,\ Jrow\ +\ 8\ *\ (\textcolor{keywordtype}{size\_t})infom,\ infom,\ infom,\ row\_\_,\ row\_\_);}
+\DoxyCodeLine{00414\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00415\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ row\_\_\ +=\ infom;}
+\DoxyCodeLine{00416\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ jj++;}
+\DoxyCodeLine{00417\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00418\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00419\ \ \ \ \ \}}
+\DoxyCodeLine{00420\ }
+\DoxyCodeLine{00421\ \ \ \ \ \textcolor{keywordflow}{if}\ (1)}
+\DoxyCodeLine{00422\ \ \ \ \ \{}
+\DoxyCodeLine{00423\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ add\ cfm\ to\ the\ diagonal\ of\ m\_A}}
+\DoxyCodeLine{00424\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}.rows();\ ++i)}
+\DoxyCodeLine{00425\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00426\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}.setElem(i,\ i,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}(i,\ i)\ +\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}}.m\_globalCfm\ /\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}}.m\_timeStep);}
+\DoxyCodeLine{00427\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00428\ \ \ \ \ \}}
+\DoxyCodeLine{00429\ }
+\DoxyCodeLine{00431\ \ \ \ \ \{}
+\DoxyCodeLine{00432\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}fill\ the\ upper\ triangle\ "{}});}
+\DoxyCodeLine{00433\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}.copyLowerToUpperTriangle();}
+\DoxyCodeLine{00434\ \ \ \ \ \}}
+\DoxyCodeLine{00435\ }
+\DoxyCodeLine{00436\ \ \ \ \ \{}
+\DoxyCodeLine{00437\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}resize/init\ x"{}});}
+\DoxyCodeLine{00438\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a79ad61721583b308de8be07cd33e67ae}{m\_x}}.resize(numConstraintRows);}
+\DoxyCodeLine{00439\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a87e493a2efd02e6ec58cdfd6806fc01d}{m\_xSplit}}.resize(numConstraintRows);}
+\DoxyCodeLine{00440\ }
+\DoxyCodeLine{00441\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}}.m\_solverMode\ \&\ \mbox{\hyperlink{bt_contact_solver_info_8h_ae639815d29b6479e683b5c706fab963fac5d4dbf40519c3ed898142386e3d0d5c}{SOLVER\_USE\_WARMSTARTING}})}
+\DoxyCodeLine{00442\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00443\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.size();\ i++)}
+\DoxyCodeLine{00444\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00445\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_solver_constraint_8h_abc9a30790ffc49b49c0f846963def7b7}{btSolverConstraint}}\&\ c\ =\ *\mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i];}
+\DoxyCodeLine{00446\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a79ad61721583b308de8be07cd33e67ae}{m\_x}}[i]\ =\ c.m\_appliedImpulse;}
+\DoxyCodeLine{00447\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a87e493a2efd02e6ec58cdfd6806fc01d}{m\_xSplit}}[i]\ =\ c.m\_appliedPushImpulse;}
+\DoxyCodeLine{00448\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00449\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00450\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00451\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00452\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a79ad61721583b308de8be07cd33e67ae}{m\_x}}.setZero();}
+\DoxyCodeLine{00453\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a87e493a2efd02e6ec58cdfd6806fc01d}{m\_xSplit}}.setZero();}
+\DoxyCodeLine{00454\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00455\ \ \ \ \ \}}
+\DoxyCodeLine{00456\ \}}
+\DoxyCodeLine{00457\ }
+\DoxyCodeLine{00458\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a83c6bc90a6a311204fccec04aa331aee}{btMLCPSolver::createMLCP}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_contact_solver_info}{btContactSolverInfo}}\&\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}})}
+\DoxyCodeLine{00459\ \{}
+\DoxyCodeLine{00460\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}}\ =\ this-\/>m\_tmpSolverBodyPool.size();}
+\DoxyCodeLine{00461\ \ \ \ \ \textcolor{keywordtype}{int}\ numConstraintRows\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.size();}
+\DoxyCodeLine{00462\ }
+\DoxyCodeLine{00463\ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a102a9cbe5333f818bd57ab58a61c9fa3}{m\_b}}.resize(numConstraintRows);}
+\DoxyCodeLine{00464\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}}.m\_splitImpulse)}
+\DoxyCodeLine{00465\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a9c1feb6855fa296c8ca582842f8e4fe3}{m\_bSplit}}.resize(numConstraintRows);}
+\DoxyCodeLine{00466\ }
+\DoxyCodeLine{00467\ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a9c1feb6855fa296c8ca582842f8e4fe3}{m\_bSplit}}.setZero();}
+\DoxyCodeLine{00468\ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a102a9cbe5333f818bd57ab58a61c9fa3}{m\_b}}.setZero();}
+\DoxyCodeLine{00469\ }
+\DoxyCodeLine{00470\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numConstraintRows;\ i++)}
+\DoxyCodeLine{00471\ \ \ \ \ \{}
+\DoxyCodeLine{00472\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>\mbox{\hyperlink{b3_solver_constraint_8h_a217946c7a4608e3fab44398144fcdd17}{m\_jacDiagABInv}})}
+\DoxyCodeLine{00473\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00474\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a102a9cbe5333f818bd57ab58a61c9fa3}{m\_b}}[i]\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_rhs\ /\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_jacDiagABInv;}
+\DoxyCodeLine{00475\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}}.m\_splitImpulse)}
+\DoxyCodeLine{00476\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a9c1feb6855fa296c8ca582842f8e4fe3}{m\_bSplit}}[i]\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_rhsPenetration\ /\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_jacDiagABInv;}
+\DoxyCodeLine{00477\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00478\ \ \ \ \ \}}
+\DoxyCodeLine{00479\ }
+\DoxyCodeLine{00480\ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_a7f0aa262c0acd063c03ce408430ce8f4}{btMatrixXu}}\&\ Minv\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a38b5484ca251c0c4c0dfe2838679678b}{m\_scratchMInv}};}
+\DoxyCodeLine{00481\ \ \ \ \ Minv.resize(6\ *\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}},\ 6\ *\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}});}
+\DoxyCodeLine{00482\ \ \ \ \ Minv.setZero();}
+\DoxyCodeLine{00483\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}};\ i++)}
+\DoxyCodeLine{00484\ \ \ \ \ \{}
+\DoxyCodeLine{00485\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_solver_body_8h_a029df9344a303d369eb63b1c7f3e60d5}{btSolverBody}}\&\ rb\ =\ m\_tmpSolverBodyPool[i];}
+\DoxyCodeLine{00486\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ invMass\ =\ rb.m\_invMass;}
+\DoxyCodeLine{00487\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(Minv,\ i\ *\ 6\ +\ 0,\ i\ *\ 6\ +\ 0,\ invMass[0]);}
+\DoxyCodeLine{00488\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(Minv,\ i\ *\ 6\ +\ 1,\ i\ *\ 6\ +\ 1,\ invMass[1]);}
+\DoxyCodeLine{00489\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(Minv,\ i\ *\ 6\ +\ 2,\ i\ *\ 6\ +\ 2,\ invMass[2]);}
+\DoxyCodeLine{00490\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*\ orgBody\ =\ m\_tmpSolverBodyPool[i].m\_originalBody;}
+\DoxyCodeLine{00491\ }
+\DoxyCodeLine{00492\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}\ =\ 0;\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}\ <\ 3;\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}++)}
+\DoxyCodeLine{00493\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ c\ =\ 0;\ c\ <\ 3;\ c++)}
+\DoxyCodeLine{00494\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(Minv,\ i\ *\ 6\ +\ 3\ +\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}},\ i\ *\ 6\ +\ 3\ +\ c,\ orgBody\ ?\ orgBody-\/>\mbox{\hyperlink{classbt_rigid_body_af7d00bfba6cf3f11d3112c0429d3d884}{getInvInertiaTensorWorld}}()[\mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}][c]\ :\ 0);}
+\DoxyCodeLine{00495\ \ \ \ \ \}}
+\DoxyCodeLine{00496\ }
+\DoxyCodeLine{00497\ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_a7f0aa262c0acd063c03ce408430ce8f4}{btMatrixXu}}\&\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}}\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a61a8428f0dd4f76af7c7cb9c6eea06bd}{m\_scratchJ}};}
+\DoxyCodeLine{00498\ \ \ \ \ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}}.resize(numConstraintRows,\ 6\ *\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}});}
+\DoxyCodeLine{00499\ \ \ \ \ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}}.setZero();}
+\DoxyCodeLine{00500\ }
+\DoxyCodeLine{00501\ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ae7a49a4a3ef55eadd59ec64a2d2dce0d}{m\_lo}}.resize(numConstraintRows);}
+\DoxyCodeLine{00502\ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_aaa4243bdf7468736d75c9da113153832}{m\_hi}}.resize(numConstraintRows);}
+\DoxyCodeLine{00503\ }
+\DoxyCodeLine{00504\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numConstraintRows;\ i++)}
+\DoxyCodeLine{00505\ \ \ \ \ \{}
+\DoxyCodeLine{00506\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ae7a49a4a3ef55eadd59ec64a2d2dce0d}{m\_lo}}[i]\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_lowerLimit;}
+\DoxyCodeLine{00507\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_aaa4243bdf7468736d75c9da113153832}{m\_hi}}[i]\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_upperLimit;}
+\DoxyCodeLine{00508\ }
+\DoxyCodeLine{00509\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ bodyIndex0\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_solverBodyIdA;}
+\DoxyCodeLine{00510\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ bodyIndex1\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>m\_solverBodyIdB;}
+\DoxyCodeLine{00511\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_tmpSolverBodyPool[bodyIndex0].\mbox{\hyperlink{b3_solver_body_8h_af33a4e6e984d5b38719a58adeccdf53c}{m\_originalBody}})}
+\DoxyCodeLine{00512\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00513\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}},\ i,\ 6\ *\ bodyIndex0\ +\ 0,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>\mbox{\hyperlink{bt_solver_constraint_8h_a5efed7975c0b0f2c65f9c9968c42d6ae}{m\_contactNormal1}}[0]);}
+\DoxyCodeLine{00514\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}},\ i,\ 6\ *\ bodyIndex0\ +\ 1,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>\mbox{\hyperlink{bt_solver_constraint_8h_a5efed7975c0b0f2c65f9c9968c42d6ae}{m\_contactNormal1}}[1]);}
+\DoxyCodeLine{00515\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}},\ i,\ 6\ *\ bodyIndex0\ +\ 2,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>\mbox{\hyperlink{bt_solver_constraint_8h_a5efed7975c0b0f2c65f9c9968c42d6ae}{m\_contactNormal1}}[2]);}
+\DoxyCodeLine{00516\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}},\ i,\ 6\ *\ bodyIndex0\ +\ 3,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>\mbox{\hyperlink{b3_solver_constraint_8h_a5b45376926aed1b113906e7726b1bfca}{m\_relpos1CrossNormal}}[0]);}
+\DoxyCodeLine{00517\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}},\ i,\ 6\ *\ bodyIndex0\ +\ 4,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>\mbox{\hyperlink{b3_solver_constraint_8h_a5b45376926aed1b113906e7726b1bfca}{m\_relpos1CrossNormal}}[1]);}
+\DoxyCodeLine{00518\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}},\ i,\ 6\ *\ bodyIndex0\ +\ 5,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>\mbox{\hyperlink{b3_solver_constraint_8h_a5b45376926aed1b113906e7726b1bfca}{m\_relpos1CrossNormal}}[2]);}
+\DoxyCodeLine{00519\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00520\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_tmpSolverBodyPool[bodyIndex1].\mbox{\hyperlink{b3_solver_body_8h_af33a4e6e984d5b38719a58adeccdf53c}{m\_originalBody}})}
+\DoxyCodeLine{00521\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00522\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}},\ i,\ 6\ *\ bodyIndex1\ +\ 0,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>\mbox{\hyperlink{bt_solver_constraint_8h_af447bf6701be7debcd4c85dc2a04bb0b}{m\_contactNormal2}}[0]);}
+\DoxyCodeLine{00523\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}},\ i,\ 6\ *\ bodyIndex1\ +\ 1,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>\mbox{\hyperlink{bt_solver_constraint_8h_af447bf6701be7debcd4c85dc2a04bb0b}{m\_contactNormal2}}[1]);}
+\DoxyCodeLine{00524\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}},\ i,\ 6\ *\ bodyIndex1\ +\ 2,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>\mbox{\hyperlink{bt_solver_constraint_8h_af447bf6701be7debcd4c85dc2a04bb0b}{m\_contactNormal2}}[2]);}
+\DoxyCodeLine{00525\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}},\ i,\ 6\ *\ bodyIndex1\ +\ 3,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>\mbox{\hyperlink{b3_solver_constraint_8h_aa54a6c3d5ccf26c0ee6dde53edfcdbe7}{m\_relpos2CrossNormal}}[0]);}
+\DoxyCodeLine{00526\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}},\ i,\ 6\ *\ bodyIndex1\ +\ 4,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>\mbox{\hyperlink{b3_solver_constraint_8h_aa54a6c3d5ccf26c0ee6dde53edfcdbe7}{m\_relpos2CrossNormal}}[1]);}
+\DoxyCodeLine{00527\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_aeec496577de65ca290d76a6d5fb0eea1}{setElem}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}},\ i,\ 6\ *\ bodyIndex1\ +\ 5,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i]-\/>\mbox{\hyperlink{b3_solver_constraint_8h_aa54a6c3d5ccf26c0ee6dde53edfcdbe7}{m\_relpos2CrossNormal}}[2]);}
+\DoxyCodeLine{00528\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00529\ \ \ \ \ \}}
+\DoxyCodeLine{00530\ }
+\DoxyCodeLine{00531\ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_a7f0aa262c0acd063c03ce408430ce8f4}{btMatrixXu}}\&\ J\_transpose\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a2d004c62bfaf11f0d076ac3fd1f86dee}{m\_scratchJTranspose}};}
+\DoxyCodeLine{00532\ \ \ \ \ J\_transpose\ =\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}}.transpose();}
+\DoxyCodeLine{00533\ }
+\DoxyCodeLine{00534\ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_a7f0aa262c0acd063c03ce408430ce8f4}{btMatrixXu}}\&\ tmp\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a015582f967c7e80064d2d5da887e8c8d}{m\_scratchTmp}};}
+\DoxyCodeLine{00535\ \ \ \ \ \textcolor{comment}{//Minv.printMatrix("{}Minv="{});}}
+\DoxyCodeLine{00536\ \ \ \ \ \{}
+\DoxyCodeLine{00537\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00538\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}J*Minv"{}});}
+\DoxyCodeLine{00539\ \ \ \ \ \ \ \ \ \ \ \ \ tmp\ =\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385aff44570aca8241914870afbc310cdb85}{J}}\ *\ Minv;}
+\DoxyCodeLine{00540\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00541\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00542\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}J*tmp"{}});}
+\DoxyCodeLine{00543\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}\ =\ tmp\ *\ J\_transpose;}
+\DoxyCodeLine{00544\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00545\ \ \ \ \ \}}
+\DoxyCodeLine{00546\ \ \ \ \ \textcolor{comment}{//J.printMatrix("{}J"{});}}
+\DoxyCodeLine{00547\ \ \ \ \ \textcolor{keywordflow}{if}\ (1)}
+\DoxyCodeLine{00548\ \ \ \ \ \{}
+\DoxyCodeLine{00549\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ add\ cfm\ to\ the\ diagonal\ of\ m\_A}}
+\DoxyCodeLine{00550\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}.rows();\ ++i)}
+\DoxyCodeLine{00551\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00552\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}.setElem(i,\ i,\ \mbox{\hyperlink{classbt_m_l_c_p_solver_ab19d782b7687c2c0598a26678a904c3d}{m\_A}}(i,\ i)\ +\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}}.m\_globalCfm\ /\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}}.m\_timeStep);}
+\DoxyCodeLine{00553\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00554\ \ \ \ \ \}}
+\DoxyCodeLine{00555\ }
+\DoxyCodeLine{00556\ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a79ad61721583b308de8be07cd33e67ae}{m\_x}}.resize(numConstraintRows);}
+\DoxyCodeLine{00557\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}}.m\_splitImpulse)}
+\DoxyCodeLine{00558\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a87e493a2efd02e6ec58cdfd6806fc01d}{m\_xSplit}}.resize(numConstraintRows);}
+\DoxyCodeLine{00559\ \ \ \ \ \textcolor{comment}{//\ \ m\_x.setZero();}}
+\DoxyCodeLine{00560\ }
+\DoxyCodeLine{00561\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.size();\ i++)}
+\DoxyCodeLine{00562\ \ \ \ \ \{}
+\DoxyCodeLine{00563\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_solver_constraint_8h_abc9a30790ffc49b49c0f846963def7b7}{btSolverConstraint}}\&\ c\ =\ *\mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i];}
+\DoxyCodeLine{00564\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a79ad61721583b308de8be07cd33e67ae}{m\_x}}[i]\ =\ c.m\_appliedImpulse;}
+\DoxyCodeLine{00565\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}}.m\_splitImpulse)}
+\DoxyCodeLine{00566\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_a87e493a2efd02e6ec58cdfd6806fc01d}{m\_xSplit}}[i]\ =\ c.m\_appliedPushImpulse;}
+\DoxyCodeLine{00567\ \ \ \ \ \}}
+\DoxyCodeLine{00568\ \}}
+\DoxyCodeLine{00569\ }
+\DoxyCodeLine{00570\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_m_l_c_p_solver_aba47abca0dc7f203f6ec5bc17d2f96a3}{btMLCPSolver::solveGroupCacheFriendlyIterations}}(\mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}**\ bodies,\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}},\ \mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}**\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a6aba8beffdb0aa00dc0b0431e260aa91}{manifoldPtr}},\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ad78d14cac38555333ae536286a72c72b}{numManifolds}},\ \mbox{\hyperlink{bt_typed_constraint_8h_ac4d45dd414a1096579ca1009cb892163}{btTypedConstraint}}**\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_contact_solver_info}{btContactSolverInfo}}\&\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}},\ \mbox{\hyperlink{classbt_i_debug_draw}{btIDebugDraw}}*\ debugDrawer)}
+\DoxyCodeLine{00571\ \{}
+\DoxyCodeLine{00572\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00573\ \ \ \ \ \{}
+\DoxyCodeLine{00574\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}solveMLCP"{}});}
+\DoxyCodeLine{00575\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ printf("{}m\_A(\%d,\%d)\(\backslash\)n"{},\ m\_A.rows(),m\_A.cols());}}
+\DoxyCodeLine{00576\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a8b3955c50047184e0deb904242a66941}{solveMLCP}}(\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}});}
+\DoxyCodeLine{00577\ \ \ \ \ \}}
+\DoxyCodeLine{00578\ }
+\DoxyCodeLine{00579\ \ \ \ \ \textcolor{comment}{//check\ if\ solution\ is\ valid,\ and\ otherwise\ fallback\ to\ btSequentialImpulseConstraintSolver::solveGroupCacheFriendlyIterations}}
+\DoxyCodeLine{00580\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}})}
+\DoxyCodeLine{00581\ \ \ \ \ \{}
+\DoxyCodeLine{00582\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}process\ MLCP\ results"{}});}
+\DoxyCodeLine{00583\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}.size();\ i++)}
+\DoxyCodeLine{00584\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00585\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00586\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_solver_constraint_8h_abc9a30790ffc49b49c0f846963def7b7}{btSolverConstraint}}\&\ c\ =\ *\mbox{\hyperlink{classbt_m_l_c_p_solver_acdf8ce3cdb3f075bad4e20aaf1a8cb14}{m\_allConstraintPtrArray}}[i];}
+\DoxyCodeLine{00587\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ sbA\ =\ c.m\_solverBodyIdA;}
+\DoxyCodeLine{00588\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ sbB\ =\ c.m\_solverBodyIdB;}
+\DoxyCodeLine{00589\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//btRigidBody*\ orgBodyA\ =\ m\_tmpSolverBodyPool[sbA].m\_originalBody;}}
+\DoxyCodeLine{00590\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ btRigidBody*\ orgBodyB\ =\ m\_tmpSolverBodyPool[sbB].m\_originalBody;}}
+\DoxyCodeLine{00591\ }
+\DoxyCodeLine{00592\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_solver_body_8h_a029df9344a303d369eb63b1c7f3e60d5}{btSolverBody}}\&\ solverBodyA\ =\ m\_tmpSolverBodyPool[sbA];}
+\DoxyCodeLine{00593\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_solver_body_8h_a029df9344a303d369eb63b1c7f3e60d5}{btSolverBody}}\&\ solverBodyB\ =\ m\_tmpSolverBodyPool[sbB];}
+\DoxyCodeLine{00594\ }
+\DoxyCodeLine{00595\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00596\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ deltaImpulse\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a79ad61721583b308de8be07cd33e67ae}{m\_x}}[i]\ -\/\ c.m\_appliedImpulse;}
+\DoxyCodeLine{00597\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ c.m\_appliedImpulse\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a79ad61721583b308de8be07cd33e67ae}{m\_x}}[i];}
+\DoxyCodeLine{00598\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ solverBodyA.internalApplyImpulse(c.m\_contactNormal1\ *\ solverBodyA.internalGetInvMass(),\ c.m\_angularComponentA,\ deltaImpulse);}
+\DoxyCodeLine{00599\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ solverBodyB.internalApplyImpulse(c.m\_contactNormal2\ *\ solverBodyB.internalGetInvMass(),\ c.m\_angularComponentB,\ deltaImpulse);}
+\DoxyCodeLine{00600\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00601\ }
+\DoxyCodeLine{00602\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}}.m\_splitImpulse)}
+\DoxyCodeLine{00603\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00604\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ deltaImpulse\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a87e493a2efd02e6ec58cdfd6806fc01d}{m\_xSplit}}[i]\ -\/\ c.m\_appliedPushImpulse;}
+\DoxyCodeLine{00605\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ solverBodyA.internalApplyPushImpulse(c.m\_contactNormal1\ *\ solverBodyA.internalGetInvMass(),\ c.m\_angularComponentA,\ deltaImpulse);}
+\DoxyCodeLine{00606\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ solverBodyB.internalApplyPushImpulse(c.m\_contactNormal2\ *\ solverBodyB.internalGetInvMass(),\ c.m\_angularComponentB,\ deltaImpulse);}
+\DoxyCodeLine{00607\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ c.m\_appliedPushImpulse\ =\ \mbox{\hyperlink{classbt_m_l_c_p_solver_a87e493a2efd02e6ec58cdfd6806fc01d}{m\_xSplit}}[i];}
+\DoxyCodeLine{00608\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00609\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00610\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00611\ \ \ \ \ \}}
+\DoxyCodeLine{00612\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00613\ \ \ \ \ \{}
+\DoxyCodeLine{00614\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ printf("{}m\_fallback\ =\ \%d\(\backslash\)n"{},m\_fallback);}}
+\DoxyCodeLine{00615\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_m_l_c_p_solver_ac3debefed2fe370fd95302fef37182bc}{m\_fallback}}++;}
+\DoxyCodeLine{00616\ \ \ \ \ \ \ \ \ btSequentialImpulseConstraintSolver::solveGroupCacheFriendlyIterations(bodies,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}},\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a6aba8beffdb0aa00dc0b0431e260aa91}{manifoldPtr}},\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ad78d14cac38555333ae536286a72c72b}{numManifolds}},\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}},\ debugDrawer);}
+\DoxyCodeLine{00617\ \ \ \ \ \}}
+\DoxyCodeLine{00618\ }
+\DoxyCodeLine{00619\ \ \ \ \ \textcolor{keywordflow}{return}\ 0.f;}
+\DoxyCodeLine{00620\ \}}
+
+\end{DoxyCode}

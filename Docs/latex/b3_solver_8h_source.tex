@@ -1,0 +1,116 @@
+\doxysection{b3\+Solver.\+h}
+\hypertarget{b3_solver_8h_source}{}\label{b3_solver_8h_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/Bullet3OpenCL/RigidBody/b3Solver.h@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/Bullet3OpenCL/RigidBody/b3Solver.h}}
+\mbox{\hyperlink{b3_solver_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Copyright\ (c)\ 2012\ Advanced\ Micro\ Devices,\ Inc.\ \ }}
+\DoxyCodeLine{00003\ \textcolor{comment}{}}
+\DoxyCodeLine{00004\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00005\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00007\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00009\ \textcolor{comment}{}}
+\DoxyCodeLine{00010\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00011\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00014\ \textcolor{comment}{//Originally\ written\ by\ Takahiro\ Harada}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#ifndef\ \_\_ADL\_SOLVER\_H}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#define\ \_\_ADL\_SOLVER\_H}}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_open_c_l_array_8h}{Bullet3OpenCL/ParallelPrimitives/b3OpenCLArray.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_gpu_constraint4_8h}{b3GpuConstraint4.h}}"{}}}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_rigid_body_data_8h}{Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyData.h}}"{}}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_contact4_8h}{Bullet3Collision/NarrowPhaseCollision/b3Contact4.h}}"{}}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_prefix_scan_c_l_8h}{Bullet3OpenCL/ParallelPrimitives/b3PrefixScanCL.h}}"{}}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_radix_sort32_c_l_8h}{Bullet3OpenCL/ParallelPrimitives/b3RadixSort32CL.h}}"{}}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_bound_search_c_l_8h}{Bullet3OpenCL/ParallelPrimitives/b3BoundSearchCL.h}}"{}}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_open_c_l_utils_8h}{Bullet3OpenCL/Initialize/b3OpenCLUtils.h}}"{}}}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#define\ B3NEXTMULTIPLEOF(num,\ alignment)\ (((num)\ /\ (alignment)\ +\ (((num)\ \%\ (alignment)\ ==\ 0)\ ?\ 0\ :\ 1))\ *\ (alignment))}}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \textcolor{keyword}{enum}}
+\DoxyCodeLine{00034\ \{}
+\DoxyCodeLine{00035\ \ \ \ \ \mbox{\hyperlink{b3_solver_8h_a907fdc8257d88fa87e57027412e23a50a4d4b21c3ca62c6cfddb65ef039ec2493}{B3\_SOLVER\_N\_SPLIT\_X}}\ =\ 8,\ \ \textcolor{comment}{//16,//4,}}
+\DoxyCodeLine{00036\ \ \ \ \ \mbox{\hyperlink{b3_solver_8h_a907fdc8257d88fa87e57027412e23a50a6c28d74a3f3d86dcefd573e00b0570fc}{B3\_SOLVER\_N\_SPLIT\_Y}}\ =\ 4,\ \ \textcolor{comment}{//16,//4,}}
+\DoxyCodeLine{00037\ \ \ \ \ \mbox{\hyperlink{b3_solver_8h_a907fdc8257d88fa87e57027412e23a50a9778e0f3d4dd326497c5adfb5412030a}{B3\_SOLVER\_N\_SPLIT\_Z}}\ =\ 8,\ \ \textcolor{comment}{//,}}
+\DoxyCodeLine{00038\ \ \ \ \ \mbox{\hyperlink{b3_solver_8h_a907fdc8257d88fa87e57027412e23a50ae9ead924500721edc06078e66f398f9f}{B3\_SOLVER\_N\_CELLS}}\ =\ \mbox{\hyperlink{b3_solver_8h_a907fdc8257d88fa87e57027412e23a50a4d4b21c3ca62c6cfddb65ef039ec2493}{B3\_SOLVER\_N\_SPLIT\_X}}\ *\ \mbox{\hyperlink{b3_solver_8h_a907fdc8257d88fa87e57027412e23a50a6c28d74a3f3d86dcefd573e00b0570fc}{B3\_SOLVER\_N\_SPLIT\_Y}}\ *\ \mbox{\hyperlink{b3_solver_8h_a907fdc8257d88fa87e57027412e23a50a9778e0f3d4dd326497c5adfb5412030a}{B3\_SOLVER\_N\_SPLIT\_Z}},}
+\DoxyCodeLine{00039\ \ \ \ \ \mbox{\hyperlink{b3_solver_8h_a907fdc8257d88fa87e57027412e23a50abeaf578c2cad45511454d8ae6ee1d986}{B3\_SOLVER\_N\_BATCHES}}\ =\ 8,\ \ \textcolor{comment}{//4,//8,//4,}}
+\DoxyCodeLine{00040\ \ \ \ \ \mbox{\hyperlink{b3_solver_8h_a907fdc8257d88fa87e57027412e23a50a5e18c27a8f40574fac61b7f9336ec036}{B3\_MAX\_NUM\_BATCHES}}\ =\ 128,}
+\DoxyCodeLine{00041\ \};}
+\DoxyCodeLine{00042\ }
+\DoxyCodeLine{00043\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classb3_solver_base}{b3SolverBase}}}
+\DoxyCodeLine{00044\ \{}
+\DoxyCodeLine{00045\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00046\ \ \ \ \ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structb3_solver_base_1_1_constraint_cfg_a5320730f1b449548b0ee3f1a58e40594}{ConstraintCfg}}}
+\DoxyCodeLine{00047\ \ \ \ \ \{}
+\DoxyCodeLine{00048\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structb3_solver_base_1_1_constraint_cfg_a5320730f1b449548b0ee3f1a58e40594}{ConstraintCfg}}(\textcolor{keywordtype}{float}\ dt\ =\ 0.f)\ :\ \mbox{\hyperlink{structb3_solver_base_1_1_constraint_cfg_a7d7b1d09de10cac60122d7063ecc00da}{m\_positionDrift}}(0.005f),\ \mbox{\hyperlink{structb3_solver_base_1_1_constraint_cfg_a1d54ea35b26cc99d3db0116eccd2c839}{m\_positionConstraintCoeff}}(0.2f),\ \mbox{\hyperlink{structb3_solver_base_1_1_constraint_cfg_a6dd06ba35499caf70e304f9c97d8df48}{m\_dt}}(dt),\ \mbox{\hyperlink{structb3_solver_base_1_1_constraint_cfg_ace863e0747a1b8a809f5f5304ae036bb}{m\_staticIdx}}(-\/1)\ \{\}}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{structb3_solver_base_1_1_constraint_cfg_a7d7b1d09de10cac60122d7063ecc00da}{m\_positionDrift}};}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{structb3_solver_base_1_1_constraint_cfg_a1d54ea35b26cc99d3db0116eccd2c839}{m\_positionConstraintCoeff}};}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{structb3_solver_base_1_1_constraint_cfg_a6dd06ba35499caf70e304f9c97d8df48}{m\_dt}};}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{structb3_solver_base_1_1_constraint_cfg_a7a3d13072b91299d22c98f0556b7fbb6}{m\_enableParallelSolve}};}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{structb3_solver_base_1_1_constraint_cfg_a78be0788f6f616cd5fe66e222c78d593}{m\_batchCellSize}};}
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{structb3_solver_base_1_1_constraint_cfg_ace863e0747a1b8a809f5f5304ae036bb}{m\_staticIdx}};}
+\DoxyCodeLine{00056\ \ \ \ \ \};}
+\DoxyCodeLine{00057\ \};}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classb3_solver_a2984a934830d00e0dd1c55d91820c41e}{b3Solver}}\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{classb3_solver_base}{b3SolverBase}}}
+\DoxyCodeLine{00060\ \{}
+\DoxyCodeLine{00061\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00062\ \ \ \ \ \mbox{\hyperlink{clew_8h_a96a7d9b65e8319e2f8c751455ae92ec8}{cl\_context}}\ \mbox{\hyperlink{classb3_solver_a7bb311020c23712f03a5020165a9c4b3}{m\_context}};}
+\DoxyCodeLine{00063\ \ \ \ \ \mbox{\hyperlink{clew_8h_abf58c686ce1c1e363fc1c219416bae3b}{cl\_device\_id}}\ \mbox{\hyperlink{classb3_solver_acf74c793030553adb586fade3fb48562}{m\_device}};}
+\DoxyCodeLine{00064\ \ \ \ \ \mbox{\hyperlink{clew_8h_ac0eceefed5ddf03f817f9c9a20fdc616}{cl\_command\_queue}}\ \mbox{\hyperlink{classb3_solver_af7fa24a1f668efb52d0c17a7234651b6}{m\_queue}};}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<unsigned\ int>}}*\ \mbox{\hyperlink{classb3_solver_a57385f8d4a5b101984158828f1f405c8}{m\_numConstraints}};}
+\DoxyCodeLine{00067\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<unsigned\ int>}}*\ \mbox{\hyperlink{classb3_solver_a578e954b038972fb68ced1671777028d}{m\_offsets}};}
+\DoxyCodeLine{00068\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<int>}}\ \mbox{\hyperlink{classb3_solver_adb86399573080b859dba9493803a2c26}{m\_batchSizes}};}
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classb3_solver_a8ee22aaeaf6f2195c35111e195eaaef5}{m\_nIterations}};}
+\DoxyCodeLine{00071\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ \mbox{\hyperlink{classb3_solver_ae6d45fdb0451aa5d6dec39493340f4b1}{m\_batchingKernel}};}
+\DoxyCodeLine{00072\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ \mbox{\hyperlink{classb3_solver_a43f9f32c1db816f78f01cd9467e52c39}{m\_batchingKernelNew}};}
+\DoxyCodeLine{00073\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ \mbox{\hyperlink{classb3_solver_a00f1a22ac96761e03c80e2b6a9559815}{m\_solveContactKernel}};}
+\DoxyCodeLine{00074\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ \mbox{\hyperlink{classb3_solver_a758582f0ac5b8e998f20a31a159e79ca}{m\_solveFrictionKernel}};}
+\DoxyCodeLine{00075\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ \mbox{\hyperlink{classb3_solver_a6190db459cc96acbd993ab99fe033656}{m\_contactToConstraintKernel}};}
+\DoxyCodeLine{00076\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ \mbox{\hyperlink{classb3_solver_a259e9fc4885f0059852db3c82b3eb9f4}{m\_setSortDataKernel}};}
+\DoxyCodeLine{00077\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ \mbox{\hyperlink{classb3_solver_a2a1f7cb8bfd5c4550d15d59bb5e8561c}{m\_reorderContactKernel}};}
+\DoxyCodeLine{00078\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ \mbox{\hyperlink{classb3_solver_a25e01c3d4ca758ed7017e49f3c1f89a5}{m\_copyConstraintKernel}};}
+\DoxyCodeLine{00079\ }
+\DoxyCodeLine{00080\ \ \ \ \ \textcolor{keyword}{class\ }\mbox{\hyperlink{classb3_radix_sort32_c_l}{b3RadixSort32CL}}*\ \mbox{\hyperlink{classb3_solver_a26e6a5285e9ceb123ebe4f29a152c315}{m\_sort32}};}
+\DoxyCodeLine{00081\ \ \ \ \ \textcolor{keyword}{class\ }\mbox{\hyperlink{classb3_bound_search_c_l}{b3BoundSearchCL}}*\ \mbox{\hyperlink{classb3_solver_a232966424150e4743cc6526ff6923ccf}{m\_search}};}
+\DoxyCodeLine{00082\ \ \ \ \ \textcolor{keyword}{class\ }\mbox{\hyperlink{classb3_prefix_scan_c_l}{b3PrefixScanCL}}*\ \mbox{\hyperlink{classb3_solver_a7418ce02f6ef7c3685ceb06350f858ba}{m\_scan}};}
+\DoxyCodeLine{00083\ }
+\DoxyCodeLine{00084\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3SortData>}}*\ \mbox{\hyperlink{classb3_solver_a84d08ed2e7401605ab0249ea1c8ee7d1}{m\_sortDataBuffer}};}
+\DoxyCodeLine{00085\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3Contact4>}}*\ \mbox{\hyperlink{classb3_solver_aa6490e0a1d69626591684c807ac13b9f}{m\_contactBuffer2}};}
+\DoxyCodeLine{00086\ }
+\DoxyCodeLine{00087\ \ \ \ \ \textcolor{keyword}{enum}}
+\DoxyCodeLine{00088\ \ \ \ \ \{}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classb3_solver_aaa201224c094af2c38b439fd4b563ae1a8bf816cc22a9fa939cd48b17d9a2bed7}{DYNAMIC\_CONTACT\_ALLOCATION\_THRESHOLD}}\ =\ 2000000,}
+\DoxyCodeLine{00090\ \ \ \ \ \};}
+\DoxyCodeLine{00091\ }
+\DoxyCodeLine{00092\ \ \ \ \ \mbox{\hyperlink{classb3_solver_a2984a934830d00e0dd1c55d91820c41e}{b3Solver}}(\mbox{\hyperlink{clew_8h_a96a7d9b65e8319e2f8c751455ae92ec8}{cl\_context}}\ ctx,\ \mbox{\hyperlink{clew_8h_abf58c686ce1c1e363fc1c219416bae3b}{cl\_device\_id}}\ device,\ \mbox{\hyperlink{clew_8h_ac0eceefed5ddf03f817f9c9a20fdc616}{cl\_command\_queue}}\ queue,\ \textcolor{keywordtype}{int}\ pairCapacity);}
+\DoxyCodeLine{00093\ }
+\DoxyCodeLine{00094\ \ \ \ \ \textcolor{keyword}{virtual}\ \mbox{\hyperlink{classb3_solver_aa24a39da693026bbc12b46b1bbc8060d}{\string~b3Solver}}();}
+\DoxyCodeLine{00095\ }
+\DoxyCodeLine{00096\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classb3_solver_a4ced1252766713ce15d9d2cac87ae166}{solveContactConstraint}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3RigidBodyData>}}*\ bodyBuf,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3InertiaData>}}*\ inertiaBuf,}
+\DoxyCodeLine{00097\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3GpuConstraint4>}}*\ constraint,\ \textcolor{keywordtype}{void}*\ additionalData,\ \textcolor{keywordtype}{int}\ n,\ \textcolor{keywordtype}{int}\ maxNumBatches);}
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classb3_solver_afdb27e3a0d7f28ea748fdc8db1afad7d}{solveContactConstraintHost}}(\mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3RigidBodyData>}}*\ bodyBuf,\ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3InertiaData>}}*\ shapeBuf,}
+\DoxyCodeLine{00100\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3GpuConstraint4>}}*\ constraint,\ \textcolor{keywordtype}{void}*\ additionalData,\ \textcolor{keywordtype}{int}\ n,\ \textcolor{keywordtype}{int}\ maxNumBatches,\ \mbox{\hyperlink{classb3_aligned_object_array}{b3AlignedObjectArray<int>}}*\ batchSizes);}
+\DoxyCodeLine{00101\ }
+\DoxyCodeLine{00102\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classb3_solver_a9763fed41095751399e0b494e9d43339}{convertToConstraints}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3RigidBodyData>}}*\ bodyBuf,}
+\DoxyCodeLine{00103\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3InertiaData>}}*\ shapeBuf,}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3Contact4>}}*\ contactsIn,\ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3GpuConstraint4>}}*\ contactCOut,\ \textcolor{keywordtype}{void}*\ additionalData,}
+\DoxyCodeLine{00105\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ nContacts,\ \textcolor{keyword}{const}\ ConstraintCfg\&\ cfg);}
+\DoxyCodeLine{00106\ }
+\DoxyCodeLine{00107\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classb3_solver_a18a0f0be7929823c8b8acbd02e5fe69b}{batchContacts}}(\mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3Contact4>}}*\ contacts,\ \textcolor{keywordtype}{int}\ nContacts,\ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<unsigned\ int>}}*\ n,\ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<unsigned\ int>}}*\ offsets,\ \textcolor{keywordtype}{int}\ staticIdx);}
+\DoxyCodeLine{00108\ \};}
+\DoxyCodeLine{00109\ }
+\DoxyCodeLine{00110\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\_\_ADL\_SOLVER\_H}}
+
+\end{DoxyCode}

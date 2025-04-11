@@ -1,0 +1,125 @@
+\doxysection{C\+:/\+Users/quant/source/repos/\+Dark-\/\+Matter-\/\+Engine/\+ENGINE/\+Libraries/include/\+Bullet/\+Bullet3\+Open\+CL/\+Rigid\+Body/b3\+Gpu\+Rigid\+Body\+Pipeline.cpp File Reference}
+\hypertarget{b3_gpu_rigid_body_pipeline_8cpp}{}\label{b3_gpu_rigid_body_pipeline_8cpp}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/Bullet3OpenCL/RigidBody/b3GpuRigidBodyPipeline.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/Bullet3OpenCL/RigidBody/b3GpuRigidBodyPipeline.cpp}}
+{\ttfamily \#include "{}b3\+Gpu\+Rigid\+Body\+Pipeline.\+h"{}}\newline
+{\ttfamily \#include "{}b3\+Gpu\+Rigid\+Body\+Pipeline\+Internal\+Data.\+h"{}}\newline
+{\ttfamily \#include "{}kernels/integrate\+Kernel.\+h"{}}\newline
+{\ttfamily \#include "{}kernels/update\+Aabbs\+Kernel.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Open\+CL/\+Initialize/b3\+Open\+CLUtils.\+h"{}}\newline
+{\ttfamily \#include "{}b3\+Gpu\+Narrow\+Phase.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Geometry/b3\+Aabb\+Util.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Open\+CL/\+Broadphase\+Collision/b3\+Sap\+Aabb.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Open\+CL/\+Broadphase\+Collision/b3\+Gpu\+Broadphase\+Interface.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Open\+CL/\+Parallel\+Primitives/b3\+Launcher\+CL.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Dynamics/\+Constraint\+Solver/b3\+Pgs\+Jacobi\+Solver.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Collision/\+Narrow\+Phase\+Collision/shared/b3\+Update\+Aabbs.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Collision/\+Broad\+Phase\+Collision/b3\+Dynamic\+Bvh\+Broadphase.\+h"{}}\newline
+{\ttfamily \#include "{}b3\+Gpu\+Jacobi\+Contact\+Solver.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Collision/\+Narrow\+Phase\+Collision/shared/b3\+Rigid\+Body\+Data.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Collision/\+Narrow\+Phase\+Collision/b3\+Contact4.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Open\+CL/\+Rigid\+Body/b3\+Gpu\+Pgs\+Constraint\+Solver.\+h"{}}\newline
+{\ttfamily \#include "{}b3\+Gpu\+Pgs\+Contact\+Solver.\+h"{}}\newline
+{\ttfamily \#include "{}b3\+Solver.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Collision/\+Narrow\+Phase\+Collision/b3\+Config.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Open\+CL/\+Raycast/b3\+Gpu\+Raycast.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Dynamics/shared/b3\+Integrate\+Transforms.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Open\+CL/\+Rigid\+Body/b3\+Gpu\+Narrow\+Phase\+Internal\+Data.\+h"{}}\newline
+\doxysubsubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \mbox{\hyperlink{b3_gpu_rigid_body_pipeline_8cpp_aec2d604f39cb2ab250964d006cf77283}{B3\+\_\+\+RIGIDBODY\+\_\+\+INTEGRATE\+\_\+\+PATH}}~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/integrate\+Kernel.\+cl"{}
+\item 
+\#define \mbox{\hyperlink{b3_gpu_rigid_body_pipeline_8cpp_a7eee212b0b795fc9a098a03e5fc86be0}{B3\+\_\+\+RIGIDBODY\+\_\+\+UPDATEAABB\+\_\+\+PATH}}~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/update\+Aabbs\+Kernel.\+cl"{}
+\item 
+\#define \mbox{\hyperlink{b3_gpu_rigid_body_pipeline_8cpp_a56549bface7eb235b40aba67f71a2de4}{TEST\+\_\+\+OTHER\+\_\+\+GPU\+\_\+\+SOLVER}}~1
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+bool \mbox{\hyperlink{b3_gpu_rigid_body_pipeline_8cpp_a7703f187dae38a65c3515dfbbfcbd0ad}{use\+Bullet2\+Cpu\+Solver}} = true
+\item 
+bool \mbox{\hyperlink{b3_gpu_rigid_body_pipeline_8cpp_a330136e5631f8ce25ecadb927730dd28}{g\+Use\+Jacobi}} = false
+\item 
+bool \mbox{\hyperlink{b3_gpu_rigid_body_pipeline_8cpp_ab89e2552fc760942ab6f901605657448}{g\+Use\+Dbvt}} = false
+\item 
+bool \mbox{\hyperlink{b3_gpu_rigid_body_pipeline_8cpp_a3fd7544981d668dbdef727047d6c805a}{g\+Dump\+Contact\+Stats}} = false
+\item 
+bool \mbox{\hyperlink{b3_gpu_rigid_body_pipeline_8cpp_a13040981911b9baba1e85bb189dc6743}{g\+Calc\+World\+Space\+Aabb\+On\+Cpu}} = false
+\item 
+bool \mbox{\hyperlink{b3_gpu_rigid_body_pipeline_8cpp_a5524189f964cd4b03fd157b772e254fb}{g\+Use\+Calculate\+Overlapping\+Pairs\+Host}} = false
+\item 
+bool \mbox{\hyperlink{b3_gpu_rigid_body_pipeline_8cpp_a9b89e4872107816d6a74e502bc4d3beb}{g\+Integrate\+On\+Cpu}} = false
+\item 
+bool \mbox{\hyperlink{b3_gpu_rigid_body_pipeline_8cpp_ad922bb39e55919bf1a3c057b906cfde8}{g\+Clear\+Pairs\+On\+Gpu}} = true
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Macro Definition Documentation}
+\Hypertarget{b3_gpu_rigid_body_pipeline_8cpp_aec2d604f39cb2ab250964d006cf77283}\index{b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}!B3\_RIGIDBODY\_INTEGRATE\_PATH@{B3\_RIGIDBODY\_INTEGRATE\_PATH}}
+\index{B3\_RIGIDBODY\_INTEGRATE\_PATH@{B3\_RIGIDBODY\_INTEGRATE\_PATH}!b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}}
+\doxysubsubsection{\texorpdfstring{B3\_RIGIDBODY\_INTEGRATE\_PATH}{B3\_RIGIDBODY\_INTEGRATE\_PATH}}
+{\footnotesize\ttfamily \label{b3_gpu_rigid_body_pipeline_8cpp_aec2d604f39cb2ab250964d006cf77283} 
+\#define B3\+\_\+\+RIGIDBODY\+\_\+\+INTEGRATE\+\_\+\+PATH~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/integrate\+Kernel.\+cl"{}}
+
+\Hypertarget{b3_gpu_rigid_body_pipeline_8cpp_a7eee212b0b795fc9a098a03e5fc86be0}\index{b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}!B3\_RIGIDBODY\_UPDATEAABB\_PATH@{B3\_RIGIDBODY\_UPDATEAABB\_PATH}}
+\index{B3\_RIGIDBODY\_UPDATEAABB\_PATH@{B3\_RIGIDBODY\_UPDATEAABB\_PATH}!b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}}
+\doxysubsubsection{\texorpdfstring{B3\_RIGIDBODY\_UPDATEAABB\_PATH}{B3\_RIGIDBODY\_UPDATEAABB\_PATH}}
+{\footnotesize\ttfamily \label{b3_gpu_rigid_body_pipeline_8cpp_a7eee212b0b795fc9a098a03e5fc86be0} 
+\#define B3\+\_\+\+RIGIDBODY\+\_\+\+UPDATEAABB\+\_\+\+PATH~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/update\+Aabbs\+Kernel.\+cl"{}}
+
+\Hypertarget{b3_gpu_rigid_body_pipeline_8cpp_a56549bface7eb235b40aba67f71a2de4}\index{b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}!TEST\_OTHER\_GPU\_SOLVER@{TEST\_OTHER\_GPU\_SOLVER}}
+\index{TEST\_OTHER\_GPU\_SOLVER@{TEST\_OTHER\_GPU\_SOLVER}!b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}}
+\doxysubsubsection{\texorpdfstring{TEST\_OTHER\_GPU\_SOLVER}{TEST\_OTHER\_GPU\_SOLVER}}
+{\footnotesize\ttfamily \label{b3_gpu_rigid_body_pipeline_8cpp_a56549bface7eb235b40aba67f71a2de4} 
+\#define TEST\+\_\+\+OTHER\+\_\+\+GPU\+\_\+\+SOLVER~1}
+
+
+
+\doxysubsection{Variable Documentation}
+\Hypertarget{b3_gpu_rigid_body_pipeline_8cpp_a13040981911b9baba1e85bb189dc6743}\index{b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}!gCalcWorldSpaceAabbOnCpu@{gCalcWorldSpaceAabbOnCpu}}
+\index{gCalcWorldSpaceAabbOnCpu@{gCalcWorldSpaceAabbOnCpu}!b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}}
+\doxysubsubsection{\texorpdfstring{gCalcWorldSpaceAabbOnCpu}{gCalcWorldSpaceAabbOnCpu}}
+{\footnotesize\ttfamily \label{b3_gpu_rigid_body_pipeline_8cpp_a13040981911b9baba1e85bb189dc6743} 
+bool g\+Calc\+World\+Space\+Aabb\+On\+Cpu = false}
+
+\Hypertarget{b3_gpu_rigid_body_pipeline_8cpp_ad922bb39e55919bf1a3c057b906cfde8}\index{b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}!gClearPairsOnGpu@{gClearPairsOnGpu}}
+\index{gClearPairsOnGpu@{gClearPairsOnGpu}!b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}}
+\doxysubsubsection{\texorpdfstring{gClearPairsOnGpu}{gClearPairsOnGpu}}
+{\footnotesize\ttfamily \label{b3_gpu_rigid_body_pipeline_8cpp_ad922bb39e55919bf1a3c057b906cfde8} 
+bool g\+Clear\+Pairs\+On\+Gpu = true}
+
+\Hypertarget{b3_gpu_rigid_body_pipeline_8cpp_a3fd7544981d668dbdef727047d6c805a}\index{b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}!gDumpContactStats@{gDumpContactStats}}
+\index{gDumpContactStats@{gDumpContactStats}!b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}}
+\doxysubsubsection{\texorpdfstring{gDumpContactStats}{gDumpContactStats}}
+{\footnotesize\ttfamily \label{b3_gpu_rigid_body_pipeline_8cpp_a3fd7544981d668dbdef727047d6c805a} 
+bool g\+Dump\+Contact\+Stats = false}
+
+\Hypertarget{b3_gpu_rigid_body_pipeline_8cpp_a9b89e4872107816d6a74e502bc4d3beb}\index{b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}!gIntegrateOnCpu@{gIntegrateOnCpu}}
+\index{gIntegrateOnCpu@{gIntegrateOnCpu}!b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}}
+\doxysubsubsection{\texorpdfstring{gIntegrateOnCpu}{gIntegrateOnCpu}}
+{\footnotesize\ttfamily \label{b3_gpu_rigid_body_pipeline_8cpp_a9b89e4872107816d6a74e502bc4d3beb} 
+bool g\+Integrate\+On\+Cpu = false}
+
+\Hypertarget{b3_gpu_rigid_body_pipeline_8cpp_a5524189f964cd4b03fd157b772e254fb}\index{b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}!gUseCalculateOverlappingPairsHost@{gUseCalculateOverlappingPairsHost}}
+\index{gUseCalculateOverlappingPairsHost@{gUseCalculateOverlappingPairsHost}!b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}}
+\doxysubsubsection{\texorpdfstring{gUseCalculateOverlappingPairsHost}{gUseCalculateOverlappingPairsHost}}
+{\footnotesize\ttfamily \label{b3_gpu_rigid_body_pipeline_8cpp_a5524189f964cd4b03fd157b772e254fb} 
+bool g\+Use\+Calculate\+Overlapping\+Pairs\+Host = false}
+
+\Hypertarget{b3_gpu_rigid_body_pipeline_8cpp_ab89e2552fc760942ab6f901605657448}\index{b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}!gUseDbvt@{gUseDbvt}}
+\index{gUseDbvt@{gUseDbvt}!b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}}
+\doxysubsubsection{\texorpdfstring{gUseDbvt}{gUseDbvt}}
+{\footnotesize\ttfamily \label{b3_gpu_rigid_body_pipeline_8cpp_ab89e2552fc760942ab6f901605657448} 
+bool g\+Use\+Dbvt = false}
+
+\Hypertarget{b3_gpu_rigid_body_pipeline_8cpp_a330136e5631f8ce25ecadb927730dd28}\index{b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}!gUseJacobi@{gUseJacobi}}
+\index{gUseJacobi@{gUseJacobi}!b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}}
+\doxysubsubsection{\texorpdfstring{gUseJacobi}{gUseJacobi}}
+{\footnotesize\ttfamily \label{b3_gpu_rigid_body_pipeline_8cpp_a330136e5631f8ce25ecadb927730dd28} 
+bool g\+Use\+Jacobi = false}
+
+\Hypertarget{b3_gpu_rigid_body_pipeline_8cpp_a7703f187dae38a65c3515dfbbfcbd0ad}\index{b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}!useBullet2CpuSolver@{useBullet2CpuSolver}}
+\index{useBullet2CpuSolver@{useBullet2CpuSolver}!b3GpuRigidBodyPipeline.cpp@{b3GpuRigidBodyPipeline.cpp}}
+\doxysubsubsection{\texorpdfstring{useBullet2CpuSolver}{useBullet2CpuSolver}}
+{\footnotesize\ttfamily \label{b3_gpu_rigid_body_pipeline_8cpp_a7703f187dae38a65c3515dfbbfcbd0ad} 
+bool use\+Bullet2\+Cpu\+Solver = true}
+

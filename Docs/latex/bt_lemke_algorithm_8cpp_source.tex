@@ -1,0 +1,399 @@
+\doxysection{bt\+Lemke\+Algorithm.\+cpp}
+\hypertarget{bt_lemke_algorithm_8cpp_source}{}\label{bt_lemke_algorithm_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/MLCPSolvers/btLemkeAlgorithm.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/MLCPSolvers/btLemkeAlgorithm.cpp}}
+\mbox{\hyperlink{bt_lemke_algorithm_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*\ Copyright\ (C)\ 2004-\/2013\ MBSim\ Development\ Team}}
+\DoxyCodeLine{00002\ \textcolor{comment}{}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Code\ was\ converted\ for\ the\ Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{comment}{//The\ original\ version\ is\ here}}
+\DoxyCodeLine{00017\ \textcolor{comment}{//https://code.google.com/p/mbsim-\/env/source/browse/trunk/kernel/mbsim/numerics/linear\_complementarity\_problem/lemke\_algorithm.cc}}
+\DoxyCodeLine{00018\ \textcolor{comment}{//This\ file\ is\ re-\/distributed\ under\ the\ ZLib\ license,\ with\ permission\ of\ the\ original\ author}}
+\DoxyCodeLine{00019\ \textcolor{comment}{//Math\ library\ was\ replaced\ from\ fmatvec\ to\ a\ the\ file\ src/LinearMath/btMatrixX.h}}
+\DoxyCodeLine{00020\ \textcolor{comment}{//STL/std::vector\ replaced\ by\ btAlignedObjectArray}}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_lemke_algorithm_8h}{btLemkeAlgorithm.h}}"{}}}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#undef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00026\ \textcolor{keyword}{using\ namespace\ }\mbox{\hyperlink{namespacestd}{std}};}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_lemke_algorithm_8cpp_a1ecb67775bd032243d00cb4fc2c06bd9}{btMachEps}}()}
+\DoxyCodeLine{00030\ \{}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ calculated\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keyword}{static}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ machEps\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.);}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keywordflow}{if}\ (!calculated)}
+\DoxyCodeLine{00034\ \ \ \ \ \{}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{do}}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ \ \ \ \ machEps\ /=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(2.0);}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ If\ next\ epsilon\ yields\ 1,\ then\ break,\ because\ current}}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ epsilon\ is\ the\ machine\ epsilon.}}
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \ \ \}\ \textcolor{keywordflow}{while}\ ((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})(1.0\ +\ (machEps\ /\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(2.0)))\ !=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0));}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ printf(\ "{}\(\backslash\)nCalculated\ Machine\ epsilon:\ \%G\(\backslash\)n"{},\ machEps\ );}}
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \ \ calculated\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00043\ \ \ \ \ \}}
+\DoxyCodeLine{00044\ \ \ \ \ \textcolor{keywordflow}{return}\ machEps;}
+\DoxyCodeLine{00045\ \}}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_lemke_algorithm_8cpp_afc065527f6c96668f0e333cf4e9fbdf3}{btEpsRoot}}()}
+\DoxyCodeLine{00048\ \{}
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{keyword}{static}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ epsroot\ =\ 0.;}
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ alreadyCalculated\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00051\ }
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keywordflow}{if}\ (!alreadyCalculated)}
+\DoxyCodeLine{00053\ \ \ \ \ \{}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ epsroot\ =\ \mbox{\hyperlink{bt_scalar_8h_a6b200a8d26a49406ca13329be909ec10}{btSqrt}}(\mbox{\hyperlink{bt_lemke_algorithm_8cpp_a1ecb67775bd032243d00cb4fc2c06bd9}{btMachEps}}());}
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \ \ alreadyCalculated\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00056\ \ \ \ \ \}}
+\DoxyCodeLine{00057\ \ \ \ \ \textcolor{keywordflow}{return}\ epsroot;}
+\DoxyCodeLine{00058\ \}}
+\DoxyCodeLine{00059\ }
+\DoxyCodeLine{00060\ \mbox{\hyperlink{bt_matrix_x_8h_a9a4e7db5bc2f56e547a2cf29de756cb8}{btVectorXu}}\ \mbox{\hyperlink{classbt_lemke_algorithm_a452736e771d2119946fc9209be0410d9}{btLemkeAlgorithm::solve}}(\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ maxloops\ \textcolor{comment}{/*\ =\ 0*/})}
+\DoxyCodeLine{00061\ \{}
+\DoxyCodeLine{00062\ \ \ \ \ \mbox{\hyperlink{classbt_lemke_algorithm_ac94bd69dafbd22cc601d3b1ff6de5a5b}{steps}}\ =\ 0;}
+\DoxyCodeLine{00063\ }
+\DoxyCodeLine{00064\ \ \ \ \ \textcolor{keywordtype}{int}\ dim\ =\ \mbox{\hyperlink{classbt_lemke_algorithm_afd91acdf0bd1097d8cd7c18ed1f5ec8f}{m\_q}}.size();}
+\DoxyCodeLine{00065\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_lemke_algorithm_a8df97e61497b888b59245c3e795f7925}{DEBUGLEVEL}}\ >=\ 1)}
+\DoxyCodeLine{00067\ \ \ \ \ \{}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ cout\ <<\ \textcolor{stringliteral}{"{}Dimension\ =\ "{}}\ <<\ dim\ <<\ endl;}
+\DoxyCodeLine{00069\ \ \ \ \ \}}
+\DoxyCodeLine{00070\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00071\ }
+\DoxyCodeLine{00072\ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_a9a4e7db5bc2f56e547a2cf29de756cb8}{btVectorXu}}\ solutionVector(2\ *\ dim);}
+\DoxyCodeLine{00073\ \ \ \ \ solutionVector.setZero();}
+\DoxyCodeLine{00074\ }
+\DoxyCodeLine{00075\ \ \ \ \ \textcolor{comment}{//,\ INIT,\ 0.);}}
+\DoxyCodeLine{00076\ }
+\DoxyCodeLine{00077\ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_a7f0aa262c0acd063c03ce408430ce8f4}{btMatrixXu}}\ ident(dim,\ dim);}
+\DoxyCodeLine{00078\ \ \ \ \ ident.setIdentity();}
+\DoxyCodeLine{00079\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00080\ \ \ \ \ cout\ <<\ \mbox{\hyperlink{classbt_lemke_algorithm_a34b49db1b9eada63ec588e34f94e770e}{m\_M}}\ <<\ std::endl;}
+\DoxyCodeLine{00081\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00083\ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_a7f0aa262c0acd063c03ce408430ce8f4}{btMatrixXu}}\ mNeg\ =\ \mbox{\hyperlink{classbt_lemke_algorithm_a34b49db1b9eada63ec588e34f94e770e}{m\_M}}.negative();}
+\DoxyCodeLine{00084\ }
+\DoxyCodeLine{00085\ \ \ \ \ \mbox{\hyperlink{bt_matrix_x_8h_a7f0aa262c0acd063c03ce408430ce8f4}{btMatrixXu}}\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}(dim,\ 2\ *\ dim\ +\ 2);}
+\DoxyCodeLine{00086\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00087\ \ \ \ \ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}.setSubMatrix(0,\ 0,\ dim\ -\/\ 1,\ dim\ -\/\ 1,\ ident);}
+\DoxyCodeLine{00088\ \ \ \ \ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}.setSubMatrix(0,\ dim,\ dim\ -\/\ 1,\ 2\ *\ dim\ -\/\ 1,\ mNeg);}
+\DoxyCodeLine{00089\ \ \ \ \ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}.setSubMatrix(0,\ 2\ *\ dim,\ dim\ -\/\ 1,\ 2\ *\ dim,\ -\/1.f);}
+\DoxyCodeLine{00090\ \ \ \ \ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}.setSubMatrix(0,\ 2\ *\ dim\ +\ 1,\ dim\ -\/\ 1,\ 2\ *\ dim\ +\ 1,\ \mbox{\hyperlink{classbt_lemke_algorithm_afd91acdf0bd1097d8cd7c18ed1f5ec8f}{m\_q}});}
+\DoxyCodeLine{00091\ }
+\DoxyCodeLine{00092\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00093\ \ \ \ \ cout\ <<\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}\ <<\ std::endl;}
+\DoxyCodeLine{00094\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00095\ }
+\DoxyCodeLine{00096\ \ \ \ \ \textcolor{comment}{//\ \ \ btVectorXu\ q\_;}}
+\DoxyCodeLine{00097\ \ \ \ \ \textcolor{comment}{//\ \ \ q\_\ >>\ A(0,\ 2\ *\ dim\ +\ 1,\ dim\ -\/\ 1,\ 2\ *\ dim\ +\ 1);}}
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00099\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<int>}}\ basis;}
+\DoxyCodeLine{00100\ \ \ \ \ \textcolor{comment}{//At\ first,\ all\ w-\/values\ are\ in\ the\ basis}}
+\DoxyCodeLine{00101\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ dim;\ i++)}
+\DoxyCodeLine{00102\ \ \ \ \ \ \ \ \ basis.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(i);}
+\DoxyCodeLine{00103\ }
+\DoxyCodeLine{00104\ \ \ \ \ \textcolor{keywordtype}{int}\ pivotRowIndex\ =\ -\/1;}
+\DoxyCodeLine{00105\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ minValue\ =\ 1e30f;}
+\DoxyCodeLine{00106\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_lemke_algorithm_a7c09798994aa4d2c296a71ff0a563811}{greaterZero}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00107\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ dim;\ i++)}
+\DoxyCodeLine{00108\ \ \ \ \ \{}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ =\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}(i,\ 2\ *\ dim\ +\ 1);}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ <\ minValue)}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ \ \ \ \ minValue\ =\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}};}
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \ \ \ \ \ \ pivotRowIndex\ =\ i;}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ <\ 0)}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_lemke_algorithm_a7c09798994aa4d2c296a71ff0a563811}{greaterZero}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00117\ \ \ \ \ \}}
+\DoxyCodeLine{00118\ }
+\DoxyCodeLine{00119\ \ \ \ \ \textcolor{comment}{//\ \ int\ pivotRowIndex\ =\ q\_.minIndex();//minIndex(q\_);\ \ \ \ \ //\ first\ row\ is\ that\ with\ lowest\ q-\/value}}
+\DoxyCodeLine{00120\ \ \ \ \ \textcolor{keywordtype}{int}\ z0Row\ =\ pivotRowIndex;\ \ \ \ \textcolor{comment}{//\ remember\ the\ col\ of\ z0\ for\ ending\ algorithm\ afterwards}}
+\DoxyCodeLine{00121\ \ \ \ \ \textcolor{keywordtype}{int}\ pivotColIndex\ =\ 2\ *\ dim;\ \ \textcolor{comment}{//\ first\ col\ is\ that\ of\ z0}}
+\DoxyCodeLine{00122\ }
+\DoxyCodeLine{00123\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00124\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_lemke_algorithm_a8df97e61497b888b59245c3e795f7925}{DEBUGLEVEL}}\ >=\ 3)}
+\DoxyCodeLine{00125\ \ \ \ \ \{}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ cout\ <<\ "{}A:\ "{}\ <<\ A\ <<\ endl;}}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ cout\ <<\ \textcolor{stringliteral}{"{}pivotRowIndex\ "{}}\ <<\ pivotRowIndex\ <<\ endl;}
+\DoxyCodeLine{00128\ \ \ \ \ \ \ \ \ cout\ <<\ \textcolor{stringliteral}{"{}pivotColIndex\ "{}}\ <<\ pivotColIndex\ <<\ endl;}
+\DoxyCodeLine{00129\ \ \ \ \ \ \ \ \ cout\ <<\ \textcolor{stringliteral}{"{}Basis:\ "{}};}
+\DoxyCodeLine{00130\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ basis.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ i++)}
+\DoxyCodeLine{00131\ \ \ \ \ \ \ \ \ \ \ \ \ cout\ <<\ basis[i]\ <<\ \textcolor{stringliteral}{"{}\ "{}};}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ cout\ <<\ endl;}
+\DoxyCodeLine{00133\ \ \ \ \ \}}
+\DoxyCodeLine{00134\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00135\ }
+\DoxyCodeLine{00136\ \ \ \ \ \textcolor{keywordflow}{if}\ (!\mbox{\hyperlink{classbt_lemke_algorithm_a7c09798994aa4d2c296a71ff0a563811}{greaterZero}})}
+\DoxyCodeLine{00137\ \ \ \ \ \{}
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (maxloops\ ==\ 0)}
+\DoxyCodeLine{00139\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ \ \ \ \ maxloops\ =\ 100;}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ maxloops\ =\ UINT\_MAX;\ //TODO:\ not\ a\ really\ nice\ way,\ problem\ is:\ maxloops\ should\ be\ 2\string^dim\ (=1<<dim),\ but\ this\ could\ exceed\ UINT\_MAX\ and\ thus\ the\ result\ would\ be\ 0\ and\ therefore\ the\ lemke\ algorithm\ wouldn't\ start\ but\ probably\ would\ find\ a\ solution\ within\ less\ then\ UINT\_MAX\ steps.\ Therefore\ this\ constant\ is\ used\ as\ a\ upper\ border\ right\ now...}}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00143\ }
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ \textcolor{comment}{/*start\ looping*/}}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\mbox{\hyperlink{classbt_lemke_algorithm_ac94bd69dafbd22cc601d3b1ff6de5a5b}{steps}}\ =\ 0;\ \mbox{\hyperlink{classbt_lemke_algorithm_ac94bd69dafbd22cc601d3b1ff6de5a5b}{steps}}\ <\ maxloops;\ \mbox{\hyperlink{classbt_lemke_algorithm_ac94bd69dafbd22cc601d3b1ff6de5a5b}{steps}}++)}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_lemke_algorithm_ae5b68ba5a6cf0ce54fc5910a7b908c06}{GaussJordanEliminationStep}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}},\ pivotRowIndex,\ pivotColIndex,\ basis);}
+\DoxyCodeLine{00148\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_lemke_algorithm_a8df97e61497b888b59245c3e795f7925}{DEBUGLEVEL}}\ >=\ 3)}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ cout\ <<\ "{}A:\ "{}\ <<\ A\ <<\ endl;}}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cout\ <<\ \textcolor{stringliteral}{"{}pivotRowIndex\ "{}}\ <<\ pivotRowIndex\ <<\ endl;}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cout\ <<\ \textcolor{stringliteral}{"{}pivotColIndex\ "{}}\ <<\ pivotColIndex\ <<\ endl;}
+\DoxyCodeLine{00154\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cout\ <<\ \textcolor{stringliteral}{"{}Basis:\ "{}};}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ basis.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ i++)}
+\DoxyCodeLine{00156\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cout\ <<\ basis[i]\ <<\ \textcolor{stringliteral}{"{}\ "{}};}
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cout\ <<\ endl;}
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00159\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00160\ }
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ pivotColIndexOld\ =\ pivotColIndex;}
+\DoxyCodeLine{00162\ }
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{/*find\ new\ column\ index\ */}}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (basis[pivotRowIndex]\ <\ dim)\ \ \textcolor{comment}{//if\ a\ w-\/value\ left\ the\ basis\ get\ in\ the\ correspondent\ z-\/value}}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ pivotColIndex\ =\ basis[pivotRowIndex]\ +\ dim;}
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//else\ do\ it\ the\ other\ way\ round\ and\ get\ in\ the\ corresponding\ w-\/value}}
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ pivotColIndex\ =\ basis[pivotRowIndex]\ -\/\ dim;}
+\DoxyCodeLine{00169\ }
+\DoxyCodeLine{00170\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{/*the\ column\ becomes\ part\ of\ the\ basis*/}}
+\DoxyCodeLine{00171\ \ \ \ \ \ \ \ \ \ \ \ \ basis[pivotRowIndex]\ =\ pivotColIndexOld;}
+\DoxyCodeLine{00172\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ isRayTermination\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00173\ \ \ \ \ \ \ \ \ \ \ \ \ pivotRowIndex\ =\ \mbox{\hyperlink{classbt_lemke_algorithm_a717e684a79c58fdcef2460d0e84beaf6}{findLexicographicMinimum}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}},\ pivotColIndex,\ z0Row,\ isRayTermination);}
+\DoxyCodeLine{00174\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (isRayTermination)}
+\DoxyCodeLine{00175\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00176\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};\ \textcolor{comment}{//\ ray\ termination}}
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (z0Row\ ==\ pivotRowIndex)}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ \ \ \ \ \{\ \ \textcolor{comment}{//if\ z0\ leaves\ the\ basis\ the\ solution\ is\ found\ -\/-\/>\ one\ last\ elimination\ step\ is\ necessary}}
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_lemke_algorithm_ae5b68ba5a6cf0ce54fc5910a7b908c06}{GaussJordanEliminationStep}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}},\ pivotRowIndex,\ pivotColIndex,\ basis);}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ basis[pivotRowIndex]\ =\ pivotColIndex;\ \ \textcolor{comment}{//update\ basis}}
+\DoxyCodeLine{00182\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00184\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00185\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_lemke_algorithm_a8df97e61497b888b59245c3e795f7925}{DEBUGLEVEL}}\ >=\ 1)}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \ \ \ \ cout\ <<\ \textcolor{stringliteral}{"{}Number\ of\ loops:\ "{}}\ <<\ \mbox{\hyperlink{classbt_lemke_algorithm_ac94bd69dafbd22cc601d3b1ff6de5a5b}{steps}}\ <<\ endl;}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \ \ \ \ cout\ <<\ \textcolor{stringliteral}{"{}Number\ of\ maximal\ loops:\ "{}}\ <<\ maxloops\ <<\ endl;}
+\DoxyCodeLine{00190\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00191\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00192\ }
+\DoxyCodeLine{00193\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!\mbox{\hyperlink{classbt_lemke_algorithm_a4aca62814af529bd2253e2df0b8ec0f0}{validBasis}}(basis))}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_lemke_algorithm_a4ce1ded119f4bae37c51bd74e996d80b}{info}}\ =\ -\/1;}
+\DoxyCodeLine{00196\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_lemke_algorithm_a8df97e61497b888b59245c3e795f7925}{DEBUGLEVEL}}\ >=\ 1)}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cerr\ <<\ \textcolor{stringliteral}{"{}Lemke-\/Algorithm\ ended\ with\ Ray-\/Termination\ (no\ valid\ solution)."{}}\ <<\ endl;}
+\DoxyCodeLine{00199\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00200\ }
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ solutionVector;}
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00203\ \ \ \ \ \}}
+\DoxyCodeLine{00204\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00205\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_lemke_algorithm_a8df97e61497b888b59245c3e795f7925}{DEBUGLEVEL}}\ >=\ 2)}
+\DoxyCodeLine{00206\ \ \ \ \ \{}
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ cout\ <<\ "{}A:\ "{}\ <<\ A\ <<\ endl;}}
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ cout\ <<\ \textcolor{stringliteral}{"{}pivotRowIndex\ "{}}\ <<\ pivotRowIndex\ <<\ endl;}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ cout\ <<\ \textcolor{stringliteral}{"{}pivotColIndex\ "{}}\ <<\ pivotColIndex\ <<\ endl;}
+\DoxyCodeLine{00210\ \ \ \ \ \}}
+\DoxyCodeLine{00211\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00212\ }
+\DoxyCodeLine{00213\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ basis.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ i++)}
+\DoxyCodeLine{00214\ \ \ \ \ \{}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ solutionVector[basis[i]]\ =\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}(i,\ 2\ *\ dim\ +\ 1);\ \ \textcolor{comment}{//q\_[i];}}
+\DoxyCodeLine{00216\ \ \ \ \ \}}
+\DoxyCodeLine{00217\ }
+\DoxyCodeLine{00218\ \ \ \ \ \mbox{\hyperlink{classbt_lemke_algorithm_a4ce1ded119f4bae37c51bd74e996d80b}{info}}\ =\ 0;}
+\DoxyCodeLine{00219\ }
+\DoxyCodeLine{00220\ \ \ \ \ \textcolor{keywordflow}{return}\ solutionVector;}
+\DoxyCodeLine{00221\ \}}
+\DoxyCodeLine{00222\ }
+\DoxyCodeLine{00223\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_lemke_algorithm_a717e684a79c58fdcef2460d0e84beaf6}{btLemkeAlgorithm::findLexicographicMinimum}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_matrix_x_8h_a7f0aa262c0acd063c03ce408430ce8f4}{btMatrixXu}}\&\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}},\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\&\ pivotColIndex,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\&\ z0Row,\ \textcolor{keywordtype}{bool}\&\ isRayTermination)}
+\DoxyCodeLine{00224\ \{}
+\DoxyCodeLine{00225\ \ \ \ \ isRayTermination\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00226\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<int>}}\ activeRows;}
+\DoxyCodeLine{00227\ }
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ firstRow\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00229\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ currentMin\ =\ 0.0;}
+\DoxyCodeLine{00230\ }
+\DoxyCodeLine{00231\ \ \ \ \ \textcolor{keywordtype}{int}\ dim\ =\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}.rows();}
+\DoxyCodeLine{00232\ }
+\DoxyCodeLine{00233\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ row\ =\ 0;\ row\ <\ dim;\ row++)}
+\DoxyCodeLine{00234\ \ \ \ \ \{}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ denom\ =\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}(row,\ pivotColIndex);}
+\DoxyCodeLine{00236\ }
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (denom\ >\ \mbox{\hyperlink{bt_lemke_algorithm_8cpp_a1ecb67775bd032243d00cb4fc2c06bd9}{btMachEps}}())}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ q\ =\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}(row,\ dim\ +\ dim\ +\ 1)\ /\ denom;}
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (firstRow)}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ currentMin\ =\ q;}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ activeRows.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(row);}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ firstRow\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00246\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (fabs(currentMin\ -\/\ q)\ <\ \mbox{\hyperlink{bt_lemke_algorithm_8cpp_a1ecb67775bd032243d00cb4fc2c06bd9}{btMachEps}}())}
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ activeRows.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(row);}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (currentMin\ >\ q)}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ currentMin\ =\ q;}
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ activeRows.\mbox{\hyperlink{classbt_aligned_object_array_a12123db01dda7758f0df5e3bba10cc0a}{clear}}();}
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ activeRows.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(row);}
+\DoxyCodeLine{00255\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00256\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00257\ \ \ \ \ \}}
+\DoxyCodeLine{00258\ }
+\DoxyCodeLine{00259\ \ \ \ \ \textcolor{keywordflow}{if}\ (activeRows.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ ==\ 0)}
+\DoxyCodeLine{00260\ \ \ \ \ \{}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ isRayTermination\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00263\ \ \ \ \ \}}
+\DoxyCodeLine{00264\ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (activeRows.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ ==\ 1)}
+\DoxyCodeLine{00265\ \ \ \ \ \{}
+\DoxyCodeLine{00266\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ activeRows[0];}
+\DoxyCodeLine{00267\ \ \ \ \ \}}
+\DoxyCodeLine{00268\ }
+\DoxyCodeLine{00269\ \ \ \ \ \textcolor{comment}{//\ if\ there\ are\ multiple\ rows,\ check\ if\ they\ contain\ the\ row\ for\ z\_0.}}
+\DoxyCodeLine{00270\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ activeRows.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ i++)}
+\DoxyCodeLine{00271\ \ \ \ \ \{}
+\DoxyCodeLine{00272\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (activeRows[i]\ ==\ z0Row)}
+\DoxyCodeLine{00273\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ z0Row;}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00276\ \ \ \ \ \}}
+\DoxyCodeLine{00277\ }
+\DoxyCodeLine{00278\ \ \ \ \ \textcolor{comment}{//\ look\ through\ the\ columns\ of\ the\ inverse\ of\ the\ basic\ matrix\ from\ left\ to\ right\ until\ the\ tie\ is\ broken.}}
+\DoxyCodeLine{00279\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ col\ =\ 0;\ col\ <\ dim\ ;\ col++)}
+\DoxyCodeLine{00280\ \ \ \ \ \{}
+\DoxyCodeLine{00281\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<int>}}\ activeRowsCopy(activeRows);}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ activeRows.\mbox{\hyperlink{classbt_aligned_object_array_a12123db01dda7758f0df5e3bba10cc0a}{clear}}();}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ firstRow\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i<activeRowsCopy.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();i++)}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ row\ =\ activeRowsCopy[i];}
+\DoxyCodeLine{00287\ }
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ denom\ is\ positive\ here\ as\ an\ invariant.}}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ denom\ =\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}(row,\ pivotColIndex);}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ ratio\ =\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}(row,\ col)\ /\ denom;}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (firstRow)}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00293\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ currentMin\ =\ ratio;}
+\DoxyCodeLine{00294\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ activeRows.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(row);}
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ firstRow\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (fabs(currentMin\ -\/\ ratio)\ <\ \mbox{\hyperlink{bt_lemke_algorithm_8cpp_a1ecb67775bd032243d00cb4fc2c06bd9}{btMachEps}}())}
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00299\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ activeRows.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(row);}
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00301\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (currentMin\ >\ ratio)}
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00303\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ currentMin\ =\ ratio;}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ activeRows.\mbox{\hyperlink{classbt_aligned_object_array_a12123db01dda7758f0df5e3bba10cc0a}{clear}}();}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ activeRows.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(row);}
+\DoxyCodeLine{00306\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00307\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00308\ }
+\DoxyCodeLine{00309\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (activeRows.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ ==\ 1)}
+\DoxyCodeLine{00310\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00311\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ activeRows[0];}
+\DoxyCodeLine{00312\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00313\ \ \ \ \ \}}
+\DoxyCodeLine{00314\ \ \ \ \ \textcolor{comment}{//\ must\ not\ reach\ here.}}
+\DoxyCodeLine{00315\ \ \ \ \ isRayTermination\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00316\ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00317\ \}}
+\DoxyCodeLine{00318\ }
+\DoxyCodeLine{00319\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_lemke_algorithm_ae5b68ba5a6cf0ce54fc5910a7b908c06}{btLemkeAlgorithm::GaussJordanEliminationStep}}(\mbox{\hyperlink{bt_matrix_x_8h_a7f0aa262c0acd063c03ce408430ce8f4}{btMatrixXu}}\&\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}},\ \textcolor{keywordtype}{int}\ pivotRowIndex,\ \textcolor{keywordtype}{int}\ pivotColumnIndex,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<int>}}\&\ basis)}
+\DoxyCodeLine{00320\ \{}
+\DoxyCodeLine{00321\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}\ =\ -\/1\ /\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}(pivotRowIndex,\ pivotColumnIndex);}
+\DoxyCodeLine{00322\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00323\ \ \ \ \ cout\ <<\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}\ <<\ std::endl;}
+\DoxyCodeLine{00324\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00325\ }
+\DoxyCodeLine{00326\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}.rows();\ i++)}
+\DoxyCodeLine{00327\ \ \ \ \ \{}
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (i\ !=\ pivotRowIndex)}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}.cols();\ j++)}
+\DoxyCodeLine{00331\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00332\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (j\ !=\ pivotColumnIndex)}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ =\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}(i,\ j);}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ +=\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}(pivotRowIndex,\ j)\ *\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}(i,\ pivotColumnIndex)\ *\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}};}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}.setElem(i,\ j,\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00339\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00340\ \ \ \ \ \}}
+\DoxyCodeLine{00341\ }
+\DoxyCodeLine{00342\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00343\ \ \ \ \ cout\ <<\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}\ <<\ std::endl;}
+\DoxyCodeLine{00344\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00345\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}.cols();\ i++)}
+\DoxyCodeLine{00346\ \ \ \ \ \{}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}.mulElem(pivotRowIndex,\ i,\ -\/\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}});}
+\DoxyCodeLine{00348\ \ \ \ \ \}}
+\DoxyCodeLine{00349\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00350\ \ \ \ \ cout\ <<\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}\ <<\ std::endl;}
+\DoxyCodeLine{00351\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\#ifdef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00352\ }
+\DoxyCodeLine{00353\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}.rows();\ i++)}
+\DoxyCodeLine{00354\ \ \ \ \ \{}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (i\ !=\ pivotRowIndex)}
+\DoxyCodeLine{00356\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}.setElem(i,\ pivotColumnIndex,\ 0);}
+\DoxyCodeLine{00358\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00359\ \ \ \ \ \}}
+\DoxyCodeLine{00360\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00361\ \ \ \ \ cout\ <<\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a7fc56270e7a70fa81a5935b72eacbe29}{A}}\ <<\ std::endl;}
+\DoxyCodeLine{00362\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\#ifdef\ BT\_DEBUG\_OSTREAM}}
+\DoxyCodeLine{00363\ \}}
+\DoxyCodeLine{00364\ }
+\DoxyCodeLine{00365\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_lemke_algorithm_a7c09798994aa4d2c296a71ff0a563811}{btLemkeAlgorithm::greaterZero}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_matrix_x_8h_a9a4e7db5bc2f56e547a2cf29de756cb8}{btVectorXu}}\&\ vector)}
+\DoxyCodeLine{00366\ \{}
+\DoxyCodeLine{00367\ \ \ \ \ \textcolor{keywordtype}{bool}\ isGreater\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00368\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ vector.size();\ i++)}
+\DoxyCodeLine{00369\ \ \ \ \ \{}
+\DoxyCodeLine{00370\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (vector[i]\ <\ 0)}
+\DoxyCodeLine{00371\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \ \ \ \ isGreater\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00373\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00375\ \ \ \ \ \}}
+\DoxyCodeLine{00376\ }
+\DoxyCodeLine{00377\ \ \ \ \ \textcolor{keywordflow}{return}\ isGreater;}
+\DoxyCodeLine{00378\ \}}
+\DoxyCodeLine{00379\ }
+\DoxyCodeLine{00380\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_lemke_algorithm_a4aca62814af529bd2253e2df0b8ec0f0}{btLemkeAlgorithm::validBasis}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<int>}}\&\ basis)}
+\DoxyCodeLine{00381\ \{}
+\DoxyCodeLine{00382\ \ \ \ \ \textcolor{keywordtype}{bool}\ isValid\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00383\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ basis.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ i++)}
+\DoxyCodeLine{00384\ \ \ \ \ \{}
+\DoxyCodeLine{00385\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (basis[i]\ >=\ basis.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ *\ 2)}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ \{\ \ \textcolor{comment}{//then\ z0\ is\ in\ the\ base}}
+\DoxyCodeLine{00387\ \ \ \ \ \ \ \ \ \ \ \ \ isValid\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00388\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00389\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00390\ \ \ \ \ \}}
+\DoxyCodeLine{00391\ }
+\DoxyCodeLine{00392\ \ \ \ \ \textcolor{keywordflow}{return}\ isValid;}
+\DoxyCodeLine{00393\ \}}
+
+\end{DoxyCode}

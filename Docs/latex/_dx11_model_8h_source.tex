@@ -1,0 +1,344 @@
+\doxysection{Dx11\+Model.\+h}
+\hypertarget{_dx11_model_8h_source}{}\label{_dx11_model_8h_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/ModelAPI/Dx11Model.h@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/ModelAPI/Dx11Model.h}}
+\mbox{\hyperlink{_dx11_model_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{_model_a_p_i_8h}{ModelAPI.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{_model_loader_8h}{ModelLoader.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{_dx11_shader_8h}{Dx11Shader.h}}"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{_model_info_8h}{ModelInfo.h}}"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{_console_manager_8h}{include/ConsoleManager.h}}"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <windows.h>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <d3d11.h>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <d3dcompiler.h>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <directxmath.h>}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ <iostream>}}
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \textcolor{keyword}{class\ }\mbox{\hyperlink{class_dx11_model_a2b939f8df63566df36bc18cf710a96e4}{Dx11Model}}\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{class_model}{Model}}\ \{}
+\DoxyCodeLine{00015\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00016\ \ \ \ \ ID3D11Buffer*\ m\_VertexBuffer\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00017\ \ \ \ \ ID3D11Buffer*\ m\_IndexBuffer\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00018\ \ \ \ \ ID3D11DeviceContext*\ deviceContext\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00019\ \ \ \ \ ID3D11Device*\ device;}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \ \ \ \ \mbox{\hyperlink{class_model__loader}{Model\_loader}}\ ModelLoaderInterface;}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \ \ \ \ std::vector<float>\ ModelData;\ \textcolor{comment}{//\ x,\ y,\ z,\ nx,\ ny,\ nz,\ u,\ v}}
+\DoxyCodeLine{00024\ \ \ \ \ \textcolor{comment}{//Dx11Shader\ m\_Program;}}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \ \ \ \ ID3D10Blob*\ errorBuffer;}
+\DoxyCodeLine{00027\ \ \ \ \ ID3D10Blob*\ VS\_Buffer;}
+\DoxyCodeLine{00028\ \ \ \ \ \mbox{\hyperlink{class_model_info}{ModelInfo}}\ Info;}
+\DoxyCodeLine{00029\ \ \ \ \ HRESULT\ hr;}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \ \ \ \ D3D11\_INPUT\_ELEMENT\_DESC\ layout[3]\ =\ \{}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ \{\textcolor{stringliteral}{"{}POSITION"{}},\ 0,\ DXGI\_FORMAT\_R32G32B32\_FLOAT,\ 0,\ 0,\ D3D11\_INPUT\_PER\_VERTEX\_DATA,\ 0\},\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Position\ (x,\ y,\ z,\ w)}}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ \{\textcolor{stringliteral}{"{}NORMAL"{}},\ 0,\ DXGI\_FORMAT\_R32G32B32\_FLOAT,\ 0,\ 12,\ D3D11\_INPUT\_PER\_VERTEX\_DATA,\ 0\},\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Normal\ (nx,\ ny,\ nz)}}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ \{\textcolor{stringliteral}{"{}TEXCOORD"{}},\ 0,\ DXGI\_FORMAT\_R32G32\_FLOAT,\ 0,\ 24,\ D3D11\_INPUT\_PER\_VERTEX\_DATA,\ 0\},\ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ UV\ (u,\ v)}}
+\DoxyCodeLine{00035\ \ \ \ \ \};}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \ \ \ \ UINT\ numElements\ =\ ARRAYSIZE(layout);}
+\DoxyCodeLine{00039\ \ \ \ \ ID3D11InputLayout*\ vertLayout\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00042\ \ \ \ \ std::vector<float>\ vertices;}
+\DoxyCodeLine{00043\ \ \ \ \ std::vector<float>\ normals;}
+\DoxyCodeLine{00044\ \ \ \ \ std::vector<float>\ texcoords;}
+\DoxyCodeLine{00045\ \ \ \ \ std::vector<unsigned\ int>\ indices;}
+\DoxyCodeLine{00046\ \ \ \ \ std::vector<float>\ colors;}
+\DoxyCodeLine{00047\ \ \ \ \ std::vector<uint32\_t>\ texcoord\_indices;}
+\DoxyCodeLine{00048\ \ \ \ \ std::vector<uint32\_t>\ normal\_indices;}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ \ \ \ \ std::vector<float>\ vertex\_data;}
+\DoxyCodeLine{00051\ \ \ \ \ \textcolor{keywordtype}{bool}\ LoadModel(std::string\ filename)\ \{}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ \ \ std::ifstream\ file(filename);}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!file.is\_open())\ \{}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Failed\ to\ open\ the\ file."{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255ad57057b1c58cba9d4c5bd4f3ab7ee78e}{API::DX11}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a6f3a603fac4d817f1848c3173b243b57}{LEVEL::ERRORS}});}
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//std::cerr\ <<\ "{}Failed\ to\ open\ the\ file."{}\ <<\ std::endl;}}
+\DoxyCodeLine{00056\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \{}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Model:\ ["{}}\ +\ filename\ +\ \textcolor{stringliteral}{"{}]\ found..."{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255ad57057b1c58cba9d4c5bd4f3ab7ee78e}{API::DX11}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a551b723eafd6a31d444fcb2f5920fbd3}{LEVEL::INFO}});}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00061\ }
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ std::string\ line;}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (std::getline(file,\ line))\ \{}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (line.substr(0,\ 2)\ ==\ \textcolor{stringliteral}{"{}v\ "{}})\ \{}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ std::istringstream\ s(line.substr(2));}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}},\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}};}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ s\ >>\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ >>\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}\ >>\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}};}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertices.push\_back(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}});}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertices.push\_back(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}});}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertices.push\_back(\mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}});}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00072\ }
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (line.substr(0,\ 2)\ ==\ \textcolor{stringliteral}{"{}vt"{}})\ \{}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ std::istringstream\ s(line.substr(2));}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ u,\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}};}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ s\ >>\ u\ >>\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}};\ \textcolor{comment}{//\ Only\ read\ the\ first\ two\ values}}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ texcoords.push\_back(u);}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ texcoords.push\_back(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00080\ }
+\DoxyCodeLine{00081\ }
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (line.substr(0,\ 2)\ ==\ \textcolor{stringliteral}{"{}vn"{}})\ \{}
+\DoxyCodeLine{00083\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ std::istringstream\ s(line.substr(2));}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}},\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}};}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ s\ >>\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ >>\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}\ >>\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}};}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ normals.push\_back(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}});}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ normals.push\_back(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}});}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ normals.push\_back(\mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}});}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00090\ }
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (line.substr(0,\ 2)\ ==\ \textcolor{stringliteral}{"{}f\ "{}})\ \{}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ std::istringstream\ s(line.substr(2));}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ std::string\ vertex\_info;}
+\DoxyCodeLine{00094\ }
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (s\ >>\ vertex\_info)\ \{}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ std::istringstream\ vertex\_stream(vertex\_info);}
+\DoxyCodeLine{00097\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ std::string\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ vt,\ vn;}
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00099\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Parse\ vertex/texture/normal\ indices}}
+\DoxyCodeLine{00100\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ std::getline(vertex\_stream,\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \textcolor{charliteral}{'/'});\ \ \textcolor{comment}{//\ Vertex\ index}}
+\DoxyCodeLine{00101\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ std::getline(vertex\_stream,\ vt,\ \textcolor{charliteral}{'/'});\ \textcolor{comment}{//\ Texture\ index}}
+\DoxyCodeLine{00102\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ std::getline(vertex\_stream,\ vn,\ \textcolor{charliteral}{'/'});\ \textcolor{comment}{//\ Normal\ index\ (optional)}}
+\DoxyCodeLine{00103\ }
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Store\ vertex\ index\ (convert\ to\ 0-\/based)}}
+\DoxyCodeLine{00105\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ indices.push\_back(std::stoi(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}})\ -\/\ 1);}
+\DoxyCodeLine{00106\ }
+\DoxyCodeLine{00107\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Store\ texture\ index\ (convert\ to\ 0-\/based,\ only\ if\ present)}}
+\DoxyCodeLine{00108\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!vt.empty())\ \{}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ texcoord\_indices.push\_back(std::stoi(vt)\ -\/\ 1);}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00111\ }
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Store\ normal\ index\ (convert\ to\ 0-\/based,\ only\ if\ present)}}
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!vn.empty())\ \{}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ normal\_indices.push\_back(std::stoi(vn)\ -\/\ 1);}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00118\ }
+\DoxyCodeLine{00119\ }
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00121\ }
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ \textcolor{comment}{//for\ (size\_t\ i\ =\ 0;\ i\ <\ indices.size();\ i\ +=\ 3)\ \{}}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ std::swap(indices[i],\ indices[i\ +\ 2]);\ \ //\ Swap\ first\ and\ last\ index}}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\}}}
+\DoxyCodeLine{00125\ }
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ file.close();}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00128\ \ \ \ \ \}}
+\DoxyCodeLine{00129\ }
+\DoxyCodeLine{00130\ \ \ \ \ \textcolor{keywordtype}{void}\ process()\ \{}
+\DoxyCodeLine{00131\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Ensure\ there\ are\ valid\ indices\ and\ the\ corresponding\ arrays}}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (indices.empty()\ ||\ vertices.empty())\ \{}
+\DoxyCodeLine{00133\ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Error:\ Indices\ or\ vertices\ are\ empty!"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255ad57057b1c58cba9d4c5bd4f3ab7ee78e}{API::DX11}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a6f3a603fac4d817f1848c3173b243b57}{LEVEL::ERRORS}});}
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00136\ }
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ i\ =\ 0;\ i\ <\ indices.size();\ i++)\ \{}
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ v\_idx\ =\ indices[i]\ *\ 3;\ \textcolor{comment}{//\ Multiply\ by\ 3\ for\ x,\ y,\ z}}
+\DoxyCodeLine{00139\ \ \ \ \ \ \ \ \ \ \ \ \ vertex\_data.push\_back(vertices[v\_idx]);}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ \ \ \ \ vertex\_data.push\_back(vertices[v\_idx\ +\ 1]);}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ \ \ \ \ vertex\_data.push\_back(vertices[v\_idx\ +\ 2]);}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//vertex\_data.push\_back(1.0f);}}
+\DoxyCodeLine{00143\ }
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!normals.empty())\ \{}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ vn\_idx\ =\ normal\_indices[i]\ *\ 3;}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertex\_data.push\_back(normals[vn\_idx]);}
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertex\_data.push\_back(normals[vn\_idx\ +\ 1]);}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertex\_data.push\_back(normals[vn\_idx\ +\ 2]);}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!texcoords.empty())\ \{}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ vt\_idx\ =\ texcoord\_indices[i]\ *\ 2;}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertex\_data.push\_back(texcoords[vt\_idx]);}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertex\_data.push\_back(texcoords[vt\_idx\ +\ 1]);}
+\DoxyCodeLine{00154\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00156\ \ \ \ \ \}}
+\DoxyCodeLine{00157\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00158\ \ \ \ \ \mbox{\hyperlink{class_dx11_model_a2b939f8df63566df36bc18cf710a96e4}{Dx11Model}}()\ \{\}}
+\DoxyCodeLine{00159\ \ \ \ \ \mbox{\hyperlink{class_dx11_model_ab1fc0ea17d847309070bccc67e9fe2ab}{\string~Dx11Model}}()\ \{\}}
+\DoxyCodeLine{00160\ }
+\DoxyCodeLine{00161\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_dx11_model_a1d6a0d7199ae45b9e8f96826c706cccc}{UpdateModelInfo}}()\ \{}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Info.VAO\ =\ VAO;}}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Info.VBO\ =\ VBO;}}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ Info.TriangleCount\ =\ vertices.size();}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ Info.vertexs\ =\ vertices;}
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \ \ Info.indicies\ =\ indices;}
+\DoxyCodeLine{00167\ \ \ \ \ \}}
+\DoxyCodeLine{00168\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_dx11_model_a35a85e426fa4c8df99715d45793a056d}{SetDxDeviceContext}}(ID3D11Device*\ dxDevice,\ ID3D11DeviceContext*\ d3d11DevCon,\ ID3D10Blob*\ DxVS\_Buffer)\ \{}
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \ \ deviceContext\ =\ d3d11DevCon;}
+\DoxyCodeLine{00170\ \ \ \ \ \ \ \ \ device\ =\ dxDevice;}
+\DoxyCodeLine{00171\ \ \ \ \ \ \ \ \ VS\_Buffer\ =\ DxVS\_Buffer;}
+\DoxyCodeLine{00172\ \ \ \ \ \}}
+\DoxyCodeLine{00173\ }
+\DoxyCodeLine{00174\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{class_dx11_model_a1da00215a87c0d6babfb4478a4a30835}{Load}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ path[],\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ texture\_path[],\ \mbox{\hyperlink{bt_convex_hull_computer_8cpp_a435d1572bf3f880d55459d9805097f62}{uint32\_t}}\ ShaderProgramId)\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00175\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ UpdateModelInfo();}}
+\DoxyCodeLine{00176\ \ \ \ \ \ \ \ \ LoadModel(path);}
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ process();}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{class_dx11_model_a1d6a0d7199ae45b9e8f96826c706cccc}{UpdateModelInfo}}();}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ Info.ShaderProgramId\ =\ ShaderProgramId;}
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ ModelLoaderInterface.filename\ =\ path;}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ \textcolor{comment}{//std::cout\ <<\ "{}Done\ loading\ asset..."{}\ <<\ std::endl;}}
+\DoxyCodeLine{00182\ }
+\DoxyCodeLine{00183\ }
+\DoxyCodeLine{00184\ }
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Définition\ des\ données\ des\ vertices\ sous\ forme\ de\ std::vector<float>}}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Format\ :\ xyznxnynzuv}}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \textcolor{comment}{//std::vector<float>\ vertices\ =\ \{}}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ -\/0.5f,\ -\/0.5f,\ 0.5f,\ \ 0.0f,\ 0.0f,\ 1.0f,\ 0.0f,\ 0.0f,\ \ //\ Vertex\ 1}}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ -\/0.5f,\ \ 0.5f,\ 0.5f,\ \ 0.0f,\ 0.0f,\ 1.0f,\ 1.0f,\ 0.0f,\ \ //\ Vertex\ 2}}
+\DoxyCodeLine{00190\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ 0.5f,\ \ 0.5f,\ 0.5f,\ \ 0.0f,\ 0.0f,\ 1.0f,\ 1.0f,\ 1.0f,\ \ //\ Vertex\ 3}}
+\DoxyCodeLine{00191\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ 0.5f,\ -\/0.5f,\ 0.5f,\ \ 0.0f,\ 0.0f,\ 1.0f,\ 0.0f,\ 1.0f\ \ \ //\ Vertex\ 4}}
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\};}}
+\DoxyCodeLine{00193\ }
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Utilisation\ d'un\ std::vector<int>\ pour\ les\ indices}}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ \textcolor{comment}{//std::vector<int>\ indices\ =\ \{}}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ 0,\ 1,\ 2,}}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ 0,\ 2,\ 3}}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\};}}
+\DoxyCodeLine{00199\ }
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 8;\ i++)\ \{}
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \ \ \ \ \ \ std::cout\ <<\ vertex\_data[i]\ <<\ \textcolor{stringliteral}{"{}\ "{}};}
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ std::cout\ <<\ std::endl;}
+\DoxyCodeLine{00204\ }
+\DoxyCodeLine{00205\ }
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ D3D11\_BUFFER\_DESC\ indexBufferDesc;}
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ ZeroMemory(\&indexBufferDesc,\ \textcolor{keyword}{sizeof}(indexBufferDesc));}
+\DoxyCodeLine{00208\ }
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ indexBufferDesc.Usage\ =\ D3D11\_USAGE\_DEFAULT;}
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ indexBufferDesc.ByteWidth\ =\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_convex_hull_computer_8cpp_a435d1572bf3f880d55459d9805097f62}{uint32\_t}})\ *\ indices.size();\ \ \textcolor{comment}{//\ Taille\ du\ vecteur\ d'indices}}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ indexBufferDesc.BindFlags\ =\ D3D11\_BIND\_INDEX\_BUFFER;}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ indexBufferDesc.CPUAccessFlags\ =\ 0;}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ indexBufferDesc.MiscFlags\ =\ 0;}
+\DoxyCodeLine{00214\ }
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ D3D11\_SUBRESOURCE\_DATA\ iinitData;}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!device)\ \{}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}device\ is\ null"{}});}
+\DoxyCodeLine{00218\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00219\ \ \ \ \ \ \ \ \ iinitData.pSysMem\ =\ indices.data();}
+\DoxyCodeLine{00220\ \ \ \ \ \ \ \ \ hr\ =\ device-\/>CreateBuffer(\&indexBufferDesc,\ \&iinitData,\ \&m\_IndexBuffer);}
+\DoxyCodeLine{00221\ }
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (FAILED(hr))\ \{}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (errorBuffer)\ \{}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Vertex\ buffer\ creation\ failed"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255ad57057b1c58cba9d4c5bd4f3ab7ee78e}{API::DX11}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a6f3a603fac4d817f1848c3173b243b57}{LEVEL::ERRORS}});}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ errorBuffer-\/>Release();}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00227\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00229\ }
+\DoxyCodeLine{00230\ }
+\DoxyCodeLine{00231\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Update\ primitive\ topology\ to\ triangle\ list}}
+\DoxyCodeLine{00232\ \ \ \ \ \ \ \ \ deviceContext-\/>IASetPrimitiveTopology(D3D11\_PRIMITIVE\_TOPOLOGY\_TRIANGLELIST);}
+\DoxyCodeLine{00233\ }
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \ \ deviceContext-\/>IASetIndexBuffer(m\_IndexBuffer,\ DXGI\_FORMAT\_R32\_UINT,\ 0);}
+\DoxyCodeLine{00235\ }
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Définir\ la\ description\ du\ buffer\ des\ vertices}}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ D3D11\_BUFFER\_DESC\ vertexBufferDesc;}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ ZeroMemory(\&vertexBufferDesc,\ \textcolor{keyword}{sizeof}(vertexBufferDesc));}
+\DoxyCodeLine{00239\ }
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ vertexBufferDesc.Usage\ =\ D3D11\_USAGE\_DEFAULT;}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ vertexBufferDesc.ByteWidth\ =\ \textcolor{keyword}{sizeof}(float)\ *\ vertex\_data.size();}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ vertexBufferDesc.BindFlags\ =\ D3D11\_BIND\_VERTEX\_BUFFER;}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ vertexBufferDesc.CPUAccessFlags\ =\ 0;}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ vertexBufferDesc.MiscFlags\ =\ 0;}
+\DoxyCodeLine{00245\ }
+\DoxyCodeLine{00246\ \ \ \ \ \ \ \ \ D3D11\_SUBRESOURCE\_DATA\ vertexBufferData;}
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ ZeroMemory(\&vertexBufferData,\ \textcolor{keyword}{sizeof}(vertexBufferData));}
+\DoxyCodeLine{00248\ }
+\DoxyCodeLine{00249\ }
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Pointer\ vers\ les\ donn{\ucr}es\ des\ vertices}}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ vertexBufferData.pSysMem\ =\ vertex\_data.data();}
+\DoxyCodeLine{00252\ }
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ hr\ =\ device-\/>CreateBuffer(\&vertexBufferDesc,\ \&vertexBufferData,\ \&m\_VertexBuffer);}
+\DoxyCodeLine{00254\ }
+\DoxyCodeLine{00255\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (FAILED(hr))\ \{}
+\DoxyCodeLine{00256\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (errorBuffer)\ \{}
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Vertex\ buffer\ creation\ failed:\ "{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255ad57057b1c58cba9d4c5bd4f3ab7ee78e}{API::DX11}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a6f3a603fac4d817f1848c3173b243b57}{LEVEL::ERRORS}});}
+\DoxyCodeLine{00258\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ errorBuffer-\/>Release();}
+\DoxyCodeLine{00259\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00260\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00262\ }
+\DoxyCodeLine{00263\ }
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ D{\ucr}finir\ les\ informations\ sur\ le\ buffer\ de\ vertices}}
+\DoxyCodeLine{00265\ \ \ \ \ \ \ \ \ UINT\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}}\ =\ \textcolor{keyword}{sizeof}(float)\ *\ 8;\ \ \textcolor{comment}{//\ 8\ valeurs\ par\ vertex\ (xyznxnynzuv)}}
+\DoxyCodeLine{00266\ \ \ \ \ \ \ \ \ UINT\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}}\ =\ 0;}
+\DoxyCodeLine{00267\ }
+\DoxyCodeLine{00268\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ IA\ =\ Input\ Assembler}}
+\DoxyCodeLine{00269\ \ \ \ \ \ \ \ \ deviceContext-\/>IASetVertexBuffers(0,\ 1,\ \&m\_VertexBuffer,\ \&\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}},\ \&\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}});}
+\DoxyCodeLine{00270\ }
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Création\ de\ l'input\ layout}}
+\DoxyCodeLine{00272\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!VS\_Buffer)\ \{}
+\DoxyCodeLine{00273\ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Vertex\ Shader\ buffer\ is\ NULL.\ Shader\ compilation\ likely\ failed."{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255ad57057b1c58cba9d4c5bd4f3ab7ee78e}{API::DX11}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a6f3a603fac4d817f1848c3173b243b57}{LEVEL::ERRORS}});}
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00276\ }
+\DoxyCodeLine{00277\ \ \ \ \ \ \ \ \ hr\ =\ device-\/>CreateInputLayout(layout,\ numElements,\ VS\_Buffer-\/>GetBufferPointer(),\ VS\_Buffer-\/>GetBufferSize(),\ \&vertLayout);}
+\DoxyCodeLine{00278\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (FAILED(hr))\ \{}
+\DoxyCodeLine{00279\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (errorBuffer)\ \{}
+\DoxyCodeLine{00280\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Input\ layout\ creation\ failed:"{}}\ +\ std::string((\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*)(errorBuffer-\/>GetBufferPointer())),\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255ad57057b1c58cba9d4c5bd4f3ab7ee78e}{API::DX11}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a6f3a603fac4d817f1848c3173b243b57}{LEVEL::ERRORS}});}
+\DoxyCodeLine{00281\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ errorBuffer-\/>Release();}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00285\ }
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Définir\ le\ layout}}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ deviceContext-\/>IASetInputLayout(vertLayout);}
+\DoxyCodeLine{00288\ }
+\DoxyCodeLine{00289\ }
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ D{\ucr}finir\ la\ topologie\ primitive\ (triangles)}}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \textcolor{comment}{//deviceContext-\/>IASetPrimitiveTopology(D3D11\_PRIMITIVE\_TOPOLOGY\_TRIANGLELIST);}}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ \textcolor{comment}{//deviceContext-\/>IASetPrimitiveTopology(D3D11\_PRIMITIVE\_TOPOLOGY\_POINTLIST);}}
+\DoxyCodeLine{00293\ \ \ \ \ \ \ \ \ \textcolor{comment}{//deviceContext-\/>IASetPrimitiveTopology(D3D11\_PRIMITIVE\_TOPOLOGY\_TRIANGLESTRIP);}}
+\DoxyCodeLine{00294\ }
+\DoxyCodeLine{00295\ }
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \textcolor{comment}{//Create\ the\ viewport}}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ D3D11\_VIEWPORT\ viewport;}
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \ \ ZeroMemory(\&viewport,\ \textcolor{keyword}{sizeof}(D3D11\_VIEWPORT));}
+\DoxyCodeLine{00299\ }
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ viewport.TopLeftX\ =\ 0;}
+\DoxyCodeLine{00301\ \ \ \ \ \ \ \ \ viewport.TopLeftY\ =\ 0;}
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ viewport.Width\ =\ 1280;}
+\DoxyCodeLine{00303\ \ \ \ \ \ \ \ \ viewport.Height\ =\ 720;}
+\DoxyCodeLine{00304\ }
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ \textcolor{comment}{//Set\ the\ viewport}}
+\DoxyCodeLine{00306\ \ \ \ \ \ \ \ \ deviceContext-\/>RSSetViewports(1,\ \&viewport);}
+\DoxyCodeLine{00307\ }
+\DoxyCodeLine{00308\ }
+\DoxyCodeLine{00309\ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Loading\ success"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255ad57057b1c58cba9d4c5bd4f3ab7ee78e}{API::DX11}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12ad0749aaba8b833466dfcbb0428e4f89c}{LEVEL::SUCCESS}});}
+\DoxyCodeLine{00310\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00311\ \ \ \ \ \}}
+\DoxyCodeLine{00312\ }
+\DoxyCodeLine{00313\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_dx11_model_ab68386c7133945c6eca803f361d7aad5}{Deload}}()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00314\ }
+\DoxyCodeLine{00315\ \ \ \ \ \}}
+\DoxyCodeLine{00316\ }
+\DoxyCodeLine{00317\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_dx11_model_a75d52d2ba518e4fd42e63e7754722ec4}{Draw}}()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00318\ \ \ \ \ \ \ \ \ \textcolor{comment}{//m\_Program.Bind();}}
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ \textcolor{comment}{//deviceContext-\/>DrawIndexed(indexCount,\ 0,\ 0);}}
+\DoxyCodeLine{00320\ \ \ \ \ \ \ \ \ \textcolor{comment}{//m\_Program.Unbind();}}
+\DoxyCodeLine{00321\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ }}
+\DoxyCodeLine{00322\ \ \ \ \ \ \ \ \ \textcolor{comment}{//display\ triangle}}
+\DoxyCodeLine{00323\ \ \ \ \ \ \ \ \ \textcolor{comment}{//deviceContext-\/>DrawIndexed(indices.size(),\ 0,\ 0);}}
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ deviceContext-\/>Draw(indices.size(),\ 0);}
+\DoxyCodeLine{00325\ \ \ \ \ \ \ \ \ \textcolor{comment}{//std::cout\ <<\ "{}Drawing:\ "{}\ <<\ indices.size()\ <<\ std::endl;}}
+\DoxyCodeLine{00326\ \ \ \ \ \}}
+\DoxyCodeLine{00327\ }
+\DoxyCodeLine{00328\ \ \ \ \ \mbox{\hyperlink{class_model_info}{ModelInfo}}*\ \mbox{\hyperlink{class_dx11_model_a43b6299d9225920e79b93bdfd1b2161d}{GetInfo}}()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \&Info;}
+\DoxyCodeLine{00330\ \ \ \ \ \}}
+\DoxyCodeLine{00331\ }
+\DoxyCodeLine{00332\ \ \ \ \ \textcolor{comment}{//std::vector<float>\ GetVertexs()\ \{return\ \}}}
+\DoxyCodeLine{00333\ \ \ \ \ \textcolor{comment}{/*btTriangleMesh*\ GetBulletTriangleMesh()\ override\ \{\}*/}}
+\DoxyCodeLine{00334\ }
+\DoxyCodeLine{00335\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{class_dx11_model_a5d6e7e290ef9e459c0052372511a894a}{GetVerticesCount}}()\ \{\ \textcolor{keywordflow}{return}\ vertices.size();\ \};}
+\DoxyCodeLine{00336\ \ \ \ \ std::string\ \mbox{\hyperlink{class_dx11_model_ae0b9c48cdf56b4812883fb4032c82501}{GetModelName}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ ModelLoaderInterface.filename;\ \};}
+\DoxyCodeLine{00337\ }
+\DoxyCodeLine{00338\ \};}
+
+\end{DoxyCode}

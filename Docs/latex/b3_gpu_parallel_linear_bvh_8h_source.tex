@@ -1,0 +1,105 @@
+\doxysection{b3\+Gpu\+Parallel\+Linear\+Bvh.\+h}
+\hypertarget{b3_gpu_parallel_linear_bvh_8h_source}{}\label{b3_gpu_parallel_linear_bvh_8h_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/Bullet3OpenCL/BroadphaseCollision/b3GpuParallelLinearBvh.h@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/Bullet3OpenCL/BroadphaseCollision/b3GpuParallelLinearBvh.h}}
+\mbox{\hyperlink{b3_gpu_parallel_linear_bvh_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00003\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00004\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,}}
+\DoxyCodeLine{00005\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,}}
+\DoxyCodeLine{00006\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00007\ \textcolor{comment}{}}
+\DoxyCodeLine{00008\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00009\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00010\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00011\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00012\ \textcolor{comment}{//Initial\ Author\ Jackson\ Lee,\ 2014}}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \textcolor{preprocessor}{\#ifndef\ B3\_GPU\_PARALLEL\_LINEAR\_BVH\_H}}
+\DoxyCodeLine{00015\ \textcolor{preprocessor}{\#define\ B3\_GPU\_PARALLEL\_LINEAR\_BVH\_H}}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \textcolor{comment}{//\#include\ "{}Bullet3Collision/BroadPhaseCollision/shared/b3Aabb.h"{}}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_sap_aabb_8h}{Bullet3OpenCL/BroadphaseCollision/b3SapAabb.h}}"{}}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_int2_8h}{Bullet3Common/shared/b3Int2.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_int4_8h}{Bullet3Common/shared/b3Int4.h}}"{}}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_raycast_info_8h}{Bullet3Collision/NarrowPhaseCollision/b3RaycastInfo.h}}"{}}}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_fill_c_l_8h}{Bullet3OpenCL/ParallelPrimitives/b3FillCL.h}}"{}}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_radix_sort32_c_l_8h}{Bullet3OpenCL/ParallelPrimitives/b3RadixSort32CL.h}}"{}}}
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_prefix_scan_c_l_8h}{Bullet3OpenCL/ParallelPrimitives/b3PrefixScanCL.h}}"{}}}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{parallel_linear_bvh_kernels_8h}{Bullet3OpenCL/BroadphaseCollision/kernels/parallelLinearBvhKernels.h}}"{}}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#define\ b3Int64\ cl\_long}}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00049\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classb3_gpu_parallel_linear_bvh_a17df08ba24e5b89716fcfd3b0d464195}{b3GpuParallelLinearBvh}}}
+\DoxyCodeLine{00050\ \{}
+\DoxyCodeLine{00051\ \ \ \ \ \mbox{\hyperlink{clew_8h_ac0eceefed5ddf03f817f9c9a20fdc616}{cl\_command\_queue}}\ m\_queue;}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00053\ \ \ \ \ \mbox{\hyperlink{clew_8h_a3d78b43bff66a3135ffcba6eb9b2f1b9}{cl\_program}}\ m\_parallelLinearBvhProgram;}
+\DoxyCodeLine{00054\ }
+\DoxyCodeLine{00055\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ m\_separateAabbsKernel;}
+\DoxyCodeLine{00056\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ m\_findAllNodesMergedAabbKernel;}
+\DoxyCodeLine{00057\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ m\_assignMortonCodesAndAabbIndiciesKernel;}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{comment}{//Binary\ radix\ tree\ construction\ kernels}}
+\DoxyCodeLine{00060\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ m\_computeAdjacentPairCommonPrefixKernel;}
+\DoxyCodeLine{00061\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ m\_buildBinaryRadixTreeLeafNodesKernel;}
+\DoxyCodeLine{00062\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ m\_buildBinaryRadixTreeInternalNodesKernel;}
+\DoxyCodeLine{00063\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ m\_findDistanceFromRootKernel;}
+\DoxyCodeLine{00064\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ m\_buildBinaryRadixTreeAabbsRecursiveKernel;}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ m\_findLeafIndexRangesKernel;}
+\DoxyCodeLine{00067\ }
+\DoxyCodeLine{00068\ \ \ \ \ \textcolor{comment}{//Traversal\ kernels}}
+\DoxyCodeLine{00069\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ m\_plbvhCalculateOverlappingPairsKernel;}
+\DoxyCodeLine{00070\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ m\_plbvhRayTraverseKernel;}
+\DoxyCodeLine{00071\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ m\_plbvhLargeAabbAabbTestKernel;}
+\DoxyCodeLine{00072\ \ \ \ \ \mbox{\hyperlink{clew_8h_ad555869572d7067f86762cd9e032cf2b}{cl\_kernel}}\ m\_plbvhLargeAabbRayTestKernel;}
+\DoxyCodeLine{00073\ }
+\DoxyCodeLine{00074\ \ \ \ \ \mbox{\hyperlink{classb3_radix_sort32_c_l}{b3RadixSort32CL}}\ m\_radixSorter;}
+\DoxyCodeLine{00075\ }
+\DoxyCodeLine{00076\ \ \ \ \ \textcolor{comment}{//1\ element}}
+\DoxyCodeLine{00077\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<int>}}\ m\_rootNodeIndex;\ \ \ \ \ \ \ \ \textcolor{comment}{//Most\ significant\ bit(0x80000000)\ is\ set\ to\ indicate\ internal\ node}}
+\DoxyCodeLine{00078\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<int>}}\ m\_maxDistanceFromRoot;\ \ \textcolor{comment}{//Max\ number\ of\ internal\ nodes\ between\ an\ internal\ node\ and\ the\ root\ node}}
+\DoxyCodeLine{00079\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<int>}}\ m\_temp;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//Used\ to\ hold\ the\ number\ of\ pairs\ in\ calculateOverlappingPairs()}}
+\DoxyCodeLine{00080\ }
+\DoxyCodeLine{00081\ \ \ \ \ \textcolor{comment}{//1\ element\ per\ internal\ node\ (number\_of\_internal\_nodes\ ==\ number\_of\_leaves\ -\/\ 1)}}
+\DoxyCodeLine{00082\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3SapAabb>}}\ m\_internalNodeAabbs;}
+\DoxyCodeLine{00083\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3Int2>}}\ m\_internalNodeLeafIndexRanges;\ \ \textcolor{comment}{//x\ ==\ min\ leaf\ index,\ y\ ==\ max\ leaf\ index}}
+\DoxyCodeLine{00084\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3Int2>}}\ m\_internalNodeChildNodes;\ \ \ \ \ \ \ \textcolor{comment}{//x\ ==\ left\ child,\ y\ ==\ right\ child;\ msb(0x80000000)\ is\ set\ to\ indicate\ internal\ node}}
+\DoxyCodeLine{00085\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<int>}}\ m\_internalNodeParentNodes;\ \ \ \ \ \ \ \ \ \textcolor{comment}{//For\ parent\ node\ index,\ msb(0x80000000)\ is\ not\ set\ since\ it\ is\ always\ internal}}
+\DoxyCodeLine{00086\ }
+\DoxyCodeLine{00087\ \ \ \ \ \textcolor{comment}{//1\ element\ per\ internal\ node;\ for\ binary\ radix\ tree\ construction}}
+\DoxyCodeLine{00088\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3Int64>}}\ m\_commonPrefixes;}
+\DoxyCodeLine{00089\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<int>}}\ m\_commonPrefixLengths;}
+\DoxyCodeLine{00090\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<int>}}\ m\_distanceFromRoot;\ \ \textcolor{comment}{//Number\ of\ internal\ nodes\ between\ this\ node\ and\ the\ root}}
+\DoxyCodeLine{00091\ }
+\DoxyCodeLine{00092\ \ \ \ \ \textcolor{comment}{//1\ element\ per\ leaf\ node\ (leaf\ nodes\ only\ include\ small\ AABBs)}}
+\DoxyCodeLine{00093\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<int>}}\ m\_leafNodeParentNodes;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//For\ parent\ node\ index,\ msb(0x80000000)\ is\ not\ set\ since\ it\ is\ always\ internal}}
+\DoxyCodeLine{00094\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3SortData>}}\ m\_mortonCodesAndAabbIndicies;\ \ \textcolor{comment}{//m\_key\ ==\ morton\ code,\ m\_value\ ==\ aabb\ index\ in\ m\_leafNodeAabbs}}
+\DoxyCodeLine{00095\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3SapAabb>}}\ m\_mergedAabb;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//m\_mergedAabb[0]\ contains\ the\ merged\ AABB\ of\ all\ leaf\ nodes}}
+\DoxyCodeLine{00096\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3SapAabb>}}\ m\_leafNodeAabbs;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//Contains\ only\ small\ AABBs}}
+\DoxyCodeLine{00097\ }
+\DoxyCodeLine{00098\ \ \ \ \ \textcolor{comment}{//1\ element\ per\ large\ AABB,\ which\ is\ not\ stored\ in\ the\ BVH}}
+\DoxyCodeLine{00099\ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3SapAabb>}}\ m\_largeAabbs;}
+\DoxyCodeLine{00100\ }
+\DoxyCodeLine{00101\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00102\ \ \ \ \ \mbox{\hyperlink{classb3_gpu_parallel_linear_bvh_a17df08ba24e5b89716fcfd3b0d464195}{b3GpuParallelLinearBvh}}(\mbox{\hyperlink{clew_8h_a96a7d9b65e8319e2f8c751455ae92ec8}{cl\_context}}\ context,\ \mbox{\hyperlink{clew_8h_abf58c686ce1c1e363fc1c219416bae3b}{cl\_device\_id}}\ device,\ \mbox{\hyperlink{clew_8h_ac0eceefed5ddf03f817f9c9a20fdc616}{cl\_command\_queue}}\ queue);}
+\DoxyCodeLine{00103\ \ \ \ \ \textcolor{keyword}{virtual}\ \mbox{\hyperlink{classb3_gpu_parallel_linear_bvh_a1559deb0c826ba3953cfaa08a5ed147d}{\string~b3GpuParallelLinearBvh}}();}
+\DoxyCodeLine{00104\ }
+\DoxyCodeLine{00106\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classb3_gpu_parallel_linear_bvh_ac6e619d22cc2bd9c979900cf83d59143}{build}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3SapAabb>}}\&\ worldSpaceAabbs,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<int>}}\&\ smallAabbIndices,}
+\DoxyCodeLine{00107\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<int>}}\&\ largeAabbIndices);}
+\DoxyCodeLine{00108\ }
+\DoxyCodeLine{00112\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classb3_gpu_parallel_linear_bvh_ac0208fca9279bdfd66eabd321d98420b}{calculateOverlappingPairs}}(\mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3Int4>}}\&\ out\_overlappingPairs);}
+\DoxyCodeLine{00113\ }
+\DoxyCodeLine{00118\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classb3_gpu_parallel_linear_bvh_aa2e73543c39fe8a8ba65394fbc33e8bb}{testRaysAgainstBvhAabbs}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3RayInfo>}}\&\ rays,}
+\DoxyCodeLine{00119\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<int>}}\&\ out\_numRayRigidPairs,\ \mbox{\hyperlink{classb3_open_c_l_array}{b3OpenCLArray<b3Int2>}}\&\ out\_rayRigidPairs);}
+\DoxyCodeLine{00120\ }
+\DoxyCodeLine{00121\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00122\ \ \ \ \ \textcolor{keywordtype}{void}\ constructBinaryRadixTree();}
+\DoxyCodeLine{00123\ \};}
+\DoxyCodeLine{00124\ }
+\DoxyCodeLine{00125\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

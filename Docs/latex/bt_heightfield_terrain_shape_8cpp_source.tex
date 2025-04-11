@@ -1,0 +1,931 @@
+\doxysection{bt\+Heightfield\+Terrain\+Shape.\+cpp}
+\hypertarget{bt_heightfield_terrain_shape_8cpp_source}{}\label{bt_heightfield_terrain_shape_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/CollisionShapes/btHeightfieldTerrainShape.cpp}}
+\mbox{\hyperlink{bt_heightfield_terrain_shape_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2009\ Erwin\ Coumans\ \ http://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_heightfield_terrain_shape_8h}{btHeightfieldTerrainShape.h}}"{}}}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_transform_util_8h}{LinearMath/btTransformUtil.h}}"{}}}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ btHeightfieldTerrainShape::btHeightfieldTerrainShape(}
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keywordtype}{int}\ heightStickWidth,\ \textcolor{keywordtype}{int}\ heightStickLength,}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}*\ heightfieldData,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ minHeight,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxHeight,}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keywordtype}{int}\ upAxis,\ \textcolor{keywordtype}{bool}\ flipQuadEdges)}
+\DoxyCodeLine{00024\ \ \ \ \ :\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a6ecb1d8af9e8ce9c7ad73cfa3d1d9095}{m\_userValue3}}(0),\ \mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_abf766da570f1e9b853ca391e2bb57602}{m\_triangleInfoMap}}(0)}
+\DoxyCodeLine{00025\ \{}
+\DoxyCodeLine{00026\ \ \ \ \ \mbox{\hyperlink{b3_convex_utility_8h_a25a40b6614565f755233080a384c35f1}{initialize}}(heightStickWidth,\ heightStickLength,\ heightfieldData,}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{/*heightScale=*/}1,\ minHeight,\ maxHeight,\ upAxis,\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a1ad4349bf85ddc19b7a0eee5e3e534c2}{PHY\_FLOAT}},}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ flipQuadEdges);}
+\DoxyCodeLine{00029\ \}}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ btHeightfieldTerrainShape::btHeightfieldTerrainShape(}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordtype}{int}\ heightStickWidth,\ \textcolor{keywordtype}{int}\ heightStickLength,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{double}*\ heightfieldData,}
+\DoxyCodeLine{00033\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ minHeight,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxHeight,\ \textcolor{keywordtype}{int}\ upAxis,\ \textcolor{keywordtype}{bool}\ flipQuadEdges)}
+\DoxyCodeLine{00034\ \ \ \ \ :\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a6ecb1d8af9e8ce9c7ad73cfa3d1d9095}{m\_userValue3}}(0),\ \mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_abf766da570f1e9b853ca391e2bb57602}{m\_triangleInfoMap}}(0)}
+\DoxyCodeLine{00035\ \{}
+\DoxyCodeLine{00036\ \ \ \ \ \mbox{\hyperlink{b3_convex_utility_8h_a25a40b6614565f755233080a384c35f1}{initialize}}(heightStickWidth,\ heightStickLength,\ heightfieldData,}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{/*heightScale=*/}1,\ minHeight,\ maxHeight,\ upAxis,\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a5bb40ac23c072b0cbd77057de01a149b}{PHY\_DOUBLE}},}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ flipQuadEdges);}
+\DoxyCodeLine{00039\ \}}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ btHeightfieldTerrainShape::btHeightfieldTerrainShape(}
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keywordtype}{int}\ heightStickWidth,\ \textcolor{keywordtype}{int}\ heightStickLength,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{short}*\ heightfieldData,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ heightScale,}
+\DoxyCodeLine{00043\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ minHeight,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxHeight,\ \textcolor{keywordtype}{int}\ upAxis,\ \textcolor{keywordtype}{bool}\ flipQuadEdges)}
+\DoxyCodeLine{00044\ \ \ \ \ :\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a6ecb1d8af9e8ce9c7ad73cfa3d1d9095}{m\_userValue3}}(0),\ \mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_abf766da570f1e9b853ca391e2bb57602}{m\_triangleInfoMap}}(0)}
+\DoxyCodeLine{00045\ \{}
+\DoxyCodeLine{00046\ \ \ \ \ \mbox{\hyperlink{b3_convex_utility_8h_a25a40b6614565f755233080a384c35f1}{initialize}}(heightStickWidth,\ heightStickLength,\ heightfieldData,}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ heightScale,\ minHeight,\ maxHeight,\ upAxis,\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a64a80d935567c2111346eca34eee6986}{PHY\_SHORT}},}
+\DoxyCodeLine{00048\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ flipQuadEdges);}
+\DoxyCodeLine{00049\ \}}
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00051\ btHeightfieldTerrainShape::btHeightfieldTerrainShape(}
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keywordtype}{int}\ heightStickWidth,\ \textcolor{keywordtype}{int}\ heightStickLength,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*\ heightfieldData,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ heightScale,}
+\DoxyCodeLine{00053\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ minHeight,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxHeight,\ \textcolor{keywordtype}{int}\ upAxis,\ \textcolor{keywordtype}{bool}\ flipQuadEdges)}
+\DoxyCodeLine{00054\ \ \ \ \ :\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a6ecb1d8af9e8ce9c7ad73cfa3d1d9095}{m\_userValue3}}(0),\ \mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_abf766da570f1e9b853ca391e2bb57602}{m\_triangleInfoMap}}(0)}
+\DoxyCodeLine{00055\ \{}
+\DoxyCodeLine{00056\ \ \ \ \ \mbox{\hyperlink{b3_convex_utility_8h_a25a40b6614565f755233080a384c35f1}{initialize}}(heightStickWidth,\ heightStickLength,\ heightfieldData,}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ heightScale,\ minHeight,\ maxHeight,\ upAxis,\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a22cb435d33635ba7440daf26ceddb33d}{PHY\_UCHAR}},}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ flipQuadEdges);}
+\DoxyCodeLine{00059\ \}}
+\DoxyCodeLine{00060\ }
+\DoxyCodeLine{00061\ btHeightfieldTerrainShape::btHeightfieldTerrainShape(}
+\DoxyCodeLine{00062\ \ \ \ \ \textcolor{keywordtype}{int}\ heightStickWidth,\ \textcolor{keywordtype}{int}\ heightStickLength,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{void}*\ heightfieldData,}
+\DoxyCodeLine{00063\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ heightScale,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ minHeight,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxHeight,\ \textcolor{keywordtype}{int}\ upAxis,}
+\DoxyCodeLine{00064\ \ \ \ \ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5}{PHY\_ScalarType}}\ hdt,\ \textcolor{keywordtype}{bool}\ flipQuadEdges)}
+\DoxyCodeLine{00065\ \ \ \ \ :\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a6ecb1d8af9e8ce9c7ad73cfa3d1d9095}{m\_userValue3}}(0),}
+\DoxyCodeLine{00066\ \ \ \ \ \mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_abf766da570f1e9b853ca391e2bb57602}{m\_triangleInfoMap}}(0)}
+\DoxyCodeLine{00067\ \{}
+\DoxyCodeLine{00068\ \ \ \ \ \textcolor{comment}{//\ legacy\ constructor:\ Assumes\ PHY\_FLOAT\ means\ btScalar.}}
+\DoxyCodeLine{00069\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_DOUBLE\_PRECISION}}
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{keywordflow}{if}\ (hdt\ ==\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a1ad4349bf85ddc19b7a0eee5e3e534c2}{PHY\_FLOAT}})\ hdt\ =\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a5bb40ac23c072b0cbd77057de01a149b}{PHY\_DOUBLE}};}
+\DoxyCodeLine{00071\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00072\ \ \ \ \ \mbox{\hyperlink{b3_convex_utility_8h_a25a40b6614565f755233080a384c35f1}{initialize}}(heightStickWidth,\ heightStickLength,\ heightfieldData,}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ heightScale,\ minHeight,\ maxHeight,\ upAxis,\ hdt,}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ flipQuadEdges);}
+\DoxyCodeLine{00075\ \}}
+\DoxyCodeLine{00076\ }
+\DoxyCodeLine{00077\ btHeightfieldTerrainShape::btHeightfieldTerrainShape(\textcolor{keywordtype}{int}\ heightStickWidth,\ \textcolor{keywordtype}{int}\ heightStickLength,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{void}*\ heightfieldData,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxHeight,\ \textcolor{keywordtype}{int}\ upAxis,\ \textcolor{keywordtype}{bool}\ useFloatData,\ \textcolor{keywordtype}{bool}\ flipQuadEdges)}
+\DoxyCodeLine{00078\ \ \ \ \ :\ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a6ecb1d8af9e8ce9c7ad73cfa3d1d9095}{m\_userValue3}}(0),}
+\DoxyCodeLine{00079\ \ \ \ \ \mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_abf766da570f1e9b853ca391e2bb57602}{m\_triangleInfoMap}}(0)}
+\DoxyCodeLine{00080\ \{}
+\DoxyCodeLine{00081\ \ \ \ \ \textcolor{comment}{//\ legacy\ constructor:\ support\ only\ btScalar\ or\ unsigned\ char\ data,}}
+\DoxyCodeLine{00082\ \ \ \ \ \textcolor{comment}{//\ and\ min\ height\ is\ zero.}}
+\DoxyCodeLine{00083\ \ \ \ \ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5}{PHY\_ScalarType}}\ hdt\ =\ (useFloatData)\ ?\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a1ad4349bf85ddc19b7a0eee5e3e534c2}{PHY\_FLOAT}}\ :\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a22cb435d33635ba7440daf26ceddb33d}{PHY\_UCHAR}};}
+\DoxyCodeLine{00084\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_DOUBLE\_PRECISION}}
+\DoxyCodeLine{00085\ \ \ \ \ \textcolor{keywordflow}{if}\ (hdt\ ==\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a1ad4349bf85ddc19b7a0eee5e3e534c2}{PHY\_FLOAT}})\ hdt\ =\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a5bb40ac23c072b0cbd77057de01a149b}{PHY\_DOUBLE}};}
+\DoxyCodeLine{00086\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00087\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ minHeight\ =\ 0.0f;}
+\DoxyCodeLine{00088\ }
+\DoxyCodeLine{00089\ \ \ \ \ \textcolor{comment}{//\ previously,\ height\ =\ uchar\ *\ maxHeight\ /\ 65535.}}
+\DoxyCodeLine{00090\ \ \ \ \ \textcolor{comment}{//\ So\ to\ preserve\ legacy\ behavior,\ heightScale\ =\ maxHeight\ /\ 65535}}
+\DoxyCodeLine{00091\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ heightScale\ =\ maxHeight\ /\ 65535;}
+\DoxyCodeLine{00092\ }
+\DoxyCodeLine{00093\ \ \ \ \ \mbox{\hyperlink{b3_convex_utility_8h_a25a40b6614565f755233080a384c35f1}{initialize}}(heightStickWidth,\ heightStickLength,\ heightfieldData,}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ heightScale,\ minHeight,\ maxHeight,\ upAxis,\ hdt,}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ flipQuadEdges);}
+\DoxyCodeLine{00096\ \}}
+\DoxyCodeLine{00097\ }
+\DoxyCodeLine{00098\ \textcolor{keywordtype}{void}\ btHeightfieldTerrainShape::initialize(}
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{keywordtype}{int}\ heightStickWidth,\ \textcolor{keywordtype}{int}\ heightStickLength,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{void}*\ heightfieldData,}
+\DoxyCodeLine{00100\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ heightScale,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ minHeight,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxHeight,\ \textcolor{keywordtype}{int}\ upAxis,}
+\DoxyCodeLine{00101\ \ \ \ \ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5}{PHY\_ScalarType}}\ hdt,\ \textcolor{keywordtype}{bool}\ flipQuadEdges)}
+\DoxyCodeLine{00102\ \{}
+\DoxyCodeLine{00103\ \ \ \ \ \textcolor{comment}{//\ validation}}
+\DoxyCodeLine{00104\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(heightStickWidth\ >\ 1);\ \ \ \textcolor{comment}{//\ \&\&\ "{}bad\ width"{});}}
+\DoxyCodeLine{00105\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(heightStickLength\ >\ 1);\ \ \textcolor{comment}{//\ \&\&\ "{}bad\ length"{});}}
+\DoxyCodeLine{00106\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(heightfieldData);\ \ \ \ \ \ \ \ \textcolor{comment}{//\ \&\&\ "{}null\ heightfield\ data"{});}}
+\DoxyCodeLine{00107\ \ \ \ \ \textcolor{comment}{//\ btAssert(heightScale)\ -\/-\/\ do\ we\ care?\ \ Trust\ caller\ here}}
+\DoxyCodeLine{00108\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(minHeight\ <=\ maxHeight);\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \&\&\ "{}bad\ min/max\ height"{});}}
+\DoxyCodeLine{00109\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(upAxis\ >=\ 0\ \&\&\ upAxis\ <\ 3);\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \&\&\ "{}bad\ upAxis-\/-\/should\ be\ in\ range\ [0,2]"{});}}
+\DoxyCodeLine{00110\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(hdt\ !=\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a22cb435d33635ba7440daf26ceddb33d}{PHY\_UCHAR}}\ ||\ hdt\ !=\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a1ad4349bf85ddc19b7a0eee5e3e534c2}{PHY\_FLOAT}}\ ||\ hdt\ !=\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a5bb40ac23c072b0cbd77057de01a149b}{PHY\_DOUBLE}}\ ||\ hdt\ !=\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a64a80d935567c2111346eca34eee6986}{PHY\_SHORT}});\ \ \textcolor{comment}{//\ \&\&\ "{}Bad\ height\ data\ type\ enum"{});}}
+\DoxyCodeLine{00111\ }
+\DoxyCodeLine{00112\ \ \ \ \ \textcolor{comment}{//\ initialize\ member\ variables}}
+\DoxyCodeLine{00113\ \ \ \ \ m\_shapeType\ =\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5ea52a047f30384a23f43a7d16b85ce551d}{TERRAIN\_SHAPE\_PROXYTYPE}};}
+\DoxyCodeLine{00114\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a175189ad64089a129167db17e62c5583}{m\_heightStickWidth}}\ =\ heightStickWidth;}
+\DoxyCodeLine{00115\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac16584a2916c01b542ca9e8754fb7639}{m\_heightStickLength}}\ =\ heightStickLength;}
+\DoxyCodeLine{00116\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a94465b6aa6efee15fa6643585582bc02}{m\_minHeight}}\ =\ minHeight;}
+\DoxyCodeLine{00117\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a46c2db7d6a6f154cdd5632ceebc742c3}{m\_maxHeight}}\ =\ maxHeight;}
+\DoxyCodeLine{00118\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac4ffa6ed6ab0f5c175893d6701c8cce6}{m\_width}}\ =\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})(heightStickWidth\ -\/\ 1);}
+\DoxyCodeLine{00119\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac8185797188edf8d544e0d668d6271a0}{m\_length}}\ =\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})(heightStickLength\ -\/\ 1);}
+\DoxyCodeLine{00120\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a41c8d0c01aa65966f241a268dbca5d9f}{m\_heightScale}}\ =\ heightScale;}
+\DoxyCodeLine{00121\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a012785bf055c2adc6154837e3899f822}{m\_heightfieldDataUnknown}}\ =\ heightfieldData;}
+\DoxyCodeLine{00122\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a0484bce91a130cb4fcd787cccb32e765}{m\_heightDataType}}\ =\ hdt;}
+\DoxyCodeLine{00123\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_aff5dfc8a26994bd34861a7915ecf1284}{m\_flipQuadEdges}}\ =\ flipQuadEdges;}
+\DoxyCodeLine{00124\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a8141bd077763e941d7eacb9b04a3f3d8}{m\_useDiamondSubdivision}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00125\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_abd78cf83a238e48575b196a720211253}{m\_useZigzagSubdivision}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00126\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ada58f667e960c7c18a8e3fdee6f32262}{m\_flipTriangleWinding}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00127\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}}\ =\ upAxis;}
+\DoxyCodeLine{00128\ \ \ \ \ \mbox{\hyperlink{bt_compound_shape_8h_ae70ba06a613edc3194c23dbd2924e01e}{m\_localScaling}}.setValue(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.));}
+\DoxyCodeLine{00129\ \ \ \ \ }
+\DoxyCodeLine{00130\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ad32b5b90af29fac44053732c568010c4}{m\_vboundsChunkSize}}\ =\ 0;}
+\DoxyCodeLine{00131\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a5bca061f30ac69138303239ccfa747c0}{m\_vboundsGridWidth}}\ =\ 0;}
+\DoxyCodeLine{00132\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a98b063d29e63bf5507fa0f9961083575}{m\_vboundsGridLength}}\ =\ 0;}
+\DoxyCodeLine{00133\ }
+\DoxyCodeLine{00134\ \ \ \ \ \textcolor{comment}{//\ determine\ min/max\ axis-\/aligned\ bounding\ box\ (aabb)\ values}}
+\DoxyCodeLine{00135\ \ \ \ \ \textcolor{keywordflow}{switch}\ (\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}})}
+\DoxyCodeLine{00136\ \ \ \ \ \{}
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 0:}
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00139\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_compound_shape_8h_a0b8abbfb0cd19f61d91e8abf98742a71}{m\_localAabbMin}}.setValue(\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a94465b6aa6efee15fa6643585582bc02}{m\_minHeight}},\ 0,\ 0);}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_compound_shape_8h_acf52c175693433a4ed0b9a4d164e432e}{m\_localAabbMax}}.setValue(\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a46c2db7d6a6f154cdd5632ceebc742c3}{m\_maxHeight}},\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac4ffa6ed6ab0f5c175893d6701c8cce6}{m\_width}},\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac8185797188edf8d544e0d668d6271a0}{m\_length}});}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 1:}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_compound_shape_8h_a0b8abbfb0cd19f61d91e8abf98742a71}{m\_localAabbMin}}.setValue(0,\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a94465b6aa6efee15fa6643585582bc02}{m\_minHeight}},\ 0);}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_compound_shape_8h_acf52c175693433a4ed0b9a4d164e432e}{m\_localAabbMax}}.setValue(\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac4ffa6ed6ab0f5c175893d6701c8cce6}{m\_width}},\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a46c2db7d6a6f154cdd5632ceebc742c3}{m\_maxHeight}},\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac8185797188edf8d544e0d668d6271a0}{m\_length}});}
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 2:}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_compound_shape_8h_a0b8abbfb0cd19f61d91e8abf98742a71}{m\_localAabbMin}}.setValue(0,\ 0,\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a94465b6aa6efee15fa6643585582bc02}{m\_minHeight}});}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_compound_shape_8h_acf52c175693433a4ed0b9a4d164e432e}{m\_localAabbMax}}.setValue(\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac4ffa6ed6ab0f5c175893d6701c8cce6}{m\_width}},\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac8185797188edf8d544e0d668d6271a0}{m\_length}},\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a46c2db7d6a6f154cdd5632ceebc742c3}{m\_maxHeight}});}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00154\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00156\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//need\ to\ get\ valid\ m\_upAxis}}
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(0);\ \ \textcolor{comment}{//\ \&\&\ "{}Bad\ m\_upAxis"{});}}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00160\ \ \ \ \ \}}
+\DoxyCodeLine{00161\ }
+\DoxyCodeLine{00162\ \ \ \ \ \textcolor{comment}{//\ remember\ origin\ (defined\ as\ exact\ middle\ of\ aabb)}}
+\DoxyCodeLine{00163\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a1a4a24aba89d83e0dadd27c7f514e97d}{m\_localOrigin}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5)\ *\ (\mbox{\hyperlink{bt_compound_shape_8h_a0b8abbfb0cd19f61d91e8abf98742a71}{m\_localAabbMin}}\ +\ \mbox{\hyperlink{bt_compound_shape_8h_acf52c175693433a4ed0b9a4d164e432e}{m\_localAabbMax}});}
+\DoxyCodeLine{00164\ \}}
+\DoxyCodeLine{00165\ }
+\DoxyCodeLine{00166\ btHeightfieldTerrainShape::\string~btHeightfieldTerrainShape()}
+\DoxyCodeLine{00167\ \{}
+\DoxyCodeLine{00168\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a6a88aa06c220b2dcf1b74f030a0e2064}{clearAccelerator}}();}
+\DoxyCodeLine{00169\ \}}
+\DoxyCodeLine{00170\ }
+\DoxyCodeLine{00171\ \textcolor{keywordtype}{void}\ btHeightfieldTerrainShape::getAabb(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ t,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00172\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00173\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ halfExtents\ =\ (\mbox{\hyperlink{bt_compound_shape_8h_acf52c175693433a4ed0b9a4d164e432e}{m\_localAabbMax}}\ -\/\ \mbox{\hyperlink{bt_compound_shape_8h_a0b8abbfb0cd19f61d91e8abf98742a71}{m\_localAabbMin}})\ *\ \mbox{\hyperlink{bt_compound_shape_8h_ae70ba06a613edc3194c23dbd2924e01e}{m\_localScaling}}\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5);}
+\DoxyCodeLine{00174\ }
+\DoxyCodeLine{00175\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ localOrigin(0,\ 0,\ 0);}
+\DoxyCodeLine{00176\ \ \ \ \ localOrigin[\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}}]\ =\ (\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a94465b6aa6efee15fa6643585582bc02}{m\_minHeight}}\ +\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a46c2db7d6a6f154cdd5632ceebc742c3}{m\_maxHeight}})\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5);}
+\DoxyCodeLine{00177\ \ \ \ \ localOrigin\ *=\ \mbox{\hyperlink{bt_compound_shape_8h_ae70ba06a613edc3194c23dbd2924e01e}{m\_localScaling}};}
+\DoxyCodeLine{00178\ }
+\DoxyCodeLine{00179\ \ \ \ \ \mbox{\hyperlink{bt_matrix3x3_8h_a8789e58a469e9c671c351d681306b4d7}{btMatrix3x3}}\ abs\_b\ =\ t.getBasis().absolute();}
+\DoxyCodeLine{00180\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ center\ =\ t.getOrigin();}
+\DoxyCodeLine{00181\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ extent\ =\ halfExtents.dot3(abs\_b[0],\ abs\_b[1],\ abs\_b[2]);}
+\DoxyCodeLine{00182\ \ \ \ \ extent\ +=\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(\mbox{\hyperlink{bt_collision_shape_8h_ac0ace873d1bd5ff19c43796670a5e939}{getMargin}}(),\ \mbox{\hyperlink{bt_collision_shape_8h_ac0ace873d1bd5ff19c43796670a5e939}{getMargin}}(),\ \mbox{\hyperlink{bt_collision_shape_8h_ac0ace873d1bd5ff19c43796670a5e939}{getMargin}}());}
+\DoxyCodeLine{00183\ }
+\DoxyCodeLine{00184\ \ \ \ \ aabbMin\ =\ center\ -\/\ extent;}
+\DoxyCodeLine{00185\ \ \ \ \ aabbMax\ =\ center\ +\ extent;}
+\DoxyCodeLine{00186\ \}}
+\DoxyCodeLine{00187\ }
+\DoxyCodeLine{00191\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}}
+\DoxyCodeLine{00192\ btHeightfieldTerrainShape::getRawHeightFieldValue(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}})\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00193\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00194\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{glad_8h_aa857b95cc76669c2a9109239ef40a47c}{val}}\ =\ 0.f;}
+\DoxyCodeLine{00195\ \ \ \ \ \textcolor{keywordflow}{switch}\ (\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a0484bce91a130cb4fcd787cccb32e765}{m\_heightDataType}})}
+\DoxyCodeLine{00196\ \ \ \ \ \{}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a1ad4349bf85ddc19b7a0eee5e3e534c2}{PHY\_FLOAT}}:}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_aa857b95cc76669c2a9109239ef40a47c}{val}}\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a82b9072d162075057b1d7a33ca24c70d}{m\_heightfieldDataFloat}}[(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}\ *\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a175189ad64089a129167db17e62c5583}{m\_heightStickWidth}})\ +\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}];}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00202\ }
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a5bb40ac23c072b0cbd77057de01a149b}{PHY\_DOUBLE}}:}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_aa857b95cc76669c2a9109239ef40a47c}{val}}\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a263e306b0674f4aa07fda837d6faaba1}{m\_heightfieldDataDouble}}[(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}\ *\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a175189ad64089a129167db17e62c5583}{m\_heightStickWidth}})\ +\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}];}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00208\ }
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a22cb435d33635ba7440daf26ceddb33d}{PHY\_UCHAR}}:}
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}\ heightFieldValue\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a9ddf2366513f8303df80c9dc61faf580}{m\_heightfieldDataUnsignedChar}}[(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}\ *\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a175189ad64089a129167db17e62c5583}{m\_heightStickWidth}})\ +\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}];}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_aa857b95cc76669c2a9109239ef40a47c}{val}}\ =\ heightFieldValue\ *\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a41c8d0c01aa65966f241a268dbca5d9f}{m\_heightScale}};}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00214\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00215\ }
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a64a80d935567c2111346eca34eee6986}{PHY\_SHORT}}:}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00218\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{short}\ hfValue\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_aac8ea8dcc3587e78e3d88e27c4a257c2}{m\_heightfieldDataShort}}[(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}\ *\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a175189ad64089a129167db17e62c5583}{m\_heightStickWidth}})\ +\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}];}
+\DoxyCodeLine{00219\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_aa857b95cc76669c2a9109239ef40a47c}{val}}\ =\ hfValue\ *\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a41c8d0c01aa65966f241a268dbca5d9f}{m\_heightScale}};}
+\DoxyCodeLine{00220\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00221\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00222\ }
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(!\textcolor{stringliteral}{"{}Bad\ m\_heightDataType"{}});}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00227\ \ \ \ \ \}}
+\DoxyCodeLine{00228\ }
+\DoxyCodeLine{00229\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{glad_8h_aa857b95cc76669c2a9109239ef40a47c}{val}};}
+\DoxyCodeLine{00230\ \}}
+\DoxyCodeLine{00231\ }
+\DoxyCodeLine{00233\ \textcolor{keywordtype}{void}\ btHeightfieldTerrainShape::getVertex(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}},\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ vertex)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00234\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00235\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ >=\ 0);}
+\DoxyCodeLine{00236\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}\ >=\ 0);}
+\DoxyCodeLine{00237\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ <\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a175189ad64089a129167db17e62c5583}{m\_heightStickWidth}});}
+\DoxyCodeLine{00238\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}\ <\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac16584a2916c01b542ca9e8754fb7639}{m\_heightStickLength}});}
+\DoxyCodeLine{00239\ }
+\DoxyCodeLine{00240\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}}\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a37a11a11f2763b4a69da2bdc5ef58d90}{getRawHeightFieldValue}}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}});}
+\DoxyCodeLine{00241\ }
+\DoxyCodeLine{00242\ \ \ \ \ \textcolor{keywordflow}{switch}\ (\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}})}
+\DoxyCodeLine{00243\ \ \ \ \ \{}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 0:}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00246\ \ \ \ \ \ \ \ \ \ \ \ \ vertex.setValue(}
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}}\ -\/\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a1a4a24aba89d83e0dadd27c7f514e97d}{m\_localOrigin}}.getX(),}
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (-\/\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac4ffa6ed6ab0f5c175893d6701c8cce6}{m\_width}}\ /\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(2.0))\ +\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (-\/\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac8185797188edf8d544e0d668d6271a0}{m\_length}}\ /\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(2.0))\ +\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}});}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 1:}
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \ \ \ \ \ \ vertex.setValue(}
+\DoxyCodeLine{00255\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (-\/\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac4ffa6ed6ab0f5c175893d6701c8cce6}{m\_width}}\ /\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(2.0))\ +\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},}
+\DoxyCodeLine{00256\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}}\ -\/\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a1a4a24aba89d83e0dadd27c7f514e97d}{m\_localOrigin}}.getY(),}
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (-\/\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac8185797188edf8d544e0d668d6271a0}{m\_length}}\ /\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(2.0))\ +\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}});}
+\DoxyCodeLine{00258\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00259\ \ \ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00260\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 2:}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ \ \ \ \ vertex.setValue(}
+\DoxyCodeLine{00263\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (-\/\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac4ffa6ed6ab0f5c175893d6701c8cce6}{m\_width}}\ /\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(2.0))\ +\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},}
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (-\/\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac8185797188edf8d544e0d668d6271a0}{m\_length}}\ /\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(2.0))\ +\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}},}
+\DoxyCodeLine{00265\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}}\ -\/\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a1a4a24aba89d83e0dadd27c7f514e97d}{m\_localOrigin}}.getZ());}
+\DoxyCodeLine{00266\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00267\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00268\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00269\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//need\ to\ get\ valid\ m\_upAxis}}
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(0);}
+\DoxyCodeLine{00272\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00273\ \ \ \ \ \}}
+\DoxyCodeLine{00274\ }
+\DoxyCodeLine{00275\ \ \ \ \ vertex\ *=\ \mbox{\hyperlink{bt_compound_shape_8h_ae70ba06a613edc3194c23dbd2924e01e}{m\_localScaling}};}
+\DoxyCodeLine{00276\ \}}
+\DoxyCodeLine{00277\ }
+\DoxyCodeLine{00278\ \textcolor{keyword}{static}\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}}
+\DoxyCodeLine{00279\ getQuantized(}
+\DoxyCodeLine{00280\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}})}
+\DoxyCodeLine{00281\ \{}
+\DoxyCodeLine{00282\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ <\ 0.0)}
+\DoxyCodeLine{00283\ \ \ \ \ \{}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ (\textcolor{keywordtype}{int})(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ -\/\ 0.5);}
+\DoxyCodeLine{00285\ \ \ \ \ \}}
+\DoxyCodeLine{00286\ \ \ \ \ \textcolor{keywordflow}{return}\ (\textcolor{keywordtype}{int})(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ +\ 0.5);}
+\DoxyCodeLine{00287\ \}}
+\DoxyCodeLine{00288\ }
+\DoxyCodeLine{00289\ \textcolor{comment}{//\ Equivalent\ to\ std::minmax(\{a,\ b,\ c\}).}}
+\DoxyCodeLine{00290\ \textcolor{comment}{//\ Performs\ at\ most\ 3\ comparisons.}}
+\DoxyCodeLine{00291\ \textcolor{keyword}{static}\ btHeightfieldTerrainShape::Range\ minmaxRange(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ c)}
+\DoxyCodeLine{00292\ \{}
+\DoxyCodeLine{00293\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}\ >\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}})}
+\DoxyCodeLine{00294\ \ \ \ \ \{}
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}\ >\ c)}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ btHeightfieldTerrainShape::Range(c,\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}});}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}\ >\ c)}
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ btHeightfieldTerrainShape::Range(\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}});}
+\DoxyCodeLine{00299\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ btHeightfieldTerrainShape::Range(\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ c);}
+\DoxyCodeLine{00301\ \ \ \ \ \}}
+\DoxyCodeLine{00302\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00303\ \ \ \ \ \{}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}\ >\ c)}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ btHeightfieldTerrainShape::Range(c,\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}});}
+\DoxyCodeLine{00306\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}\ >\ c)}
+\DoxyCodeLine{00307\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ btHeightfieldTerrainShape::Range(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}});}
+\DoxyCodeLine{00308\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00309\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ btHeightfieldTerrainShape::Range(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ c);}
+\DoxyCodeLine{00310\ \ \ \ \ \}}
+\DoxyCodeLine{00311\ \}}
+\DoxyCodeLine{00312\ }
+\DoxyCodeLine{00314\ }
+\DoxyCodeLine{00322\ \textcolor{keywordtype}{void}\ btHeightfieldTerrainShape::quantizeWithClamp(\textcolor{keywordtype}{int}*\ out,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ point,\ \textcolor{keywordtype}{int}\ \textcolor{comment}{/*isMax*/})\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00323\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00324\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ clampedPoint(point);}
+\DoxyCodeLine{00325\ \ \ \ \ clampedPoint.setMax(\mbox{\hyperlink{bt_compound_shape_8h_a0b8abbfb0cd19f61d91e8abf98742a71}{m\_localAabbMin}});}
+\DoxyCodeLine{00326\ \ \ \ \ clampedPoint.setMin(\mbox{\hyperlink{bt_compound_shape_8h_acf52c175693433a4ed0b9a4d164e432e}{m\_localAabbMax}});}
+\DoxyCodeLine{00327\ }
+\DoxyCodeLine{00328\ \ \ \ \ out[0]\ =\ getQuantized(clampedPoint.getX());}
+\DoxyCodeLine{00329\ \ \ \ \ out[1]\ =\ getQuantized(clampedPoint.getY());}
+\DoxyCodeLine{00330\ \ \ \ \ out[2]\ =\ getQuantized(clampedPoint.getZ());}
+\DoxyCodeLine{00331\ \}}
+\DoxyCodeLine{00332\ }
+\DoxyCodeLine{00334\ }
+\DoxyCodeLine{00340\ \textcolor{keywordtype}{void}\ btHeightfieldTerrainShape::processAllTriangles(\mbox{\hyperlink{classbt_triangle_callback}{btTriangleCallback}}*\ callback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00341\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00342\ \ \ \ \ \textcolor{comment}{//\ scale\ down\ the\ input\ aabb's\ so\ they\ are\ in\ local\ (non-\/scaled)\ coordinates}}
+\DoxyCodeLine{00343\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ localAabbMin\ =\ aabbMin\ *\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(1.f\ /\ \mbox{\hyperlink{bt_compound_shape_8h_ae70ba06a613edc3194c23dbd2924e01e}{m\_localScaling}}[0],\ 1.f\ /\ \mbox{\hyperlink{bt_compound_shape_8h_ae70ba06a613edc3194c23dbd2924e01e}{m\_localScaling}}[1],\ 1.f\ /\ \mbox{\hyperlink{bt_compound_shape_8h_ae70ba06a613edc3194c23dbd2924e01e}{m\_localScaling}}[2]);}
+\DoxyCodeLine{00344\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ localAabbMax\ =\ aabbMax\ *\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(1.f\ /\ \mbox{\hyperlink{bt_compound_shape_8h_ae70ba06a613edc3194c23dbd2924e01e}{m\_localScaling}}[0],\ 1.f\ /\ \mbox{\hyperlink{bt_compound_shape_8h_ae70ba06a613edc3194c23dbd2924e01e}{m\_localScaling}}[1],\ 1.f\ /\ \mbox{\hyperlink{bt_compound_shape_8h_ae70ba06a613edc3194c23dbd2924e01e}{m\_localScaling}}[2]);}
+\DoxyCodeLine{00345\ }
+\DoxyCodeLine{00346\ \ \ \ \ \textcolor{comment}{//\ account\ for\ local\ origin}}
+\DoxyCodeLine{00347\ \ \ \ \ localAabbMin\ +=\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a1a4a24aba89d83e0dadd27c7f514e97d}{m\_localOrigin}};}
+\DoxyCodeLine{00348\ \ \ \ \ localAabbMax\ +=\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a1a4a24aba89d83e0dadd27c7f514e97d}{m\_localOrigin}};}
+\DoxyCodeLine{00349\ }
+\DoxyCodeLine{00350\ \ \ \ \ \textcolor{comment}{//quantize\ the\ aabbMin\ and\ aabbMax,\ and\ adjust\ the\ start/end\ ranges}}
+\DoxyCodeLine{00351\ \ \ \ \ \textcolor{keywordtype}{int}\ quantizedAabbMin[3];}
+\DoxyCodeLine{00352\ \ \ \ \ \textcolor{keywordtype}{int}\ quantizedAabbMax[3];}
+\DoxyCodeLine{00353\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_acb1580a436c9633459102a1096ca6671}{quantizeWithClamp}}(quantizedAabbMin,\ localAabbMin,\ 0);}
+\DoxyCodeLine{00354\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_acb1580a436c9633459102a1096ca6671}{quantizeWithClamp}}(quantizedAabbMax,\ localAabbMax,\ 1);}
+\DoxyCodeLine{00355\ }
+\DoxyCodeLine{00356\ \ \ \ \ \textcolor{comment}{//\ expand\ the\ min/max\ quantized\ values}}
+\DoxyCodeLine{00357\ \ \ \ \ \textcolor{comment}{//\ this\ is\ to\ catch\ the\ case\ where\ the\ input\ aabb\ falls\ between\ grid\ points!}}
+\DoxyCodeLine{00358\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 3;\ ++i)}
+\DoxyCodeLine{00359\ \ \ \ \ \{}
+\DoxyCodeLine{00360\ \ \ \ \ \ \ \ \ quantizedAabbMin[i]-\/-\/;}
+\DoxyCodeLine{00361\ \ \ \ \ \ \ \ \ quantizedAabbMax[i]++;}
+\DoxyCodeLine{00362\ \ \ \ \ \}}
+\DoxyCodeLine{00363\ }
+\DoxyCodeLine{00364\ \ \ \ \ \textcolor{keywordtype}{int}\ startX\ =\ 0;}
+\DoxyCodeLine{00365\ \ \ \ \ \textcolor{keywordtype}{int}\ endX\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a175189ad64089a129167db17e62c5583}{m\_heightStickWidth}}\ -\/\ 1;}
+\DoxyCodeLine{00366\ \ \ \ \ \textcolor{keywordtype}{int}\ startJ\ =\ 0;}
+\DoxyCodeLine{00367\ \ \ \ \ \textcolor{keywordtype}{int}\ endJ\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac16584a2916c01b542ca9e8754fb7639}{m\_heightStickLength}}\ -\/\ 1;}
+\DoxyCodeLine{00368\ }
+\DoxyCodeLine{00369\ \ \ \ \ \textcolor{keywordflow}{switch}\ (\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}})}
+\DoxyCodeLine{00370\ \ \ \ \ \{}
+\DoxyCodeLine{00371\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 0:}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00373\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (quantizedAabbMin[1]\ >\ startX)}
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ startX\ =\ quantizedAabbMin[1];}
+\DoxyCodeLine{00375\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (quantizedAabbMax[1]\ <\ endX)}
+\DoxyCodeLine{00376\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ endX\ =\ quantizedAabbMax[1];}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (quantizedAabbMin[2]\ >\ startJ)}
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ startJ\ =\ quantizedAabbMin[2];}
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (quantizedAabbMax[2]\ <\ endJ)}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ endJ\ =\ quantizedAabbMax[2];}
+\DoxyCodeLine{00381\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00383\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 1:}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00385\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (quantizedAabbMin[0]\ >\ startX)}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ startX\ =\ quantizedAabbMin[0];}
+\DoxyCodeLine{00387\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (quantizedAabbMax[0]\ <\ endX)}
+\DoxyCodeLine{00388\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ endX\ =\ quantizedAabbMax[0];}
+\DoxyCodeLine{00389\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (quantizedAabbMin[2]\ >\ startJ)}
+\DoxyCodeLine{00390\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ startJ\ =\ quantizedAabbMin[2];}
+\DoxyCodeLine{00391\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (quantizedAabbMax[2]\ <\ endJ)}
+\DoxyCodeLine{00392\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ endJ\ =\ quantizedAabbMax[2];}
+\DoxyCodeLine{00393\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00394\ \ \ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 2:}
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (quantizedAabbMin[0]\ >\ startX)}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ startX\ =\ quantizedAabbMin[0];}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (quantizedAabbMax[0]\ <\ endX)}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ endX\ =\ quantizedAabbMax[0];}
+\DoxyCodeLine{00401\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (quantizedAabbMin[1]\ >\ startJ)}
+\DoxyCodeLine{00402\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ startJ\ =\ quantizedAabbMin[1];}
+\DoxyCodeLine{00403\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (quantizedAabbMax[1]\ <\ endJ)}
+\DoxyCodeLine{00404\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ endJ\ =\ quantizedAabbMax[1];}
+\DoxyCodeLine{00405\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00406\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00407\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00408\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00409\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//need\ to\ get\ valid\ m\_upAxis}}
+\DoxyCodeLine{00410\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(0);}
+\DoxyCodeLine{00411\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00412\ \ \ \ \ \}}
+\DoxyCodeLine{00413\ }
+\DoxyCodeLine{00414\ \ \ \ \ \textcolor{comment}{//\ TODO\ If\ m\_vboundsGrid\ is\ available,\ use\ it\ to\ determine\ if\ we\ really\ need\ to\ process\ this\ area}}
+\DoxyCodeLine{00415\ \ \ \ \ }
+\DoxyCodeLine{00416\ \ \ \ \ \textcolor{keyword}{const}\ Range\ aabbUpRange(aabbMin[\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}}],\ aabbMax[\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}}]);}
+\DoxyCodeLine{00417\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ startJ;\ j\ <\ endJ;\ j++)}
+\DoxyCodeLine{00418\ \ \ \ \ \{}
+\DoxyCodeLine{00419\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ =\ startX;\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ <\ endX;\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}++)}
+\DoxyCodeLine{00420\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00421\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vertices[3];}
+\DoxyCodeLine{00422\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[3]\ =\ \{\ 0,\ 1,\ 2\ \};}
+\DoxyCodeLine{00423\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ada58f667e960c7c18a8e3fdee6f32262}{m\_flipTriangleWinding}})}
+\DoxyCodeLine{00424\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00425\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]\ =\ 2;}
+\DoxyCodeLine{00426\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]\ =\ 0;}
+\DoxyCodeLine{00427\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00428\ }
+\DoxyCodeLine{00429\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_aff5dfc8a26994bd34861a7915ecf1284}{m\_flipQuadEdges}}\ ||\ (\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a8141bd077763e941d7eacb9b04a3f3d8}{m\_useDiamondSubdivision}}\ \&\&\ !((j\ +\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}})\ \&\ 1))\ ||\ (\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_abd78cf83a238e48575b196a720211253}{m\_useZigzagSubdivision}}\ \&\&\ !(j\ \&\ 1)))}
+\DoxyCodeLine{00430\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00431\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_box2d_shape_8h_abd931a9909d75edbf7268bc4b1b0356e}{getVertex}}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ j,\ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]]);}
+\DoxyCodeLine{00432\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_box2d_shape_8h_abd931a9909d75edbf7268bc4b1b0356e}{getVertex}}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ j\ +\ 1,\ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[1]]);}
+\DoxyCodeLine{00433\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_box2d_shape_8h_abd931a9909d75edbf7268bc4b1b0356e}{getVertex}}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ +\ 1,\ j\ +\ 1,\ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]]);}
+\DoxyCodeLine{00434\ }
+\DoxyCodeLine{00435\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Skip\ triangle\ processing\ if\ the\ triangle\ is\ out-\/of-\/AABB.}}
+\DoxyCodeLine{00436\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Range\ upRange\ =\ minmaxRange(vertices[0][\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}}],\ vertices[1][\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}}],\ vertices[2][\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}}]);}
+\DoxyCodeLine{00437\ }
+\DoxyCodeLine{00438\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (upRange.overlaps(aabbUpRange))}
+\DoxyCodeLine{00439\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ callback-\/>\mbox{\hyperlink{classbt_triangle_callback_a3850755f2c1fd71c4ca5877db1e6f891}{processTriangle}}(vertices,\ 2\ *\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ j);}
+\DoxyCodeLine{00440\ \ \ \ \ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00441\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ already\ set:\ getVertex(x,\ j,\ vertices[indices[0]])}}
+\DoxyCodeLine{00442\ }
+\DoxyCodeLine{00443\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ equivalent\ to:\ getVertex(x\ +\ 1,\ j\ +\ 1,\ vertices[indices[1]]);}}
+\DoxyCodeLine{00444\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[1]]\ =\ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]];}
+\DoxyCodeLine{00445\ }
+\DoxyCodeLine{00446\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_box2d_shape_8h_abd931a9909d75edbf7268bc4b1b0356e}{getVertex}}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ +\ 1,\ j,\ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]]);}
+\DoxyCodeLine{00447\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ upRange.min\ =\ \mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin}}(upRange.min,\ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]][\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}}]);}
+\DoxyCodeLine{00448\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ upRange.max\ =\ \mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(upRange.max,\ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]][\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}}]);}
+\DoxyCodeLine{00449\ }
+\DoxyCodeLine{00450\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (upRange.overlaps(aabbUpRange))}
+\DoxyCodeLine{00451\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ callback-\/>\mbox{\hyperlink{classbt_triangle_callback_a3850755f2c1fd71c4ca5877db1e6f891}{processTriangle}}(vertices,\ 2\ *\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ +\ 1,\ j);}
+\DoxyCodeLine{00452\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00453\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00454\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00455\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_box2d_shape_8h_abd931a9909d75edbf7268bc4b1b0356e}{getVertex}}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ j,\ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]]);}
+\DoxyCodeLine{00456\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_box2d_shape_8h_abd931a9909d75edbf7268bc4b1b0356e}{getVertex}}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ j\ +\ 1,\ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[1]]);}
+\DoxyCodeLine{00457\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_box2d_shape_8h_abd931a9909d75edbf7268bc4b1b0356e}{getVertex}}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ +\ 1,\ j,\ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]]);}
+\DoxyCodeLine{00458\ }
+\DoxyCodeLine{00459\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Skip\ triangle\ processing\ if\ the\ triangle\ is\ out-\/of-\/AABB.}}
+\DoxyCodeLine{00460\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Range\ upRange\ =\ minmaxRange(vertices[0][\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}}],\ vertices[1][\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}}],\ vertices[2][\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}}]);}
+\DoxyCodeLine{00461\ }
+\DoxyCodeLine{00462\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (upRange.overlaps(aabbUpRange))}
+\DoxyCodeLine{00463\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ callback-\/>\mbox{\hyperlink{classbt_triangle_callback_a3850755f2c1fd71c4ca5877db1e6f891}{processTriangle}}(vertices,\ 2\ *\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ j);}
+\DoxyCodeLine{00464\ }
+\DoxyCodeLine{00465\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ already\ set:\ getVertex(x,\ j\ +\ 1,\ vertices[indices[1]]);}}
+\DoxyCodeLine{00466\ }
+\DoxyCodeLine{00467\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ equivalent\ to:\ getVertex(x\ +\ 1,\ j,\ vertices[indices[0]]);}}
+\DoxyCodeLine{00468\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]]\ =\ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]];}
+\DoxyCodeLine{00469\ }
+\DoxyCodeLine{00470\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_box2d_shape_8h_abd931a9909d75edbf7268bc4b1b0356e}{getVertex}}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ +\ 1,\ j\ +\ 1,\ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]]);}
+\DoxyCodeLine{00471\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ upRange.min\ =\ \mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin}}(upRange.min,\ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]][\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}}]);}
+\DoxyCodeLine{00472\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ upRange.max\ =\ \mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(upRange.max,\ vertices[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]][\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}}]);}
+\DoxyCodeLine{00473\ }
+\DoxyCodeLine{00474\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (upRange.overlaps(aabbUpRange))}
+\DoxyCodeLine{00475\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ callback-\/>\mbox{\hyperlink{classbt_triangle_callback_a3850755f2c1fd71c4ca5877db1e6f891}{processTriangle}}(vertices,\ 2\ *\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ +\ 1,\ j);}
+\DoxyCodeLine{00476\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00477\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00478\ \ \ \ \ \}}
+\DoxyCodeLine{00479\ \}}
+\DoxyCodeLine{00480\ }
+\DoxyCodeLine{00481\ \textcolor{keywordtype}{void}\ btHeightfieldTerrainShape::calculateLocalInertia(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}},\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ inertia)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00482\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00483\ \ \ \ \ \textcolor{comment}{//moving\ concave\ objects\ not\ supported}}
+\DoxyCodeLine{00484\ }
+\DoxyCodeLine{00485\ \ \ \ \ inertia.setValue(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.));}
+\DoxyCodeLine{00486\ \}}
+\DoxyCodeLine{00487\ }
+\DoxyCodeLine{00488\ \textcolor{keywordtype}{void}\ btHeightfieldTerrainShape::setLocalScaling(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ scaling)}
+\DoxyCodeLine{00489\ \{}
+\DoxyCodeLine{00490\ \ \ \ \ \mbox{\hyperlink{bt_compound_shape_8h_ae70ba06a613edc3194c23dbd2924e01e}{m\_localScaling}}\ =\ scaling;}
+\DoxyCodeLine{00491\ \}}
+\DoxyCodeLine{00492\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ btHeightfieldTerrainShape::getLocalScaling()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00493\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00494\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_compound_shape_8h_ae70ba06a613edc3194c23dbd2924e01e}{m\_localScaling}};}
+\DoxyCodeLine{00495\ \}}
+\DoxyCodeLine{00496\ }
+\DoxyCodeLine{00497\ \textcolor{keyword}{namespace}}
+\DoxyCodeLine{00498\ \{}
+\DoxyCodeLine{00499\ \ \ \ \ \textcolor{keyword}{struct\ }GridRaycastState}
+\DoxyCodeLine{00500\ \ \ \ \ \{}
+\DoxyCodeLine{00501\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ x;\ \ \textcolor{comment}{//\ Next\ quad\ coords}}
+\DoxyCodeLine{00502\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ z;}
+\DoxyCodeLine{00503\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ prev\_x;\ \ \textcolor{comment}{//\ Previous\ quad\ coords}}
+\DoxyCodeLine{00504\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ prev\_z;}
+\DoxyCodeLine{00505\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ param;\ \ \ \ \ \ \textcolor{comment}{//\ Exit\ param\ for\ previous\ quad}}
+\DoxyCodeLine{00506\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ prevParam;\ \ \textcolor{comment}{//\ Enter\ param\ for\ previous\ quad}}
+\DoxyCodeLine{00507\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxDistanceFlat;}
+\DoxyCodeLine{00508\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxDistance3d;}
+\DoxyCodeLine{00509\ \ \ \ \ \};}
+\DoxyCodeLine{00510\ \}}
+\DoxyCodeLine{00511\ }
+\DoxyCodeLine{00512\ \textcolor{comment}{//\ TODO\ Does\ it\ really\ need\ to\ take\ 3D\ vectors?}}
+\DoxyCodeLine{00516\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ Action\_T>}
+\DoxyCodeLine{00517\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8cpp_af4adccc54181ad86ada29e74ab9a6443}{gridRaycast}}(Action\_T\&\ quadAction,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ beginPos,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ endPos,\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[3])}
+\DoxyCodeLine{00518\ \{}
+\DoxyCodeLine{00519\ \ \ \ \ GridRaycastState\ rs;}
+\DoxyCodeLine{00520\ \ \ \ \ rs.maxDistance3d\ =\ beginPos.distance(endPos);}
+\DoxyCodeLine{00521\ \ \ \ \ \textcolor{keywordflow}{if}\ (rs.maxDistance3d\ <\ 0.0001)}
+\DoxyCodeLine{00522\ \ \ \ \ \{}
+\DoxyCodeLine{00523\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Consider\ the\ ray\ is\ too\ small\ to\ hit\ anything}}
+\DoxyCodeLine{00524\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00525\ \ \ \ \ \}}
+\DoxyCodeLine{00526\ \ \ \ \ }
+\DoxyCodeLine{00527\ }
+\DoxyCodeLine{00528\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ rayDirectionFlatX\ =\ endPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]]\ -\/\ beginPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]];}
+\DoxyCodeLine{00529\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ rayDirectionFlatZ\ =\ endPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]]\ -\/\ beginPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]];}
+\DoxyCodeLine{00530\ \ \ \ \ rs.maxDistanceFlat\ =\ \mbox{\hyperlink{bt_scalar_8h_a6b200a8d26a49406ca13329be909ec10}{btSqrt}}(rayDirectionFlatX\ *\ rayDirectionFlatX\ +\ rayDirectionFlatZ\ *\ rayDirectionFlatZ);}
+\DoxyCodeLine{00531\ }
+\DoxyCodeLine{00532\ \ \ \ \ \textcolor{keywordflow}{if}\ (rs.maxDistanceFlat\ <\ 0.0001)}
+\DoxyCodeLine{00533\ \ \ \ \ \{}
+\DoxyCodeLine{00534\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Consider\ the\ ray\ vertical}}
+\DoxyCodeLine{00535\ \ \ \ \ \ \ \ \ rayDirectionFlatX\ =\ 0;}
+\DoxyCodeLine{00536\ \ \ \ \ \ \ \ \ rayDirectionFlatZ\ =\ 0;}
+\DoxyCodeLine{00537\ \ \ \ \ \}}
+\DoxyCodeLine{00538\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00539\ \ \ \ \ \{}
+\DoxyCodeLine{00540\ \ \ \ \ \ \ \ \ rayDirectionFlatX\ /=\ rs.maxDistanceFlat;}
+\DoxyCodeLine{00541\ \ \ \ \ \ \ \ \ rayDirectionFlatZ\ /=\ rs.maxDistanceFlat;}
+\DoxyCodeLine{00542\ \ \ \ \ \}}
+\DoxyCodeLine{00543\ }
+\DoxyCodeLine{00544\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ xiStep\ =\ rayDirectionFlatX\ >\ 0\ ?\ 1\ :\ rayDirectionFlatX\ <\ 0\ ?\ -\/1\ :\ 0;}
+\DoxyCodeLine{00545\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ ziStep\ =\ rayDirectionFlatZ\ >\ 0\ ?\ 1\ :\ rayDirectionFlatZ\ <\ 0\ ?\ -\/1\ :\ 0;}
+\DoxyCodeLine{00546\ }
+\DoxyCodeLine{00547\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ infinite\ =\ 9999999;}
+\DoxyCodeLine{00548\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ paramDeltaX\ =\ xiStep\ !=\ 0\ ?\ 1.f\ /\ \mbox{\hyperlink{bt_scalar_8h_a4c4bd8e065ab617f4e37273d76e6d581}{btFabs}}(rayDirectionFlatX)\ :\ infinite;}
+\DoxyCodeLine{00549\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ paramDeltaZ\ =\ ziStep\ !=\ 0\ ?\ 1.f\ /\ \mbox{\hyperlink{bt_scalar_8h_a4c4bd8e065ab617f4e37273d76e6d581}{btFabs}}(rayDirectionFlatZ)\ :\ infinite;}
+\DoxyCodeLine{00550\ }
+\DoxyCodeLine{00551\ \ \ \ \ \textcolor{comment}{//\ pos\ =\ param\ *\ dir}}
+\DoxyCodeLine{00552\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ paramCrossX;\ \ \textcolor{comment}{//\ At\ which\ value\ of\ \`{}param`\ we\ will\ cross\ a\ x-\/axis\ lane?}}
+\DoxyCodeLine{00553\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ paramCrossZ;\ \ \textcolor{comment}{//\ At\ which\ value\ of\ \`{}param`\ we\ will\ cross\ a\ z-\/axis\ lane?}}
+\DoxyCodeLine{00554\ }
+\DoxyCodeLine{00555\ \ \ \ \ \textcolor{comment}{//\ paramCrossX\ and\ paramCrossZ\ are\ initialized\ as\ being\ the\ first\ cross}}
+\DoxyCodeLine{00556\ \ \ \ \ \textcolor{comment}{//\ X\ initialization}}
+\DoxyCodeLine{00557\ \ \ \ \ \textcolor{keywordflow}{if}\ (xiStep\ !=\ 0)}
+\DoxyCodeLine{00558\ \ \ \ \ \{}
+\DoxyCodeLine{00559\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (xiStep\ ==\ 1)}
+\DoxyCodeLine{00560\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00561\ \ \ \ \ \ \ \ \ \ \ \ \ paramCrossX\ =\ (ceil(beginPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]])\ -\/\ beginPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]])\ *\ paramDeltaX;}
+\DoxyCodeLine{00562\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00563\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00564\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00565\ \ \ \ \ \ \ \ \ \ \ \ \ paramCrossX\ =\ (beginPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]]\ -\/\ floor(beginPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]]))\ *\ paramDeltaX;}
+\DoxyCodeLine{00566\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00567\ \ \ \ \ \}}
+\DoxyCodeLine{00568\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00569\ \ \ \ \ \{}
+\DoxyCodeLine{00570\ \ \ \ \ \ \ \ \ paramCrossX\ =\ infinite;\ \ \textcolor{comment}{//\ Will\ never\ cross\ on\ X}}
+\DoxyCodeLine{00571\ \ \ \ \ \}}
+\DoxyCodeLine{00572\ }
+\DoxyCodeLine{00573\ \ \ \ \ \textcolor{comment}{//\ Z\ initialization}}
+\DoxyCodeLine{00574\ \ \ \ \ \textcolor{keywordflow}{if}\ (ziStep\ !=\ 0)}
+\DoxyCodeLine{00575\ \ \ \ \ \{}
+\DoxyCodeLine{00576\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (ziStep\ ==\ 1)}
+\DoxyCodeLine{00577\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00578\ \ \ \ \ \ \ \ \ \ \ \ \ paramCrossZ\ =\ (ceil(beginPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]])\ -\/\ beginPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]])\ *\ paramDeltaZ;}
+\DoxyCodeLine{00579\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00580\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00581\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00582\ \ \ \ \ \ \ \ \ \ \ \ \ paramCrossZ\ =\ (beginPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]]\ -\/\ floor(beginPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]]))\ *\ paramDeltaZ;}
+\DoxyCodeLine{00583\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00584\ \ \ \ \ \}}
+\DoxyCodeLine{00585\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00586\ \ \ \ \ \{}
+\DoxyCodeLine{00587\ \ \ \ \ \ \ \ \ paramCrossZ\ =\ infinite;\ \ \textcolor{comment}{//\ Will\ never\ cross\ on\ Z}}
+\DoxyCodeLine{00588\ \ \ \ \ \}}
+\DoxyCodeLine{00589\ }
+\DoxyCodeLine{00590\ \ \ \ \ rs.x\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(floor(beginPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]]));}
+\DoxyCodeLine{00591\ \ \ \ \ rs.z\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(floor(beginPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]]));}
+\DoxyCodeLine{00592\ }
+\DoxyCodeLine{00593\ \ \ \ \ \textcolor{comment}{//\ Workaround\ cases\ where\ the\ ray\ starts\ at\ an\ integer\ position}}
+\DoxyCodeLine{00594\ \ \ \ \ \textcolor{keywordflow}{if}\ (paramCrossX\ ==\ 0.0)}
+\DoxyCodeLine{00595\ \ \ \ \ \{}
+\DoxyCodeLine{00596\ \ \ \ \ \ \ \ \ paramCrossX\ +=\ paramDeltaX;}
+\DoxyCodeLine{00597\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ If\ going\ backwards,\ we\ should\ ignore\ the\ position\ we\ would\ get\ by\ the\ above\ flooring,}}
+\DoxyCodeLine{00598\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ because\ the\ ray\ is\ not\ heading\ in\ that\ direction}}
+\DoxyCodeLine{00599\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (xiStep\ ==\ -\/1)}
+\DoxyCodeLine{00600\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00601\ \ \ \ \ \ \ \ \ \ \ \ \ rs.x\ -\/=\ 1;}
+\DoxyCodeLine{00602\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00603\ \ \ \ \ \}}
+\DoxyCodeLine{00604\ }
+\DoxyCodeLine{00605\ \ \ \ \ \textcolor{keywordflow}{if}\ (paramCrossZ\ ==\ 0.0)}
+\DoxyCodeLine{00606\ \ \ \ \ \{}
+\DoxyCodeLine{00607\ \ \ \ \ \ \ \ \ paramCrossZ\ +=\ paramDeltaZ;}
+\DoxyCodeLine{00608\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (ziStep\ ==\ -\/1)}
+\DoxyCodeLine{00609\ \ \ \ \ \ \ \ \ \ \ \ \ rs.z\ -\/=\ 1;}
+\DoxyCodeLine{00610\ \ \ \ \ \}}
+\DoxyCodeLine{00611\ }
+\DoxyCodeLine{00612\ \ \ \ \ rs.prev\_x\ =\ rs.x;}
+\DoxyCodeLine{00613\ \ \ \ \ rs.prev\_z\ =\ rs.z;}
+\DoxyCodeLine{00614\ \ \ \ \ rs.param\ =\ 0;}
+\DoxyCodeLine{00615\ }
+\DoxyCodeLine{00616\ \ \ \ \ \textcolor{keywordflow}{while}\ (\textcolor{keyword}{true})}
+\DoxyCodeLine{00617\ \ \ \ \ \{}
+\DoxyCodeLine{00618\ \ \ \ \ \ \ \ \ rs.prev\_x\ =\ rs.x;}
+\DoxyCodeLine{00619\ \ \ \ \ \ \ \ \ rs.prev\_z\ =\ rs.z;}
+\DoxyCodeLine{00620\ \ \ \ \ \ \ \ \ rs.prevParam\ =\ rs.param;}
+\DoxyCodeLine{00621\ }
+\DoxyCodeLine{00622\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (paramCrossX\ <\ paramCrossZ)}
+\DoxyCodeLine{00623\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00624\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ X\ lane}}
+\DoxyCodeLine{00625\ \ \ \ \ \ \ \ \ \ \ \ \ rs.x\ +=\ xiStep;}
+\DoxyCodeLine{00626\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Assign\ before\ advancing\ the\ param,}}
+\DoxyCodeLine{00627\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ to\ be\ in\ sync\ with\ the\ initialization\ step}}
+\DoxyCodeLine{00628\ \ \ \ \ \ \ \ \ \ \ \ \ rs.param\ =\ paramCrossX;}
+\DoxyCodeLine{00629\ \ \ \ \ \ \ \ \ \ \ \ \ paramCrossX\ +=\ paramDeltaX;}
+\DoxyCodeLine{00630\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00631\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00632\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00633\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Z\ lane}}
+\DoxyCodeLine{00634\ \ \ \ \ \ \ \ \ \ \ \ \ rs.z\ +=\ ziStep;}
+\DoxyCodeLine{00635\ \ \ \ \ \ \ \ \ \ \ \ \ rs.param\ =\ paramCrossZ;}
+\DoxyCodeLine{00636\ \ \ \ \ \ \ \ \ \ \ \ \ paramCrossZ\ +=\ paramDeltaZ;}
+\DoxyCodeLine{00637\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00638\ }
+\DoxyCodeLine{00639\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (rs.param\ >\ rs.maxDistanceFlat)}
+\DoxyCodeLine{00640\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00641\ \ \ \ \ \ \ \ \ \ \ \ \ rs.param\ =\ rs.maxDistanceFlat;}
+\DoxyCodeLine{00642\ \ \ \ \ \ \ \ \ \ \ \ \ quadAction(rs);}
+\DoxyCodeLine{00643\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00644\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00645\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00646\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00647\ \ \ \ \ \ \ \ \ \ \ \ \ quadAction(rs);}
+\DoxyCodeLine{00648\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00649\ \ \ \ \ \}}
+\DoxyCodeLine{00650\ \}}
+\DoxyCodeLine{00651\ }
+\DoxyCodeLine{00652\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{struct_process_triangles_action}{ProcessTrianglesAction}}}
+\DoxyCodeLine{00653\ \{}
+\DoxyCodeLine{00654\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_adbade661f5b7f36468a23cb7a958e3c2}{btHeightfieldTerrainShape}}*\ \mbox{\hyperlink{struct_process_triangles_action_ac60179234a95f580c8ddbf1ebf17993a}{shape}};}
+\DoxyCodeLine{00655\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{struct_process_triangles_action_aa0e29aeefc2c1e79da1df98aed89fe2d}{flipQuadEdges}};}
+\DoxyCodeLine{00656\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{struct_process_triangles_action_a6c2a3eebf7ab6b74599141e46cbe18f5}{useDiamondSubdivision}};}
+\DoxyCodeLine{00657\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct_process_triangles_action_a67e73d7435ec7a56daa875aa488defd4}{width}};}
+\DoxyCodeLine{00658\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct_process_triangles_action_af74f319de167c0000a1df2ce8fe89091}{length}};}
+\DoxyCodeLine{00659\ \ \ \ \ \mbox{\hyperlink{classbt_triangle_callback}{btTriangleCallback}}*\ \mbox{\hyperlink{struct_process_triangles_action_a63fa97db558a773bb3513e7a9374a818}{callback}};}
+\DoxyCodeLine{00660\ }
+\DoxyCodeLine{00661\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{struct_process_triangles_action_a24c06995f13078325440b9723aa4e328}{exec}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}})\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00662\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00663\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ <\ 0\ ||\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z\ <\ 0\ ||\ x\ >}}=\ \mbox{\hyperlink{struct_process_triangles_action_a67e73d7435ec7a56daa875aa488defd4}{width}}\ ||\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}\ >=\ \mbox{\hyperlink{struct_process_triangles_action_af74f319de167c0000a1df2ce8fe89091}{length}})}
+\DoxyCodeLine{00664\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00665\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00666\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00667\ }
+\DoxyCodeLine{00668\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vertices[3];}
+\DoxyCodeLine{00669\ }
+\DoxyCodeLine{00670\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ TODO\ Since\ this\ is\ for\ raycasts,\ we\ could\ greatly\ benefit\ from\ an\ early\ exit\ on\ the\ first\ hit}}
+\DoxyCodeLine{00671\ }
+\DoxyCodeLine{00672\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Check\ quad}}
+\DoxyCodeLine{00673\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{struct_process_triangles_action_aa0e29aeefc2c1e79da1df98aed89fe2d}{flipQuadEdges}}\ ||\ (\mbox{\hyperlink{struct_process_triangles_action_a6c2a3eebf7ab6b74599141e46cbe18f5}{useDiamondSubdivision}}\ \&\&\ (((\mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}\ +\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}})\ \&\ 1)\ >\ 0)))}
+\DoxyCodeLine{00674\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00675\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ First\ triangle}}
+\DoxyCodeLine{00676\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_ac60179234a95f580c8ddbf1ebf17993a}{shape}}-\/>getVertex(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}},\ vertices[0]);}
+\DoxyCodeLine{00677\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_ac60179234a95f580c8ddbf1ebf17993a}{shape}}-\/>getVertex(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ +\ 1,\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}},\ vertices[1]);}
+\DoxyCodeLine{00678\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_ac60179234a95f580c8ddbf1ebf17993a}{shape}}-\/>getVertex(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ +\ 1,\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}\ +\ 1,\ vertices[2]);}
+\DoxyCodeLine{00679\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_a63fa97db558a773bb3513e7a9374a818}{callback}}-\/>processTriangle(vertices,\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}});}
+\DoxyCodeLine{00680\ }
+\DoxyCodeLine{00681\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Second\ triangle}}
+\DoxyCodeLine{00682\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_ac60179234a95f580c8ddbf1ebf17993a}{shape}}-\/>getVertex(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}},\ vertices[0]);}
+\DoxyCodeLine{00683\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_ac60179234a95f580c8ddbf1ebf17993a}{shape}}-\/>getVertex(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ +\ 1,\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}\ +\ 1,\ vertices[1]);}
+\DoxyCodeLine{00684\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_ac60179234a95f580c8ddbf1ebf17993a}{shape}}-\/>getVertex(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}\ +\ 1,\ vertices[2]);}
+\DoxyCodeLine{00685\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_a63fa97db558a773bb3513e7a9374a818}{callback}}-\/>processTriangle(vertices,\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}});}
+\DoxyCodeLine{00686\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00687\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00688\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00689\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ First\ triangle}}
+\DoxyCodeLine{00690\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_ac60179234a95f580c8ddbf1ebf17993a}{shape}}-\/>getVertex(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}},\ vertices[0]);}
+\DoxyCodeLine{00691\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_ac60179234a95f580c8ddbf1ebf17993a}{shape}}-\/>getVertex(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}\ +\ 1,\ vertices[1]);}
+\DoxyCodeLine{00692\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_ac60179234a95f580c8ddbf1ebf17993a}{shape}}-\/>getVertex(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ +\ 1,\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}},\ vertices[2]);}
+\DoxyCodeLine{00693\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_a63fa97db558a773bb3513e7a9374a818}{callback}}-\/>processTriangle(vertices,\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}});}
+\DoxyCodeLine{00694\ }
+\DoxyCodeLine{00695\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Second\ triangle}}
+\DoxyCodeLine{00696\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_ac60179234a95f580c8ddbf1ebf17993a}{shape}}-\/>getVertex(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ +\ 1,\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}},\ vertices[0]);}
+\DoxyCodeLine{00697\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_ac60179234a95f580c8ddbf1ebf17993a}{shape}}-\/>getVertex(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}\ +\ 1,\ vertices[1]);}
+\DoxyCodeLine{00698\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_ac60179234a95f580c8ddbf1ebf17993a}{shape}}-\/>getVertex(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ +\ 1,\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}\ +\ 1,\ vertices[2]);}
+\DoxyCodeLine{00699\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_a63fa97db558a773bb3513e7a9374a818}{callback}}-\/>processTriangle(vertices,\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}});}
+\DoxyCodeLine{00700\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00701\ \ \ \ \ \}}
+\DoxyCodeLine{00702\ }
+\DoxyCodeLine{00703\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{struct_process_triangles_action_a012ac64b9f9a09b99e8d82276ada6574}{operator()}}(\textcolor{keyword}{const}\ GridRaycastState\&\ bs)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00704\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00705\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action_a24c06995f13078325440b9723aa4e328}{exec}}(bs.prev\_x,\ bs.prev\_z);}
+\DoxyCodeLine{00706\ \ \ \ \ \}}
+\DoxyCodeLine{00707\ \};}
+\DoxyCodeLine{00708\ }
+\DoxyCodeLine{00709\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{struct_process_v_bounds_action_a88dab794cd54750f979deed81811974f}{ProcessVBoundsAction}}}
+\DoxyCodeLine{00710\ \{}
+\DoxyCodeLine{00711\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btHeightfieldTerrainShape::Range>}}\&\ \mbox{\hyperlink{struct_process_v_bounds_action_adacaf12b22622057daf0d71bf40c08e2}{vbounds}};}
+\DoxyCodeLine{00712\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct_process_v_bounds_action_a41e71c6bab02731d4fe01fac36fb7d23}{width}};}
+\DoxyCodeLine{00713\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct_process_v_bounds_action_a23bb568d7595bc814c01246f8a927c9a}{length}};}
+\DoxyCodeLine{00714\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct_process_v_bounds_action_a65ac8bcd32b13a38ab5272b23600ed35}{chunkSize}};}
+\DoxyCodeLine{00715\ }
+\DoxyCodeLine{00716\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{struct_process_v_bounds_action_a9977a9ba155a242352ddd4c5b14d05de}{rayBegin}};}
+\DoxyCodeLine{00717\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{struct_process_v_bounds_action_a9cb49df0dc238c811f30bae890e5857b}{rayEnd}};}
+\DoxyCodeLine{00718\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{struct_process_v_bounds_action_abc130b48a89415e6748806b500b96f9c}{rayDir}};}
+\DoxyCodeLine{00719\ }
+\DoxyCodeLine{00720\ \ \ \ \ \textcolor{keywordtype}{int}*\ \mbox{\hyperlink{struct_process_v_bounds_action_a5793ce712ae80e2d6c8f6be7c9a58443}{m\_indices}};}
+\DoxyCodeLine{00721\ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action}{ProcessTrianglesAction}}\ \mbox{\hyperlink{struct_process_v_bounds_action_a929960a6b635a04b385728fc2d3bb9f5}{processTriangles}};}
+\DoxyCodeLine{00722\ }
+\DoxyCodeLine{00723\ \ \ \ \ \mbox{\hyperlink{struct_process_v_bounds_action_a88dab794cd54750f979deed81811974f}{ProcessVBoundsAction}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btHeightfieldTerrainShape::Range>}}\&\ bnd,\ \textcolor{keywordtype}{int}*\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}})}
+\DoxyCodeLine{00724\ \ \ \ \ \ \ \ \ :\ \mbox{\hyperlink{struct_process_v_bounds_action_adacaf12b22622057daf0d71bf40c08e2}{vbounds}}(bnd),}
+\DoxyCodeLine{00725\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_v_bounds_action_a5793ce712ae80e2d6c8f6be7c9a58443}{m\_indices}}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}})}
+\DoxyCodeLine{00726\ \ \ \ \ \{}
+\DoxyCodeLine{00727\ \ \ \ \ \}}
+\DoxyCodeLine{00728\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{struct_process_v_bounds_action_a6297ab8bacd22d36c954c6f9b55da8f1}{operator()}}(\textcolor{keyword}{const}\ GridRaycastState\&\ rs)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00729\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00730\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ =\ rs.prev\_x;}
+\DoxyCodeLine{00731\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}\ =\ rs.prev\_z;}
+\DoxyCodeLine{00732\ }
+\DoxyCodeLine{00733\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ <\ 0\ ||\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z\ <\ 0\ ||\ x\ >}}=\ \mbox{\hyperlink{struct_process_v_bounds_action_a41e71c6bab02731d4fe01fac36fb7d23}{width}}\ ||\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}\ >=\ \mbox{\hyperlink{struct_process_v_bounds_action_a23bb568d7595bc814c01246f8a927c9a}{length}})}
+\DoxyCodeLine{00734\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00735\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00736\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00737\ }
+\DoxyCodeLine{00738\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ btHeightfieldTerrainShape::Range\ chunk\ =\ \mbox{\hyperlink{struct_process_v_bounds_action_adacaf12b22622057daf0d71bf40c08e2}{vbounds}}[\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ +\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}\ *\ \mbox{\hyperlink{struct_process_v_bounds_action_a41e71c6bab02731d4fe01fac36fb7d23}{width}}];}
+\DoxyCodeLine{00739\ }
+\DoxyCodeLine{00740\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ enterPos;}
+\DoxyCodeLine{00741\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ exitPos;}
+\DoxyCodeLine{00742\ }
+\DoxyCodeLine{00743\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (rs.maxDistanceFlat\ >\ 0.0001)}
+\DoxyCodeLine{00744\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00745\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ flatTo3d\ =\ \mbox{\hyperlink{struct_process_v_bounds_action_a65ac8bcd32b13a38ab5272b23600ed35}{chunkSize}}\ *\ rs.maxDistance3d\ /\ rs.maxDistanceFlat;}
+\DoxyCodeLine{00746\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ enterParam3d\ =\ rs.prevParam\ *\ flatTo3d;}
+\DoxyCodeLine{00747\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ exitParam3d\ =\ rs.param\ *\ flatTo3d;}
+\DoxyCodeLine{00748\ \ \ \ \ \ \ \ \ \ \ \ \ enterPos\ =\ \mbox{\hyperlink{struct_process_v_bounds_action_a9977a9ba155a242352ddd4c5b14d05de}{rayBegin}}\ +\ \mbox{\hyperlink{struct_process_v_bounds_action_abc130b48a89415e6748806b500b96f9c}{rayDir}}\ *\ enterParam3d;}
+\DoxyCodeLine{00749\ \ \ \ \ \ \ \ \ \ \ \ \ exitPos\ =\ \mbox{\hyperlink{struct_process_v_bounds_action_a9977a9ba155a242352ddd4c5b14d05de}{rayBegin}}\ +\ \mbox{\hyperlink{struct_process_v_bounds_action_abc130b48a89415e6748806b500b96f9c}{rayDir}}\ *\ exitParam3d;}
+\DoxyCodeLine{00750\ }
+\DoxyCodeLine{00751\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ We\ did\ enter\ the\ flat\ projection\ of\ the\ AABB,}}
+\DoxyCodeLine{00752\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ but\ we\ have\ to\ check\ if\ we\ intersect\ it\ on\ the\ vertical\ axis}}
+\DoxyCodeLine{00753\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (enterPos[1]\ >\ chunk.max\ \&\&\ exitPos[\mbox{\hyperlink{struct_process_v_bounds_action_a5793ce712ae80e2d6c8f6be7c9a58443}{m\_indices}}[1]]\ >\ chunk.max)}
+\DoxyCodeLine{00754\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00755\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00756\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00757\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (enterPos[1]\ <\ chunk.min\ \&\&\ exitPos[\mbox{\hyperlink{struct_process_v_bounds_action_a5793ce712ae80e2d6c8f6be7c9a58443}{m\_indices}}[1]]\ <\ chunk.min)}
+\DoxyCodeLine{00758\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00759\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00760\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00761\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00762\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00763\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00764\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Consider\ the\ ray\ vertical}}
+\DoxyCodeLine{00765\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ (though\ we\ shouldn't\ reach\ this\ often\ because\ there\ is\ an\ early\ check\ up-\/front)}}
+\DoxyCodeLine{00766\ \ \ \ \ \ \ \ \ \ \ \ \ enterPos\ =\ \mbox{\hyperlink{struct_process_v_bounds_action_a9977a9ba155a242352ddd4c5b14d05de}{rayBegin}};}
+\DoxyCodeLine{00767\ \ \ \ \ \ \ \ \ \ \ \ \ exitPos\ =\ \mbox{\hyperlink{struct_process_v_bounds_action_a9cb49df0dc238c811f30bae890e5857b}{rayEnd}};}
+\DoxyCodeLine{00768\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00769\ }
+\DoxyCodeLine{00770\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8cpp_af4adccc54181ad86ada29e74ab9a6443}{gridRaycast}}(\mbox{\hyperlink{struct_process_v_bounds_action_a929960a6b635a04b385728fc2d3bb9f5}{processTriangles}},\ enterPos,\ exitPos,\ \mbox{\hyperlink{struct_process_v_bounds_action_a5793ce712ae80e2d6c8f6be7c9a58443}{m\_indices}});}
+\DoxyCodeLine{00771\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Note:\ it\ could\ be\ possible\ to\ have\ more\ than\ one\ grid\ at\ different\ levels,}}
+\DoxyCodeLine{00772\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ to\ do\ this\ there\ would\ be\ a\ branch\ using\ a\ pointer\ to\ another\ ProcessVBoundsAction}}
+\DoxyCodeLine{00773\ \ \ \ \ \}}
+\DoxyCodeLine{00774\ \};}
+\DoxyCodeLine{00775\ }
+\DoxyCodeLine{00776\ \textcolor{comment}{//\ TODO\ How\ do\ I\ interrupt\ the\ ray\ when\ there\ is\ a\ hit?\ \`{}callback`\ does\ not\ return\ any\ result}}
+\DoxyCodeLine{00779\ \textcolor{keywordtype}{void}\ btHeightfieldTerrainShape::performRaycast(\mbox{\hyperlink{classbt_triangle_callback}{btTriangleCallback}}*\ callback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ raySource,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ rayTarget)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00780\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00781\ \ \ \ \ \textcolor{comment}{//\ Transform\ to\ cell-\/local}}
+\DoxyCodeLine{00782\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ beginPos\ =\ raySource\ /\ \mbox{\hyperlink{bt_compound_shape_8h_ae70ba06a613edc3194c23dbd2924e01e}{m\_localScaling}};}
+\DoxyCodeLine{00783\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ endPos\ =\ rayTarget\ /\ \mbox{\hyperlink{bt_compound_shape_8h_ae70ba06a613edc3194c23dbd2924e01e}{m\_localScaling}};}
+\DoxyCodeLine{00784\ \ \ \ \ beginPos\ +=\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a1a4a24aba89d83e0dadd27c7f514e97d}{m\_localOrigin}};}
+\DoxyCodeLine{00785\ \ \ \ \ endPos\ +=\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a1a4a24aba89d83e0dadd27c7f514e97d}{m\_localOrigin}};}
+\DoxyCodeLine{00786\ }
+\DoxyCodeLine{00787\ \ \ \ \ \mbox{\hyperlink{struct_process_triangles_action}{ProcessTrianglesAction}}\ processTriangles;}
+\DoxyCodeLine{00788\ \ \ \ \ processTriangles.\mbox{\hyperlink{struct_process_triangles_action_ac60179234a95f580c8ddbf1ebf17993a}{shape}}\ =\ \textcolor{keyword}{this};}
+\DoxyCodeLine{00789\ \ \ \ \ processTriangles.\mbox{\hyperlink{struct_process_triangles_action_aa0e29aeefc2c1e79da1df98aed89fe2d}{flipQuadEdges}}\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_aff5dfc8a26994bd34861a7915ecf1284}{m\_flipQuadEdges}};}
+\DoxyCodeLine{00790\ \ \ \ \ processTriangles.\mbox{\hyperlink{struct_process_triangles_action_a6c2a3eebf7ab6b74599141e46cbe18f5}{useDiamondSubdivision}}\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a8141bd077763e941d7eacb9b04a3f3d8}{m\_useDiamondSubdivision}};}
+\DoxyCodeLine{00791\ \ \ \ \ processTriangles.\mbox{\hyperlink{struct_process_triangles_action_a63fa97db558a773bb3513e7a9374a818}{callback}}\ =\ callback;}
+\DoxyCodeLine{00792\ \ \ \ \ processTriangles.\mbox{\hyperlink{struct_process_triangles_action_a67e73d7435ec7a56daa875aa488defd4}{width}}\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a175189ad64089a129167db17e62c5583}{m\_heightStickWidth}}\ -\/\ 1;}
+\DoxyCodeLine{00793\ \ \ \ \ processTriangles.\mbox{\hyperlink{struct_process_triangles_action_af74f319de167c0000a1df2ce8fe89091}{length}}\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac16584a2916c01b542ca9e8754fb7639}{m\_heightStickLength}}\ -\/\ 1;}
+\DoxyCodeLine{00794\ }
+\DoxyCodeLine{00795\ \ \ \ \ \textcolor{comment}{//\ TODO\ Transform\ vectors\ to\ account\ for\ m\_upAxis}}
+\DoxyCodeLine{00796\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[3]\ =\ \{\ 0,\ 1,\ 2\ \};}
+\DoxyCodeLine{00797\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a281d95a9171a3be0468ad8c62d62f799}{m\_upAxis}}\ ==\ 2)}
+\DoxyCodeLine{00798\ \ \ \ \ \{}
+\DoxyCodeLine{00799\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[1]\ =\ 2;}
+\DoxyCodeLine{00800\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]\ =\ 1;}
+\DoxyCodeLine{00801\ \ \ \ \ \}}
+\DoxyCodeLine{00802\ \ \ \ \ \textcolor{keywordtype}{int}\ iBeginX\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{group__core__func__common_gac433646923ab80af6d9964f1570855d5}{floor}}(beginPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]]));}
+\DoxyCodeLine{00803\ \ \ \ \ \textcolor{keywordtype}{int}\ iBeginZ\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{group__core__func__common_gac433646923ab80af6d9964f1570855d5}{floor}}(beginPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]]));}
+\DoxyCodeLine{00804\ \ \ \ \ \textcolor{keywordtype}{int}\ iEndX\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{group__core__func__common_gac433646923ab80af6d9964f1570855d5}{floor}}(endPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]]));}
+\DoxyCodeLine{00805\ \ \ \ \ \textcolor{keywordtype}{int}\ iEndZ\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{group__core__func__common_gac433646923ab80af6d9964f1570855d5}{floor}}(endPos[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]]));}
+\DoxyCodeLine{00806\ }
+\DoxyCodeLine{00807\ \ \ \ \ \textcolor{keywordflow}{if}\ (iBeginX\ ==\ iEndX\ \&\&\ iBeginZ\ ==\ iEndZ)}
+\DoxyCodeLine{00808\ \ \ \ \ \{}
+\DoxyCodeLine{00809\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ The\ ray\ will\ never\ cross\ quads\ within\ the\ plane,}}
+\DoxyCodeLine{00810\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ so\ directly\ process\ triangles\ within\ one\ quad}}
+\DoxyCodeLine{00811\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ (typically,\ vertical\ rays\ should\ end\ up\ here)}}
+\DoxyCodeLine{00812\ \ \ \ \ \ \ \ \ processTriangles.\mbox{\hyperlink{struct_process_triangles_action_a24c06995f13078325440b9723aa4e328}{exec}}(iBeginX,\ iEndZ);}
+\DoxyCodeLine{00813\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00814\ \ \ \ \ \}}
+\DoxyCodeLine{00815\ }
+\DoxyCodeLine{00816\ \ \ \ \ }
+\DoxyCodeLine{00817\ }
+\DoxyCodeLine{00818\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a029a68a4205e2bf6a0fe1a0c5fd05f72}{m\_vboundsGrid}}.size()==0)}
+\DoxyCodeLine{00819\ \ \ \ \ \{}
+\DoxyCodeLine{00820\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Process\ all\ quads\ intersecting\ the\ flat\ projection\ of\ the\ ray}}
+\DoxyCodeLine{00821\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8cpp_af4adccc54181ad86ada29e74ab9a6443}{gridRaycast}}(processTriangles,\ beginPos,\ endPos,\ \&\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]);}
+\DoxyCodeLine{00822\ \ \ \ \ \}}
+\DoxyCodeLine{00823\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00824\ \ \ \ \ \{}
+\DoxyCodeLine{00825\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ rayDiff\ =\ endPos\ -\/\ beginPos;}
+\DoxyCodeLine{00826\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ flatDistance2\ =\ rayDiff[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]]\ *\ rayDiff[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]]\ +\ rayDiff[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]]\ *\ rayDiff[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[2]];}
+\DoxyCodeLine{00827\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (flatDistance2\ <\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ad32b5b90af29fac44053732c568010c4}{m\_vboundsChunkSize}}\ *\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ad32b5b90af29fac44053732c568010c4}{m\_vboundsChunkSize}})}
+\DoxyCodeLine{00828\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00829\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Don't\ use\ chunks,\ the\ ray\ is\ too\ short\ in\ the\ plane}}
+\DoxyCodeLine{00830\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8cpp_af4adccc54181ad86ada29e74ab9a6443}{gridRaycast}}(processTriangles,\ beginPos,\ endPos,\ \&\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]);}
+\DoxyCodeLine{00831\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00832\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00833\ }
+\DoxyCodeLine{00834\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_process_v_bounds_action}{ProcessVBoundsAction}}\ processVBounds(\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a029a68a4205e2bf6a0fe1a0c5fd05f72}{m\_vboundsGrid}},\ \&\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}[0]);}
+\DoxyCodeLine{00835\ \ \ \ \ \ \ \ \ processVBounds.width\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a5bca061f30ac69138303239ccfa747c0}{m\_vboundsGridWidth}};}
+\DoxyCodeLine{00836\ \ \ \ \ \ \ \ \ processVBounds.length\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a98b063d29e63bf5507fa0f9961083575}{m\_vboundsGridLength}};}
+\DoxyCodeLine{00837\ \ \ \ \ \ \ \ \ processVBounds.rayBegin\ =\ beginPos;}
+\DoxyCodeLine{00838\ \ \ \ \ \ \ \ \ processVBounds.rayEnd\ =\ endPos;}
+\DoxyCodeLine{00839\ \ \ \ \ \ \ \ \ processVBounds.rayDir\ =\ rayDiff.normalized();}
+\DoxyCodeLine{00840\ \ \ \ \ \ \ \ \ processVBounds.processTriangles\ =\ processTriangles;}
+\DoxyCodeLine{00841\ \ \ \ \ \ \ \ \ processVBounds.chunkSize\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ad32b5b90af29fac44053732c568010c4}{m\_vboundsChunkSize}};}
+\DoxyCodeLine{00842\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ The\ ray\ is\ long,\ run\ raycast\ on\ a\ higher-\/level\ grid}}
+\DoxyCodeLine{00843\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8cpp_af4adccc54181ad86ada29e74ab9a6443}{gridRaycast}}(processVBounds,\ beginPos\ /\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ad32b5b90af29fac44053732c568010c4}{m\_vboundsChunkSize}},\ endPos\ /\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ad32b5b90af29fac44053732c568010c4}{m\_vboundsChunkSize}},\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}});}
+\DoxyCodeLine{00844\ \ \ \ \ \}}
+\DoxyCodeLine{00845\ \}}
+\DoxyCodeLine{00846\ }
+\DoxyCodeLine{00850\ \textcolor{keywordtype}{void}\ btHeightfieldTerrainShape::buildAccelerator(\textcolor{keywordtype}{int}\ chunkSize)}
+\DoxyCodeLine{00851\ \{}
+\DoxyCodeLine{00852\ \ \ \ \ \textcolor{keywordflow}{if}\ (chunkSize\ <=\ 0)}
+\DoxyCodeLine{00853\ \ \ \ \ \{}
+\DoxyCodeLine{00854\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a6a88aa06c220b2dcf1b74f030a0e2064}{clearAccelerator}}();}
+\DoxyCodeLine{00855\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00856\ \ \ \ \ \}}
+\DoxyCodeLine{00857\ }
+\DoxyCodeLine{00858\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ad32b5b90af29fac44053732c568010c4}{m\_vboundsChunkSize}}\ =\ chunkSize;}
+\DoxyCodeLine{00859\ \ \ \ \ \textcolor{keywordtype}{int}\ nChunksX\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a175189ad64089a129167db17e62c5583}{m\_heightStickWidth}}\ /\ chunkSize;}
+\DoxyCodeLine{00860\ \ \ \ \ \textcolor{keywordtype}{int}\ nChunksZ\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac16584a2916c01b542ca9e8754fb7639}{m\_heightStickLength}}\ /\ chunkSize;}
+\DoxyCodeLine{00861\ }
+\DoxyCodeLine{00862\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a175189ad64089a129167db17e62c5583}{m\_heightStickWidth}}\ \%\ chunkSize\ >\ 0)}
+\DoxyCodeLine{00863\ \ \ \ \ \{}
+\DoxyCodeLine{00864\ \ \ \ \ \ \ \ \ ++nChunksX;\ \ \textcolor{comment}{//\ In\ case\ terrain\ size\ isn't\ dividable\ by\ chunk\ size}}
+\DoxyCodeLine{00865\ \ \ \ \ \}}
+\DoxyCodeLine{00866\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac16584a2916c01b542ca9e8754fb7639}{m\_heightStickLength}}\ \%\ chunkSize\ >\ 0)}
+\DoxyCodeLine{00867\ \ \ \ \ \{}
+\DoxyCodeLine{00868\ \ \ \ \ \ \ \ \ ++nChunksZ;}
+\DoxyCodeLine{00869\ \ \ \ \ \}}
+\DoxyCodeLine{00870\ }
+\DoxyCodeLine{00871\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a5bca061f30ac69138303239ccfa747c0}{m\_vboundsGridWidth}}\ !=\ nChunksX\ ||\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a98b063d29e63bf5507fa0f9961083575}{m\_vboundsGridLength}}\ !=\ nChunksZ)}
+\DoxyCodeLine{00872\ \ \ \ \ \{}
+\DoxyCodeLine{00873\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a6a88aa06c220b2dcf1b74f030a0e2064}{clearAccelerator}}();}
+\DoxyCodeLine{00874\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a5bca061f30ac69138303239ccfa747c0}{m\_vboundsGridWidth}}\ =\ nChunksX;}
+\DoxyCodeLine{00875\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a98b063d29e63bf5507fa0f9961083575}{m\_vboundsGridLength}}\ =\ nChunksZ;}
+\DoxyCodeLine{00876\ \ \ \ \ \}}
+\DoxyCodeLine{00877\ }
+\DoxyCodeLine{00878\ \ \ \ \ \textcolor{keywordflow}{if}\ (nChunksX\ ==\ 0\ ||\ nChunksZ\ ==\ 0)}
+\DoxyCodeLine{00879\ \ \ \ \ \{}
+\DoxyCodeLine{00880\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00881\ \ \ \ \ \}}
+\DoxyCodeLine{00882\ }
+\DoxyCodeLine{00883\ \ \ \ \ \textcolor{comment}{//\ This\ data\ structure\ is\ only\ reallocated\ if\ the\ required\ size\ changed}}
+\DoxyCodeLine{00884\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a029a68a4205e2bf6a0fe1a0c5fd05f72}{m\_vboundsGrid}}.resize(nChunksX\ *\ nChunksZ);}
+\DoxyCodeLine{00885\ \ \ \ \ }
+\DoxyCodeLine{00886\ \ \ \ \ \textcolor{comment}{//\ Compute\ min\ and\ max\ height\ for\ all\ chunks}}
+\DoxyCodeLine{00887\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ cz\ =\ 0;\ cz\ <\ nChunksZ;\ ++cz)}
+\DoxyCodeLine{00888\ \ \ \ \ \{}
+\DoxyCodeLine{00889\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ z0\ =\ cz\ *\ chunkSize;}
+\DoxyCodeLine{00890\ }
+\DoxyCodeLine{00891\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ cx\ =\ 0;\ cx\ <\ nChunksX;\ ++cx)}
+\DoxyCodeLine{00892\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00893\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ x0\ =\ cx\ *\ chunkSize;}
+\DoxyCodeLine{00894\ }
+\DoxyCodeLine{00895\ \ \ \ \ \ \ \ \ \ \ \ \ Range\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}};}
+\DoxyCodeLine{00896\ }
+\DoxyCodeLine{00897\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}.min\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a37a11a11f2763b4a69da2bdc5ef58d90}{getRawHeightFieldValue}}(x0,\ z0);}
+\DoxyCodeLine{00898\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}.max\ =\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}.min;}
+\DoxyCodeLine{00899\ }
+\DoxyCodeLine{00900\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Compute\ min\ and\ max\ height\ for\ this\ chunk.}}
+\DoxyCodeLine{00901\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ We\ have\ to\ include\ one\ extra\ cell\ to\ account\ for\ neighbors.}}
+\DoxyCodeLine{00902\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Here\ is\ why:}}
+\DoxyCodeLine{00903\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Say\ we\ have\ a\ flat\ terrain,\ and\ a\ plateau\ that\ fits\ a\ chunk\ perfectly.}}
+\DoxyCodeLine{00904\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00905\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ Left\ \ \ \ \ \ \ \ Right}}
+\DoxyCodeLine{00906\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 0-\/-\/-\/0-\/-\/-\/0-\/-\/-\/1-\/-\/-\/1-\/-\/-\/1}}
+\DoxyCodeLine{00907\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ |\ \ \ |\ \ \ |\ \ \ |\ \ \ |\ \ \ |}}
+\DoxyCodeLine{00908\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 0-\/-\/-\/0-\/-\/-\/0-\/-\/-\/1-\/-\/-\/1-\/-\/-\/1}}
+\DoxyCodeLine{00909\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ |\ \ \ |\ \ \ |\ \ \ |\ \ \ |\ \ \ |}}
+\DoxyCodeLine{00910\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 0-\/-\/-\/0-\/-\/-\/0-\/-\/-\/1-\/-\/-\/1-\/-\/-\/1}}
+\DoxyCodeLine{00911\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ x}}
+\DoxyCodeLine{00912\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00913\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ If\ the\ AABB\ for\ the\ Left\ chunk\ did\ not\ share\ vertices\ with\ the\ Right,}}
+\DoxyCodeLine{00914\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ then\ we\ would\ fail\ collision\ tests\ at\ x\ due\ to\ a\ gap.}}
+\DoxyCodeLine{00915\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00916\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}\ =\ z0;\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}\ <\ z0\ +\ chunkSize\ +\ 1;\ ++\mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}})}
+\DoxyCodeLine{00917\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00918\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}\ >=\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_ac16584a2916c01b542ca9e8754fb7639}{m\_heightStickLength}})}
+\DoxyCodeLine{00919\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00920\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{00921\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00922\ }
+\DoxyCodeLine{00923\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ =\ x0;\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ <\ x0\ +\ chunkSize\ +\ 1;\ ++\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}})}
+\DoxyCodeLine{00924\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00925\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ >=\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a175189ad64089a129167db17e62c5583}{m\_heightStickWidth}})}
+\DoxyCodeLine{00926\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00927\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{continue};}
+\DoxyCodeLine{00928\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00929\ }
+\DoxyCodeLine{00930\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}}\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a37a11a11f2763b4a69da2bdc5ef58d90}{getRawHeightFieldValue}}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}});}
+\DoxyCodeLine{00931\ }
+\DoxyCodeLine{00932\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}}\ <\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}.min)}
+\DoxyCodeLine{00933\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00934\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}.min\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}};}
+\DoxyCodeLine{00935\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00936\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}}\ >\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}.max)}
+\DoxyCodeLine{00937\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00938\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}.max\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}};}
+\DoxyCodeLine{00939\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00940\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00941\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00942\ }
+\DoxyCodeLine{00943\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a029a68a4205e2bf6a0fe1a0c5fd05f72}{m\_vboundsGrid}}[cx\ +\ cz\ *\ nChunksX]\ =\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}};}
+\DoxyCodeLine{00944\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00945\ \ \ \ \ \}}
+\DoxyCodeLine{00946\ \}}
+\DoxyCodeLine{00947\ }
+\DoxyCodeLine{00948\ \textcolor{keywordtype}{void}\ btHeightfieldTerrainShape::clearAccelerator()}
+\DoxyCodeLine{00949\ \{}
+\DoxyCodeLine{00950\ \ \ \ \ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a029a68a4205e2bf6a0fe1a0c5fd05f72}{m\_vboundsGrid}}.clear();}
+\DoxyCodeLine{00951\ \}}
+
+\end{DoxyCode}

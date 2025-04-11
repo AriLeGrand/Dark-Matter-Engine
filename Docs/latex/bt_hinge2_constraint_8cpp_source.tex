@@ -1,0 +1,67 @@
+\doxysection{bt\+Hinge2\+Constraint.\+cpp}
+\hypertarget{bt_hinge2_constraint_8cpp_source}{}\label{bt_hinge2_constraint_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/ConstraintSolver/btHinge2Constraint.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/ConstraintSolver/btHinge2Constraint.cpp}}
+\mbox{\hyperlink{bt_hinge2_constraint_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library,\ http://bulletphysics.org}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (C)\ 2006,\ 2007\ Sony\ Computer\ Entertainment\ Inc.\ }}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_hinge2_constraint_8h}{btHinge2Constraint.h}}"{}}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_rigid_body_8h}{BulletDynamics/Dynamics/btRigidBody.h}}"{}}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_transform_util_8h}{LinearMath/btTransformUtil.h}}"{}}}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{comment}{//\ constructor}}
+\DoxyCodeLine{00021\ \textcolor{comment}{//\ anchor,\ axis1\ and\ axis2\ are\ in\ world\ coordinate\ system}}
+\DoxyCodeLine{00022\ \textcolor{comment}{//\ axis1\ must\ be\ orthogonal\ to\ axis2}}
+\DoxyCodeLine{00023\ btHinge2Constraint::btHinge2Constraint(\mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}\&\ rbA,\ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}\&\ \mbox{\hyperlink{bt_fixed_constraint_8h_a2708cf4cc286b1cfc99a645b9ec1dccd}{rbB}},\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ anchor,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ axis1,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ axis2)}
+\DoxyCodeLine{00024\ \ \ \ \ :\ \mbox{\hyperlink{bt_generic6_dof_spring2_constraint_8h_ae1c6c4b9a5461d9965d6e06dfe9ed5e8}{btGeneric6DofSpring2Constraint}}(rbA,\ \mbox{\hyperlink{bt_fixed_constraint_8h_a2708cf4cc286b1cfc99a645b9ec1dccd}{rbB}},\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}::getIdentity(),\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}::getIdentity(),\ \mbox{\hyperlink{bt_generic6_dof_spring2_constraint_8h_a861290d33511322c5f5d693aa1d09eb7a780117b51669830d4dffc0a743ac6498}{RO\_XYZ}}),}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ m\_anchor(anchor),}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ \mbox{\hyperlink{bt_hinge2_constraint_8h_a728cc4a83b38ae889de42aedec9dc696}{m\_axis1}}(axis1),}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \mbox{\hyperlink{bt_hinge2_constraint_8h_a8b34715f5656bf9b7809d2d9fad8fa14}{m\_axis2}}(axis2)}
+\DoxyCodeLine{00028\ \{}
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{comment}{//\ build\ frame\ basis}}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{comment}{//\ 6DOF\ constraint\ uses\ Euler\ angles\ and\ to\ define\ limits}}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{comment}{//\ it\ is\ assumed\ that\ rotational\ order\ is\ :}}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{comment}{//\ Z\ -\/\ first,\ allowed\ limits\ are\ (-\/PI,PI);}}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{comment}{//\ new\ position\ of\ Y\ -\/\ second\ (allowed\ limits\ are\ (-\/PI/2\ +\ epsilon,\ PI/2\ -\/\ epsilon),\ where\ epsilon\ is\ a\ small\ positive\ number}}
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{comment}{//\ used\ to\ prevent\ constraint\ from\ instability\ on\ poles;}}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{comment}{//\ new\ position\ of\ X,\ allowed\ limits\ are\ (-\/PI,PI);}}
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{comment}{//\ So\ to\ simulate\ ODE\ Universal\ joint\ we\ should\ use\ parent\ axis\ as\ Z,\ child\ axis\ as\ Y\ and\ limit\ all\ other\ DOFs}}
+\DoxyCodeLine{00037\ \ \ \ \ \textcolor{comment}{//\ Build\ the\ frame\ in\ world\ coordinate\ system\ first}}
+\DoxyCodeLine{00038\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ zAxis\ =\ axis1.normalize();}
+\DoxyCodeLine{00039\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ xAxis\ =\ axis2.normalize();}
+\DoxyCodeLine{00040\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ yAxis\ =\ zAxis.cross(xAxis);\ \ \textcolor{comment}{//\ we\ want\ right\ coordinate\ system}}
+\DoxyCodeLine{00041\ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ frameInW;}
+\DoxyCodeLine{00042\ \ \ \ \ frameInW.setIdentity();}
+\DoxyCodeLine{00043\ \ \ \ \ frameInW.getBasis().\mbox{\hyperlink{b3_matrix3x3_8h_a652a2de9356ccf7166075446b56eb50a}{setValue}}(xAxis[0],\ yAxis[0],\ zAxis[0],}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ xAxis[1],\ yAxis[1],\ zAxis[1],}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ xAxis[2],\ yAxis[2],\ zAxis[2]);}
+\DoxyCodeLine{00046\ \ \ \ \ frameInW.setOrigin(anchor);}
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{comment}{//\ now\ get\ constraint\ frame\ in\ local\ coordinate\ systems}}
+\DoxyCodeLine{00048\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a385cf545f997f70e88905e18fb7ff44e}{m\_frameInA}}\ =\ rbA.\mbox{\hyperlink{classbt_rigid_body_a716f7165f523eed046cb85c08925680d}{getCenterOfMassTransform}}().\mbox{\hyperlink{b3_matrix3x3_8h_ab650b0d6417309b37ece08789cae5b6d}{inverse}}()\ *\ frameInW;}
+\DoxyCodeLine{00049\ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a399c033a4edc1a30d0531bbb4c9a9d3c}{m\_frameInB}}\ =\ \mbox{\hyperlink{bt_fixed_constraint_8h_a2708cf4cc286b1cfc99a645b9ec1dccd}{rbB}}.getCenterOfMassTransform().\mbox{\hyperlink{b3_matrix3x3_8h_ab650b0d6417309b37ece08789cae5b6d}{inverse}}()\ *\ frameInW;}
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{comment}{//\ sei\ limits}}
+\DoxyCodeLine{00051\ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_aa2987bf42d31edc7d47c3ed8793a3788}{setLinearLowerLimit}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0.f,\ 0.f,\ -\/1.f));}
+\DoxyCodeLine{00052\ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_ada93d2c5f3376d98d97bf6baf7f4807a}{setLinearUpperLimit}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0.f,\ 0.f,\ 1.f));}
+\DoxyCodeLine{00053\ \ \ \ \ \textcolor{comment}{//\ like\ front\ wheels\ of\ a\ car}}
+\DoxyCodeLine{00054\ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_afd7deb44f1bd1f955c4b811140efebf7}{setAngularLowerLimit}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(1.f,\ 0.f,\ -\/\mbox{\hyperlink{bt_scalar_8h_af451c843c6b96c5ce1fa0d1c39f4c255}{SIMD\_HALF\_PI}}\ *\ 0.5f));}
+\DoxyCodeLine{00055\ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a65cbdd1dcf57311e6ccf11a358e760ec}{setAngularUpperLimit}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(-\/1.f,\ 0.f,\ \mbox{\hyperlink{bt_scalar_8h_af451c843c6b96c5ce1fa0d1c39f4c255}{SIMD\_HALF\_PI}}\ *\ 0.5f));}
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{comment}{//\ enable\ suspension}}
+\DoxyCodeLine{00057\ \ \ \ \ \mbox{\hyperlink{bt_generic6_dof_spring2_constraint_8h_a6df1469fef92311e7d2e0a255e971474}{enableSpring}}(2,\ \textcolor{keyword}{true});}
+\DoxyCodeLine{00058\ \ \ \ \ \mbox{\hyperlink{bt_generic6_dof_spring2_constraint_8h_a23793b49c415e947116f2a1375fa2d1d}{setStiffness}}(2,\ \mbox{\hyperlink{bt_scalar_8h_a1bdff187c878167505bcedbbbabf7b0a}{SIMD\_PI}}\ *\ \mbox{\hyperlink{bt_scalar_8h_a1bdff187c878167505bcedbbbabf7b0a}{SIMD\_PI}}\ *\ 4.f);}
+\DoxyCodeLine{00059\ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a2e22c9b7f2e0b20eb4f5a33647d4a5aa}{setDamping}}(2,\ 0.01f);}
+\DoxyCodeLine{00060\ \ \ \ \ \mbox{\hyperlink{bt_generic6_dof_spring2_constraint_8h_ada98f0660e905d57c344cc7931544137}{setEquilibriumPoint}}();}
+\DoxyCodeLine{00061\ \}}
+
+\end{DoxyCode}

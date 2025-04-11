@@ -1,0 +1,452 @@
+\doxysection{bt\+Persistent\+Manifold.\+cpp}
+\hypertarget{bt_persistent_manifold_8cpp_source}{}\label{bt_persistent_manifold_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/NarrowPhaseCollision/btPersistentManifold.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/NarrowPhaseCollision/btPersistentManifold.cpp}}
+\mbox{\hyperlink{bt_persistent_manifold_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2006\ Erwin\ Coumans\ \ https://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_persistent_manifold_8h}{btPersistentManifold.h}}"{}}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_transform_8h}{LinearMath/btTransform.h}}"{}}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_serializer_8h}{LinearMath/btSerializer.h}}"{}}}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_DOUBLE\_PRECISION}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#define\ btCollisionObjectData\ btCollisionObjectDoubleData}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#define\ btCollisionObjectData\ btCollisionObjectFloatData}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{b3_contact_cache_8h_a84eb28b9c3e6328f796088fe1f59bb9a}{gContactBreakingThreshold}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.02);}
+\DoxyCodeLine{00027\ \mbox{\hyperlink{bt_persistent_manifold_8h_a9345e261cde18234e819dc440ab9fbcc}{ContactDestroyedCallback}}\ \mbox{\hyperlink{bt_persistent_manifold_8cpp_adbd4a850db5049029334b67670bf76eb}{gContactDestroyedCallback}}\ =\ 0;}
+\DoxyCodeLine{00028\ \mbox{\hyperlink{bt_persistent_manifold_8h_aeb666246ff1858b4a3c2dd5afa3db9e2}{ContactProcessedCallback}}\ \mbox{\hyperlink{bt_persistent_manifold_8cpp_a894efabc230046dd9f6fc1cb0e3c9edc}{gContactProcessedCallback}}\ =\ 0;}
+\DoxyCodeLine{00029\ \mbox{\hyperlink{bt_persistent_manifold_8h_a86bbcfd3db6fb80b9df7c519493b3dd6}{ContactStartedCallback}}\ \mbox{\hyperlink{bt_persistent_manifold_8cpp_a7dbca5b857edf9b38137c2c1a1da0b34}{gContactStartedCallback}}\ =\ 0;}
+\DoxyCodeLine{00030\ \mbox{\hyperlink{bt_persistent_manifold_8h_a169205a2d2143ceb1ecbd576a8c5d9ec}{ContactEndedCallback}}\ \mbox{\hyperlink{bt_persistent_manifold_8cpp_a3527facc9adf3b714f0ae37471eaee9a}{gContactEndedCallback}}\ =\ 0;}
+\DoxyCodeLine{00033\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_persistent_manifold_8cpp_a13189b05463c1054c1edd65fe15e9095}{gContactCalcArea3Points}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ btPersistentManifold::btPersistentManifold()}
+\DoxyCodeLine{00036\ \ \ \ \ :\ \mbox{\hyperlink{structbt_typed_object}{btTypedObject}}(\mbox{\hyperlink{bt_persistent_manifold_8h_ad3c97663a5cba0ce97da7382c07cff60afe28d408ef27d79de2593618e2d2a026}{BT\_PERSISTENT\_MANIFOLD\_TYPE}}),}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_a10a11afa7ab6c06c138262ec2ad6d717}{m\_body0}}(0),}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_a4f900da2a49cae591174567d9a452a80}{m\_body1}}(0),}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_ad42a5484619a3cb64345300b3cf35338}{m\_cachedPoints}}(0),}
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_a75a76df0092ddbc024c04078344997f4}{m\_companionIdA}}(0),}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_acdc91f9b833ba0bba505cdfabe2162cf}{m\_companionIdB}}(0),}
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_a2a36a28d6a128450d202b2b1382b2b3f}{m\_index1a}}(0)}
+\DoxyCodeLine{00043\ \{}
+\DoxyCodeLine{00044\ \}}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00046\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_PERSISTENCY}}
+\DoxyCodeLine{00047\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00048\ \textcolor{keywordtype}{void}\ btPersistentManifold::DebugPersistency()}
+\DoxyCodeLine{00049\ \{}
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00051\ \ \ \ \ printf(\textcolor{stringliteral}{"{}DebugPersistency\ :\ numPoints\ \%d\(\backslash\)n"{}},\ \mbox{\hyperlink{bt_persistent_manifold_8h_ad42a5484619a3cb64345300b3cf35338}{m\_cachedPoints}});}
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_persistent_manifold_8h_ad42a5484619a3cb64345300b3cf35338}{m\_cachedPoints}};\ i++)}
+\DoxyCodeLine{00053\ \ \ \ \ \{}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}m\_pointCache[\%d].m\_userPersistentData\ =\ \%x\(\backslash\)n"{}},\ i,\ m\_pointCache[i].m\_userPersistentData);}
+\DoxyCodeLine{00055\ \ \ \ \ \}}
+\DoxyCodeLine{00056\ \}}
+\DoxyCodeLine{00057\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_PERSISTENCY}}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \textcolor{keywordtype}{void}\ btPersistentManifold::clearUserCache(\mbox{\hyperlink{classbt_manifold_point}{btManifoldPoint}}\&\ pt)}
+\DoxyCodeLine{00060\ \{}
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{keywordtype}{void}*\ oldPtr\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_aafa874a073e18b67204fa1675bf331e9}{m\_userPersistentData}};}
+\DoxyCodeLine{00062\ \ \ \ \ \textcolor{keywordflow}{if}\ (oldPtr)}
+\DoxyCodeLine{00063\ \ \ \ \ \{}
+\DoxyCodeLine{00064\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_PERSISTENCY}}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ occurance\ =\ 0;}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_persistent_manifold_8h_ad42a5484619a3cb64345300b3cf35338}{m\_cachedPoints}};\ i++)}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_pointCache[i].m\_userPersistentData\ ==\ oldPtr)}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ occurance++;}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (occurance\ >\ 1)}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}error\ in\ clearUserCache\(\backslash\)n"{}});}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(occurance\ <=\ 0);}
+\DoxyCodeLine{00077\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_PERSISTENCY}}
+\DoxyCodeLine{00078\ }
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (pt.\mbox{\hyperlink{classbt_manifold_point_aafa874a073e18b67204fa1675bf331e9}{m\_userPersistentData}}\ \&\&\ \mbox{\hyperlink{bt_persistent_manifold_8cpp_adbd4a850db5049029334b67670bf76eb}{gContactDestroyedCallback}})}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00081\ \ \ \ \ \ \ \ \ \ \ \ \ (*gContactDestroyedCallback)(pt.\mbox{\hyperlink{classbt_manifold_point_aafa874a073e18b67204fa1675bf331e9}{m\_userPersistentData}});}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_aafa874a073e18b67204fa1675bf331e9}{m\_userPersistentData}}\ =\ 0;}
+\DoxyCodeLine{00083\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00084\ }
+\DoxyCodeLine{00085\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_PERSISTENCY}}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ DebugPersistency();}
+\DoxyCodeLine{00087\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00088\ \ \ \ \ \}}
+\DoxyCodeLine{00089\ \}}
+\DoxyCodeLine{00090\ }
+\DoxyCodeLine{00091\ \textcolor{keyword}{static}\ \textcolor{keyword}{inline}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ calcArea4Points(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ p0,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ p1,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ p2,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ p3)}
+\DoxyCodeLine{00092\ \{}
+\DoxyCodeLine{00093\ \ \ \ \ \textcolor{comment}{//\ It\ calculates\ possible\ 3\ area\ constructed\ from\ random\ 4\ points\ and\ returns\ the\ biggest\ one.}}
+\DoxyCodeLine{00094\ }
+\DoxyCodeLine{00095\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}[3],\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[3];}
+\DoxyCodeLine{00096\ \ \ \ \ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}[0]\ =\ p0\ -\/\ p1;}
+\DoxyCodeLine{00097\ \ \ \ \ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}[1]\ =\ p0\ -\/\ p2;}
+\DoxyCodeLine{00098\ \ \ \ \ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}[2]\ =\ p0\ -\/\ p3;}
+\DoxyCodeLine{00099\ \ \ \ \ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[0]\ =\ p2\ -\/\ p3;}
+\DoxyCodeLine{00100\ \ \ \ \ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[1]\ =\ p1\ -\/\ p3;}
+\DoxyCodeLine{00101\ \ \ \ \ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[2]\ =\ p1\ -\/\ p2;}
+\DoxyCodeLine{00102\ }
+\DoxyCodeLine{00103\ \ \ \ \ \textcolor{comment}{//todo:\ Following\ 3\ cross\ production\ can\ be\ easily\ optimized\ by\ SIMD.}}
+\DoxyCodeLine{00104\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ tmp0\ =\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}[0].cross(\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[0]);}
+\DoxyCodeLine{00105\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ tmp1\ =\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}[1].cross(\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[1]);}
+\DoxyCodeLine{00106\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ tmp2\ =\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}[2].cross(\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[2]);}
+\DoxyCodeLine{00107\ }
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(\mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(tmp0.length2(),\ tmp1.length2()),\ tmp2.length2());}
+\DoxyCodeLine{00109\ \}}
+\DoxyCodeLine{00110\ }
+\DoxyCodeLine{00111\ \textcolor{keywordtype}{int}\ btPersistentManifold::sortCachedPoints(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_manifold_point}{btManifoldPoint}}\&\ pt)}
+\DoxyCodeLine{00112\ \{}
+\DoxyCodeLine{00113\ \ \ \ \ \textcolor{comment}{//calculate\ 4\ possible\ cases\ areas,\ and\ take\ biggest\ area}}
+\DoxyCodeLine{00114\ \ \ \ \ \textcolor{comment}{//also\ need\ to\ keep\ 'deepest'}}
+\DoxyCodeLine{00115\ }
+\DoxyCodeLine{00116\ \ \ \ \ \textcolor{keywordtype}{int}\ maxPenetrationIndex\ =\ -\/1;}
+\DoxyCodeLine{00117\ \textcolor{preprocessor}{\#define\ KEEP\_DEEPEST\_POINT\ 1}}
+\DoxyCodeLine{00118\ \textcolor{preprocessor}{\#ifdef\ KEEP\_DEEPEST\_POINT}}
+\DoxyCodeLine{00119\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxPenetration\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a42cd47cba8f5e1e3f6c24c910224df6d}{getDistance}}();}
+\DoxyCodeLine{00120\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 4;\ i++)}
+\DoxyCodeLine{00121\ \ \ \ \ \{}
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_pointCache[i].getDistance()\ <\ maxPenetration)}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \ \ \ \ maxPenetrationIndex\ =\ i;}
+\DoxyCodeLine{00125\ \ \ \ \ \ \ \ \ \ \ \ \ maxPenetration\ =\ m\_pointCache[i].getDistance();}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00127\ \ \ \ \ \}}
+\DoxyCodeLine{00128\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//KEEP\_DEEPEST\_POINT}}
+\DoxyCodeLine{00129\ }
+\DoxyCodeLine{00130\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ res0(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.)),\ res1(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.)),\ res2(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.)),\ res3(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.));}
+\DoxyCodeLine{00131\ }
+\DoxyCodeLine{00132\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_persistent_manifold_8cpp_a13189b05463c1054c1edd65fe15e9095}{gContactCalcArea3Points}})}
+\DoxyCodeLine{00133\ \ \ \ \ \{}
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (maxPenetrationIndex\ !=\ 0)}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ a0\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a58a8028c5de712ff0224cfde8c9e8e44}{m\_localPointA}}\ -\/\ m\_pointCache[1].m\_localPointA;}
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ b0\ =\ m\_pointCache[3].m\_localPointA\ -\/\ m\_pointCache[2].m\_localPointA;}
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{b3_vector3_8h_a6363567af554bcaeeb40e126f1f052f1}{cross}}\ =\ a0.cross(b0);}
+\DoxyCodeLine{00139\ \ \ \ \ \ \ \ \ \ \ \ \ res0\ =\ \mbox{\hyperlink{b3_vector3_8h_a6363567af554bcaeeb40e126f1f052f1}{cross}}.length2();}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (maxPenetrationIndex\ !=\ 1)}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ a1\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a58a8028c5de712ff0224cfde8c9e8e44}{m\_localPointA}}\ -\/\ m\_pointCache[0].m\_localPointA;}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ b1\ =\ m\_pointCache[3].m\_localPointA\ -\/\ m\_pointCache[2].m\_localPointA;}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{b3_vector3_8h_a6363567af554bcaeeb40e126f1f052f1}{cross}}\ =\ a1.cross(b1);}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \ \ \ \ res1\ =\ \mbox{\hyperlink{b3_vector3_8h_a6363567af554bcaeeb40e126f1f052f1}{cross}}.length2();}
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00148\ }
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (maxPenetrationIndex\ !=\ 2)}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ a2\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a58a8028c5de712ff0224cfde8c9e8e44}{m\_localPointA}}\ -\/\ m\_pointCache[0].m\_localPointA;}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ b2\ =\ m\_pointCache[3].m\_localPointA\ -\/\ m\_pointCache[1].m\_localPointA;}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{b3_vector3_8h_a6363567af554bcaeeb40e126f1f052f1}{cross}}\ =\ a2.cross(b2);}
+\DoxyCodeLine{00154\ \ \ \ \ \ \ \ \ \ \ \ \ res2\ =\ \mbox{\hyperlink{b3_vector3_8h_a6363567af554bcaeeb40e126f1f052f1}{cross}}.length2();}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00156\ }
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (maxPenetrationIndex\ !=\ 3)}
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ a3\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a58a8028c5de712ff0224cfde8c9e8e44}{m\_localPointA}}\ -\/\ m\_pointCache[0].m\_localPointA;}
+\DoxyCodeLine{00160\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ b3\ =\ m\_pointCache[2].m\_localPointA\ -\/\ m\_pointCache[1].m\_localPointA;}
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{b3_vector3_8h_a6363567af554bcaeeb40e126f1f052f1}{cross}}\ =\ a3.cross(b3);}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \ \ \ \ res3\ =\ \mbox{\hyperlink{b3_vector3_8h_a6363567af554bcaeeb40e126f1f052f1}{cross}}.length2();}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00164\ \ \ \ \ \}}
+\DoxyCodeLine{00165\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00166\ \ \ \ \ \{}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (maxPenetrationIndex\ !=\ 0)}
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \ \ \ \ \ \ res0\ =\ calcArea4Points(pt.\mbox{\hyperlink{classbt_manifold_point_a58a8028c5de712ff0224cfde8c9e8e44}{m\_localPointA}},\ m\_pointCache[1].m\_localPointA,\ m\_pointCache[2].m\_localPointA,\ m\_pointCache[3].m\_localPointA);}
+\DoxyCodeLine{00170\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00171\ }
+\DoxyCodeLine{00172\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (maxPenetrationIndex\ !=\ 1)}
+\DoxyCodeLine{00173\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00174\ \ \ \ \ \ \ \ \ \ \ \ \ res1\ =\ calcArea4Points(pt.\mbox{\hyperlink{classbt_manifold_point_a58a8028c5de712ff0224cfde8c9e8e44}{m\_localPointA}},\ m\_pointCache[0].m\_localPointA,\ m\_pointCache[2].m\_localPointA,\ m\_pointCache[3].m\_localPointA);}
+\DoxyCodeLine{00175\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00176\ }
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (maxPenetrationIndex\ !=\ 2)}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ \ \ \ \ res2\ =\ calcArea4Points(pt.\mbox{\hyperlink{classbt_manifold_point_a58a8028c5de712ff0224cfde8c9e8e44}{m\_localPointA}},\ m\_pointCache[0].m\_localPointA,\ m\_pointCache[1].m\_localPointA,\ m\_pointCache[3].m\_localPointA);}
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00181\ }
+\DoxyCodeLine{00182\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (maxPenetrationIndex\ !=\ 3)}
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00184\ \ \ \ \ \ \ \ \ \ \ \ \ res3\ =\ calcArea4Points(pt.\mbox{\hyperlink{classbt_manifold_point_a58a8028c5de712ff0224cfde8c9e8e44}{m\_localPointA}},\ m\_pointCache[0].m\_localPointA,\ m\_pointCache[1].m\_localPointA,\ m\_pointCache[2].m\_localPointA);}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00186\ \ \ \ \ \}}
+\DoxyCodeLine{00187\ \ \ \ \ \mbox{\hyperlink{classbt_vector4}{btVector4}}\ maxvec(res0,\ res1,\ res2,\ res3);}
+\DoxyCodeLine{00188\ \ \ \ \ \textcolor{keywordtype}{int}\ biggestarea\ =\ maxvec.\mbox{\hyperlink{classbt_vector4_a6aabaf2fc5ec47af13b2c0accb4cbdda}{closestAxis4}}();}
+\DoxyCodeLine{00189\ \ \ \ \ \textcolor{keywordflow}{return}\ biggestarea;}
+\DoxyCodeLine{00190\ \}}
+\DoxyCodeLine{00191\ }
+\DoxyCodeLine{00192\ \textcolor{keywordtype}{int}\ btPersistentManifold::getCacheEntry(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_manifold_point}{btManifoldPoint}}\&\ newPoint)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00193\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00194\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ shortestDist\ =\ \mbox{\hyperlink{bt_persistent_manifold_8h_ab32e1bb80b3587346f86dd6621791784}{getContactBreakingThreshold}}()\ *\ \mbox{\hyperlink{bt_persistent_manifold_8h_ab32e1bb80b3587346f86dd6621791784}{getContactBreakingThreshold}}();}
+\DoxyCodeLine{00195\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}\ =\ \mbox{\hyperlink{bt_persistent_manifold_8h_aff8ffe6d8fb7fad0e7f74ad3a4f7a86c}{getNumContacts}}();}
+\DoxyCodeLine{00196\ \ \ \ \ \textcolor{keywordtype}{int}\ nearestPoint\ =\ -\/1;}
+\DoxyCodeLine{00197\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}};\ i++)}
+\DoxyCodeLine{00198\ \ \ \ \ \{}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_manifold_point}{btManifoldPoint}}\&\ mp\ =\ m\_pointCache[i];}
+\DoxyCodeLine{00200\ }
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ diffA\ =\ mp.\mbox{\hyperlink{classbt_manifold_point_a58a8028c5de712ff0224cfde8c9e8e44}{m\_localPointA}}\ -\/\ newPoint.\mbox{\hyperlink{classbt_manifold_point_a58a8028c5de712ff0224cfde8c9e8e44}{m\_localPointA}};}
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ distToManiPoint\ =\ diffA.dot(diffA);}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (distToManiPoint\ <\ shortestDist)}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ \ \ \ \ shortestDist\ =\ distToManiPoint;}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ \ \ \ \ nearestPoint\ =\ i;}
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00208\ \ \ \ \ \}}
+\DoxyCodeLine{00209\ \ \ \ \ \textcolor{keywordflow}{return}\ nearestPoint;}
+\DoxyCodeLine{00210\ \}}
+\DoxyCodeLine{00211\ }
+\DoxyCodeLine{00212\ \textcolor{keywordtype}{int}\ btPersistentManifold::addManifoldPoint(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_manifold_point}{btManifoldPoint}}\&\ newPoint,\ \textcolor{keywordtype}{bool}\ isPredictive)}
+\DoxyCodeLine{00213\ \{}
+\DoxyCodeLine{00214\ \ \ \ \ \textcolor{keywordflow}{if}\ (!isPredictive)}
+\DoxyCodeLine{00215\ \ \ \ \ \{}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(validContactDistance(newPoint));}
+\DoxyCodeLine{00217\ \ \ \ \ \}}
+\DoxyCodeLine{00218\ }
+\DoxyCodeLine{00219\ \ \ \ \ \textcolor{keywordtype}{int}\ insertIndex\ =\ \mbox{\hyperlink{bt_persistent_manifold_8h_aff8ffe6d8fb7fad0e7f74ad3a4f7a86c}{getNumContacts}}();}
+\DoxyCodeLine{00220\ \ \ \ \ \textcolor{keywordflow}{if}\ (insertIndex\ ==\ \mbox{\hyperlink{b3_contact_cache_8h_adeeacdc0b6da4c8e7426e0fc39d53614}{MANIFOLD\_CACHE\_SIZE}})}
+\DoxyCodeLine{00221\ \ \ \ \ \{}
+\DoxyCodeLine{00222\ \textcolor{preprocessor}{\#if\ MANIFOLD\_CACHE\_SIZE\ >=\ 4}}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \textcolor{comment}{//sort\ cache\ so\ best\ points\ come\ first,\ based\ on\ area}}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ insertIndex\ =\ \mbox{\hyperlink{bt_persistent_manifold_8h_a6a35a02f630d8320ab7b0f9b6b782783}{sortCachedPoints}}(newPoint);}
+\DoxyCodeLine{00225\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ insertIndex\ =\ 0;}
+\DoxyCodeLine{00227\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_a94c02a401bee6308e9d636983cefe281}{clearUserCache}}(m\_pointCache[insertIndex]);}
+\DoxyCodeLine{00229\ \ \ \ \ \}}
+\DoxyCodeLine{00230\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00231\ \ \ \ \ \{}
+\DoxyCodeLine{00232\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_ad42a5484619a3cb64345300b3cf35338}{m\_cachedPoints}}++;}
+\DoxyCodeLine{00233\ \ \ \ \ \}}
+\DoxyCodeLine{00234\ \ \ \ \ \textcolor{keywordflow}{if}\ (insertIndex\ <\ 0)}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ insertIndex\ =\ 0;}
+\DoxyCodeLine{00236\ }
+\DoxyCodeLine{00237\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(m\_pointCache[insertIndex].m\_userPersistentData\ ==\ 0);}
+\DoxyCodeLine{00238\ \ \ \ \ m\_pointCache[insertIndex]\ =\ newPoint;}
+\DoxyCodeLine{00239\ \ \ \ \ \textcolor{keywordflow}{return}\ insertIndex;}
+\DoxyCodeLine{00240\ \}}
+\DoxyCodeLine{00241\ }
+\DoxyCodeLine{00242\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ btPersistentManifold::getContactBreakingThreshold()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00243\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00244\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_persistent_manifold_8h_a50035ae0f53021dbe5e95ef7b16cb9fd}{m\_contactBreakingThreshold}};}
+\DoxyCodeLine{00245\ \}}
+\DoxyCodeLine{00246\ }
+\DoxyCodeLine{00247\ \textcolor{keywordtype}{void}\ btPersistentManifold::refreshContactPoints(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ trA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ trB)}
+\DoxyCodeLine{00248\ \{}
+\DoxyCodeLine{00249\ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00250\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_PERSISTENCY}}
+\DoxyCodeLine{00251\ \ \ \ \ printf(\textcolor{stringliteral}{"{}refreshContactPoints\ posA\ =\ (\%f,\%f,\%f)\ posB\ =\ (\%f,\%f,\%f)\(\backslash\)n"{}},}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ \ \ \ trA.getOrigin().getX(),}
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ \ \ \ trA.getOrigin().getY(),}
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \ \ \ \ \ trA.getOrigin().getZ(),}
+\DoxyCodeLine{00255\ \ \ \ \ \ \ \ \ \ \ \ trB.getOrigin().getX(),}
+\DoxyCodeLine{00256\ \ \ \ \ \ \ \ \ \ \ \ trB.getOrigin().getY(),}
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ \ \ \ trB.getOrigin().getZ());}
+\DoxyCodeLine{00258\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_PERSISTENCY}}
+\DoxyCodeLine{00260\ \ \ \ \ for\ (i\ =\ getNumContacts()\ -\/\ 1;\ i\ >=\ 0;\ i-\/-\/)}
+\DoxyCodeLine{00261\ \ \ \ \ \{}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_manifold_point}{btManifoldPoint}}\&\ manifoldPoint\ =\ m\_pointCache[i];}
+\DoxyCodeLine{00263\ \ \ \ \ \ \ \ \ manifoldPoint.\mbox{\hyperlink{classbt_manifold_point_a5fd89785a2e081dd658b15af8bedf04b}{m\_positionWorldOnA}}\ =\ trA(manifoldPoint.\mbox{\hyperlink{classbt_manifold_point_a58a8028c5de712ff0224cfde8c9e8e44}{m\_localPointA}});}
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \ \ manifoldPoint.\mbox{\hyperlink{classbt_manifold_point_ae64702f66baa6539b56dd1f7d2f163e0}{m\_positionWorldOnB}}\ =\ trB(manifoldPoint.\mbox{\hyperlink{classbt_manifold_point_a6df421e6b6345cacee6b1bdd6307fe6b}{m\_localPointB}});}
+\DoxyCodeLine{00265\ \ \ \ \ \ \ \ \ manifoldPoint.\mbox{\hyperlink{classbt_manifold_point_a8a42d00697733931ef82220feca0f401}{m\_distance1}}\ =\ (manifoldPoint.\mbox{\hyperlink{classbt_manifold_point_a5fd89785a2e081dd658b15af8bedf04b}{m\_positionWorldOnA}}\ -\/\ manifoldPoint.\mbox{\hyperlink{classbt_manifold_point_ae64702f66baa6539b56dd1f7d2f163e0}{m\_positionWorldOnB}}).\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}(manifoldPoint.\mbox{\hyperlink{classbt_manifold_point_ac821b226c09cd4f50009645fa932161e}{m\_normalWorldOnB}});}
+\DoxyCodeLine{00266\ \ \ \ \ \ \ \ \ manifoldPoint.\mbox{\hyperlink{classbt_manifold_point_ac33796d728ab7b10987937a46522ab7f}{m\_lifeTime}}++;}
+\DoxyCodeLine{00267\ \ \ \ \ \}}
+\DoxyCodeLine{00268\ }
+\DoxyCodeLine{00270\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ distance2d;}
+\DoxyCodeLine{00271\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ projectedDifference,\ projectedPoint;}
+\DoxyCodeLine{00272\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ \mbox{\hyperlink{bt_persistent_manifold_8h_aff8ffe6d8fb7fad0e7f74ad3a4f7a86c}{getNumContacts}}()\ -\/\ 1;\ i\ >=\ 0;\ i-\/-\/)}
+\DoxyCodeLine{00273\ \ \ \ \ \{}
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_manifold_point}{btManifoldPoint}}\&\ manifoldPoint\ =\ m\_pointCache[i];}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ \textcolor{comment}{//contact\ becomes\ invalid\ when\ signed\ distance\ exceeds\ margin\ (projected\ on\ contactnormal\ direction)}}
+\DoxyCodeLine{00276\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!validContactDistance(manifoldPoint))}
+\DoxyCodeLine{00277\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00278\ \ \ \ \ \ \ \ \ \ \ \ \ removeContactPoint(i);}
+\DoxyCodeLine{00279\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00280\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00281\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//todo:\ friction\ anchor\ may\ require\ the\ contact\ to\ be\ around\ a\ bit\ longer}}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//contact\ also\ becomes\ invalid\ when\ relative\ movement\ orthogonal\ to\ normal\ exceeds\ margin}}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ \ \ \ \ projectedPoint\ =\ manifoldPoint.\mbox{\hyperlink{classbt_manifold_point_a5fd89785a2e081dd658b15af8bedf04b}{m\_positionWorldOnA}}\ -\/\ manifoldPoint.\mbox{\hyperlink{classbt_manifold_point_ac821b226c09cd4f50009645fa932161e}{m\_normalWorldOnB}}\ *\ manifoldPoint.\mbox{\hyperlink{classbt_manifold_point_a8a42d00697733931ef82220feca0f401}{m\_distance1}};}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ \ \ \ \ projectedDifference\ =\ manifoldPoint.\mbox{\hyperlink{classbt_manifold_point_ae64702f66baa6539b56dd1f7d2f163e0}{m\_positionWorldOnB}}\ -\/\ projectedPoint;}
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \ \ \ \ distance2d\ =\ projectedDifference.dot(projectedDifference);}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (distance2d\ >\ \mbox{\hyperlink{bt_persistent_manifold_8h_ab32e1bb80b3587346f86dd6621791784}{getContactBreakingThreshold}}()\ *\ \mbox{\hyperlink{bt_persistent_manifold_8h_ab32e1bb80b3587346f86dd6621791784}{getContactBreakingThreshold}}())}
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ removeContactPoint(i);}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00293\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//contact\ point\ processed\ callback}}
+\DoxyCodeLine{00294\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_persistent_manifold_8cpp_a894efabc230046dd9f6fc1cb0e3c9edc}{gContactProcessedCallback}})}
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (*gContactProcessedCallback)(manifoldPoint,\ (\textcolor{keywordtype}{void}*)\mbox{\hyperlink{bt_persistent_manifold_8h_a10a11afa7ab6c06c138262ec2ad6d717}{m\_body0}},\ (\textcolor{keywordtype}{void}*)\mbox{\hyperlink{bt_persistent_manifold_8h_a4f900da2a49cae591174567d9a452a80}{m\_body1}});}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00298\ \ \ \ \ \}}
+\DoxyCodeLine{00299\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_PERSISTENCY}}
+\DoxyCodeLine{00300\ \ \ \ \ DebugPersistency();}
+\DoxyCodeLine{00301\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//}}
+\DoxyCodeLine{00302\ \}}
+\DoxyCodeLine{00303\ }
+\DoxyCodeLine{00304\ \textcolor{keywordtype}{int}\ btPersistentManifold::calculateSerializeBufferSize()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00305\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00306\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_persistent_manifold_8h_ac403c20e2c3eb1d69e8c99493cf3530e}{btPersistentManifoldData}});}
+\DoxyCodeLine{00307\ \}}
+\DoxyCodeLine{00308\ }
+\DoxyCodeLine{00309\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ btPersistentManifold::serialize(\textcolor{keyword}{const}\ \textcolor{keyword}{class}\ \mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}*\ manifold,\ \textcolor{keywordtype}{void}*\ dataBuffer,\ \textcolor{keyword}{class}\ \mbox{\hyperlink{classbt_serializer}{btSerializer}}*\ serializer)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00310\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00311\ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_ac403c20e2c3eb1d69e8c99493cf3530e}{btPersistentManifoldData}}*\ dataOut\ =\ (\mbox{\hyperlink{bt_persistent_manifold_8h_ac403c20e2c3eb1d69e8c99493cf3530e}{btPersistentManifoldData}}*)dataBuffer;}
+\DoxyCodeLine{00312\ \ \ \ \ memset(dataOut,\ 0,\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_persistent_manifold_8h_ac403c20e2c3eb1d69e8c99493cf3530e}{btPersistentManifoldData}}));}
+\DoxyCodeLine{00313\ }
+\DoxyCodeLine{00314\ \ \ \ \ dataOut-\/>m\_body0\ =\ (\mbox{\hyperlink{bt_collision_object_8h_a258d927ec2cbf7c55a322234dd4acbb0}{btCollisionObjectData}}*)serializer-\/>\mbox{\hyperlink{classbt_serializer_a58b09aa556a85cfcbeb06d741f333d29}{getUniquePointer}}((\textcolor{keywordtype}{void}*)manifold-\/>getBody0());}
+\DoxyCodeLine{00315\ \ \ \ \ dataOut-\/>m\_body1\ =\ (\mbox{\hyperlink{bt_collision_object_8h_a258d927ec2cbf7c55a322234dd4acbb0}{btCollisionObjectData}}*)serializer-\/>\mbox{\hyperlink{classbt_serializer_a58b09aa556a85cfcbeb06d741f333d29}{getUniquePointer}}((\textcolor{keywordtype}{void}*)manifold-\/>getBody1());}
+\DoxyCodeLine{00316\ \ \ \ \ dataOut-\/>m\_contactBreakingThreshold\ =\ manifold-\/>getContactBreakingThreshold();}
+\DoxyCodeLine{00317\ \ \ \ \ dataOut-\/>m\_contactProcessingThreshold\ =\ manifold-\/>getContactProcessingThreshold();}
+\DoxyCodeLine{00318\ \ \ \ \ dataOut-\/>m\_numCachedPoints\ =\ manifold-\/>getNumContacts();}
+\DoxyCodeLine{00319\ \ \ \ \ dataOut-\/>m\_companionIdA\ =\ manifold-\/>m\_companionIdA;}
+\DoxyCodeLine{00320\ \ \ \ \ dataOut-\/>m\_companionIdB\ =\ manifold-\/>m\_companionIdB;}
+\DoxyCodeLine{00321\ \ \ \ \ dataOut-\/>m\_index1a\ =\ manifold-\/>m\_index1a;}
+\DoxyCodeLine{00322\ \ \ \ \ dataOut-\/>m\_objectType\ =\ manifold-\/>m\_objectType;}
+\DoxyCodeLine{00323\ }
+\DoxyCodeLine{00324\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ this-\/>\mbox{\hyperlink{bt_persistent_manifold_8h_aff8ffe6d8fb7fad0e7f74ad3a4f7a86c}{getNumContacts}}();\ i++)}
+\DoxyCodeLine{00325\ \ \ \ \ \{}
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_manifold_point}{btManifoldPoint}}\&\ pt\ =\ manifold-\/>getContactPoint(i);}
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheAppliedImpulse[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a850210ab7227a631fac718d3338fd2d5}{m\_appliedImpulse}};}
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCachePrevRHS[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_aba48482719761906a60d25dd26c10263}{m\_prevRHS}};}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheAppliedImpulseLateral1[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_ab114afc463955b88fcb82d22aee94b0c}{m\_appliedImpulseLateral1}};}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheAppliedImpulseLateral2[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a75d1ec9bf4c90be58b9a4317a879af21}{m\_appliedImpulseLateral2}};}
+\DoxyCodeLine{00331\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a58a8028c5de712ff0224cfde8c9e8e44}{m\_localPointA}}.serialize(dataOut-\/>m\_pointCacheLocalPointA[i]);}
+\DoxyCodeLine{00332\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a6df421e6b6345cacee6b1bdd6307fe6b}{m\_localPointB}}.serialize(dataOut-\/>m\_pointCacheLocalPointB[i]);}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_ac821b226c09cd4f50009645fa932161e}{m\_normalWorldOnB}}.serialize(dataOut-\/>m\_pointCacheNormalWorldOnB[i]);}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheDistance[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a8a42d00697733931ef82220feca0f401}{m\_distance1}};}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheCombinedContactDamping1[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a6e60e2c05a48611862b5dbaa7a99f97f}{m\_combinedContactDamping1}};}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheCombinedContactStiffness1[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a4709f062044090113cd832ffa044160c}{m\_combinedContactStiffness1}};}
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheLifeTime[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_ac33796d728ab7b10987937a46522ab7f}{m\_lifeTime}};}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheFrictionCFM[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a1c7d91a148659ee8e8f322929150bd63}{m\_frictionCFM}};}
+\DoxyCodeLine{00339\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheContactERP[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_adf7f5f7d52305944aa8d742d0ccfed5f}{m\_contactERP}};}
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheContactCFM[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_abd0ffc7fef25f8dfba33a261c0d89a34}{m\_contactCFM}};}
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheContactPointFlags[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a44071e7302c0444f900d46d4e1bf7439}{m\_contactPointFlags}};}
+\DoxyCodeLine{00342\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheIndex0[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a6215ceaa7bd5f370872c80e4a7d46920}{m\_index0}};}
+\DoxyCodeLine{00343\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheIndex1[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a02b2f0d3132566af7af252685578b8fb}{m\_index1}};}
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCachePartId0[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a01ebda18c8ff80b053e0372edc717e88}{m\_partId0}};}
+\DoxyCodeLine{00345\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCachePartId1[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a9af10858319df4dceb3849a4c44ad321}{m\_partId1}};}
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a5fd89785a2e081dd658b15af8bedf04b}{m\_positionWorldOnA}}.serialize(dataOut-\/>m\_pointCachePositionWorldOnA[i]);}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_ae64702f66baa6539b56dd1f7d2f163e0}{m\_positionWorldOnB}}.serialize(dataOut-\/>m\_pointCachePositionWorldOnB[i]);}
+\DoxyCodeLine{00348\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheCombinedFriction[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_ad4ac2c484c62af1142d2aea1a3e67777}{m\_combinedFriction}};}
+\DoxyCodeLine{00349\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_af80f9c429485467e0f7c34952e172020}{m\_lateralFrictionDir1}}.serialize(dataOut-\/>m\_pointCacheLateralFrictionDir1[i]);}
+\DoxyCodeLine{00350\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a5aedd18945719e40d141aa15011384eb}{m\_lateralFrictionDir2}}.serialize(dataOut-\/>m\_pointCacheLateralFrictionDir2[i]);}
+\DoxyCodeLine{00351\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheCombinedRollingFriction[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a3e25a81eaabb31cb5caf1510da3b7946}{m\_combinedRollingFriction}};}
+\DoxyCodeLine{00352\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheCombinedSpinningFriction[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a260d71545449c96cc2546495cbf7af11}{m\_combinedSpinningFriction}};}
+\DoxyCodeLine{00353\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheCombinedRestitution[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_a566013cf11150ea0f268c7561eace4fd}{m\_combinedRestitution}};}
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheContactMotion1[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_af980e3d3ddc888ea84fdb7bd9ed47a51}{m\_contactMotion1}};}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ dataOut-\/>m\_pointCacheContactMotion2[i]\ =\ pt.\mbox{\hyperlink{classbt_manifold_point_aeb26ea44a60b91d8b87dadf02d61d05d}{m\_contactMotion2}};}
+\DoxyCodeLine{00356\ \ \ \ \ \}}
+\DoxyCodeLine{00357\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_persistent_manifold_8h_abe4f1897a43c8ac83840ec4336c41e6c}{btPersistentManifoldDataName}};}
+\DoxyCodeLine{00358\ \}}
+\DoxyCodeLine{00359\ }
+\DoxyCodeLine{00360\ \textcolor{keywordtype}{void}\ btPersistentManifold::deSerialize(\textcolor{keyword}{const}\ \textcolor{keyword}{struct}\ \mbox{\hyperlink{structbt_persistent_manifold_double_data}{btPersistentManifoldDoubleData}}*\ manifoldDataPtr)}
+\DoxyCodeLine{00361\ \{}
+\DoxyCodeLine{00362\ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_a50035ae0f53021dbe5e95ef7b16cb9fd}{m\_contactBreakingThreshold}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a2db6fe4003c9e0fd698db9dc1ec336ff}{m\_contactBreakingThreshold}};}
+\DoxyCodeLine{00363\ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a5e6dd65e7b7af8bb7a2774c4145739f7}{m\_contactProcessingThreshold}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a176319d601b354bd1305a5b8d9488e57}{m\_contactProcessingThreshold}};}
+\DoxyCodeLine{00364\ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_ad42a5484619a3cb64345300b3cf35338}{m\_cachedPoints}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a1e5899077bf0445be09b8f09f93e99e8}{m\_numCachedPoints}};}
+\DoxyCodeLine{00365\ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_a75a76df0092ddbc024c04078344997f4}{m\_companionIdA}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_aeacf8c8ed515e06a233b2e6cfe9017f7}{m\_companionIdA}};}
+\DoxyCodeLine{00366\ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_acdc91f9b833ba0bba505cdfabe2162cf}{m\_companionIdB}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_ad1da98e63c62b33c778170fdc18c4dfa}{m\_companionIdB}};}
+\DoxyCodeLine{00367\ \ \ \ \ \textcolor{comment}{//m\_index1a\ =\ manifoldDataPtr-\/>m\_index1a;}}
+\DoxyCodeLine{00368\ \ \ \ \ m\_objectType\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_aa9e8775bccc6f406137d99f44228a0db}{m\_objectType}};}
+\DoxyCodeLine{00369\ }
+\DoxyCodeLine{00370\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ this-\/>\mbox{\hyperlink{bt_persistent_manifold_8h_aff8ffe6d8fb7fad0e7f74ad3a4f7a86c}{getNumContacts}}();\ i++)}
+\DoxyCodeLine{00371\ \ \ \ \ \{}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_manifold_point}{btManifoldPoint}}\&\ pt\ =\ m\_pointCache[i];}
+\DoxyCodeLine{00373\ }
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a850210ab7227a631fac718d3338fd2d5}{m\_appliedImpulse}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_aba7675f68d53936a8fac9ed0684b6661}{m\_pointCacheAppliedImpulse}}[i];}
+\DoxyCodeLine{00375\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_aba48482719761906a60d25dd26c10263}{m\_prevRHS}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a042ef12024ae98144576aef8ba671f3e}{m\_pointCachePrevRHS}}[i];}
+\DoxyCodeLine{00376\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_ab114afc463955b88fcb82d22aee94b0c}{m\_appliedImpulseLateral1}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a4d1b7e7b66c265ba4bf3e0c0c3610f3c}{m\_pointCacheAppliedImpulseLateral1}}[i];}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a75d1ec9bf4c90be58b9a4317a879af21}{m\_appliedImpulseLateral2}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a404e12de02bb6ad8afa9842974f85e22}{m\_pointCacheAppliedImpulseLateral2}}[i];}
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a58a8028c5de712ff0224cfde8c9e8e44}{m\_localPointA}}.deSerializeDouble(manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_afb4ea45432d2e9ad2c5d132d0b40c7d4}{m\_pointCacheLocalPointA}}[i]);}
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a6df421e6b6345cacee6b1bdd6307fe6b}{m\_localPointB}}.deSerializeDouble(manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a3b49cfceea311a74a5bc4b860a903832}{m\_pointCacheLocalPointB}}[i]);}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_ac821b226c09cd4f50009645fa932161e}{m\_normalWorldOnB}}.deSerializeDouble(manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a948627b74c299528dfca8c5c74be70bc}{m\_pointCacheNormalWorldOnB}}[i]);}
+\DoxyCodeLine{00381\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a8a42d00697733931ef82220feca0f401}{m\_distance1}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a36b24599df87ff0e403cbb6c03aa1f9a}{m\_pointCacheDistance}}[i];}
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a6e60e2c05a48611862b5dbaa7a99f97f}{m\_combinedContactDamping1}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a44400832ed5f930ef915879c93b02339}{m\_pointCacheCombinedContactDamping1}}[i];}
+\DoxyCodeLine{00383\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a4709f062044090113cd832ffa044160c}{m\_combinedContactStiffness1}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a7090688aac8474f9627193e8541370f8}{m\_pointCacheCombinedContactStiffness1}}[i];}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_ac33796d728ab7b10987937a46522ab7f}{m\_lifeTime}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a38fdfa4818af67c2ec93f5a618ae3e89}{m\_pointCacheLifeTime}}[i];}
+\DoxyCodeLine{00385\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a1c7d91a148659ee8e8f322929150bd63}{m\_frictionCFM}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_abed1b3489c5c5596fa90ff727e517d6a}{m\_pointCacheFrictionCFM}}[i];}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_adf7f5f7d52305944aa8d742d0ccfed5f}{m\_contactERP}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a818a7480d3467066f4775f38283b496b}{m\_pointCacheContactERP}}[i];}
+\DoxyCodeLine{00387\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_abd0ffc7fef25f8dfba33a261c0d89a34}{m\_contactCFM}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a9c50be8a57a613f527855abe57903c79}{m\_pointCacheContactCFM}}[i];}
+\DoxyCodeLine{00388\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a44071e7302c0444f900d46d4e1bf7439}{m\_contactPointFlags}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a31c434559659cb49e10e8484023e1d0b}{m\_pointCacheContactPointFlags}}[i];}
+\DoxyCodeLine{00389\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a6215ceaa7bd5f370872c80e4a7d46920}{m\_index0}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a75a28a3840d7fa62a490ca6a86bbd2bc}{m\_pointCacheIndex0}}[i];}
+\DoxyCodeLine{00390\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a02b2f0d3132566af7af252685578b8fb}{m\_index1}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_ae73438e8f0520225a3bc4c7a63cea410}{m\_pointCacheIndex1}}[i];}
+\DoxyCodeLine{00391\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a01ebda18c8ff80b053e0372edc717e88}{m\_partId0}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a09103361b988796ff1aca38e832d3e9a}{m\_pointCachePartId0}}[i];}
+\DoxyCodeLine{00392\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a9af10858319df4dceb3849a4c44ad321}{m\_partId1}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_abaa3544cbcd065d6a62a76572f00f94f}{m\_pointCachePartId1}}[i];}
+\DoxyCodeLine{00393\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a5fd89785a2e081dd658b15af8bedf04b}{m\_positionWorldOnA}}.deSerializeDouble(manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a4b09626cd954660f391bdc31afa06729}{m\_pointCachePositionWorldOnA}}[i]);}
+\DoxyCodeLine{00394\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_ae64702f66baa6539b56dd1f7d2f163e0}{m\_positionWorldOnB}}.deSerializeDouble(manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a0fb1c96fbf2e99555fbe1af323456578}{m\_pointCachePositionWorldOnB}}[i]);}
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_ad4ac2c484c62af1142d2aea1a3e67777}{m\_combinedFriction}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_ae8c73a87efade32fe58c2401e2596d65}{m\_pointCacheCombinedFriction}}[i];}
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_af80f9c429485467e0f7c34952e172020}{m\_lateralFrictionDir1}}.deSerializeDouble(manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a0fa3271bc5d12c5d8e9a3a4e3f42ca4b}{m\_pointCacheLateralFrictionDir1}}[i]);}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a5aedd18945719e40d141aa15011384eb}{m\_lateralFrictionDir2}}.deSerializeDouble(manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_ab30da0921514f3a87da134eff21abfbb}{m\_pointCacheLateralFrictionDir2}}[i]);}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a3e25a81eaabb31cb5caf1510da3b7946}{m\_combinedRollingFriction}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a1a912046fdfd50cf48030d741bf95fdb}{m\_pointCacheCombinedRollingFriction}}[i];}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a260d71545449c96cc2546495cbf7af11}{m\_combinedSpinningFriction}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_acf8f488d58717c209d3da4c84e1b3b20}{m\_pointCacheCombinedSpinningFriction}}[i];}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a566013cf11150ea0f268c7561eace4fd}{m\_combinedRestitution}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_abbd3f267f99e3d86b7d12eaf6f221216}{m\_pointCacheCombinedRestitution}}[i];}
+\DoxyCodeLine{00401\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_af980e3d3ddc888ea84fdb7bd9ed47a51}{m\_contactMotion1}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a8de9a8be75de5451761de770ec058d15}{m\_pointCacheContactMotion1}}[i];}
+\DoxyCodeLine{00402\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_aeb26ea44a60b91d8b87dadf02d61d05d}{m\_contactMotion2}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_double_data_a6f77d93367ee7369e4293026451d7e78}{m\_pointCacheContactMotion2}}[i];}
+\DoxyCodeLine{00403\ \ \ \ \ \}}
+\DoxyCodeLine{00404\ \}}
+\DoxyCodeLine{00405\ }
+\DoxyCodeLine{00406\ \textcolor{keywordtype}{void}\ btPersistentManifold::deSerialize(\textcolor{keyword}{const}\ \textcolor{keyword}{struct}\ \mbox{\hyperlink{structbt_persistent_manifold_float_data}{btPersistentManifoldFloatData}}*\ manifoldDataPtr)}
+\DoxyCodeLine{00407\ \{}
+\DoxyCodeLine{00408\ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_a50035ae0f53021dbe5e95ef7b16cb9fd}{m\_contactBreakingThreshold}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a5e4831ee7b2a5e82c2d7e4ab22fe6435}{m\_contactBreakingThreshold}};}
+\DoxyCodeLine{00409\ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a5e6dd65e7b7af8bb7a2774c4145739f7}{m\_contactProcessingThreshold}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_af3c529f03b75d4ffbccb7fcbfeeaed27}{m\_contactProcessingThreshold}};}
+\DoxyCodeLine{00410\ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_ad42a5484619a3cb64345300b3cf35338}{m\_cachedPoints}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a2c24d7208981a7b1fb1469f5330c1967}{m\_numCachedPoints}};}
+\DoxyCodeLine{00411\ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_a75a76df0092ddbc024c04078344997f4}{m\_companionIdA}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_aecb1b2c9fbdd788c7f2b6cedc79ac37e}{m\_companionIdA}};}
+\DoxyCodeLine{00412\ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_acdc91f9b833ba0bba505cdfabe2162cf}{m\_companionIdB}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a6eca7396eb5aae897a3cc2eb8a5f401f}{m\_companionIdB}};}
+\DoxyCodeLine{00413\ \ \ \ \ \textcolor{comment}{//m\_index1a\ =\ manifoldDataPtr-\/>m\_index1a;}}
+\DoxyCodeLine{00414\ \ \ \ \ m\_objectType\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a734bfe36db461af5ef43cf9c0ed1e277}{m\_objectType}};}
+\DoxyCodeLine{00415\ }
+\DoxyCodeLine{00416\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ this-\/>\mbox{\hyperlink{bt_persistent_manifold_8h_aff8ffe6d8fb7fad0e7f74ad3a4f7a86c}{getNumContacts}}();\ i++)}
+\DoxyCodeLine{00417\ \ \ \ \ \{}
+\DoxyCodeLine{00418\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_manifold_point}{btManifoldPoint}}\&\ pt\ =\ m\_pointCache[i];}
+\DoxyCodeLine{00419\ }
+\DoxyCodeLine{00420\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a850210ab7227a631fac718d3338fd2d5}{m\_appliedImpulse}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a1cd81017c079277e2809e37f6fe12d58}{m\_pointCacheAppliedImpulse}}[i];}
+\DoxyCodeLine{00421\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_aba48482719761906a60d25dd26c10263}{m\_prevRHS}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_aaa3b223a72702e5706e94afc52639fb2}{m\_pointCachePrevRHS}}[i];}
+\DoxyCodeLine{00422\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_ab114afc463955b88fcb82d22aee94b0c}{m\_appliedImpulseLateral1}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a1def0b2aa30c21900c89bdf640e57cfd}{m\_pointCacheAppliedImpulseLateral1}}[i];}
+\DoxyCodeLine{00423\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a75d1ec9bf4c90be58b9a4317a879af21}{m\_appliedImpulseLateral2}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a98286d3812f740e7a0d98d0be2ca0fe3}{m\_pointCacheAppliedImpulseLateral2}}[i];}
+\DoxyCodeLine{00424\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a58a8028c5de712ff0224cfde8c9e8e44}{m\_localPointA}}.deSerialize(manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_acd5aa742a28344315342f5974a5744b1}{m\_pointCacheLocalPointA}}[i]);}
+\DoxyCodeLine{00425\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a6df421e6b6345cacee6b1bdd6307fe6b}{m\_localPointB}}.deSerialize(manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a5cb9baf1152b24ab1ace1131dfcddb04}{m\_pointCacheLocalPointB}}[i]);}
+\DoxyCodeLine{00426\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_ac821b226c09cd4f50009645fa932161e}{m\_normalWorldOnB}}.deSerialize(manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a248f26212d1df5705227c61d3352264d}{m\_pointCacheNormalWorldOnB}}[i]);}
+\DoxyCodeLine{00427\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a8a42d00697733931ef82220feca0f401}{m\_distance1}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a1ba847d0d49969efb3efa7d85c6e761c}{m\_pointCacheDistance}}[i];}
+\DoxyCodeLine{00428\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a6e60e2c05a48611862b5dbaa7a99f97f}{m\_combinedContactDamping1}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a56f3559d2a9fa503d6cdbac6ea36aec6}{m\_pointCacheCombinedContactDamping1}}[i];}
+\DoxyCodeLine{00429\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a4709f062044090113cd832ffa044160c}{m\_combinedContactStiffness1}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a61c50006571da54b349a132fd91ee2e1}{m\_pointCacheCombinedContactStiffness1}}[i];}
+\DoxyCodeLine{00430\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_ac33796d728ab7b10987937a46522ab7f}{m\_lifeTime}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a3c22350563ebcd6c1f5858fe89e4cf23}{m\_pointCacheLifeTime}}[i];}
+\DoxyCodeLine{00431\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a1c7d91a148659ee8e8f322929150bd63}{m\_frictionCFM}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a655fb4040bc5b0760475790a241c3ec6}{m\_pointCacheFrictionCFM}}[i];}
+\DoxyCodeLine{00432\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_adf7f5f7d52305944aa8d742d0ccfed5f}{m\_contactERP}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a2b68b7ea9ff840fc88f19749c581a675}{m\_pointCacheContactERP}}[i];}
+\DoxyCodeLine{00433\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_abd0ffc7fef25f8dfba33a261c0d89a34}{m\_contactCFM}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_acb81c5302f8f6cb9befb78ab9a4c111b}{m\_pointCacheContactCFM}}[i];}
+\DoxyCodeLine{00434\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a44071e7302c0444f900d46d4e1bf7439}{m\_contactPointFlags}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a7c464a16bed443358dd9cfa6e05524ef}{m\_pointCacheContactPointFlags}}[i];}
+\DoxyCodeLine{00435\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a6215ceaa7bd5f370872c80e4a7d46920}{m\_index0}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a3816e02230f2dd2b913f2aeb5218f3cd}{m\_pointCacheIndex0}}[i];}
+\DoxyCodeLine{00436\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a02b2f0d3132566af7af252685578b8fb}{m\_index1}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a6f4032ae0e7df4ec7bad8632bfdc1b36}{m\_pointCacheIndex1}}[i];}
+\DoxyCodeLine{00437\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a01ebda18c8ff80b053e0372edc717e88}{m\_partId0}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a0fc7c1526cd31fd6ba10714dbbb6b645}{m\_pointCachePartId0}}[i];}
+\DoxyCodeLine{00438\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a9af10858319df4dceb3849a4c44ad321}{m\_partId1}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_af95cf0a4f00abb13934d7945e318a0a5}{m\_pointCachePartId1}}[i];}
+\DoxyCodeLine{00439\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a5fd89785a2e081dd658b15af8bedf04b}{m\_positionWorldOnA}}.deSerialize(manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_adf4dd5b3c53d1c92ddb6837340355955}{m\_pointCachePositionWorldOnA}}[i]);}
+\DoxyCodeLine{00440\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_ae64702f66baa6539b56dd1f7d2f163e0}{m\_positionWorldOnB}}.deSerialize(manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a9b8d92bb59c7b5ac63ba0b1159a7df2f}{m\_pointCachePositionWorldOnB}}[i]);}
+\DoxyCodeLine{00441\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_ad4ac2c484c62af1142d2aea1a3e67777}{m\_combinedFriction}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a58bb995ba2ab082d6d4c91212e9f38d6}{m\_pointCacheCombinedFriction}}[i];}
+\DoxyCodeLine{00442\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_af80f9c429485467e0f7c34952e172020}{m\_lateralFrictionDir1}}.deSerialize(manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_af1ce674ae79c29d6125d0da571d0f237}{m\_pointCacheLateralFrictionDir1}}[i]);}
+\DoxyCodeLine{00443\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a5aedd18945719e40d141aa15011384eb}{m\_lateralFrictionDir2}}.deSerialize(manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_afd236208f51ab71374812f423beb84eb}{m\_pointCacheLateralFrictionDir2}}[i]);}
+\DoxyCodeLine{00444\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a3e25a81eaabb31cb5caf1510da3b7946}{m\_combinedRollingFriction}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a96faa5ba77bc7c40f8ea559beb8d83c8}{m\_pointCacheCombinedRollingFriction}}[i];}
+\DoxyCodeLine{00445\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a260d71545449c96cc2546495cbf7af11}{m\_combinedSpinningFriction}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_acde55bb89376515212772c7965bd940d}{m\_pointCacheCombinedSpinningFriction}}[i];}
+\DoxyCodeLine{00446\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_a566013cf11150ea0f268c7561eace4fd}{m\_combinedRestitution}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_abcd6cbc14cbe4e37166c6f42cef31394}{m\_pointCacheCombinedRestitution}}[i];}
+\DoxyCodeLine{00447\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_af980e3d3ddc888ea84fdb7bd9ed47a51}{m\_contactMotion1}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a7745d600cf2fedf34742ae410b7b60c3}{m\_pointCacheContactMotion1}}[i];}
+\DoxyCodeLine{00448\ \ \ \ \ \ \ \ \ pt.\mbox{\hyperlink{classbt_manifold_point_aeb26ea44a60b91d8b87dadf02d61d05d}{m\_contactMotion2}}\ =\ manifoldDataPtr-\/>\mbox{\hyperlink{structbt_persistent_manifold_float_data_a5827dcd63d2f4c8a27f033e2ec3eb3fa}{m\_pointCacheContactMotion2}}[i];}
+\DoxyCodeLine{00449\ \ \ \ \ \}}
+\DoxyCodeLine{00450\ \}}
+
+\end{DoxyCode}

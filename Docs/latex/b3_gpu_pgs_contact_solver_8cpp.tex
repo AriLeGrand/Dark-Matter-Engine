@@ -1,0 +1,242 @@
+\doxysection{C\+:/\+Users/quant/source/repos/\+Dark-\/\+Matter-\/\+Engine/\+ENGINE/\+Libraries/include/\+Bullet/\+Bullet3\+Open\+CL/\+Rigid\+Body/b3\+Gpu\+Pgs\+Contact\+Solver.cpp File Reference}
+\hypertarget{b3_gpu_pgs_contact_solver_8cpp}{}\label{b3_gpu_pgs_contact_solver_8cpp}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/Bullet3OpenCL/RigidBody/b3GpuPgsContactSolver.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/Bullet3OpenCL/RigidBody/b3GpuPgsContactSolver.cpp}}
+{\ttfamily \#include "{}b3\+Gpu\+Pgs\+Contact\+Solver.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Open\+CL/\+Parallel\+Primitives/b3\+Radix\+Sort32\+CL.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Open\+CL/\+Parallel\+Primitives/b3\+Launcher\+CL.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Open\+CL/\+Parallel\+Primitives/b3\+Bound\+Search\+CL.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Open\+CL/\+Parallel\+Primitives/b3\+Prefix\+Scan\+CL.\+h"{}}\newline
+{\ttfamily \#include $<$string.\+h$>$}\newline
+{\ttfamily \#include "{}Bullet3\+Open\+CL/\+Initialize/b3\+Open\+CLUtils.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Collision/\+Narrow\+Phase\+Collision/b3\+Config.\+h"{}}\newline
+{\ttfamily \#include "{}b3\+Solver.\+h"{}}\newline
+{\ttfamily \#include "{}kernels/solver\+Setup.\+h"{}}\newline
+{\ttfamily \#include "{}kernels/solver\+Setup2.\+h"{}}\newline
+{\ttfamily \#include "{}kernels/solve\+Contact.\+h"{}}\newline
+{\ttfamily \#include "{}kernels/solve\+Friction.\+h"{}}\newline
+{\ttfamily \#include "{}kernels/batching\+Kernels.\+h"{}}\newline
+{\ttfamily \#include "{}kernels/batching\+Kernels\+New.\+h"{}}\newline
+\doxysubsubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{structb3_gpu_batching_pgs_solver_internal_data}{b3\+Gpu\+Batching\+Pgs\+Solver\+Internal\+Data}}
+\item 
+struct \mbox{\hyperlink{structb3_constraint_cfg}{b3\+Constraint\+Cfg}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a92b3220b08ddcb673503c9c277ca10ed}{B3\+\_\+\+SOLVER\+\_\+\+SETUP\+\_\+\+KERNEL\+\_\+\+PATH}}~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/solver\+Setup.\+cl"{}
+\item 
+\#define \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a65b7a3c4b6551e07a872c4c8616630d2}{B3\+\_\+\+SOLVER\+\_\+\+SETUP2\+\_\+\+KERNEL\+\_\+\+PATH}}~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/solver\+Setup2.\+cl"{}
+\item 
+\#define \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a4be23a999dffd1caafc007c0cf73c3ef}{B3\+\_\+\+SOLVER\+\_\+\+CONTACT\+\_\+\+KERNEL\+\_\+\+PATH}}~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/solve\+Contact.\+cl"{}
+\item 
+\#define \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a152ed0544191865809d6aa8668461acf}{B3\+\_\+\+SOLVER\+\_\+\+FRICTION\+\_\+\+KERNEL\+\_\+\+PATH}}~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/solve\+Friction.\+cl"{}
+\item 
+\#define \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_ac2410c4b14d3a6aa29f9f28efde59b67}{B3\+\_\+\+BATCHING\+\_\+\+PATH}}~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/batching\+Kernels.\+cl"{}
+\item 
+\#define \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a9e624388c2c239a9649db8a87b619d0d}{B3\+\_\+\+BATCHING\+\_\+\+NEW\+\_\+\+PATH}}~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/batching\+Kernels\+New.\+cl"{}
+\item 
+\#define \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a6b0dee5e8d9a8fad0e362deda59bb231}{USE\+\_\+\+SPATIAL\+\_\+\+BATCHING}}~1
+\item 
+\#define \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a779cfbb3cdb659415782cf5b31f55558}{USE\+\_\+4x4\+\_\+\+GRID}}~1
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a83fa9adf03bafb1588da6ed03eb85c45}{Set\+Sort\+Data\+CPU}} (b3\+Contact4 \texorpdfstring{$\ast$}{*}g\+Contact, \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}g\+Bodies, \mbox{\hyperlink{structb3_sort_data}{b3\+Sort\+Data}} \texorpdfstring{$\ast$}{*}g\+Sort\+Data\+Out, int n\+Contacts, float scale, const \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3\+Int4}} \&n\+Split, int static\+Idx)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+bool \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_ab3095446c64451e282dd730dfc25de82}{g\+Use\+Large\+Batches}} = false
+\item 
+bool \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a591581d8adda18d642a86eaa59be8e19}{g\+Cpu\+Batch\+Contacts}} = false
+\item 
+bool \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_aecfe71e73d75c71701ebd603e0892ccf}{g\+Cpu\+Solve\+Constraint}} = false
+\item 
+bool \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a9d3b4fad1304e4b2e6254130be6acc6c}{g\+Cpu\+Radix\+Sort}} = false
+\item 
+bool \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_affd51a4edc7e208982a88bd63aa4cfb6}{g\+Cpu\+Set\+Sort\+Data}} = false
+\item 
+bool \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a5d19c33e367e4116695ce0722bccb4a7}{g\+Cpu\+Sort\+Contacts\+Determinism}} = false
+\item 
+bool \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a843ee34eace49231988fa38bde1dbe7f}{g\+Use\+Cpu\+Copy\+Constraints}} = false
+\item 
+bool \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_ab0ab933383e83b09ba7866978bb2006a}{g\+Use\+Scan\+Host}} = false
+\item 
+bool \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a677e3a4822a059ae9f996248c0f0a4f1}{g\+Reorder\+Contacts\+On\+Cpu}} = false
+\item 
+bool \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a3cf2f27f73fb6bd57d021b159028b49a}{optional\+Sort\+Contacts\+Determinism}} = true
+\item 
+\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ unsigned int $>$ \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_aadcb13d08eb37a1cdf11786115a60e4b}{idx\+Buffer}}
+\item 
+\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_sort_data}{b3\+Sort\+Data}} $>$ \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a865ca21f7bb707942e32a96cdf911da1}{sort\+Data}}
+\item 
+\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ b3\+Contact4 $>$ \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a3d1d47f1128e61b580076648dba252b7}{old}}
+\item 
+\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_ac62ba87bf41fcf55e445009e80371346}{body\+Used2}}
+\item 
+\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_a5829d56e17a6f1378b194b452cc83ed6}{body\+Used}}
+\item 
+\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \mbox{\hyperlink{b3_gpu_pgs_contact_solver_8cpp_ac2e265a53b9f35f41f36bfed62845bf6}{cur\+Used}}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Macro Definition Documentation}
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a9e624388c2c239a9649db8a87b619d0d}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!B3\_BATCHING\_NEW\_PATH@{B3\_BATCHING\_NEW\_PATH}}
+\index{B3\_BATCHING\_NEW\_PATH@{B3\_BATCHING\_NEW\_PATH}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{B3\_BATCHING\_NEW\_PATH}{B3\_BATCHING\_NEW\_PATH}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a9e624388c2c239a9649db8a87b619d0d} 
+\#define B3\+\_\+\+BATCHING\+\_\+\+NEW\+\_\+\+PATH~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/batching\+Kernels\+New.\+cl"{}}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_ac2410c4b14d3a6aa29f9f28efde59b67}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!B3\_BATCHING\_PATH@{B3\_BATCHING\_PATH}}
+\index{B3\_BATCHING\_PATH@{B3\_BATCHING\_PATH}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{B3\_BATCHING\_PATH}{B3\_BATCHING\_PATH}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_ac2410c4b14d3a6aa29f9f28efde59b67} 
+\#define B3\+\_\+\+BATCHING\+\_\+\+PATH~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/batching\+Kernels.\+cl"{}}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a4be23a999dffd1caafc007c0cf73c3ef}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!B3\_SOLVER\_CONTACT\_KERNEL\_PATH@{B3\_SOLVER\_CONTACT\_KERNEL\_PATH}}
+\index{B3\_SOLVER\_CONTACT\_KERNEL\_PATH@{B3\_SOLVER\_CONTACT\_KERNEL\_PATH}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{B3\_SOLVER\_CONTACT\_KERNEL\_PATH}{B3\_SOLVER\_CONTACT\_KERNEL\_PATH}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a4be23a999dffd1caafc007c0cf73c3ef} 
+\#define B3\+\_\+\+SOLVER\+\_\+\+CONTACT\+\_\+\+KERNEL\+\_\+\+PATH~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/solve\+Contact.\+cl"{}}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a152ed0544191865809d6aa8668461acf}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!B3\_SOLVER\_FRICTION\_KERNEL\_PATH@{B3\_SOLVER\_FRICTION\_KERNEL\_PATH}}
+\index{B3\_SOLVER\_FRICTION\_KERNEL\_PATH@{B3\_SOLVER\_FRICTION\_KERNEL\_PATH}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{B3\_SOLVER\_FRICTION\_KERNEL\_PATH}{B3\_SOLVER\_FRICTION\_KERNEL\_PATH}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a152ed0544191865809d6aa8668461acf} 
+\#define B3\+\_\+\+SOLVER\+\_\+\+FRICTION\+\_\+\+KERNEL\+\_\+\+PATH~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/solve\+Friction.\+cl"{}}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a65b7a3c4b6551e07a872c4c8616630d2}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!B3\_SOLVER\_SETUP2\_KERNEL\_PATH@{B3\_SOLVER\_SETUP2\_KERNEL\_PATH}}
+\index{B3\_SOLVER\_SETUP2\_KERNEL\_PATH@{B3\_SOLVER\_SETUP2\_KERNEL\_PATH}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{B3\_SOLVER\_SETUP2\_KERNEL\_PATH}{B3\_SOLVER\_SETUP2\_KERNEL\_PATH}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a65b7a3c4b6551e07a872c4c8616630d2} 
+\#define B3\+\_\+\+SOLVER\+\_\+\+SETUP2\+\_\+\+KERNEL\+\_\+\+PATH~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/solver\+Setup2.\+cl"{}}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a92b3220b08ddcb673503c9c277ca10ed}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!B3\_SOLVER\_SETUP\_KERNEL\_PATH@{B3\_SOLVER\_SETUP\_KERNEL\_PATH}}
+\index{B3\_SOLVER\_SETUP\_KERNEL\_PATH@{B3\_SOLVER\_SETUP\_KERNEL\_PATH}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{B3\_SOLVER\_SETUP\_KERNEL\_PATH}{B3\_SOLVER\_SETUP\_KERNEL\_PATH}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a92b3220b08ddcb673503c9c277ca10ed} 
+\#define B3\+\_\+\+SOLVER\+\_\+\+SETUP\+\_\+\+KERNEL\+\_\+\+PATH~"{}src/Bullet3\+Open\+CL/\mbox{\hyperlink{class_rigid_body}{Rigid\+Body}}/kernels/solver\+Setup.\+cl"{}}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a779cfbb3cdb659415782cf5b31f55558}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!USE\_4x4\_GRID@{USE\_4x4\_GRID}}
+\index{USE\_4x4\_GRID@{USE\_4x4\_GRID}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{USE\_4x4\_GRID}{USE\_4x4\_GRID}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a779cfbb3cdb659415782cf5b31f55558} 
+\#define USE\+\_\+4x4\+\_\+\+GRID~1}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a6b0dee5e8d9a8fad0e362deda59bb231}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!USE\_SPATIAL\_BATCHING@{USE\_SPATIAL\_BATCHING}}
+\index{USE\_SPATIAL\_BATCHING@{USE\_SPATIAL\_BATCHING}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{USE\_SPATIAL\_BATCHING}{USE\_SPATIAL\_BATCHING}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a6b0dee5e8d9a8fad0e362deda59bb231} 
+\#define USE\+\_\+\+SPATIAL\+\_\+\+BATCHING~1}
+
+
+
+\doxysubsection{Function Documentation}
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a83fa9adf03bafb1588da6ed03eb85c45}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!SetSortDataCPU@{SetSortDataCPU}}
+\index{SetSortDataCPU@{SetSortDataCPU}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{SetSortDataCPU()}{SetSortDataCPU()}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a83fa9adf03bafb1588da6ed03eb85c45} 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} Set\+Sort\+Data\+CPU (\begin{DoxyParamCaption}\item[{b3\+Contact4 \texorpdfstring{$\ast$}{*}}]{g\+Contact}{, }\item[{\mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}}]{g\+Bodies}{, }\item[{\mbox{\hyperlink{structb3_sort_data}{b3\+Sort\+Data}} \texorpdfstring{$\ast$}{*}}]{g\+Sort\+Data\+Out}{, }\item[{int}]{n\+Contacts}{, }\item[{float}]{scale}{, }\item[{const \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3\+Int4}} \&}]{n\+Split}{, }\item[{int}]{static\+Idx}{}\end{DoxyParamCaption})}
+
+
+
+\doxysubsection{Variable Documentation}
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a5829d56e17a6f1378b194b452cc83ed6}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!bodyUsed@{bodyUsed}}
+\index{bodyUsed@{bodyUsed}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{bodyUsed}{bodyUsed}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a5829d56e17a6f1378b194b452cc83ed6} 
+\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$int$>$ body\+Used}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_ac62ba87bf41fcf55e445009e80371346}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!bodyUsed2@{bodyUsed2}}
+\index{bodyUsed2@{bodyUsed2}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{bodyUsed2}{bodyUsed2}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_ac62ba87bf41fcf55e445009e80371346} 
+\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$int$>$ body\+Used2}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_ac2e265a53b9f35f41f36bfed62845bf6}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!curUsed@{curUsed}}
+\index{curUsed@{curUsed}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{curUsed}{curUsed}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_ac2e265a53b9f35f41f36bfed62845bf6} 
+\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$int$>$ cur\+Used}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a591581d8adda18d642a86eaa59be8e19}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!gCpuBatchContacts@{gCpuBatchContacts}}
+\index{gCpuBatchContacts@{gCpuBatchContacts}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{gCpuBatchContacts}{gCpuBatchContacts}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a591581d8adda18d642a86eaa59be8e19} 
+bool g\+Cpu\+Batch\+Contacts = false}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a9d3b4fad1304e4b2e6254130be6acc6c}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!gCpuRadixSort@{gCpuRadixSort}}
+\index{gCpuRadixSort@{gCpuRadixSort}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{gCpuRadixSort}{gCpuRadixSort}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a9d3b4fad1304e4b2e6254130be6acc6c} 
+bool g\+Cpu\+Radix\+Sort = false}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_affd51a4edc7e208982a88bd63aa4cfb6}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!gCpuSetSortData@{gCpuSetSortData}}
+\index{gCpuSetSortData@{gCpuSetSortData}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{gCpuSetSortData}{gCpuSetSortData}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_affd51a4edc7e208982a88bd63aa4cfb6} 
+bool g\+Cpu\+Set\+Sort\+Data = false}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_aecfe71e73d75c71701ebd603e0892ccf}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!gCpuSolveConstraint@{gCpuSolveConstraint}}
+\index{gCpuSolveConstraint@{gCpuSolveConstraint}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{gCpuSolveConstraint}{gCpuSolveConstraint}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_aecfe71e73d75c71701ebd603e0892ccf} 
+bool g\+Cpu\+Solve\+Constraint = false}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a5d19c33e367e4116695ce0722bccb4a7}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!gCpuSortContactsDeterminism@{gCpuSortContactsDeterminism}}
+\index{gCpuSortContactsDeterminism@{gCpuSortContactsDeterminism}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{gCpuSortContactsDeterminism}{gCpuSortContactsDeterminism}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a5d19c33e367e4116695ce0722bccb4a7} 
+bool g\+Cpu\+Sort\+Contacts\+Determinism = false}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a677e3a4822a059ae9f996248c0f0a4f1}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!gReorderContactsOnCpu@{gReorderContactsOnCpu}}
+\index{gReorderContactsOnCpu@{gReorderContactsOnCpu}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{gReorderContactsOnCpu}{gReorderContactsOnCpu}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a677e3a4822a059ae9f996248c0f0a4f1} 
+bool g\+Reorder\+Contacts\+On\+Cpu = false}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a843ee34eace49231988fa38bde1dbe7f}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!gUseCpuCopyConstraints@{gUseCpuCopyConstraints}}
+\index{gUseCpuCopyConstraints@{gUseCpuCopyConstraints}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{gUseCpuCopyConstraints}{gUseCpuCopyConstraints}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a843ee34eace49231988fa38bde1dbe7f} 
+bool g\+Use\+Cpu\+Copy\+Constraints = false}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_ab3095446c64451e282dd730dfc25de82}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!gUseLargeBatches@{gUseLargeBatches}}
+\index{gUseLargeBatches@{gUseLargeBatches}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{gUseLargeBatches}{gUseLargeBatches}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_ab3095446c64451e282dd730dfc25de82} 
+bool g\+Use\+Large\+Batches = false}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_ab0ab933383e83b09ba7866978bb2006a}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!gUseScanHost@{gUseScanHost}}
+\index{gUseScanHost@{gUseScanHost}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{gUseScanHost}{gUseScanHost}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_ab0ab933383e83b09ba7866978bb2006a} 
+bool g\+Use\+Scan\+Host = false}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_aadcb13d08eb37a1cdf11786115a60e4b}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!idxBuffer@{idxBuffer}}
+\index{idxBuffer@{idxBuffer}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{idxBuffer}{idxBuffer}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_aadcb13d08eb37a1cdf11786115a60e4b} 
+\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$unsigned int$>$ idx\+Buffer}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a3d1d47f1128e61b580076648dba252b7}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!old@{old}}
+\index{old@{old}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{old}{old}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a3d1d47f1128e61b580076648dba252b7} 
+\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$b3\+Contact4$>$ old}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a3cf2f27f73fb6bd57d021b159028b49a}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!optionalSortContactsDeterminism@{optionalSortContactsDeterminism}}
+\index{optionalSortContactsDeterminism@{optionalSortContactsDeterminism}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{optionalSortContactsDeterminism}{optionalSortContactsDeterminism}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a3cf2f27f73fb6bd57d021b159028b49a} 
+bool optional\+Sort\+Contacts\+Determinism = true}
+
+\Hypertarget{b3_gpu_pgs_contact_solver_8cpp_a865ca21f7bb707942e32a96cdf911da1}\index{b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}!sortData@{sortData}}
+\index{sortData@{sortData}!b3GpuPgsContactSolver.cpp@{b3GpuPgsContactSolver.cpp}}
+\doxysubsubsection{\texorpdfstring{sortData}{sortData}}
+{\footnotesize\ttfamily \label{b3_gpu_pgs_contact_solver_8cpp_a865ca21f7bb707942e32a96cdf911da1} 
+\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$\mbox{\hyperlink{structb3_sort_data}{b3\+Sort\+Data}}$>$ sort\+Data}
+

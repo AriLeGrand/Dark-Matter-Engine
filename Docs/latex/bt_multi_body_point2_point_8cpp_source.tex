@@ -1,0 +1,221 @@
+\doxysection{bt\+Multi\+Body\+Point2\+Point.\+cpp}
+\hypertarget{bt_multi_body_point2_point_8cpp_source}{}\label{bt_multi_body_point2_point_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/Featherstone/btMultiBodyPoint2Point.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/Featherstone/btMultiBodyPoint2Point.cpp}}
+\mbox{\hyperlink{bt_multi_body_point2_point_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2013\ Erwin\ Coumans\ \ http://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,}}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,}}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_multi_body_point2_point_8h}{btMultiBodyPoint2Point.h}}"{}}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_multi_body_link_collider_8h}{btMultiBodyLinkCollider.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_rigid_body_8h}{BulletDynamics/Dynamics/btRigidBody.h}}"{}}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_i_debug_draw_8h}{LinearMath/btIDebugDraw.h}}"{}}}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#ifndef\ BTMBP2PCONSTRAINT\_BLOCK\_ANGULAR\_MOTION\_TEST}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#define\ BTMBP2PCONSTRAINT\_DIM\ 3}}
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#define\ BTMBP2PCONSTRAINT\_DIM\ 6}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ btMultiBodyPoint2Point::btMultiBodyPoint2Point(\mbox{\hyperlink{bt_multi_body_8h_a8503bd8ca5bc46619963a8800e997c37}{btMultiBody}}*\ body,\ \textcolor{keywordtype}{int}\ link,\ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*\ bodyB,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ pivotInA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ pivotInB)}
+\DoxyCodeLine{00030\ \ \ \ \ :\ \mbox{\hyperlink{bt_multi_body_constraint_8h_ad9e3b210141eb6fbe2e379f99ef2cfc6}{btMultiBodyConstraint}}(body,\ 0,\ link,\ -\/1,\ \mbox{\hyperlink{bt_multi_body_point2_point_8cpp_ad22c833e272e33f15d37f878c3096b6f}{BTMBP2PCONSTRAINT\_DIM}},\ false,\ \mbox{\hyperlink{bt_multi_body_constraint_8h_a02e478c12698ddb3d18c7d44c8104586a82eca863380feeaf0b91f5b7e00809ce}{MULTIBODY\_CONSTRAINT\_POINT\_TO\_POINT}}),}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ m\_rigidBodyA(0),}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \mbox{\hyperlink{bt_multi_body_point2_point_8h_a55296c0abe51bb888bb9b19566c49ef8}{m\_rigidBodyB}}(bodyB),}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \mbox{\hyperlink{b3_gpu_generic_constraint_8h_a0ddb92579c4fe49f1fc0257ece08addb}{m\_pivotInA}}(pivotInA),}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \mbox{\hyperlink{b3_fixed_constraint_8h_a92f88f3f8b2f6f5cce4850ad1161de2f}{m\_pivotInB}}(pivotInB)}
+\DoxyCodeLine{00035\ \{}
+\DoxyCodeLine{00036\ \ \ \ \ \mbox{\hyperlink{bt_multi_body_constraint_8h_a872c2c8ba01357425e1e3a063f281e65}{m\_data}}.resize(\mbox{\hyperlink{bt_multi_body_point2_point_8cpp_ad22c833e272e33f15d37f878c3096b6f}{BTMBP2PCONSTRAINT\_DIM}});\ \ \textcolor{comment}{//at\ least\ store\ the\ applied\ impulses}}
+\DoxyCodeLine{00037\ \}}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00039\ btMultiBodyPoint2Point::btMultiBodyPoint2Point(\mbox{\hyperlink{bt_multi_body_8h_a8503bd8ca5bc46619963a8800e997c37}{btMultiBody}}*\ bodyA,\ \textcolor{keywordtype}{int}\ linkA,\ \mbox{\hyperlink{bt_multi_body_8h_a8503bd8ca5bc46619963a8800e997c37}{btMultiBody}}*\ bodyB,\ \textcolor{keywordtype}{int}\ linkB,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ pivotInA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ pivotInB)}
+\DoxyCodeLine{00040\ \ \ \ \ :\ \mbox{\hyperlink{bt_multi_body_constraint_8h_ad9e3b210141eb6fbe2e379f99ef2cfc6}{btMultiBodyConstraint}}(bodyA,\ bodyB,\ linkA,\ linkB,\ \mbox{\hyperlink{bt_multi_body_point2_point_8cpp_ad22c833e272e33f15d37f878c3096b6f}{BTMBP2PCONSTRAINT\_DIM}},\ false,\ \mbox{\hyperlink{bt_multi_body_constraint_8h_a02e478c12698ddb3d18c7d44c8104586a82eca863380feeaf0b91f5b7e00809ce}{MULTIBODY\_CONSTRAINT\_POINT\_TO\_POINT}}),}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ m\_rigidBodyA(0),}
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \mbox{\hyperlink{bt_multi_body_point2_point_8h_a55296c0abe51bb888bb9b19566c49ef8}{m\_rigidBodyB}}(0),}
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \mbox{\hyperlink{b3_gpu_generic_constraint_8h_a0ddb92579c4fe49f1fc0257ece08addb}{m\_pivotInA}}(pivotInA),}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \mbox{\hyperlink{b3_fixed_constraint_8h_a92f88f3f8b2f6f5cce4850ad1161de2f}{m\_pivotInB}}(pivotInB)}
+\DoxyCodeLine{00045\ \{}
+\DoxyCodeLine{00046\ \ \ \ \ \mbox{\hyperlink{bt_multi_body_constraint_8h_a872c2c8ba01357425e1e3a063f281e65}{m\_data}}.resize(\mbox{\hyperlink{bt_multi_body_point2_point_8cpp_ad22c833e272e33f15d37f878c3096b6f}{BTMBP2PCONSTRAINT\_DIM}});\ \ \textcolor{comment}{//at\ least\ store\ the\ applied\ impulses}}
+\DoxyCodeLine{00047\ \}}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \textcolor{keywordtype}{void}\ btMultiBodyPoint2Point::finalizeMultiDof()}
+\DoxyCodeLine{00050\ \{}
+\DoxyCodeLine{00051\ \ \ \ \ \textcolor{comment}{//not\ implemented\ yet}}
+\DoxyCodeLine{00052\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(0);}
+\DoxyCodeLine{00053\ \}}
+\DoxyCodeLine{00054\ }
+\DoxyCodeLine{00055\ btMultiBodyPoint2Point::\string~btMultiBodyPoint2Point()}
+\DoxyCodeLine{00056\ \{}
+\DoxyCodeLine{00057\ \}}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \textcolor{keywordtype}{int}\ btMultiBodyPoint2Point::getIslandIdA()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00060\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00061\ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_rigidBodyA)}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ m\_rigidBodyA-\/>getIslandTag();}
+\DoxyCodeLine{00063\ }
+\DoxyCodeLine{00064\ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_bodyA)}
+\DoxyCodeLine{00065\ \ \ \ \ \{}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_multi_body_constraint_8h_aa110ee56b5ca349790f31d113dcc2723}{m\_linkA}}\ <\ 0)}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_multi_body_link_collider}{btMultiBodyLinkCollider}}*\ col\ =\ m\_bodyA-\/>getBaseCollider();}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (col)}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ col-\/>getIslandTag();}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_bodyA-\/>getLink(\mbox{\hyperlink{bt_multi_body_constraint_8h_aa110ee56b5ca349790f31d113dcc2723}{m\_linkA}}).m\_collider)}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ m\_bodyA-\/>getLink(\mbox{\hyperlink{bt_multi_body_constraint_8h_aa110ee56b5ca349790f31d113dcc2723}{m\_linkA}}).m\_collider-\/>getIslandTag();}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00077\ \ \ \ \ \}}
+\DoxyCodeLine{00078\ \ \ \ \ \textcolor{keywordflow}{return}\ -\/1;}
+\DoxyCodeLine{00079\ \}}
+\DoxyCodeLine{00080\ }
+\DoxyCodeLine{00081\ \textcolor{keywordtype}{int}\ btMultiBodyPoint2Point::getIslandIdB()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00082\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00083\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_multi_body_point2_point_8h_a55296c0abe51bb888bb9b19566c49ef8}{m\_rigidBodyB}})}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_multi_body_point2_point_8h_a55296c0abe51bb888bb9b19566c49ef8}{m\_rigidBodyB}}-\/>getIslandTag();}
+\DoxyCodeLine{00085\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_multi_body_constraint_8h_a9d63a50fda9d6be151b05c39bd4ebf7e}{m\_bodyB}})}
+\DoxyCodeLine{00086\ \ \ \ \ \{}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_multi_body_constraint_8h_a2526b9091fc8c89be4ea4164319571aa}{m\_linkB}}\ <\ 0)}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_multi_body_link_collider}{btMultiBodyLinkCollider}}*\ col\ =\ \mbox{\hyperlink{bt_multi_body_constraint_8h_a9d63a50fda9d6be151b05c39bd4ebf7e}{m\_bodyB}}-\/>getBaseCollider();}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (col)}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ col-\/>getIslandTag();}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_multi_body_constraint_8h_a9d63a50fda9d6be151b05c39bd4ebf7e}{m\_bodyB}}-\/>getLink(\mbox{\hyperlink{bt_multi_body_constraint_8h_a2526b9091fc8c89be4ea4164319571aa}{m\_linkB}}).m\_collider)}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_multi_body_constraint_8h_a9d63a50fda9d6be151b05c39bd4ebf7e}{m\_bodyB}}-\/>getLink(\mbox{\hyperlink{bt_multi_body_constraint_8h_a2526b9091fc8c89be4ea4164319571aa}{m\_linkB}}).m\_collider-\/>getIslandTag();}
+\DoxyCodeLine{00097\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00098\ \ \ \ \ \}}
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{keywordflow}{return}\ -\/1;}
+\DoxyCodeLine{00100\ \}}
+\DoxyCodeLine{00101\ }
+\DoxyCodeLine{00102\ \textcolor{keywordtype}{void}\ btMultiBodyPoint2Point::createConstraintRows(\mbox{\hyperlink{bt_multi_body_solver_constraint_8h_a4e3480e132bb4ed8d193d651f6715267}{btMultiBodyConstraintArray}}\&\ constraintRows,}
+\DoxyCodeLine{00103\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_multi_body_jacobian_data}{btMultiBodyJacobianData}}\&\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a0f78eecb0891cce3bdfc815b971866a1}{data}},}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_contact_solver_info}{btContactSolverInfo}}\&\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}})}
+\DoxyCodeLine{00105\ \{}
+\DoxyCodeLine{00106\ \ \ \ \ \textcolor{comment}{//\ \ int\ i=1;}}
+\DoxyCodeLine{00107\ \ \ \ \ \textcolor{keywordtype}{int}\ numDim\ =\ \mbox{\hyperlink{bt_multi_body_point2_point_8cpp_ad22c833e272e33f15d37f878c3096b6f}{BTMBP2PCONSTRAINT\_DIM}};}
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numDim;\ i++)}
+\DoxyCodeLine{00109\ \ \ \ \ \{}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_multi_body_solver_constraint_8h_a613da63f979a69fe4f1e636fe8bc3260}{btMultiBodySolverConstraint}}\&\ constraintRow\ =\ constraintRows.\mbox{\hyperlink{classbt_aligned_object_array_ab6bdca8ff3d966b2801bdab0256256f8}{expandNonInitializing}}();}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \textcolor{comment}{//memset(\&constraintRow,0xffffffff,sizeof(btMultiBodySolverConstraint));}}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ constraintRow.m\_orgConstraint\ =\ \textcolor{keyword}{this};}
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \ \ constraintRow.m\_orgDofIndex\ =\ i;}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ constraintRow.m\_relpos1CrossNormal.setValue(0,\ 0,\ 0);}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \ \ constraintRow.m\_contactNormal1.setValue(0,\ 0,\ 0);}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ constraintRow.m\_relpos2CrossNormal.setValue(0,\ 0,\ 0);}
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \ \ constraintRow.m\_contactNormal2.setValue(0,\ 0,\ 0);}
+\DoxyCodeLine{00118\ \ \ \ \ \ \ \ \ constraintRow.m\_angularComponentA.setValue(0,\ 0,\ 0);}
+\DoxyCodeLine{00119\ \ \ \ \ \ \ \ \ constraintRow.m\_angularComponentB.setValue(0,\ 0,\ 0);}
+\DoxyCodeLine{00120\ }
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ constraintRow.m\_solverBodyIdA\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a0f78eecb0891cce3bdfc815b971866a1}{data}}.m\_fixedBodyId;}
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ constraintRow.m\_solverBodyIdB\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a0f78eecb0891cce3bdfc815b971866a1}{data}}.m\_fixedBodyId;}
+\DoxyCodeLine{00123\ }
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ contactNormalOnB(0,\ 0,\ 0);}
+\DoxyCodeLine{00125\ \textcolor{preprocessor}{\#ifndef\ BTMBP2PCONSTRAINT\_BLOCK\_ANGULAR\_MOTION\_TEST}}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ contactNormalOnB[i]\ =\ -\/1;}
+\DoxyCodeLine{00127\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00128\ \ \ \ \ \ \ \ \ contactNormalOnB[i\ \%\ 3]\ =\ -\/1;}
+\DoxyCodeLine{00129\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00130\ }
+\DoxyCodeLine{00131\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Convert\ local\ points\ back\ to\ world}}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ pivotAworld\ =\ \mbox{\hyperlink{b3_gpu_generic_constraint_8h_a0ddb92579c4fe49f1fc0257ece08addb}{m\_pivotInA}};}
+\DoxyCodeLine{00133\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_rigidBodyA)}
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ \ \ \ \ constraintRow.m\_solverBodyIdA\ =\ m\_rigidBodyA-\/>getCompanionId();}
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ \ \ \ \ pivotAworld\ =\ m\_rigidBodyA-\/>getCenterOfMassTransform()\ *\ \mbox{\hyperlink{b3_gpu_generic_constraint_8h_a0ddb92579c4fe49f1fc0257ece08addb}{m\_pivotInA}};}
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00139\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_bodyA)}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ pivotAworld\ =\ m\_bodyA-\/>localPosToWorld(\mbox{\hyperlink{bt_multi_body_constraint_8h_aa110ee56b5ca349790f31d113dcc2723}{m\_linkA}},\ \mbox{\hyperlink{b3_gpu_generic_constraint_8h_a0ddb92579c4fe49f1fc0257ece08addb}{m\_pivotInA}});}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ pivotBworld\ =\ \mbox{\hyperlink{b3_fixed_constraint_8h_a92f88f3f8b2f6f5cce4850ad1161de2f}{m\_pivotInB}};}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_multi_body_point2_point_8h_a55296c0abe51bb888bb9b19566c49ef8}{m\_rigidBodyB}})}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \ \ \ \ constraintRow.m\_solverBodyIdB\ =\ \mbox{\hyperlink{bt_multi_body_point2_point_8h_a55296c0abe51bb888bb9b19566c49ef8}{m\_rigidBodyB}}-\/>getCompanionId();}
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ \ \ \ \ pivotBworld\ =\ \mbox{\hyperlink{bt_multi_body_point2_point_8h_a55296c0abe51bb888bb9b19566c49ef8}{m\_rigidBodyB}}-\/>getCenterOfMassTransform()\ *\ \mbox{\hyperlink{b3_fixed_constraint_8h_a92f88f3f8b2f6f5cce4850ad1161de2f}{m\_pivotInB}};}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_multi_body_constraint_8h_a9d63a50fda9d6be151b05c39bd4ebf7e}{m\_bodyB}})}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ pivotBworld\ =\ \mbox{\hyperlink{bt_multi_body_constraint_8h_a9d63a50fda9d6be151b05c39bd4ebf7e}{m\_bodyB}}-\/>localPosToWorld(\mbox{\hyperlink{bt_multi_body_constraint_8h_a2526b9091fc8c89be4ea4164319571aa}{m\_linkB}},\ \mbox{\hyperlink{b3_fixed_constraint_8h_a92f88f3f8b2f6f5cce4850ad1161de2f}{m\_pivotInB}});}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00154\ }
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ posError\ =\ i\ <\ 3\ ?\ (pivotAworld\ -\/\ pivotBworld).\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}(contactNormalOnB)\ :\ 0;}
+\DoxyCodeLine{00156\ }
+\DoxyCodeLine{00157\ \textcolor{preprocessor}{\#ifndef\ BTMBP2PCONSTRAINT\_BLOCK\_ANGULAR\_MOTION\_TEST}}
+\DoxyCodeLine{00158\ }
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_multi_body_constraint_8h_ab8e328f015529311a79b855e56377279}{fillMultiBodyConstraint}}(constraintRow,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a0f78eecb0891cce3bdfc815b971866a1}{data}},\ 0,\ 0,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0,\ 0,\ 0),}
+\DoxyCodeLine{00160\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ contactNormalOnB,\ pivotAworld,\ pivotBworld,\ \ \textcolor{comment}{//sucks\ but\ let\ it\ be\ this\ way\ "{}for\ the\ time\ being"{}}}
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ posError,}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}},}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ -\/m\_maxAppliedImpulse,\ m\_maxAppliedImpulse);}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \textcolor{comment}{//@todo:\ support\ the\ case\ of\ btMultiBody\ versus\ btRigidBody,}}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ \textcolor{comment}{//see\ btPoint2PointConstraint::getInfo2NonVirtual}}
+\DoxyCodeLine{00166\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ dummy(0,\ 0,\ 0);}
+\DoxyCodeLine{00168\ }
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(m\_bodyA-\/>isMultiDof());}
+\DoxyCodeLine{00170\ }
+\DoxyCodeLine{00171\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}*\ jac1\ =\ \mbox{\hyperlink{bt_multi_body_constraint_8h_ad5f59110a4e99227330563122a5a3a5d}{jacobianA}}(i);}
+\DoxyCodeLine{00172\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ normalAng\ =\ i\ >=\ 3\ ?\ contactNormalOnB\ :\ dummy;}
+\DoxyCodeLine{00173\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ normalLin\ =\ i\ <\ 3\ ?\ contactNormalOnB\ :\ dummy;}
+\DoxyCodeLine{00174\ }
+\DoxyCodeLine{00175\ \ \ \ \ \ \ \ \ m\_bodyA-\/>filConstraintJacobianMultiDof(\mbox{\hyperlink{bt_multi_body_constraint_8h_aa110ee56b5ca349790f31d113dcc2723}{m\_linkA}},\ pivotAworld,\ normalAng,\ normalLin,\ jac1,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a0f78eecb0891cce3bdfc815b971866a1}{data}}.scratch\_r,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a0f78eecb0891cce3bdfc815b971866a1}{data}}.scratch\_v,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a0f78eecb0891cce3bdfc815b971866a1}{data}}.scratch\_m);}
+\DoxyCodeLine{00176\ }
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_multi_body_constraint_8h_ab8e328f015529311a79b855e56377279}{fillMultiBodyConstraint}}(constraintRow,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a0f78eecb0891cce3bdfc815b971866a1}{data}},\ jac1,\ 0,}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ dummy,\ dummy,\ dummy,\ \ \textcolor{comment}{//sucks\ but\ let\ it\ be\ this\ way\ "{}for\ the\ time\ being"{}}}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ posError,}
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ac20389276c153b99e54fa17341cfe420}{infoGlobal}},}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ -\/m\_maxAppliedImpulse,\ m\_maxAppliedImpulse);}
+\DoxyCodeLine{00182\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00183\ \ \ \ \ \}}
+\DoxyCodeLine{00184\ \}}
+\DoxyCodeLine{00185\ }
+\DoxyCodeLine{00186\ \textcolor{keywordtype}{void}\ btMultiBodyPoint2Point::debugDraw(\textcolor{keyword}{class}\ \mbox{\hyperlink{classbt_i_debug_draw}{btIDebugDraw}}*\ drawer)}
+\DoxyCodeLine{00187\ \{}
+\DoxyCodeLine{00188\ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ tr;}
+\DoxyCodeLine{00189\ \ \ \ \ tr.setIdentity();}
+\DoxyCodeLine{00190\ }
+\DoxyCodeLine{00191\ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_rigidBodyA)}
+\DoxyCodeLine{00192\ \ \ \ \ \{}
+\DoxyCodeLine{00193\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ pivot\ =\ m\_rigidBodyA-\/>getCenterOfMassTransform()\ *\ \mbox{\hyperlink{b3_gpu_generic_constraint_8h_a0ddb92579c4fe49f1fc0257ece08addb}{m\_pivotInA}};}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ tr.setOrigin(pivot);}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ drawer-\/>\mbox{\hyperlink{classbt_i_debug_draw_a6faa8214eebc450104325b6833448b1e}{drawTransform}}(tr,\ 0.1);}
+\DoxyCodeLine{00196\ \ \ \ \ \}}
+\DoxyCodeLine{00197\ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_bodyA)}
+\DoxyCodeLine{00198\ \ \ \ \ \{}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ pivotAworld\ =\ m\_bodyA-\/>localPosToWorld(\mbox{\hyperlink{bt_multi_body_constraint_8h_aa110ee56b5ca349790f31d113dcc2723}{m\_linkA}},\ \mbox{\hyperlink{b3_gpu_generic_constraint_8h_a0ddb92579c4fe49f1fc0257ece08addb}{m\_pivotInA}});}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ tr.setOrigin(pivotAworld);}
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \ \ drawer-\/>\mbox{\hyperlink{classbt_i_debug_draw_a6faa8214eebc450104325b6833448b1e}{drawTransform}}(tr,\ 0.1);}
+\DoxyCodeLine{00202\ \ \ \ \ \}}
+\DoxyCodeLine{00203\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_multi_body_point2_point_8h_a55296c0abe51bb888bb9b19566c49ef8}{m\_rigidBodyB}})}
+\DoxyCodeLine{00204\ \ \ \ \ \{}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ that\ ideally\ should\ draw\ the\ same\ frame}}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ pivot\ =\ \mbox{\hyperlink{bt_multi_body_point2_point_8h_a55296c0abe51bb888bb9b19566c49ef8}{m\_rigidBodyB}}-\/>getCenterOfMassTransform()\ *\ \mbox{\hyperlink{b3_fixed_constraint_8h_a92f88f3f8b2f6f5cce4850ad1161de2f}{m\_pivotInB}};}
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ tr.setOrigin(pivot);}
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ drawer-\/>\mbox{\hyperlink{classbt_i_debug_draw_a6faa8214eebc450104325b6833448b1e}{drawTransform}}(tr,\ 0.1);}
+\DoxyCodeLine{00209\ \ \ \ \ \}}
+\DoxyCodeLine{00210\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_multi_body_constraint_8h_a9d63a50fda9d6be151b05c39bd4ebf7e}{m\_bodyB}})}
+\DoxyCodeLine{00211\ \ \ \ \ \{}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ pivotBworld\ =\ \mbox{\hyperlink{bt_multi_body_constraint_8h_a9d63a50fda9d6be151b05c39bd4ebf7e}{m\_bodyB}}-\/>localPosToWorld(\mbox{\hyperlink{bt_multi_body_constraint_8h_a2526b9091fc8c89be4ea4164319571aa}{m\_linkB}},\ \mbox{\hyperlink{b3_fixed_constraint_8h_a92f88f3f8b2f6f5cce4850ad1161de2f}{m\_pivotInB}});}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ tr.setOrigin(pivotBworld);}
+\DoxyCodeLine{00214\ \ \ \ \ \ \ \ \ drawer-\/>\mbox{\hyperlink{classbt_i_debug_draw_a6faa8214eebc450104325b6833448b1e}{drawTransform}}(tr,\ 0.1);}
+\DoxyCodeLine{00215\ \ \ \ \ \}}
+\DoxyCodeLine{00216\ \}}
+
+\end{DoxyCode}

@@ -1,0 +1,129 @@
+\doxysection{b3\+Bvh\+Traversal.\+h}
+\hypertarget{b3_bvh_traversal_8h_source}{}\label{b3_bvh_traversal_8h_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/Bullet3Collision/NarrowPhaseCollision/shared/b3BvhTraversal.h@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/Bullet3Collision/NarrowPhaseCollision/shared/b3BvhTraversal.h}}
+\mbox{\hyperlink{b3_bvh_traversal_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ }
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_int4_8h}{Bullet3Common/shared/b3Int4.h}}"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_rigid_body_data_8h}{Bullet3Collision/NarrowPhaseCollision/shared/b3RigidBodyData.h}}"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_collidable_8h}{Bullet3Collision/NarrowPhaseCollision/shared/b3Collidable.h}}"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_aabb_8h}{Bullet3Collision/BroadPhaseCollision/shared/b3Aabb.h}}"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_bvh_subtree_info_data_8h}{Bullet3Collision/NarrowPhaseCollision/shared/b3BvhSubtreeInfoData.h}}"{}}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{b3_quantized_bvh_node_data_8h}{Bullet3Collision/NarrowPhaseCollision/shared/b3QuantizedBvhNodeData.h}}"{}}}
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{comment}{//\ work-\/in-\/progress}}
+\DoxyCodeLine{00011\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{b3_bvh_traversal_8h_a9401ff55550424ed971e83856bde5f7a}{b3BvhTraversal}}(\_\_global\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3Int4}}*\ pairs,}
+\DoxyCodeLine{00012\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \_\_global\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structb3_rigid_body_data}{b3RigidBodyData}}*\ rigidBodies,}
+\DoxyCodeLine{00013\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \_\_global\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structb3_collidable}{b3Collidable}}*\ collidables,}
+\DoxyCodeLine{00014\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \_\_global\ \mbox{\hyperlink{structb3_aabb}{b3Aabb}}*\ aabbs,}
+\DoxyCodeLine{00015\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \_\_global\ \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3Int4}}*\ concavePairsOut,}
+\DoxyCodeLine{00016\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \_\_global\ \textcolor{keyword}{volatile}\ \textcolor{keywordtype}{int}*\ numConcavePairsOut,}
+\DoxyCodeLine{00017\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \_\_global\ \textcolor{keyword}{const}\ \mbox{\hyperlink{b3_quantized_bvh_8h_a03e2ef5394bdd4fc7b7e0c1c85e7475c}{b3BvhSubtreeInfo}}*\ subtreeHeadersRoot,}
+\DoxyCodeLine{00018\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \_\_global\ \textcolor{keyword}{const}\ b3QuantizedBvhNode*\ quantizedNodesRoot,}
+\DoxyCodeLine{00019\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \_\_global\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structb3_bvh_info}{b3BvhInfo}}*\ bvhInfos,}
+\DoxyCodeLine{00020\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numPairs,}
+\DoxyCodeLine{00021\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ maxNumConcavePairsCapacity,}
+\DoxyCodeLine{00022\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \textcolor{keywordtype}{id})}
+\DoxyCodeLine{00023\ \{}
+\DoxyCodeLine{00024\ \ \ \ \ \textcolor{keywordtype}{int}\ bodyIndexA\ =\ pairs[\mbox{\hyperlink{glad_8h_a58c2a664503e14ffb8f21012aabff3e9}{id}}].x;}
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{keywordtype}{int}\ bodyIndexB\ =\ pairs[\mbox{\hyperlink{glad_8h_a58c2a664503e14ffb8f21012aabff3e9}{id}}].y;}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keywordtype}{int}\ collidableIndexA\ =\ rigidBodies[bodyIndexA].m\_collidableIdx;}
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{keywordtype}{int}\ collidableIndexB\ =\ rigidBodies[bodyIndexB].m\_collidableIdx;}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{comment}{//once\ the\ broadphase\ avoids\ static-\/static\ pairs,\ we\ can\ remove\ this\ test}}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keywordflow}{if}\ ((rigidBodies[bodyIndexA].\mbox{\hyperlink{b3_solver_body_8h_acc37c43d930d1eb4a5278fe016f10631}{m\_invMass}}\ ==\ 0)\ \&\&\ (rigidBodies[bodyIndexB].\mbox{\hyperlink{b3_solver_body_8h_acc37c43d930d1eb4a5278fe016f10631}{m\_invMass}}\ ==\ 0))}
+\DoxyCodeLine{00031\ \ \ \ \ \{}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00033\ \ \ \ \ \}}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keywordflow}{if}\ (collidables[collidableIndexA].m\_shapeType\ !=\ \mbox{\hyperlink{b3_collidable_8h_a406768cc924ff0d32815aa114530d9deabcbee233ddcd2638c49c243f067f8e8b}{SHAPE\_CONCAVE\_TRIMESH}})}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{keywordtype}{int}\ shapeTypeB\ =\ collidables[collidableIndexB].m\_shapeType;}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00040\ \ \ \ \ \textcolor{keywordflow}{if}\ (shapeTypeB\ !=\ \mbox{\hyperlink{b3_collidable_8h_a406768cc924ff0d32815aa114530d9dea224a468602d9d9186afe615058ca4526}{SHAPE\_CONVEX\_HULL}}\ \&\&}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ shapeTypeB\ !=\ \mbox{\hyperlink{b3_collidable_8h_a406768cc924ff0d32815aa114530d9deac7a9839306104e6733f1adc2bb66274b}{SHAPE\_SPHERE}}\ \&\&}
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \ \ shapeTypeB\ !=\ \mbox{\hyperlink{b3_collidable_8h_a406768cc924ff0d32815aa114530d9dea6ac4b50ce136d5864840040df369259c}{SHAPE\_COMPOUND\_OF\_CONVEX\_HULLS}})}
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \ \ \ \ \mbox{\hyperlink{structb3_bvh_info}{b3BvhInfo}}\ bvhInfo\ =\ bvhInfos[collidables[collidableIndexA].m\_numChildShapes];}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \ \ \ \ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3Float4}}\ bvhAabbMin\ =\ bvhInfo.\mbox{\hyperlink{structb3_bvh_info_a789c1d9cc85c9e48eaa27842360d91e2}{m\_aabbMin}};}
+\DoxyCodeLine{00048\ \ \ \ \ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3Float4}}\ bvhAabbMax\ =\ bvhInfo.\mbox{\hyperlink{structb3_bvh_info_a5b3f14fcb0dd64b8aea75c6775f0babd}{m\_aabbMax}};}
+\DoxyCodeLine{00049\ \ \ \ \ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3Float4}}\ bvhQuantization\ =\ bvhInfo.\mbox{\hyperlink{structb3_bvh_info_ac6a9e679f2384a88fc05af5d29210696}{m\_quantization}};}
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{keywordtype}{int}\ numSubtreeHeaders\ =\ bvhInfo.\mbox{\hyperlink{structb3_bvh_info_a62fa90e63e925398cd766af670e7b68b}{m\_numSubTrees}};}
+\DoxyCodeLine{00051\ \ \ \ \ \_\_global\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structb3_bvh_subtree_info_data}{b3BvhSubtreeInfoData}}*\ subtreeHeaders\ =\ \&subtreeHeadersRoot[bvhInfo.\mbox{\hyperlink{structb3_bvh_info_a390a9bfff15f72a50111b2615379048f}{m\_subTreeOffset}}];}
+\DoxyCodeLine{00052\ \ \ \ \ \_\_global\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structb3_quantized_bvh_node_data}{b3QuantizedBvhNodeData}}*\ quantizedNodes\ =\ \&quantizedNodesRoot[bvhInfo.\mbox{\hyperlink{structb3_bvh_info_a6f8373e544bf1465022aac1968fa4f11}{m\_nodeOffset}}];}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00054\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}\ quantizedQueryAabbMin[3];}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}\ quantizedQueryAabbMax[3];}
+\DoxyCodeLine{00056\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_node_data_8h_a615312b5c97f8b4f4c0feda811eb63ff}{b3QuantizeWithClamp}}(quantizedQueryAabbMin,\ aabbs[bodyIndexB].m\_minVec,\ \textcolor{keyword}{false},\ bvhAabbMin,\ bvhAabbMax,\ bvhQuantization);}
+\DoxyCodeLine{00057\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_node_data_8h_a615312b5c97f8b4f4c0feda811eb63ff}{b3QuantizeWithClamp}}(quantizedQueryAabbMax,\ aabbs[bodyIndexB].m\_maxVec,\ \textcolor{keyword}{true},\ bvhAabbMin,\ bvhAabbMax,\ bvhQuantization);}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numSubtreeHeaders;\ i++)}
+\DoxyCodeLine{00060\ \ \ \ \ \{}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structb3_bvh_subtree_info_data}{b3BvhSubtreeInfoData}}\ subtree\ =\ subtreeHeaders[i];}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ overlap\ =\ \mbox{\hyperlink{b3_quantized_bvh_node_data_8h_ac5068119569a896ba552ae261f5770e8}{b3TestQuantizedAabbAgainstQuantizedAabbSlow}}(quantizedQueryAabbMin,\ quantizedQueryAabbMax,\ subtree.\mbox{\hyperlink{structb3_bvh_subtree_info_data_ae8887d4d086d6e2b51bf9adab3eb95f3}{m\_quantizedAabbMin}},\ subtree.\mbox{\hyperlink{structb3_bvh_subtree_info_data_a33c6ef7f77fa875956ed012391bc5c47}{m\_quantizedAabbMax}});}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (overlap\ !=\ 0)}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ startNodeIndex\ =\ subtree.\mbox{\hyperlink{structb3_bvh_subtree_info_data_a759fcf6767048800cc6621598f52d99f}{m\_rootNodeIndex}};}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ endNodeIndex\ =\ subtree.\mbox{\hyperlink{structb3_bvh_subtree_info_data_a759fcf6767048800cc6621598f52d99f}{m\_rootNodeIndex}}\ +\ subtree.\mbox{\hyperlink{structb3_bvh_subtree_info_data_a02fcd13e198fac4d6f500dbe58935e43}{m\_subtreeSize}};}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ curIndex\ =\ startNodeIndex;}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ escapeIndex;}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}};}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ aabbOverlap;}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (curIndex\ <\ endNodeIndex)}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structb3_quantized_bvh_node_data}{b3QuantizedBvhNodeData}}\ rootNode\ =\ quantizedNodes[curIndex];}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ aabbOverlap\ =\ \mbox{\hyperlink{b3_quantized_bvh_node_data_8h_ac5068119569a896ba552ae261f5770e8}{b3TestQuantizedAabbAgainstQuantizedAabbSlow}}(quantizedQueryAabbMin,\ quantizedQueryAabbMax,\ rootNode.\mbox{\hyperlink{structb3_quantized_bvh_node_data_ad5b02544ca7e5aa9f3ee70d4010467bc}{m\_quantizedAabbMin}},\ rootNode.\mbox{\hyperlink{structb3_quantized_bvh_node_data_a9656ecedb669e0dfe5124f8b1fffb7ee}{m\_quantizedAabbMax}});}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}\ =\ \mbox{\hyperlink{b3_quantized_bvh_node_data_8h_a6fb6dcbb7a6a61da0ba9f830c6680647}{b3IsLeaf}}(\&rootNode);}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (aabbOverlap)}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}})}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00081\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ triangleIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_node_data_8h_ad43d927f54779f019903e0fb689305d2}{b3GetTriangleIndex}}(\&rootNode);}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (shapeTypeB\ ==\ \mbox{\hyperlink{b3_collidable_8h_a406768cc924ff0d32815aa114530d9dea6ac4b50ce136d5864840040df369259c}{SHAPE\_COMPOUND\_OF\_CONVEX\_HULLS}})}
+\DoxyCodeLine{00083\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numChildrenB\ =\ collidables[collidableIndexB].m\_numChildShapes;}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ pairIdx\ =\ \mbox{\hyperlink{b3_platform_definitions_8h_a739ef4af28b5ca75039dc45655986f38}{b3AtomicAdd}}(numConcavePairsOut,\ numChildrenB);}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}\ =\ 0;\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}\ <\ numChildrenB;\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}++)}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((pairIdx\ +\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}})\ <\ maxNumConcavePairsCapacity)}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ childShapeIndexB\ =\ collidables[collidableIndexB].m\_shapeIndex\ +\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}};}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3Int4}}\ newPair\ =\ \mbox{\hyperlink{b3_int4_8h_af2330dff4b1a516d3a3b04d16fa5b9f9}{b3MakeInt4}}(bodyIndexA,\ bodyIndexB,\ triangleIndex,\ childShapeIndexB);}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ concavePairsOut[pairIdx\ +\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}]\ =\ newPair;}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00097\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00098\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ pairIdx\ =\ \mbox{\hyperlink{b3_platform_definitions_8h_ae73cc9dae6a0ae2f592eb5bf06875f9a}{b3AtomicInc}}(numConcavePairsOut);}
+\DoxyCodeLine{00099\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (pairIdx\ <\ maxNumConcavePairsCapacity)}
+\DoxyCodeLine{00100\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00101\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3Int4}}\ newPair\ =\ \mbox{\hyperlink{b3_int4_8h_af2330dff4b1a516d3a3b04d16fa5b9f9}{b3MakeInt4}}(bodyIndexA,\ bodyIndexB,\ triangleIndex,\ 0);}
+\DoxyCodeLine{00102\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ concavePairsOut[pairIdx]\ =\ newPair;}
+\DoxyCodeLine{00103\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00105\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00106\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ curIndex++;}
+\DoxyCodeLine{00107\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00108\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}})}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ curIndex++;}
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ escapeIndex\ =\ \mbox{\hyperlink{b3_quantized_bvh_node_data_8h_ab463a028e32da48961a7e8a503a1b925}{b3GetEscapeIndex}}(\&rootNode);}
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ curIndex\ +=\ escapeIndex;}
+\DoxyCodeLine{00118\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00119\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00122\ \ \ \ \ \}}
+\DoxyCodeLine{00123\ \}}
+
+\end{DoxyCode}

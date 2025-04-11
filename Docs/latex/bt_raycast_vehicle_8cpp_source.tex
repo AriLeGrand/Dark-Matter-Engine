@@ -1,0 +1,714 @@
+\doxysection{bt\+Raycast\+Vehicle.\+cpp}
+\hypertarget{bt_raycast_vehicle_8cpp_source}{}\label{bt_raycast_vehicle_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/Vehicle/btRaycastVehicle.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/Vehicle/btRaycastVehicle.cpp}}
+\mbox{\hyperlink{bt_raycast_vehicle_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{\ *\ Copyright\ (c)\ 2005\ Erwin\ Coumans\ https://bulletphysics.org}}
+\DoxyCodeLine{00003\ \textcolor{comment}{\ *}}
+\DoxyCodeLine{00004\ \textcolor{comment}{\ *\ Permission\ to\ use,\ copy,\ modify,\ distribute\ and\ sell\ this\ software}}
+\DoxyCodeLine{00005\ \textcolor{comment}{\ *\ and\ its\ documentation\ for\ any\ purpose\ is\ hereby\ granted\ without\ fee,}}
+\DoxyCodeLine{00006\ \textcolor{comment}{\ *\ provided\ that\ the\ above\ copyright\ notice\ appear\ in\ all\ copies.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{\ *\ Erwin\ Coumans\ makes\ no\ representations\ about\ the\ suitability\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{\ *\ of\ this\ software\ for\ any\ purpose.\ \ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{\ *\ It\ is\ provided\ "{}as\ is"{}\ without\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00010\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_vector3_8h}{LinearMath/btVector3.h}}"{}}}
+\DoxyCodeLine{00013\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_raycast_vehicle_8h}{btRaycastVehicle.h}}"{}}}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_solve2_linear_constraint_8h}{BulletDynamics/ConstraintSolver/btSolve2LinearConstraint.h}}"{}}}
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_jacobian_entry_8h}{BulletDynamics/ConstraintSolver/btJacobianEntry.h}}"{}}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_quaternion_8h}{LinearMath/btQuaternion.h}}"{}}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_dynamics_world_8h}{BulletDynamics/Dynamics/btDynamicsWorld.h}}"{}}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_vehicle_raycaster_8h}{btVehicleRaycaster.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_wheel_info_8h}{btWheelInfo.h}}"{}}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_min_max_8h}{LinearMath/btMinMax.h}}"{}}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_i_debug_draw_8h}{LinearMath/btIDebugDraw.h}}"{}}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_contact_constraint_8h}{BulletDynamics/ConstraintSolver/btContactConstraint.h}}"{}}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#define\ ROLLING\_INFLUENCE\_FIX}}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}\&\ \mbox{\hyperlink{classbt_action_interface_a4a1b027efbb978fa346eaa5bdc0877a7}{btActionInterface::getFixedBody}}()}
+\DoxyCodeLine{00028\ \{}
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{keyword}{static}\ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}\ s\_fixed(0,\ 0,\ 0);}
+\DoxyCodeLine{00030\ \ \ \ \ s\_fixed.\mbox{\hyperlink{classbt_rigid_body_a912b4a273bcd6fe9af25c47106db900c}{setMassProps}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.)));}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keywordflow}{return}\ s\_fixed;}
+\DoxyCodeLine{00032\ \}}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00034\ \mbox{\hyperlink{classbt_raycast_vehicle_a7dd285cde99f2fb2b6c6a38ff4e4e151}{btRaycastVehicle::btRaycastVehicle}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_raycast_vehicle_1_1bt_vehicle_tuning}{btVehicleTuning}}\&\ tuning,\ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*\ chassis,\ \mbox{\hyperlink{structbt_vehicle_raycaster}{btVehicleRaycaster}}*\ raycaster)}
+\DoxyCodeLine{00035\ \ \ \ \ :\ m\_vehicleRaycaster(raycaster),}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ m\_pitchControl(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.))}
+\DoxyCodeLine{00037\ \{}
+\DoxyCodeLine{00038\ \ \ \ \ m\_chassisBody\ =\ chassis;}
+\DoxyCodeLine{00039\ \ \ \ \ m\_indexRightAxis\ =\ 0;}
+\DoxyCodeLine{00040\ \ \ \ \ m\_indexUpAxis\ =\ 2;}
+\DoxyCodeLine{00041\ \ \ \ \ m\_indexForwardAxis\ =\ 1;}
+\DoxyCodeLine{00042\ \ \ \ \ defaultInit(tuning);}
+\DoxyCodeLine{00043\ \}}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \textcolor{keywordtype}{void}\ btRaycastVehicle::defaultInit(\textcolor{keyword}{const}\ btVehicleTuning\&\ tuning)}
+\DoxyCodeLine{00046\ \{}
+\DoxyCodeLine{00047\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})tuning;}
+\DoxyCodeLine{00048\ \ \ \ \ m\_currentVehicleSpeedKmHour\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00049\ \ \ \ \ m\_steeringValue\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00050\ \}}
+\DoxyCodeLine{00051\ }
+\DoxyCodeLine{00052\ \mbox{\hyperlink{classbt_raycast_vehicle_a70ab06862163d795a030a57507252cfe}{btRaycastVehicle::\string~btRaycastVehicle}}()}
+\DoxyCodeLine{00053\ \{}
+\DoxyCodeLine{00054\ \}}
+\DoxyCodeLine{00055\ }
+\DoxyCodeLine{00056\ \textcolor{comment}{//}}
+\DoxyCodeLine{00057\ \textcolor{comment}{//\ basically\ most\ of\ the\ code\ is\ general\ for\ 2\ or\ 4\ wheel\ vehicles,\ but\ some\ of\ it\ needs\ to\ be\ reviewed}}
+\DoxyCodeLine{00058\ \textcolor{comment}{//}}
+\DoxyCodeLine{00059\ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ \mbox{\hyperlink{classbt_raycast_vehicle_ab553ee172346b9cea796abd56ba12a40}{btRaycastVehicle::addWheel}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ connectionPointCS,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ wheelDirectionCS0,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ wheelAxleCS,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ suspensionRestLength,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ wheelRadius,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_raycast_vehicle_1_1bt_vehicle_tuning}{btVehicleTuning}}\&\ tuning,\ \textcolor{keywordtype}{bool}\ isFrontWheel)}
+\DoxyCodeLine{00060\ \{}
+\DoxyCodeLine{00061\ \ \ \ \ \mbox{\hyperlink{structbt_wheel_info_construction_info}{btWheelInfoConstructionInfo}}\ ci;}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ \ \ \ \ ci.\mbox{\hyperlink{structbt_wheel_info_construction_info_ace9733519c81df42d2362231ec68eaae}{m\_chassisConnectionCS}}\ =\ connectionPointCS;}
+\DoxyCodeLine{00064\ \ \ \ \ ci.\mbox{\hyperlink{structbt_wheel_info_construction_info_a37851da19fce1c3ef01c65ec60ea7154}{m\_wheelDirectionCS}}\ =\ wheelDirectionCS0;}
+\DoxyCodeLine{00065\ \ \ \ \ ci.\mbox{\hyperlink{structbt_wheel_info_construction_info_a35f8baf5ada324e7d60e3a3b51d17e00}{m\_wheelAxleCS}}\ =\ wheelAxleCS;}
+\DoxyCodeLine{00066\ \ \ \ \ ci.\mbox{\hyperlink{structbt_wheel_info_construction_info_a0a57ff5c5688b689a766583e058c8183}{m\_suspensionRestLength}}\ =\ suspensionRestLength;}
+\DoxyCodeLine{00067\ \ \ \ \ ci.\mbox{\hyperlink{structbt_wheel_info_construction_info_a762cacf6a7c9892039a55ae1a35d4833}{m\_wheelRadius}}\ =\ wheelRadius;}
+\DoxyCodeLine{00068\ \ \ \ \ ci.\mbox{\hyperlink{structbt_wheel_info_construction_info_ac7fa423c96deb5101767072cea14341e}{m\_suspensionStiffness}}\ =\ tuning.\mbox{\hyperlink{classbt_raycast_vehicle_1_1bt_vehicle_tuning_a95560af1a353c41a311441bcf0c0dd38}{m\_suspensionStiffness}};}
+\DoxyCodeLine{00069\ \ \ \ \ ci.\mbox{\hyperlink{structbt_wheel_info_construction_info_a5b277a9060b3a47d93eb09321c62dce2}{m\_wheelsDampingCompression}}\ =\ tuning.\mbox{\hyperlink{classbt_raycast_vehicle_1_1bt_vehicle_tuning_af8b5697271ca760bcb8cd2ab9fd42c8e}{m\_suspensionCompression}};}
+\DoxyCodeLine{00070\ \ \ \ \ ci.\mbox{\hyperlink{structbt_wheel_info_construction_info_a136b8c0f9f9833ef2ac7fc9c7d0f3ba8}{m\_wheelsDampingRelaxation}}\ =\ tuning.\mbox{\hyperlink{classbt_raycast_vehicle_1_1bt_vehicle_tuning_ac7c48576a8b149379d9c6c004728c1e6}{m\_suspensionDamping}};}
+\DoxyCodeLine{00071\ \ \ \ \ ci.\mbox{\hyperlink{structbt_wheel_info_construction_info_a61c12acb2dccbc0c75952b0ffa454c56}{m\_frictionSlip}}\ =\ tuning.\mbox{\hyperlink{classbt_raycast_vehicle_1_1bt_vehicle_tuning_a10be267c88447f74f0333e0191afb9f3}{m\_frictionSlip}};}
+\DoxyCodeLine{00072\ \ \ \ \ ci.\mbox{\hyperlink{structbt_wheel_info_construction_info_a4cf8c234ad9f54fbc8a9acb6ac61adcb}{m\_bIsFrontWheel}}\ =\ isFrontWheel;}
+\DoxyCodeLine{00073\ \ \ \ \ ci.\mbox{\hyperlink{structbt_wheel_info_construction_info_abc6f20187127b76600a6abec4e070c3d}{m\_maxSuspensionTravelCm}}\ =\ tuning.\mbox{\hyperlink{classbt_raycast_vehicle_1_1bt_vehicle_tuning_a789f463dd10e87e5b99d3eaffbcf3de5}{m\_maxSuspensionTravelCm}};}
+\DoxyCodeLine{00074\ \ \ \ \ ci.\mbox{\hyperlink{structbt_wheel_info_construction_info_a6396b75a9bd205c6aead692cdba2a316}{m\_maxSuspensionForce}}\ =\ tuning.\mbox{\hyperlink{classbt_raycast_vehicle_1_1bt_vehicle_tuning_a9a0b62ea981354a0de93912e776f2487}{m\_maxSuspensionForce}};}
+\DoxyCodeLine{00075\ }
+\DoxyCodeLine{00076\ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}.push\_back(\mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}(ci));}
+\DoxyCodeLine{00077\ }
+\DoxyCodeLine{00078\ \ \ \ \ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ wheel\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[\mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}()\ -\/\ 1];}
+\DoxyCodeLine{00079\ }
+\DoxyCodeLine{00080\ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_a097dff14b09869992c4c2ced984305b3}{updateWheelTransformsWS}}(wheel,\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00081\ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_adf67ae421334225c886c3dc4c12fe1f2}{updateWheelTransform}}(\mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}()\ -\/\ 1,\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00082\ \ \ \ \ \textcolor{keywordflow}{return}\ wheel;}
+\DoxyCodeLine{00083\ \}}
+\DoxyCodeLine{00084\ }
+\DoxyCodeLine{00085\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ \mbox{\hyperlink{classbt_raycast_vehicle_a30e803d12dbeb049ce7174dda04afbdc}{btRaycastVehicle::getWheelTransformWS}}(\textcolor{keywordtype}{int}\ wheelIndex)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00086\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00087\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(wheelIndex\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}());}
+\DoxyCodeLine{00088\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ wheel\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[wheelIndex];}
+\DoxyCodeLine{00089\ \ \ \ \ \textcolor{keywordflow}{return}\ wheel.\mbox{\hyperlink{structbt_wheel_info_acdf5fe66004c026e297d96a371ebc598}{m\_worldTransform}};}
+\DoxyCodeLine{00090\ \}}
+\DoxyCodeLine{00091\ }
+\DoxyCodeLine{00092\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_raycast_vehicle_adf67ae421334225c886c3dc4c12fe1f2}{btRaycastVehicle::updateWheelTransform}}(\textcolor{keywordtype}{int}\ wheelIndex,\ \textcolor{keywordtype}{bool}\ interpolatedTransform)}
+\DoxyCodeLine{00093\ \{}
+\DoxyCodeLine{00094\ \ \ \ \ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ wheel\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[wheelIndex];}
+\DoxyCodeLine{00095\ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_a097dff14b09869992c4c2ced984305b3}{updateWheelTransformsWS}}(wheel,\ interpolatedTransform);}
+\DoxyCodeLine{00096\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ up\ =\ -\/wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a533049ce1763d2f53e7063d96f406271}{m\_wheelDirectionWS}};}
+\DoxyCodeLine{00097\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ right\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a0e4312377529bd15f081a2af9cc02b22}{m\_wheelAxleWS}};}
+\DoxyCodeLine{00098\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ fwd\ =\ up.cross(right);}
+\DoxyCodeLine{00099\ \ \ \ \ fwd\ =\ fwd.normalize();}
+\DoxyCodeLine{00100\ \ \ \ \ \textcolor{comment}{//\ \ up\ =\ right.cross(fwd);}}
+\DoxyCodeLine{00101\ \ \ \ \ \textcolor{comment}{//\ \ up.normalize();}}
+\DoxyCodeLine{00102\ }
+\DoxyCodeLine{00103\ \ \ \ \ \textcolor{comment}{//rotate\ around\ steering\ over\ de\ wheelAxleWS}}
+\DoxyCodeLine{00104\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ steering\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_a88078127452fb67055486bcf2ce0dcf1}{m\_steering}};}
+\DoxyCodeLine{00105\ }
+\DoxyCodeLine{00106\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\ steeringOrn(up,\ steering);\ \ \textcolor{comment}{//wheel.m\_steering);}}
+\DoxyCodeLine{00107\ \ \ \ \ \mbox{\hyperlink{bt_matrix3x3_8h_a8789e58a469e9c671c351d681306b4d7}{btMatrix3x3}}\ steeringMat(steeringOrn);}
+\DoxyCodeLine{00108\ }
+\DoxyCodeLine{00109\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\ rotatingOrn(right,\ -\/wheel.\mbox{\hyperlink{structbt_wheel_info_a7b1d466dcadc5f0974dc47ccfb75f59a}{m\_rotation}});}
+\DoxyCodeLine{00110\ \ \ \ \ \mbox{\hyperlink{bt_matrix3x3_8h_a8789e58a469e9c671c351d681306b4d7}{btMatrix3x3}}\ rotatingMat(rotatingOrn);}
+\DoxyCodeLine{00111\ }
+\DoxyCodeLine{00112\ \ \ \ \ \mbox{\hyperlink{bt_matrix3x3_8h_a8789e58a469e9c671c351d681306b4d7}{btMatrix3x3}}\ basis2;}
+\DoxyCodeLine{00113\ \ \ \ \ basis2[0][m\_indexRightAxis]\ =\ -\/right[0];}
+\DoxyCodeLine{00114\ \ \ \ \ basis2[1][m\_indexRightAxis]\ =\ -\/right[1];}
+\DoxyCodeLine{00115\ \ \ \ \ basis2[2][m\_indexRightAxis]\ =\ -\/right[2];}
+\DoxyCodeLine{00116\ }
+\DoxyCodeLine{00117\ \ \ \ \ basis2[0][m\_indexUpAxis]\ =\ up[0];}
+\DoxyCodeLine{00118\ \ \ \ \ basis2[1][m\_indexUpAxis]\ =\ up[1];}
+\DoxyCodeLine{00119\ \ \ \ \ basis2[2][m\_indexUpAxis]\ =\ up[2];}
+\DoxyCodeLine{00120\ }
+\DoxyCodeLine{00121\ \ \ \ \ basis2[0][m\_indexForwardAxis]\ =\ fwd[0];}
+\DoxyCodeLine{00122\ \ \ \ \ basis2[1][m\_indexForwardAxis]\ =\ fwd[1];}
+\DoxyCodeLine{00123\ \ \ \ \ basis2[2][m\_indexForwardAxis]\ =\ fwd[2];}
+\DoxyCodeLine{00124\ }
+\DoxyCodeLine{00125\ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_acdf5fe66004c026e297d96a371ebc598}{m\_worldTransform}}.setBasis(steeringMat\ *\ rotatingMat\ *\ basis2);}
+\DoxyCodeLine{00126\ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_acdf5fe66004c026e297d96a371ebc598}{m\_worldTransform}}.setOrigin(}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a830900f74e600cceb69359c7ad3f2a91}{m\_hardPointWS}}\ +\ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a533049ce1763d2f53e7063d96f406271}{m\_wheelDirectionWS}}\ *\ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1445bf7ab2e44074441aab67201b1ba1}{m\_suspensionLength}});}
+\DoxyCodeLine{00128\ \}}
+\DoxyCodeLine{00129\ }
+\DoxyCodeLine{00130\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_raycast_vehicle_a327f031abd00d7bee5546b7602d7fd6b}{btRaycastVehicle::resetSuspension}}()}
+\DoxyCodeLine{00131\ \{}
+\DoxyCodeLine{00132\ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00133\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}.size();\ i++)}
+\DoxyCodeLine{00134\ \ \ \ \ \{}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ wheel\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[i];}
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1445bf7ab2e44074441aab67201b1ba1}{m\_suspensionLength}}\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_a64c4160c12675ed8ac9cdbdb53fa5f55}{getSuspensionRestLength}}();}
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ab370ba1508dd6c40425fb5b8d4fb4cc4}{m\_suspensionRelativeVelocity}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0);}
+\DoxyCodeLine{00138\ }
+\DoxyCodeLine{00139\ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_adc58f3c5e33effc66e5053ab7dbac97e}{m\_contactNormalWS}}\ =\ -\/wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a533049ce1763d2f53e7063d96f406271}{m\_wheelDirectionWS}};}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ \textcolor{comment}{//wheel\_info.setContactFriction(btScalar(0.0));}}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_a160cbd3f2dceb766194638e49f55bf8f}{m\_clippedInvContactDotSuspension}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0);}
+\DoxyCodeLine{00142\ \ \ \ \ \}}
+\DoxyCodeLine{00143\ \}}
+\DoxyCodeLine{00144\ }
+\DoxyCodeLine{00145\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_raycast_vehicle_a097dff14b09869992c4c2ced984305b3}{btRaycastVehicle::updateWheelTransformsWS}}(\mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ wheel,\ \textcolor{keywordtype}{bool}\ interpolatedTransform)}
+\DoxyCodeLine{00146\ \{}
+\DoxyCodeLine{00147\ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a29c172936558437da29af8fef741afda}{m\_isInContact}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00148\ }
+\DoxyCodeLine{00149\ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ chassisTrans\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_acb7cdc79f160663bc7b0122bae2f4090}{getChassisWorldTransform}}();}
+\DoxyCodeLine{00150\ \ \ \ \ \textcolor{keywordflow}{if}\ (interpolatedTransform\ \&\&\ (\mbox{\hyperlink{classbt_raycast_vehicle_a2dde575375b9de897b415809c0120fbf}{getRigidBody}}()-\/>getMotionState()))}
+\DoxyCodeLine{00151\ \ \ \ \ \{}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_a2dde575375b9de897b415809c0120fbf}{getRigidBody}}()-\/>\mbox{\hyperlink{classbt_rigid_body_a846b8176ab46729aa01e37ff289cd6ee}{getMotionState}}()-\/>\mbox{\hyperlink{classbt_motion_state_a5d30ed64161a4f36fe2affc3d3501412}{getWorldTransform}}(chassisTrans);}
+\DoxyCodeLine{00153\ \ \ \ \ \}}
+\DoxyCodeLine{00154\ }
+\DoxyCodeLine{00155\ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a830900f74e600cceb69359c7ad3f2a91}{m\_hardPointWS}}\ =\ chassisTrans(wheel.\mbox{\hyperlink{structbt_wheel_info_a9f687488242322590a95687868d8a411}{m\_chassisConnectionPointCS}});}
+\DoxyCodeLine{00156\ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a533049ce1763d2f53e7063d96f406271}{m\_wheelDirectionWS}}\ =\ chassisTrans.getBasis()\ *\ wheel.\mbox{\hyperlink{structbt_wheel_info_a5b9feca7a6d901e0418129e565f47623}{m\_wheelDirectionCS}};}
+\DoxyCodeLine{00157\ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a0e4312377529bd15f081a2af9cc02b22}{m\_wheelAxleWS}}\ =\ chassisTrans.getBasis()\ *\ wheel.\mbox{\hyperlink{structbt_wheel_info_aabf212ac6dd020d9ded6fcb647c35523}{m\_wheelAxleCS}};}
+\DoxyCodeLine{00158\ \}}
+\DoxyCodeLine{00159\ }
+\DoxyCodeLine{00160\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_raycast_vehicle_a53451c4e3495561f3f078b2041ef04be}{btRaycastVehicle::rayCast}}(\mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ wheel)}
+\DoxyCodeLine{00161\ \{}
+\DoxyCodeLine{00162\ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_a097dff14b09869992c4c2ced984305b3}{updateWheelTransformsWS}}(wheel,\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00163\ }
+\DoxyCodeLine{00164\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{glad_8h_a2aa5ce5567a58e4da543ce468fb1711a}{depth}}\ =\ -\/1;}
+\DoxyCodeLine{00165\ }
+\DoxyCodeLine{00166\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ raylen\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_a64c4160c12675ed8ac9cdbdb53fa5f55}{getSuspensionRestLength}}()\ +\ wheel.\mbox{\hyperlink{structbt_wheel_info_a96d9d2f181b20598bdaa58cb79e65b0f}{m\_wheelsRadius}};}
+\DoxyCodeLine{00167\ }
+\DoxyCodeLine{00168\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ rayvector\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a533049ce1763d2f53e7063d96f406271}{m\_wheelDirectionWS}}\ *\ (raylen);}
+\DoxyCodeLine{00169\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ \mbox{\hyperlink{glad_8h_a6ffd2192cbc75d017665e95207ee36a7}{source}}\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a830900f74e600cceb69359c7ad3f2a91}{m\_hardPointWS}};}
+\DoxyCodeLine{00170\ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1ceb3b86560dbc522c2ae561d391f862}{m\_contactPointWS}}\ =\ \mbox{\hyperlink{glad_8h_a6ffd2192cbc75d017665e95207ee36a7}{source}}\ +\ rayvector;}
+\DoxyCodeLine{00171\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ \mbox{\hyperlink{glad_8h_af9d0cbbbeb7414e786c41899e5a856d7}{target}}\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1ceb3b86560dbc522c2ae561d391f862}{m\_contactPointWS}};}
+\DoxyCodeLine{00172\ }
+\DoxyCodeLine{00173\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a630cfbd3157b61ef7097600d4b7885b7}{param}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00174\ }
+\DoxyCodeLine{00175\ \ \ \ \ \mbox{\hyperlink{structbt_vehicle_raycaster_1_1bt_vehicle_raycaster_result}{btVehicleRaycaster::btVehicleRaycasterResult}}\ rayResults;}
+\DoxyCodeLine{00176\ }
+\DoxyCodeLine{00177\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(m\_vehicleRaycaster);}
+\DoxyCodeLine{00178\ }
+\DoxyCodeLine{00179\ \ \ \ \ \textcolor{keywordtype}{void}*\ \textcolor{keywordtype}{object}\ =\ m\_vehicleRaycaster-\/>castRay(\mbox{\hyperlink{glad_8h_a6ffd2192cbc75d017665e95207ee36a7}{source}},\ \mbox{\hyperlink{glad_8h_af9d0cbbbeb7414e786c41899e5a856d7}{target}},\ rayResults);}
+\DoxyCodeLine{00180\ }
+\DoxyCodeLine{00181\ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_aa660acf5de607b62263165e010f531cc}{m\_groundObject}}\ =\ 0;}
+\DoxyCodeLine{00182\ }
+\DoxyCodeLine{00183\ \ \ \ \ \textcolor{keywordflow}{if}\ (\textcolor{keywordtype}{object})}
+\DoxyCodeLine{00184\ \ \ \ \ \{}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a630cfbd3157b61ef7097600d4b7885b7}{param}}\ =\ rayResults.\mbox{\hyperlink{structbt_vehicle_raycaster_1_1bt_vehicle_raycaster_result_a3365bc5454d1c213342eb654d9e9f679}{m\_distFraction}};}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_a2aa5ce5567a58e4da543ce468fb1711a}{depth}}\ =\ raylen\ *\ rayResults.\mbox{\hyperlink{structbt_vehicle_raycaster_1_1bt_vehicle_raycaster_result_a3365bc5454d1c213342eb654d9e9f679}{m\_distFraction}};}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_adc58f3c5e33effc66e5053ab7dbac97e}{m\_contactNormalWS}}\ =\ rayResults.\mbox{\hyperlink{structbt_vehicle_raycaster_1_1bt_vehicle_raycaster_result_a7bae9a60b535b4a13a61faca33fe4381}{m\_hitNormalInWorld}};}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a29c172936558437da29af8fef741afda}{m\_isInContact}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00189\ }
+\DoxyCodeLine{00190\ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_aa660acf5de607b62263165e010f531cc}{m\_groundObject}}\ =\ \&\mbox{\hyperlink{classbt_action_interface_a4a1b027efbb978fa346eaa5bdc0877a7}{getFixedBody}}();\ \ }
+\DoxyCodeLine{00191\ \ \ \ \ \ \ \ \ \textcolor{comment}{//wheel.m\_raycastInfo.m\_groundObject\ =\ object;}}
+\DoxyCodeLine{00192\ }
+\DoxyCodeLine{00193\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ hitDistance\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a630cfbd3157b61ef7097600d4b7885b7}{param}}\ *\ raylen;}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1445bf7ab2e44074441aab67201b1ba1}{m\_suspensionLength}}\ =\ hitDistance\ -\/\ wheel.\mbox{\hyperlink{structbt_wheel_info_a96d9d2f181b20598bdaa58cb79e65b0f}{m\_wheelsRadius}};}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ \textcolor{comment}{//clamp\ on\ max\ suspension\ travel}}
+\DoxyCodeLine{00196\ }
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ minSuspensionLength\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_a64c4160c12675ed8ac9cdbdb53fa5f55}{getSuspensionRestLength}}()\ -\/\ wheel.\mbox{\hyperlink{structbt_wheel_info_a81c29a33875c0db7cbe17481d030d905}{m\_maxSuspensionTravelCm}}\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.01);}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxSuspensionLength\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_a64c4160c12675ed8ac9cdbdb53fa5f55}{getSuspensionRestLength}}()\ +\ wheel.\mbox{\hyperlink{structbt_wheel_info_a81c29a33875c0db7cbe17481d030d905}{m\_maxSuspensionTravelCm}}\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.01);}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1445bf7ab2e44074441aab67201b1ba1}{m\_suspensionLength}}\ <\ minSuspensionLength)}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1445bf7ab2e44074441aab67201b1ba1}{m\_suspensionLength}}\ =\ minSuspensionLength;}
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1445bf7ab2e44074441aab67201b1ba1}{m\_suspensionLength}}\ >\ maxSuspensionLength)}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1445bf7ab2e44074441aab67201b1ba1}{m\_suspensionLength}}\ =\ maxSuspensionLength;}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00207\ }
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1ceb3b86560dbc522c2ae561d391f862}{m\_contactPointWS}}\ =\ rayResults.\mbox{\hyperlink{structbt_vehicle_raycaster_1_1bt_vehicle_raycaster_result_aa524cc6ed69db849b5b4f8887114bb9b}{m\_hitPointInWorld}};}
+\DoxyCodeLine{00209\ }
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ denominator\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_adc58f3c5e33effc66e5053ab7dbac97e}{m\_contactNormalWS}}.dot(wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a533049ce1763d2f53e7063d96f406271}{m\_wheelDirectionWS}});}
+\DoxyCodeLine{00211\ }
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ chassis\_velocity\_at\_contactPoint;}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ relpos\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1ceb3b86560dbc522c2ae561d391f862}{m\_contactPointWS}}\ -\/\ \mbox{\hyperlink{classbt_raycast_vehicle_a2dde575375b9de897b415809c0120fbf}{getRigidBody}}()-\/>\mbox{\hyperlink{classbt_rigid_body_a954761eb557c1707ffab51d40e4e32e2}{getCenterOfMassPosition}}();}
+\DoxyCodeLine{00214\ }
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ chassis\_velocity\_at\_contactPoint\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_a2dde575375b9de897b415809c0120fbf}{getRigidBody}}()-\/>\mbox{\hyperlink{classbt_rigid_body_a1b4cd79f5c8ad9161737742eea9470f5}{getVelocityInLocalPoint}}(relpos);}
+\DoxyCodeLine{00216\ }
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ projVel\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_adc58f3c5e33effc66e5053ab7dbac97e}{m\_contactNormalWS}}.dot(chassis\_velocity\_at\_contactPoint);}
+\DoxyCodeLine{00218\ }
+\DoxyCodeLine{00219\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (denominator\ >=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/0.1))}
+\DoxyCodeLine{00220\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00221\ \ \ \ \ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ab370ba1508dd6c40425fb5b8d4fb4cc4}{m\_suspensionRelativeVelocity}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0);}
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_a160cbd3f2dceb766194638e49f55bf8f}{m\_clippedInvContactDotSuspension}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0)\ /\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.1);}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ inv\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/1.)\ /\ denominator;}
+\DoxyCodeLine{00227\ \ \ \ \ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ab370ba1508dd6c40425fb5b8d4fb4cc4}{m\_suspensionRelativeVelocity}}\ =\ projVel\ *\ inv;}
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_a160cbd3f2dceb766194638e49f55bf8f}{m\_clippedInvContactDotSuspension}}\ =\ inv;}
+\DoxyCodeLine{00229\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00230\ \ \ \ \ \}}
+\DoxyCodeLine{00231\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00232\ \ \ \ \ \{}
+\DoxyCodeLine{00233\ \ \ \ \ \ \ \ \ \textcolor{comment}{//put\ wheel\ info\ as\ in\ rest\ position}}
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1445bf7ab2e44074441aab67201b1ba1}{m\_suspensionLength}}\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_a64c4160c12675ed8ac9cdbdb53fa5f55}{getSuspensionRestLength}}();}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ab370ba1508dd6c40425fb5b8d4fb4cc4}{m\_suspensionRelativeVelocity}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0);}
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_adc58f3c5e33effc66e5053ab7dbac97e}{m\_contactNormalWS}}\ =\ -\/wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a533049ce1763d2f53e7063d96f406271}{m\_wheelDirectionWS}};}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_a160cbd3f2dceb766194638e49f55bf8f}{m\_clippedInvContactDotSuspension}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0);}
+\DoxyCodeLine{00238\ \ \ \ \ \}}
+\DoxyCodeLine{00239\ }
+\DoxyCodeLine{00240\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{glad_8h_a2aa5ce5567a58e4da543ce468fb1711a}{depth}};}
+\DoxyCodeLine{00241\ \}}
+\DoxyCodeLine{00242\ }
+\DoxyCodeLine{00243\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ \mbox{\hyperlink{classbt_raycast_vehicle_acb7cdc79f160663bc7b0122bae2f4090}{btRaycastVehicle::getChassisWorldTransform}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00244\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00245\ \ \ \ \ \textcolor{comment}{/*if\ (getRigidBody()-\/>getMotionState())}}
+\DoxyCodeLine{00246\ \textcolor{comment}{\ \ \ \ \{}}
+\DoxyCodeLine{00247\ \textcolor{comment}{\ \ \ \ \ \ \ \ btTransform\ chassisWorldTrans;}}
+\DoxyCodeLine{00248\ \textcolor{comment}{\ \ \ \ \ \ \ \ getRigidBody()-\/>getMotionState()-\/>getWorldTransform(chassisWorldTrans);}}
+\DoxyCodeLine{00249\ \textcolor{comment}{\ \ \ \ \ \ \ \ return\ chassisWorldTrans;}}
+\DoxyCodeLine{00250\ \textcolor{comment}{\ \ \ \ \}}}
+\DoxyCodeLine{00251\ \textcolor{comment}{\ \ \ \ */}}
+\DoxyCodeLine{00252\ }
+\DoxyCodeLine{00253\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_raycast_vehicle_a2dde575375b9de897b415809c0120fbf}{getRigidBody}}()-\/>\mbox{\hyperlink{classbt_rigid_body_a716f7165f523eed046cb85c08925680d}{getCenterOfMassTransform}}();}
+\DoxyCodeLine{00254\ \}}
+\DoxyCodeLine{00255\ }
+\DoxyCodeLine{00256\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_raycast_vehicle_a9c7597378358b8f4609aa87090116014}{btRaycastVehicle::updateVehicle}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ step)}
+\DoxyCodeLine{00257\ \{}
+\DoxyCodeLine{00258\ \ \ \ \ \{}
+\DoxyCodeLine{00259\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}();\ i++)}
+\DoxyCodeLine{00260\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_adf67ae421334225c886c3dc4c12fe1f2}{updateWheelTransform}}(i,\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00263\ \ \ \ \ \}}
+\DoxyCodeLine{00264\ }
+\DoxyCodeLine{00265\ \ \ \ \ m\_currentVehicleSpeedKmHour\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(3.6)\ *\ \mbox{\hyperlink{classbt_raycast_vehicle_a2dde575375b9de897b415809c0120fbf}{getRigidBody}}()-\/>\mbox{\hyperlink{classbt_rigid_body_afc3ccd35cc7ab958b448f69189bc5342}{getLinearVelocity}}().length();}
+\DoxyCodeLine{00266\ }
+\DoxyCodeLine{00267\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ chassisTrans\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_acb7cdc79f160663bc7b0122bae2f4090}{getChassisWorldTransform}}();}
+\DoxyCodeLine{00268\ }
+\DoxyCodeLine{00269\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ forwardW(}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \ \ chassisTrans.getBasis()[0][m\_indexForwardAxis],}
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \ \ chassisTrans.getBasis()[1][m\_indexForwardAxis],}
+\DoxyCodeLine{00272\ \ \ \ \ \ \ \ \ chassisTrans.getBasis()[2][m\_indexForwardAxis]);}
+\DoxyCodeLine{00273\ }
+\DoxyCodeLine{00274\ \ \ \ \ \textcolor{keywordflow}{if}\ (forwardW.dot(\mbox{\hyperlink{classbt_raycast_vehicle_a2dde575375b9de897b415809c0120fbf}{getRigidBody}}()-\/>\mbox{\hyperlink{bt_kinematic_character_controller_8h_a04206c27904aaf5124292c29cf06018d}{getLinearVelocity}}())\ <\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.))}
+\DoxyCodeLine{00275\ \ \ \ \ \{}
+\DoxyCodeLine{00276\ \ \ \ \ \ \ \ \ m\_currentVehicleSpeedKmHour\ *=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/1.);}
+\DoxyCodeLine{00277\ \ \ \ \ \}}
+\DoxyCodeLine{00278\ }
+\DoxyCodeLine{00279\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00280\ \ \ \ \ \textcolor{comment}{//\ simulate\ suspension}}
+\DoxyCodeLine{00281\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00282\ }
+\DoxyCodeLine{00283\ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ 0;}
+\DoxyCodeLine{00284\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}.size();\ i++)}
+\DoxyCodeLine{00285\ \ \ \ \ \{}
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \textcolor{comment}{//btScalar\ depth;}}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ \textcolor{comment}{//depth\ =}}
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_a53451c4e3495561f3f078b2041ef04be}{rayCast}}(\mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[i]);}
+\DoxyCodeLine{00289\ \ \ \ \ \}}
+\DoxyCodeLine{00290\ }
+\DoxyCodeLine{00291\ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_a6be582b77af41d8ad50369d30882776d}{updateSuspension}}(step);}
+\DoxyCodeLine{00292\ }
+\DoxyCodeLine{00293\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}.size();\ i++)}
+\DoxyCodeLine{00294\ \ \ \ \ \{}
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ \textcolor{comment}{//apply\ suspension\ force}}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ wheel\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[i];}
+\DoxyCodeLine{00297\ }
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ suspensionForce\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_a892ec97b81ecc90e4884439aa22815f7}{m\_wheelsSuspensionForce}};}
+\DoxyCodeLine{00299\ }
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (suspensionForce\ >\ wheel.\mbox{\hyperlink{structbt_wheel_info_a77e9b0fb8f3d48972e97e7becf3a81a6}{m\_maxSuspensionForce}})}
+\DoxyCodeLine{00301\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ \ \ \ \ suspensionForce\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_a77e9b0fb8f3d48972e97e7becf3a81a6}{m\_maxSuspensionForce}};}
+\DoxyCodeLine{00303\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ impulse\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_adc58f3c5e33effc66e5053ab7dbac97e}{m\_contactNormalWS}}\ *\ suspensionForce\ *\ step;}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ relpos\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1ceb3b86560dbc522c2ae561d391f862}{m\_contactPointWS}}\ -\/\ \mbox{\hyperlink{classbt_raycast_vehicle_a2dde575375b9de897b415809c0120fbf}{getRigidBody}}()-\/>\mbox{\hyperlink{classbt_rigid_body_a954761eb557c1707ffab51d40e4e32e2}{getCenterOfMassPosition}}();}
+\DoxyCodeLine{00306\ }
+\DoxyCodeLine{00307\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_a2dde575375b9de897b415809c0120fbf}{getRigidBody}}()-\/>\mbox{\hyperlink{classbt_rigid_body_a8274f89d9e6b8fe945282797bd25f377}{applyImpulse}}(impulse,\ relpos);}
+\DoxyCodeLine{00308\ \ \ \ \ \}}
+\DoxyCodeLine{00309\ }
+\DoxyCodeLine{00310\ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_a074131752aafd9bf75b5c05411439de3}{updateFriction}}(step);}
+\DoxyCodeLine{00311\ }
+\DoxyCodeLine{00312\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}.size();\ i++)}
+\DoxyCodeLine{00313\ \ \ \ \ \{}
+\DoxyCodeLine{00314\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ wheel\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[i];}
+\DoxyCodeLine{00315\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ relpos\ =\ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a830900f74e600cceb69359c7ad3f2a91}{m\_hardPointWS}}\ -\/\ \mbox{\hyperlink{classbt_raycast_vehicle_a2dde575375b9de897b415809c0120fbf}{getRigidBody}}()-\/>\mbox{\hyperlink{classbt_rigid_body_a954761eb557c1707ffab51d40e4e32e2}{getCenterOfMassPosition}}();}
+\DoxyCodeLine{00316\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vel\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_a2dde575375b9de897b415809c0120fbf}{getRigidBody}}()-\/>\mbox{\hyperlink{classbt_rigid_body_a1b4cd79f5c8ad9161737742eea9470f5}{getVelocityInLocalPoint}}(relpos);}
+\DoxyCodeLine{00317\ }
+\DoxyCodeLine{00318\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a29c172936558437da29af8fef741afda}{m\_isInContact}})}
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00320\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ chassisWorldTransform\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_acb7cdc79f160663bc7b0122bae2f4090}{getChassisWorldTransform}}();}
+\DoxyCodeLine{00321\ }
+\DoxyCodeLine{00322\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ fwd(}
+\DoxyCodeLine{00323\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ chassisWorldTransform.getBasis()[0][m\_indexForwardAxis],}
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ chassisWorldTransform.getBasis()[1][m\_indexForwardAxis],}
+\DoxyCodeLine{00325\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ chassisWorldTransform.getBasis()[2][m\_indexForwardAxis]);}
+\DoxyCodeLine{00326\ }
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ proj\ =\ fwd.dot(wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_adc58f3c5e33effc66e5053ab7dbac97e}{m\_contactNormalWS}});}
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ \ \ \ \ fwd\ -\/=\ wheel.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_adc58f3c5e33effc66e5053ab7dbac97e}{m\_contactNormalWS}}\ *\ proj;}
+\DoxyCodeLine{00329\ }
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ proj2\ =\ fwd.dot(vel);}
+\DoxyCodeLine{00331\ }
+\DoxyCodeLine{00332\ \ \ \ \ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_abe9d7d4fac64c5117cdadf92d0fe5715}{m\_deltaRotation}}\ =\ (proj2\ *\ step)\ /\ (wheel.\mbox{\hyperlink{structbt_wheel_info_a96d9d2f181b20598bdaa58cb79e65b0f}{m\_wheelsRadius}});}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_a7b1d466dcadc5f0974dc47ccfb75f59a}{m\_rotation}}\ +=\ wheel.\mbox{\hyperlink{structbt_wheel_info_abe9d7d4fac64c5117cdadf92d0fe5715}{m\_deltaRotation}};}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_a7b1d466dcadc5f0974dc47ccfb75f59a}{m\_rotation}}\ +=\ wheel.\mbox{\hyperlink{structbt_wheel_info_abe9d7d4fac64c5117cdadf92d0fe5715}{m\_deltaRotation}};}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00339\ }
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \ \ wheel.\mbox{\hyperlink{structbt_wheel_info_abe9d7d4fac64c5117cdadf92d0fe5715}{m\_deltaRotation}}\ *=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.99);\ \ \textcolor{comment}{//damping\ of\ rotation\ when\ not\ in\ contact}}
+\DoxyCodeLine{00341\ \ \ \ \ \}}
+\DoxyCodeLine{00342\ \}}
+\DoxyCodeLine{00343\ }
+\DoxyCodeLine{00344\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_raycast_vehicle_afbbaf96eadb808cea4102b696abd4649}{btRaycastVehicle::setSteeringValue}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ steering,\ \textcolor{keywordtype}{int}\ wheel)}
+\DoxyCodeLine{00345\ \{}
+\DoxyCodeLine{00346\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(wheel\ >=\ 0\ \&\&\ wheel\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}());}
+\DoxyCodeLine{00347\ }
+\DoxyCodeLine{00348\ \ \ \ \ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ wheelInfo\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_aeb29696567a0ad447f1d769f1b3b8e75}{getWheelInfo}}(wheel);}
+\DoxyCodeLine{00349\ \ \ \ \ wheelInfo.\mbox{\hyperlink{structbt_wheel_info_a88078127452fb67055486bcf2ce0dcf1}{m\_steering}}\ =\ steering;}
+\DoxyCodeLine{00350\ \}}
+\DoxyCodeLine{00351\ }
+\DoxyCodeLine{00352\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_raycast_vehicle_a61c029ffd3bec9c8404022ed20dd6264}{btRaycastVehicle::getSteeringValue}}(\textcolor{keywordtype}{int}\ wheel)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00353\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00354\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_raycast_vehicle_aeb29696567a0ad447f1d769f1b3b8e75}{getWheelInfo}}(wheel).\mbox{\hyperlink{structbt_wheel_info_a88078127452fb67055486bcf2ce0dcf1}{m\_steering}};}
+\DoxyCodeLine{00355\ \}}
+\DoxyCodeLine{00356\ }
+\DoxyCodeLine{00357\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_raycast_vehicle_aafe6f81794ec7ad1ce900bdca2facb92}{btRaycastVehicle::applyEngineForce}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ force,\ \textcolor{keywordtype}{int}\ wheel)}
+\DoxyCodeLine{00358\ \{}
+\DoxyCodeLine{00359\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(wheel\ >=\ 0\ \&\&\ wheel\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}());}
+\DoxyCodeLine{00360\ \ \ \ \ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ wheelInfo\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_aeb29696567a0ad447f1d769f1b3b8e75}{getWheelInfo}}(wheel);}
+\DoxyCodeLine{00361\ \ \ \ \ wheelInfo.\mbox{\hyperlink{structbt_wheel_info_af89880607da34de2dd42bffa99a4ad0c}{m\_engineForce}}\ =\ force;}
+\DoxyCodeLine{00362\ \}}
+\DoxyCodeLine{00363\ }
+\DoxyCodeLine{00364\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ \mbox{\hyperlink{classbt_raycast_vehicle_aeb29696567a0ad447f1d769f1b3b8e75}{btRaycastVehicle::getWheelInfo}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}})\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00365\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00366\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}((\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}\ >=\ 0)\ \&\&\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}()));}
+\DoxyCodeLine{00367\ }
+\DoxyCodeLine{00368\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}];}
+\DoxyCodeLine{00369\ \}}
+\DoxyCodeLine{00370\ }
+\DoxyCodeLine{00371\ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ \mbox{\hyperlink{classbt_raycast_vehicle_aeb29696567a0ad447f1d769f1b3b8e75}{btRaycastVehicle::getWheelInfo}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}})}
+\DoxyCodeLine{00372\ \{}
+\DoxyCodeLine{00373\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}((\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}\ >=\ 0)\ \&\&\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}()));}
+\DoxyCodeLine{00374\ }
+\DoxyCodeLine{00375\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}];}
+\DoxyCodeLine{00376\ \}}
+\DoxyCodeLine{00377\ }
+\DoxyCodeLine{00378\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_raycast_vehicle_a6b9dd519ac59a2bf326f4ff423e4ba6d}{btRaycastVehicle::setBrake}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ brake,\ \textcolor{keywordtype}{int}\ wheelIndex)}
+\DoxyCodeLine{00379\ \{}
+\DoxyCodeLine{00380\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}((wheelIndex\ >=\ 0)\ \&\&\ (wheelIndex\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}()));}
+\DoxyCodeLine{00381\ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_aeb29696567a0ad447f1d769f1b3b8e75}{getWheelInfo}}(wheelIndex).\mbox{\hyperlink{structbt_wheel_info_aa7eb1ca21c125ece8160fe1c1b2e66cb}{m\_brake}}\ =\ brake;}
+\DoxyCodeLine{00382\ \}}
+\DoxyCodeLine{00383\ }
+\DoxyCodeLine{00384\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_raycast_vehicle_a6be582b77af41d8ad50369d30882776d}{btRaycastVehicle::updateSuspension}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ deltaTime)}
+\DoxyCodeLine{00385\ \{}
+\DoxyCodeLine{00386\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})deltaTime;}
+\DoxyCodeLine{00387\ }
+\DoxyCodeLine{00388\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ chassisMass\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.)\ /\ m\_chassisBody-\/>getInvMass();}
+\DoxyCodeLine{00389\ }
+\DoxyCodeLine{00390\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ w\_it\ =\ 0;\ w\_it\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}();\ w\_it++)}
+\DoxyCodeLine{00391\ \ \ \ \ \{}
+\DoxyCodeLine{00392\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ wheel\_info\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[w\_it];}
+\DoxyCodeLine{00393\ }
+\DoxyCodeLine{00394\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (wheel\_info.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a29c172936558437da29af8fef741afda}{m\_isInContact}})}
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ force;}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ Spring}}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ susp\_length\ =\ wheel\_info.\mbox{\hyperlink{structbt_wheel_info_a64c4160c12675ed8ac9cdbdb53fa5f55}{getSuspensionRestLength}}();}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ current\_length\ =\ wheel\_info.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1445bf7ab2e44074441aab67201b1ba1}{m\_suspensionLength}};}
+\DoxyCodeLine{00401\ }
+\DoxyCodeLine{00402\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ length\_diff\ =\ (susp\_length\ -\/\ current\_length);}
+\DoxyCodeLine{00403\ }
+\DoxyCodeLine{00404\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ force\ =\ wheel\_info.\mbox{\hyperlink{structbt_wheel_info_a53b2e9061f96d3002137870fc1fdd419}{m\_suspensionStiffness}}\ *\ length\_diff\ *\ wheel\_info.\mbox{\hyperlink{structbt_wheel_info_a160cbd3f2dceb766194638e49f55bf8f}{m\_clippedInvContactDotSuspension}};}
+\DoxyCodeLine{00405\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00406\ }
+\DoxyCodeLine{00407\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Damper}}
+\DoxyCodeLine{00408\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00409\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ projected\_rel\_vel\ =\ wheel\_info.\mbox{\hyperlink{structbt_wheel_info_ab370ba1508dd6c40425fb5b8d4fb4cc4}{m\_suspensionRelativeVelocity}};}
+\DoxyCodeLine{00410\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00411\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ susp\_damping;}
+\DoxyCodeLine{00412\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (projected\_rel\_vel\ <\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0))}
+\DoxyCodeLine{00413\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00414\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ susp\_damping\ =\ wheel\_info.\mbox{\hyperlink{structbt_wheel_info_aa95b4d18939e3dfaab0485357b75ab9e}{m\_wheelsDampingCompression}};}
+\DoxyCodeLine{00415\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00416\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00417\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00418\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ susp\_damping\ =\ wheel\_info.\mbox{\hyperlink{structbt_wheel_info_ac2407e9e6279841f2ad489743c9c706a}{m\_wheelsDampingRelaxation}};}
+\DoxyCodeLine{00419\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00420\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ force\ -\/=\ susp\_damping\ *\ projected\_rel\_vel;}
+\DoxyCodeLine{00421\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00422\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00423\ }
+\DoxyCodeLine{00424\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ RESULT}}
+\DoxyCodeLine{00425\ \ \ \ \ \ \ \ \ \ \ \ \ wheel\_info.\mbox{\hyperlink{structbt_wheel_info_a892ec97b81ecc90e4884439aa22815f7}{m\_wheelsSuspensionForce}}\ =\ force\ *\ chassisMass;}
+\DoxyCodeLine{00426\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (wheel\_info.\mbox{\hyperlink{structbt_wheel_info_a892ec97b81ecc90e4884439aa22815f7}{m\_wheelsSuspensionForce}}\ <\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.))}
+\DoxyCodeLine{00427\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00428\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ wheel\_info.\mbox{\hyperlink{structbt_wheel_info_a892ec97b81ecc90e4884439aa22815f7}{m\_wheelsSuspensionForce}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00429\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00430\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00431\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00432\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00433\ \ \ \ \ \ \ \ \ \ \ \ \ wheel\_info.\mbox{\hyperlink{structbt_wheel_info_a892ec97b81ecc90e4884439aa22815f7}{m\_wheelsSuspensionForce}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0);}
+\DoxyCodeLine{00434\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00435\ \ \ \ \ \}}
+\DoxyCodeLine{00436\ \}}
+\DoxyCodeLine{00437\ }
+\DoxyCodeLine{00438\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structbt_wheel_contact_point_afb6cf036281d1994930a85f03bf7bba6}{btWheelContactPoint}}}
+\DoxyCodeLine{00439\ \{}
+\DoxyCodeLine{00440\ \ \ \ \ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*\ \mbox{\hyperlink{structbt_wheel_contact_point_a552bc66287fbc473742bc5f784dc7769}{m\_body0}};}
+\DoxyCodeLine{00441\ \ \ \ \ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*\ \mbox{\hyperlink{structbt_wheel_contact_point_a65f70ab5c71e46880e41f2775104519f}{m\_body1}};}
+\DoxyCodeLine{00442\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{structbt_wheel_contact_point_afdddf099aa5bf319ae685227ae6b806d}{m\_frictionPositionWorld}};}
+\DoxyCodeLine{00443\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{structbt_wheel_contact_point_a00aa59f208fa00087e4b2570ca166c0e}{m\_frictionDirectionWorld}};}
+\DoxyCodeLine{00444\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{structbt_wheel_contact_point_a6209038b417fef7b6544cfec44f68ba2}{m\_jacDiagABInv}};}
+\DoxyCodeLine{00445\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{structbt_wheel_contact_point_a6cec1cf50a9c910ae785ceb8c31b67d7}{m\_maxImpulse}};}
+\DoxyCodeLine{00446\ }
+\DoxyCodeLine{00447\ \ \ \ \ \mbox{\hyperlink{structbt_wheel_contact_point_afb6cf036281d1994930a85f03bf7bba6}{btWheelContactPoint}}(\mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*\ body0,\ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*\ body1,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ frictionPosWorld,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ frictionDirectionWorld,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxImpulse)}
+\DoxyCodeLine{00448\ \ \ \ \ \ \ \ \ :\ \mbox{\hyperlink{structbt_wheel_contact_point_a552bc66287fbc473742bc5f784dc7769}{m\_body0}}(body0),}
+\DoxyCodeLine{00449\ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_wheel_contact_point_a65f70ab5c71e46880e41f2775104519f}{m\_body1}}(body1),}
+\DoxyCodeLine{00450\ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_wheel_contact_point_afdddf099aa5bf319ae685227ae6b806d}{m\_frictionPositionWorld}}(frictionPosWorld),}
+\DoxyCodeLine{00451\ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_wheel_contact_point_a00aa59f208fa00087e4b2570ca166c0e}{m\_frictionDirectionWorld}}(frictionDirectionWorld),}
+\DoxyCodeLine{00452\ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_wheel_contact_point_a6cec1cf50a9c910ae785ceb8c31b67d7}{m\_maxImpulse}}(maxImpulse)}
+\DoxyCodeLine{00453\ \ \ \ \ \{}
+\DoxyCodeLine{00454\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ denom0\ =\ body0-\/>\mbox{\hyperlink{classbt_rigid_body_a8637d220d3002af281bdb81d5bedc1ba}{computeImpulseDenominator}}(frictionPosWorld,\ frictionDirectionWorld);}
+\DoxyCodeLine{00455\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ denom1\ =\ body1-\/>\mbox{\hyperlink{classbt_rigid_body_a8637d220d3002af281bdb81d5bedc1ba}{computeImpulseDenominator}}(frictionPosWorld,\ frictionDirectionWorld);}
+\DoxyCodeLine{00456\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ relaxation\ =\ 1.f;}
+\DoxyCodeLine{00457\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_wheel_contact_point_a6209038b417fef7b6544cfec44f68ba2}{m\_jacDiagABInv}}\ =\ relaxation\ /\ (denom0\ +\ denom1);}
+\DoxyCodeLine{00458\ \ \ \ \ \}}
+\DoxyCodeLine{00459\ \};}
+\DoxyCodeLine{00460\ }
+\DoxyCodeLine{00461\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_raycast_vehicle_8cpp_a8c5ca872ae0d9230f1cb735700854d95}{calcRollingFriction}}(\mbox{\hyperlink{structbt_wheel_contact_point}{btWheelContactPoint}}\&\ contactPoint,\ \textcolor{keywordtype}{int}\ numWheelsOnGround);}
+\DoxyCodeLine{00462\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_raycast_vehicle_8cpp_a8c5ca872ae0d9230f1cb735700854d95}{calcRollingFriction}}(\mbox{\hyperlink{structbt_wheel_contact_point}{btWheelContactPoint}}\&\ contactPoint,\ \textcolor{keywordtype}{int}\ numWheelsOnGround)}
+\DoxyCodeLine{00463\ \{}
+\DoxyCodeLine{00464\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ j1\ =\ 0.f;}
+\DoxyCodeLine{00465\ }
+\DoxyCodeLine{00466\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ contactPosWorld\ =\ contactPoint.\mbox{\hyperlink{structbt_wheel_contact_point_afdddf099aa5bf319ae685227ae6b806d}{m\_frictionPositionWorld}};}
+\DoxyCodeLine{00467\ }
+\DoxyCodeLine{00468\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ rel\_pos1\ =\ contactPosWorld\ -\/\ contactPoint.\mbox{\hyperlink{structbt_wheel_contact_point_a552bc66287fbc473742bc5f784dc7769}{m\_body0}}-\/>\mbox{\hyperlink{classbt_rigid_body_a954761eb557c1707ffab51d40e4e32e2}{getCenterOfMassPosition}}();}
+\DoxyCodeLine{00469\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ rel\_pos2\ =\ contactPosWorld\ -\/\ contactPoint.\mbox{\hyperlink{structbt_wheel_contact_point_a65f70ab5c71e46880e41f2775104519f}{m\_body1}}-\/>\mbox{\hyperlink{classbt_rigid_body_a954761eb557c1707ffab51d40e4e32e2}{getCenterOfMassPosition}}();}
+\DoxyCodeLine{00470\ }
+\DoxyCodeLine{00471\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxImpulse\ =\ contactPoint.\mbox{\hyperlink{structbt_wheel_contact_point_a6cec1cf50a9c910ae785ceb8c31b67d7}{m\_maxImpulse}};}
+\DoxyCodeLine{00472\ }
+\DoxyCodeLine{00473\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vel1\ =\ contactPoint.\mbox{\hyperlink{structbt_wheel_contact_point_a552bc66287fbc473742bc5f784dc7769}{m\_body0}}-\/>\mbox{\hyperlink{classbt_rigid_body_a1b4cd79f5c8ad9161737742eea9470f5}{getVelocityInLocalPoint}}(rel\_pos1);}
+\DoxyCodeLine{00474\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vel2\ =\ contactPoint.\mbox{\hyperlink{structbt_wheel_contact_point_a65f70ab5c71e46880e41f2775104519f}{m\_body1}}-\/>\mbox{\hyperlink{classbt_rigid_body_a1b4cd79f5c8ad9161737742eea9470f5}{getVelocityInLocalPoint}}(rel\_pos2);}
+\DoxyCodeLine{00475\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vel\ =\ vel1\ -\/\ vel2;}
+\DoxyCodeLine{00476\ }
+\DoxyCodeLine{00477\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ vrel\ =\ contactPoint.\mbox{\hyperlink{structbt_wheel_contact_point_a00aa59f208fa00087e4b2570ca166c0e}{m\_frictionDirectionWorld}}.dot(vel);}
+\DoxyCodeLine{00478\ }
+\DoxyCodeLine{00479\ \ \ \ \ \textcolor{comment}{//\ calculate\ j\ that\ moves\ us\ to\ zero\ relative\ velocity}}
+\DoxyCodeLine{00480\ \ \ \ \ j1\ =\ -\/vrel\ *\ contactPoint.\mbox{\hyperlink{structbt_wheel_contact_point_a6209038b417fef7b6544cfec44f68ba2}{m\_jacDiagABInv}}\ /\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(numWheelsOnGround);}
+\DoxyCodeLine{00481\ \ \ \ \ \mbox{\hyperlink{bt_min_max_8h_a544e4184451f1eaf44369ce74091d391}{btSetMin}}(j1,\ maxImpulse);}
+\DoxyCodeLine{00482\ \ \ \ \ \mbox{\hyperlink{bt_min_max_8h_a840762049d6b465a4b5ff42c1b892e80}{btSetMax}}(j1,\ -\/maxImpulse);}
+\DoxyCodeLine{00483\ }
+\DoxyCodeLine{00484\ \ \ \ \ \textcolor{keywordflow}{return}\ j1;}
+\DoxyCodeLine{00485\ \}}
+\DoxyCodeLine{00486\ }
+\DoxyCodeLine{00487\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_raycast_vehicle_8cpp_ab60d6fadfbea7cf784073bad3d50cdcd}{sideFrictionStiffness2}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0);}
+\DoxyCodeLine{00488\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_raycast_vehicle_a074131752aafd9bf75b5c05411439de3}{btRaycastVehicle::updateFriction}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ timeStep)}
+\DoxyCodeLine{00489\ \{}
+\DoxyCodeLine{00490\ \ \ \ \ \textcolor{comment}{//calculate\ the\ impulse,\ so\ that\ the\ wheels\ don't\ move\ sidewards}}
+\DoxyCodeLine{00491\ \ \ \ \ \textcolor{keywordtype}{int}\ numWheel\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}();}
+\DoxyCodeLine{00492\ \ \ \ \ \textcolor{keywordflow}{if}\ (!numWheel)}
+\DoxyCodeLine{00493\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00494\ }
+\DoxyCodeLine{00495\ \ \ \ \ m\_forwardWS.resize(numWheel);}
+\DoxyCodeLine{00496\ \ \ \ \ m\_axle.resize(numWheel);}
+\DoxyCodeLine{00497\ \ \ \ \ m\_forwardImpulse.resize(numWheel);}
+\DoxyCodeLine{00498\ \ \ \ \ m\_sideImpulse.resize(numWheel);}
+\DoxyCodeLine{00499\ }
+\DoxyCodeLine{00500\ \ \ \ \ \textcolor{keywordtype}{int}\ numWheelsOnGround\ =\ 0;}
+\DoxyCodeLine{00501\ }
+\DoxyCodeLine{00502\ \ \ \ \ \textcolor{comment}{//collapse\ all\ those\ loops\ into\ one!}}
+\DoxyCodeLine{00503\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}();\ i++)}
+\DoxyCodeLine{00504\ \ \ \ \ \{}
+\DoxyCodeLine{00505\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ wheelInfo\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[i];}
+\DoxyCodeLine{00506\ \ \ \ \ \ \ \ \ \textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*\ groundObject\ =\ (\textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*)wheelInfo.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_aa660acf5de607b62263165e010f531cc}{m\_groundObject}};}
+\DoxyCodeLine{00507\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (groundObject)}
+\DoxyCodeLine{00508\ \ \ \ \ \ \ \ \ \ \ \ \ numWheelsOnGround++;}
+\DoxyCodeLine{00509\ \ \ \ \ \ \ \ \ m\_sideImpulse[i]\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00510\ \ \ \ \ \ \ \ \ m\_forwardImpulse[i]\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00511\ \ \ \ \ \}}
+\DoxyCodeLine{00512\ }
+\DoxyCodeLine{00513\ \ \ \ \ \{}
+\DoxyCodeLine{00514\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}();\ i++)}
+\DoxyCodeLine{00515\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00516\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ wheelInfo\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[i];}
+\DoxyCodeLine{00517\ }
+\DoxyCodeLine{00518\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*\ groundObject\ =\ (\textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*)wheelInfo.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_aa660acf5de607b62263165e010f531cc}{m\_groundObject}};}
+\DoxyCodeLine{00519\ }
+\DoxyCodeLine{00520\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (groundObject)}
+\DoxyCodeLine{00521\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00522\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ wheelTrans\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_a30e803d12dbeb049ce7174dda04afbdc}{getWheelTransformWS}}(i);}
+\DoxyCodeLine{00523\ }
+\DoxyCodeLine{00524\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_matrix3x3_8h_a8789e58a469e9c671c351d681306b4d7}{btMatrix3x3}}\ wheelBasis0\ =\ wheelTrans.getBasis();}
+\DoxyCodeLine{00525\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_axle[i]\ =\ -\/\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(}
+\DoxyCodeLine{00526\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ wheelBasis0[0][m\_indexRightAxis],}
+\DoxyCodeLine{00527\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ wheelBasis0[1][m\_indexRightAxis],}
+\DoxyCodeLine{00528\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ wheelBasis0[2][m\_indexRightAxis]);}
+\DoxyCodeLine{00529\ }
+\DoxyCodeLine{00530\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ surfNormalWS\ =\ wheelInfo.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_adc58f3c5e33effc66e5053ab7dbac97e}{m\_contactNormalWS}};}
+\DoxyCodeLine{00531\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ proj\ =\ m\_axle[i].dot(surfNormalWS);}
+\DoxyCodeLine{00532\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_axle[i]\ -\/=\ surfNormalWS\ *\ proj;}
+\DoxyCodeLine{00533\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_axle[i]\ =\ m\_axle[i].normalize();}
+\DoxyCodeLine{00534\ }
+\DoxyCodeLine{00535\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_forwardWS[i]\ =\ surfNormalWS.cross(m\_axle[i]);}
+\DoxyCodeLine{00536\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_forwardWS[i].normalize();}
+\DoxyCodeLine{00537\ }
+\DoxyCodeLine{00538\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_contact_constraint_8cpp_a202a56b51be8554fad0a2661024ba353}{resolveSingleBilateral}}(*m\_chassisBody,\ wheelInfo.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1ceb3b86560dbc522c2ae561d391f862}{m\_contactPointWS}},}
+\DoxyCodeLine{00539\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *groundObject,\ wheelInfo.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1ceb3b86560dbc522c2ae561d391f862}{m\_contactPointWS}},}
+\DoxyCodeLine{00540\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ m\_axle[i],\ m\_sideImpulse[i],\ timeStep);}
+\DoxyCodeLine{00541\ }
+\DoxyCodeLine{00542\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_sideImpulse[i]\ *=\ \mbox{\hyperlink{bt_raycast_vehicle_8cpp_ab60d6fadfbea7cf784073bad3d50cdcd}{sideFrictionStiffness2}};}
+\DoxyCodeLine{00543\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00544\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00545\ \ \ \ \ \}}
+\DoxyCodeLine{00546\ }
+\DoxyCodeLine{00547\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sideFactor\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.);}
+\DoxyCodeLine{00548\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ fwdFactor\ =\ 0.5;}
+\DoxyCodeLine{00549\ }
+\DoxyCodeLine{00550\ \ \ \ \ \textcolor{keywordtype}{bool}\ sliding\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00551\ \ \ \ \ \{}
+\DoxyCodeLine{00552\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ wheel\ =\ 0;\ wheel\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}();\ wheel++)}
+\DoxyCodeLine{00553\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00554\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ wheelInfo\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[wheel];}
+\DoxyCodeLine{00555\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*\ groundObject\ =\ (\textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*)wheelInfo.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_aa660acf5de607b62263165e010f531cc}{m\_groundObject}};}
+\DoxyCodeLine{00556\ }
+\DoxyCodeLine{00557\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ rollingFriction\ =\ 0.f;}
+\DoxyCodeLine{00558\ }
+\DoxyCodeLine{00559\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (groundObject)}
+\DoxyCodeLine{00560\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00561\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (wheelInfo.\mbox{\hyperlink{structbt_wheel_info_af89880607da34de2dd42bffa99a4ad0c}{m\_engineForce}}\ !=\ 0.f)}
+\DoxyCodeLine{00562\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00563\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ rollingFriction\ =\ wheelInfo.\mbox{\hyperlink{structbt_wheel_info_af89880607da34de2dd42bffa99a4ad0c}{m\_engineForce}}\ *\ timeStep;}
+\DoxyCodeLine{00564\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00565\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00566\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00567\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ defaultRollingFrictionImpulse\ =\ 0.f;}
+\DoxyCodeLine{00568\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxImpulse\ =\ wheelInfo.\mbox{\hyperlink{structbt_wheel_info_aa7eb1ca21c125ece8160fe1c1b2e66cb}{m\_brake}}\ ?\ wheelInfo.\mbox{\hyperlink{structbt_wheel_info_aa7eb1ca21c125ece8160fe1c1b2e66cb}{m\_brake}}\ :\ defaultRollingFrictionImpulse;}
+\DoxyCodeLine{00569\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_wheel_contact_point}{btWheelContactPoint}}\ contactPt(m\_chassisBody,\ groundObject,\ wheelInfo.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1ceb3b86560dbc522c2ae561d391f862}{m\_contactPointWS}},\ m\_forwardWS[wheel],\ maxImpulse);}
+\DoxyCodeLine{00570\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(numWheelsOnGround\ >\ 0);}
+\DoxyCodeLine{00571\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ rollingFriction\ =\ \mbox{\hyperlink{bt_raycast_vehicle_8cpp_a8c5ca872ae0d9230f1cb735700854d95}{calcRollingFriction}}(contactPt,\ numWheelsOnGround);}
+\DoxyCodeLine{00572\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00573\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00574\ }
+\DoxyCodeLine{00575\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//switch\ between\ active\ rolling\ (throttle),\ braking\ and\ non-\/active\ rolling\ friction\ (no\ throttle/break)}}
+\DoxyCodeLine{00576\ }
+\DoxyCodeLine{00577\ \ \ \ \ \ \ \ \ \ \ \ \ m\_forwardImpulse[wheel]\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00578\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[wheel].m\_skidInfo\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.);}
+\DoxyCodeLine{00579\ }
+\DoxyCodeLine{00580\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (groundObject)}
+\DoxyCodeLine{00581\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00582\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[wheel].m\_skidInfo\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.);}
+\DoxyCodeLine{00583\ }
+\DoxyCodeLine{00584\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maximp\ =\ wheelInfo.\mbox{\hyperlink{structbt_wheel_info_a892ec97b81ecc90e4884439aa22815f7}{m\_wheelsSuspensionForce}}\ *\ timeStep\ *\ wheelInfo.\mbox{\hyperlink{structbt_wheel_info_ac167547cd2ff3fcaf365ab8b7a5cbaf6}{m\_frictionSlip}};}
+\DoxyCodeLine{00585\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maximpSide\ =\ maximp;}
+\DoxyCodeLine{00586\ }
+\DoxyCodeLine{00587\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maximpSquared\ =\ maximp\ *\ maximpSide;}
+\DoxyCodeLine{00588\ }
+\DoxyCodeLine{00589\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_forwardImpulse[wheel]\ =\ rollingFriction;\ \ \textcolor{comment}{//wheelInfo.m\_engineForce*\ timeStep;}}
+\DoxyCodeLine{00590\ }
+\DoxyCodeLine{00591\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ =\ (m\_forwardImpulse[wheel])\ *\ fwdFactor;}
+\DoxyCodeLine{00592\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}\ =\ (m\_sideImpulse[wheel])\ *\ sideFactor;}
+\DoxyCodeLine{00593\ }
+\DoxyCodeLine{00594\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ impulseSquared\ =\ (\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ *\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ +\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}});}
+\DoxyCodeLine{00595\ }
+\DoxyCodeLine{00596\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (impulseSquared\ >\ maximpSquared)}
+\DoxyCodeLine{00597\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00598\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ sliding\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00599\ }
+\DoxyCodeLine{00600\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ factor\ =\ maximp\ /\ \mbox{\hyperlink{bt_scalar_8h_a6b200a8d26a49406ca13329be909ec10}{btSqrt}}(impulseSquared);}
+\DoxyCodeLine{00601\ }
+\DoxyCodeLine{00602\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[wheel].m\_skidInfo\ *=\ factor;}
+\DoxyCodeLine{00603\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00604\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00605\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00606\ \ \ \ \ \}}
+\DoxyCodeLine{00607\ }
+\DoxyCodeLine{00608\ \ \ \ \ \textcolor{keywordflow}{if}\ (sliding)}
+\DoxyCodeLine{00609\ \ \ \ \ \{}
+\DoxyCodeLine{00610\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ wheel\ =\ 0;\ wheel\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}();\ wheel++)}
+\DoxyCodeLine{00611\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00612\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_sideImpulse[wheel]\ !=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.))}
+\DoxyCodeLine{00613\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00614\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[wheel].m\_skidInfo\ <\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.))}
+\DoxyCodeLine{00615\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00616\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_forwardImpulse[wheel]\ *=\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[wheel].m\_skidInfo;}
+\DoxyCodeLine{00617\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_sideImpulse[wheel]\ *=\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[wheel].m\_skidInfo;}
+\DoxyCodeLine{00618\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00619\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00620\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00621\ \ \ \ \ \}}
+\DoxyCodeLine{00622\ }
+\DoxyCodeLine{00623\ \ \ \ \ \textcolor{comment}{//\ apply\ the\ impulses}}
+\DoxyCodeLine{00624\ \ \ \ \ \{}
+\DoxyCodeLine{00625\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ wheel\ =\ 0;\ wheel\ <\ \mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}();\ wheel++)}
+\DoxyCodeLine{00626\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00627\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_wheel_info}{btWheelInfo}}\&\ wheelInfo\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[wheel];}
+\DoxyCodeLine{00628\ }
+\DoxyCodeLine{00629\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ rel\_pos\ =\ wheelInfo.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1ceb3b86560dbc522c2ae561d391f862}{m\_contactPointWS}}\ -\/}
+\DoxyCodeLine{00630\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_chassisBody-\/>getCenterOfMassPosition();}
+\DoxyCodeLine{00631\ }
+\DoxyCodeLine{00632\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_forwardImpulse[wheel]\ !=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.))}
+\DoxyCodeLine{00633\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00634\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_chassisBody-\/>applyImpulse(m\_forwardWS[wheel]\ *\ (m\_forwardImpulse[wheel]),\ rel\_pos);}
+\DoxyCodeLine{00635\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00636\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_sideImpulse[wheel]\ !=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.))}
+\DoxyCodeLine{00637\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00638\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*\ groundObject\ =\ (\textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*)\mbox{\hyperlink{classbt_raycast_vehicle_aabfbb662219db326752c7fa6e32da682}{m\_wheelInfo}}[wheel].m\_raycastInfo.m\_groundObject;}
+\DoxyCodeLine{00639\ }
+\DoxyCodeLine{00640\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ rel\_pos2\ =\ wheelInfo.\mbox{\hyperlink{structbt_wheel_info_ae628d995c45e7475589f655f95acd301}{m\_raycastInfo}}.\mbox{\hyperlink{structbt_wheel_info_1_1_raycast_info_a1ceb3b86560dbc522c2ae561d391f862}{m\_contactPointWS}}\ -\/}
+\DoxyCodeLine{00641\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ groundObject-\/>\mbox{\hyperlink{classbt_rigid_body_a954761eb557c1707ffab51d40e4e32e2}{getCenterOfMassPosition}}();}
+\DoxyCodeLine{00642\ }
+\DoxyCodeLine{00643\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ sideImp\ =\ m\_axle[wheel]\ *\ m\_sideImpulse[wheel];}
+\DoxyCodeLine{00644\ }
+\DoxyCodeLine{00645\ \textcolor{preprocessor}{\#if\ defined\ ROLLING\_INFLUENCE\_FIX\ \ }\textcolor{comment}{//\ fix.\ It\ only\ worked\ if\ car's\ up\ was\ along\ Y\ -\/\ VT.}}
+\DoxyCodeLine{00646\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vChassisWorldUp\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_a2dde575375b9de897b415809c0120fbf}{getRigidBody}}()-\/>\mbox{\hyperlink{classbt_rigid_body_a716f7165f523eed046cb85c08925680d}{getCenterOfMassTransform}}().getBasis().getColumn(m\_indexUpAxis);}
+\DoxyCodeLine{00647\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ rel\_pos\ -\/=\ vChassisWorldUp\ *\ (vChassisWorldUp.dot(rel\_pos)\ *\ (1.f\ -\/\ wheelInfo.\mbox{\hyperlink{structbt_wheel_info_a9e75c6cdcee804e27278a5070d2489c6}{m\_rollInfluence}}));}
+\DoxyCodeLine{00648\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00649\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ rel\_pos[m\_indexUpAxis]\ *=\ wheelInfo.\mbox{\hyperlink{structbt_wheel_info_a9e75c6cdcee804e27278a5070d2489c6}{m\_rollInfluence}};}
+\DoxyCodeLine{00650\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00651\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_chassisBody-\/>applyImpulse(sideImp,\ rel\_pos);}
+\DoxyCodeLine{00652\ }
+\DoxyCodeLine{00653\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//apply\ friction\ impulse\ on\ the\ ground}}
+\DoxyCodeLine{00654\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ groundObject-\/>\mbox{\hyperlink{classbt_rigid_body_a8274f89d9e6b8fe945282797bd25f377}{applyImpulse}}(-\/sideImp,\ rel\_pos2);}
+\DoxyCodeLine{00655\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00656\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00657\ \ \ \ \ \}}
+\DoxyCodeLine{00658\ \}}
+\DoxyCodeLine{00659\ }
+\DoxyCodeLine{00660\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_raycast_vehicle_ab5dfeb4a57f735f6fb069bfc5654428d}{btRaycastVehicle::debugDraw}}(\mbox{\hyperlink{classbt_i_debug_draw}{btIDebugDraw}}*\ debugDrawer)}
+\DoxyCodeLine{00661\ \{}
+\DoxyCodeLine{00662\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ =\ 0;\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ <\ this-\/>\mbox{\hyperlink{classbt_raycast_vehicle_a49c9df37ed439ba8a5fe3a0c4a07047d}{getNumWheels}}();\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}++)}
+\DoxyCodeLine{00663\ \ \ \ \ \{}
+\DoxyCodeLine{00664\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ wheelColor(0,\ 1,\ 1);}
+\DoxyCodeLine{00665\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_raycast_vehicle_aeb29696567a0ad447f1d769f1b3b8e75}{getWheelInfo}}(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}).m\_raycastInfo.m\_isInContact)}
+\DoxyCodeLine{00666\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00667\ \ \ \ \ \ \ \ \ \ \ \ \ wheelColor.setValue(0,\ 0,\ 1);}
+\DoxyCodeLine{00668\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00669\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00670\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00671\ \ \ \ \ \ \ \ \ \ \ \ \ wheelColor.setValue(1,\ 0,\ 1);}
+\DoxyCodeLine{00672\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00673\ }
+\DoxyCodeLine{00674\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ wheelPosWS\ =\ \mbox{\hyperlink{classbt_raycast_vehicle_aeb29696567a0ad447f1d769f1b3b8e75}{getWheelInfo}}(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}).\mbox{\hyperlink{structbt_wheel_info_acdf5fe66004c026e297d96a371ebc598}{m\_worldTransform}}.getOrigin();}
+\DoxyCodeLine{00675\ }
+\DoxyCodeLine{00676\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ axle\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(}
+\DoxyCodeLine{00677\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_aeb29696567a0ad447f1d769f1b3b8e75}{getWheelInfo}}(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}).\mbox{\hyperlink{b3_solver_body_8h_a1b97985801d3f3cdbb2679ba8d601131}{m\_worldTransform}}.getBasis()[0][\mbox{\hyperlink{classbt_raycast_vehicle_a8900579eb259c892f9866564560494e6}{getRightAxis}}()],}
+\DoxyCodeLine{00678\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_aeb29696567a0ad447f1d769f1b3b8e75}{getWheelInfo}}(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}).\mbox{\hyperlink{b3_solver_body_8h_a1b97985801d3f3cdbb2679ba8d601131}{m\_worldTransform}}.getBasis()[1][\mbox{\hyperlink{classbt_raycast_vehicle_a8900579eb259c892f9866564560494e6}{getRightAxis}}()],}
+\DoxyCodeLine{00679\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_raycast_vehicle_aeb29696567a0ad447f1d769f1b3b8e75}{getWheelInfo}}(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}).\mbox{\hyperlink{b3_solver_body_8h_a1b97985801d3f3cdbb2679ba8d601131}{m\_worldTransform}}.getBasis()[2][\mbox{\hyperlink{classbt_raycast_vehicle_a8900579eb259c892f9866564560494e6}{getRightAxis}}()]);}
+\DoxyCodeLine{00680\ }
+\DoxyCodeLine{00681\ \ \ \ \ \ \ \ \ \textcolor{comment}{//debug\ wheels\ (cylinders)}}
+\DoxyCodeLine{00682\ \ \ \ \ \ \ \ \ debugDrawer-\/>\mbox{\hyperlink{classbt_i_debug_draw_a07b08e255ab4607ab5aeb24399332aff}{drawLine}}(wheelPosWS,\ wheelPosWS\ +\ axle,\ wheelColor);}
+\DoxyCodeLine{00683\ \ \ \ \ \ \ \ \ debugDrawer-\/>\mbox{\hyperlink{classbt_i_debug_draw_a07b08e255ab4607ab5aeb24399332aff}{drawLine}}(wheelPosWS,\ \mbox{\hyperlink{classbt_raycast_vehicle_aeb29696567a0ad447f1d769f1b3b8e75}{getWheelInfo}}(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}).m\_raycastInfo.m\_contactPointWS,\ wheelColor);}
+\DoxyCodeLine{00684\ \ \ \ \ \}}
+\DoxyCodeLine{00685\ \}}
+\DoxyCodeLine{00686\ }
+\DoxyCodeLine{00687\ \textcolor{keywordtype}{void}*\ \mbox{\hyperlink{classbt_default_vehicle_raycaster_a0d52996ccf166b42590e698dd30d43c1}{btDefaultVehicleRaycaster::castRay}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ from,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ to,\ \mbox{\hyperlink{structbt_vehicle_raycaster_1_1bt_vehicle_raycaster_result}{btVehicleRaycasterResult}}\&\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}})}
+\DoxyCodeLine{00688\ \{}
+\DoxyCodeLine{00689\ \ \ \ \ \textcolor{comment}{//\ \ RayResultCallback\&\ resultCallback;}}
+\DoxyCodeLine{00690\ }
+\DoxyCodeLine{00691\ \ \ \ \ \mbox{\hyperlink{structbt_collision_world_1_1_closest_ray_result_callback}{btCollisionWorld::ClosestRayResultCallback}}\ rayCallback(from,\ to);}
+\DoxyCodeLine{00692\ }
+\DoxyCodeLine{00693\ \ \ \ \ m\_dynamicsWorld-\/>rayTest(from,\ to,\ rayCallback);}
+\DoxyCodeLine{00694\ }
+\DoxyCodeLine{00695\ \ \ \ \ \textcolor{keywordflow}{if}\ (rayCallback.\mbox{\hyperlink{structbt_collision_world_1_1_ray_result_callback_aaf9869fa287538602bc3c44bff355586}{hasHit}}())}
+\DoxyCodeLine{00696\ \ \ \ \ \{}
+\DoxyCodeLine{00697\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}*\ body\ =\ \mbox{\hyperlink{classbt_rigid_body_ae4867a6bafb413e3a2e18dd1de125042}{btRigidBody::upcast}}(rayCallback.\mbox{\hyperlink{structbt_collision_world_1_1_ray_result_callback_adc357c2cd9f5d9cc06948b7c1b1a985c}{m\_collisionObject}});}
+\DoxyCodeLine{00698\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (body\ \&\&\ body-\/>hasContactResponse())}
+\DoxyCodeLine{00699\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00700\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.m\_hitPointInWorld\ =\ rayCallback.\mbox{\hyperlink{structbt_collision_world_1_1_closest_ray_result_callback_a9c6f6d2ffdb0420674bb928324677f76}{m\_hitPointWorld}};}
+\DoxyCodeLine{00701\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.m\_hitNormalInWorld\ =\ rayCallback.\mbox{\hyperlink{structbt_collision_world_1_1_closest_ray_result_callback_acafc99a2109d9a77bd50adc5de111721}{m\_hitNormalWorld}};}
+\DoxyCodeLine{00702\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.m\_hitNormalInWorld.normalize();}
+\DoxyCodeLine{00703\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.m\_distFraction\ =\ rayCallback.\mbox{\hyperlink{structbt_collision_world_1_1_ray_result_callback_a2218c203bbea335f75f89e8306490af0}{m\_closestHitFraction}};}
+\DoxyCodeLine{00704\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ (\textcolor{keywordtype}{void}*)body;}
+\DoxyCodeLine{00705\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00706\ \ \ \ \ \}}
+\DoxyCodeLine{00707\ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00708\ \}}
+
+\end{DoxyCode}

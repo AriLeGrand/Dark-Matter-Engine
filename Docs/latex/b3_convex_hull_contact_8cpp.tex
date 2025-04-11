@@ -1,0 +1,575 @@
+\doxysection{C\+:/\+Users/quant/source/repos/\+Dark-\/\+Matter-\/\+Engine/\+ENGINE/\+Libraries/include/\+Bullet/\+Bullet3\+Open\+CL/\+Narrowphase\+Collision/b3\+Convex\+Hull\+Contact.cpp File Reference}
+\hypertarget{b3_convex_hull_contact_8cpp}{}\label{b3_convex_hull_contact_8cpp}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/Bullet3OpenCL/NarrowphaseCollision/b3ConvexHullContact.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/Bullet3OpenCL/NarrowphaseCollision/b3ConvexHullContact.cpp}}
+{\ttfamily \#include "{}b3\+Convex\+Hull\+Contact.\+h"{}}\newline
+{\ttfamily \#include $<$string.\+h$>$}\newline
+{\ttfamily \#include "{}Bullet3\+Collision/\+Narrow\+Phase\+Collision/shared/b3\+Convex\+Polyhedron\+Data.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Collision/\+Narrow\+Phase\+Collision/shared/b3\+Mpr\+Penetration.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Open\+CL/\+Narrowphase\+Collision/b3\+Contact\+Cache.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Geometry/b3\+Aabb\+Util.\+h"{}}\newline
+{\ttfamily \#include $<$float.\+h$>$}\newline
+{\ttfamily \#include "{}Bullet3\+Open\+CL/\+Initialize/b3\+Open\+CLUtils.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Open\+CL/\+Parallel\+Primitives/b3\+Launcher\+CL.\+h"{}}\newline
+{\ttfamily \#include "{}kernels/sat\+Kernels.\+h"{}}\newline
+{\ttfamily \#include "{}kernels/mpr\+Kernels.\+h"{}}\newline
+{\ttfamily \#include "{}kernels/sat\+Concave\+Kernels.\+h"{}}\newline
+{\ttfamily \#include "{}kernels/sat\+Clip\+Hull\+Contacts.\+h"{}}\newline
+{\ttfamily \#include "{}kernels/bvh\+Traversal.\+h"{}}\newline
+{\ttfamily \#include "{}kernels/primitive\+Contacts.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Collision/\+Narrow\+Phase\+Collision/shared/b3\+Bvh\+Traversal.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Collision/\+Narrow\+Phase\+Collision/shared/b3\+Find\+Concave\+Sat\+Axis.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Collision/\+Narrow\+Phase\+Collision/shared/b3\+Clip\+Faces.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Collision/\+Narrow\+Phase\+Collision/shared/b3\+New\+Contact\+Reduction.\+h"{}}\newline
+{\ttfamily \#include "{}Bullet3\+Common/shared/b3\+Mat3x3.\+h"{}}\newline
+\doxysubsubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{struct_my_triangle_callback}{My\+Triangle\+Callback}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Macros}
+\begin{DoxyCompactItemize}
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a00c49d6a390370d949c9c3cf3b586950}{BT\+\_\+\+NARROWPHASE\+\_\+\+SAT\+\_\+\+PATH}}~"{}src/Bullet3\+Open\+CL/Narrowphase\+Collision/kernels/sat.\+cl"{}
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ad68e2469ee7363579d010c8a2bb9a79d}{BT\+\_\+\+NARROWPHASE\+\_\+\+SAT\+\_\+\+CONCAVE\+\_\+\+PATH}}~"{}src/Bullet3\+Open\+CL/Narrowphase\+Collision/kernels/sat\+Concave.\+cl"{}
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a7e39242b8674dd8915999e0c828b58c6}{BT\+\_\+\+NARROWPHASE\+\_\+\+MPR\+\_\+\+PATH}}~"{}src/Bullet3\+Open\+CL/Narrowphase\+Collision/kernels/mpr.\+cl"{}
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_afe5937c96ec0a289e3d4ecd59b6e734d}{BT\+\_\+\+NARROWPHASE\+\_\+\+CLIPHULL\+\_\+\+PATH}}~"{}src/Bullet3\+Open\+CL/Narrowphase\+Collision/kernels/sat\+Clip\+Hull\+Contacts.\+cl"{}
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_abb4de4fecb22d1004a810608aa3222ec}{BT\+\_\+\+NARROWPHASE\+\_\+\+BVH\+\_\+\+TRAVERSAL\+\_\+\+PATH}}~"{}src/Bullet3\+Open\+CL/Narrowphase\+Collision/kernels/bvh\+Traversal.\+cl"{}
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_af9ac26e774f17fc376526d43a04ed18d}{BT\+\_\+\+NARROWPHASE\+\_\+\+PRIMITIVE\+\_\+\+CONTACT\+\_\+\+PATH}}~"{}src/Bullet3\+Open\+CL/Narrowphase\+Collision/kernels/primitive\+Contacts.\+cl"{}
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a808945c5ae849a5110b6e3127c99023b}{\+\_\+\+\_\+kernel}}
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_afe5557bcb4d85e0fbfeb9844944938a2}{dot3\+F4}}~\mbox{\hyperlink{b3_quaternion_8h_a2e54540cd0bd00326a5326eba568c32a}{b3\+Dot}}
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}}~\mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}}
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a9968576875bbd2e04e483978f9ab2d34}{make\+\_\+float4}}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},  \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}},  \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}},  \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}})
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a94b9276e0b71d4d76de37c3697819e35}{cross3}}(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},  \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}})
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a0c6207fc85642867e19ef2408a586e90}{normalize3}}(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}})
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a5c84c1a3c727eb9feb5e7b6ecda33b16}{MAX\+\_\+\+VERTS}}~1024
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ae9ce728cfeebe1be73c2f0dc3b845275}{PARALLEL\+\_\+\+SUM}}(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},  n)
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ac45fecd6b8e2bb65bf0c1e06955a0509}{PARALLEL\+\_\+\+DO}}(execution,  n)
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ae2c51b0b236ec61af592f641db2b8e13}{REDUCE\+\_\+\+MAX}}(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},  n)
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a9eaaa4245582c43c2a04e121ffc169b5}{REDUCE\+\_\+\+MIN}}(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},  n)
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a4fb7436a163bdef3561b2b0df58295c9}{MAX\+\_\+\+PLANE\+\_\+\+CONVEX\+\_\+\+POINTS}}~64
+\item 
+\#define \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a4fb7436a163bdef3561b2b0df58295c9}{MAX\+\_\+\+PLANE\+\_\+\+CONVEX\+\_\+\+POINTS}}~64
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ad3a699dce0e332ebcb817fd8a4669014}{b3\+Vertex\+Array}}
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+float \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ad336a4391348e318c74192a891ddebea}{signed\+Distance\+From\+Point\+To\+Plane}} (const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&point, const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&plane\+Eqn, \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}closest\+Point\+On\+Face)
+\item 
+\mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a6184b55ffb6d85df27bb08bb66a41b0b}{transform}} (const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \texorpdfstring{$\ast$}{*}\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}, const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \texorpdfstring{$\ast$}{*}pos, const \mbox{\hyperlink{classb3_quaternion}{b3\+Quaternion}} \texorpdfstring{$\ast$}{*}orn)
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a39421ab2010e1801b99210e1bf06697e}{Is\+Point\+In\+Polygon}} (const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&p, const \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} \texorpdfstring{$\ast$}{*}face, const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}base\+Vertex, const int \texorpdfstring{$\ast$}{*}convex\+Indices, \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}out)
+\item 
+int \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a85d9604a85b0823c59e3eb0467b6a857}{extract\+Manifold\+Sequential\+Global}} (const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}p, int n\+Points, const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&near\+Normal, \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3\+Int4}} \texorpdfstring{$\ast$}{*}contact\+Idx)
+\item 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a01df508060e3ad66604cd8d155f6fe42}{project}} (const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \&hull, const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&pos, const \mbox{\hyperlink{classb3_quaternion}{b3\+Quaternion}} \&orn, const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&dir, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&vertices, \mbox{\hyperlink{b3_scalar_8h_ac6f45f3fb4d0d50710cdaa55e5ddd6ac}{b3\+Scalar}} \&\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_abeb2fef66c4ccdb539acaf9a5de81e8d}{min}}, \mbox{\hyperlink{b3_scalar_8h_ac6f45f3fb4d0d50710cdaa55e5ddd6ac}{b3\+Scalar}} \&\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a5e0d0c9b1e0345b586502e192758f820}{max}})
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a2db90e2cb63ed740ff26c7d164b930ce}{Is\+Almost\+Zero}} (const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \&\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}})
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a2477495c49cbfd932582e781480518d4}{find\+Separating\+Axis\+Edge\+Edge}} (\+\_\+\+\_\+global const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}hullA, \+\_\+\+\_\+global const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}hullB, const \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} \&pos\+A1, const \mbox{\hyperlink{b3_quat_8h_aa082b3d8522c3f5341df06735cde260b}{b3\+Quat}} \&ornA, const \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} \&pos\+B1, const \mbox{\hyperlink{b3_quat_8h_aa082b3d8522c3f5341df06735cde260b}{b3\+Quat}} \&ornB, const \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} \&Delta\+C2, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} $>$ \&vertices, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} $>$ \&unique\+Edges, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&faces, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}, \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}sep, float \texorpdfstring{$\ast$}{*}dmin)
+\item 
+\+\_\+\+\_\+inline \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \mbox{\hyperlink{b3_convex_hull_contact_8cpp_aa833cddb708f2206b498c4e2db17aacc}{lerp3}} (const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}, const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}, float t)
+\item 
+int \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a22a7e21b828897d90fb771f6b75a53a3}{clip\+Face}} (const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}p\+Vtx\+In, int num\+Verts\+In, \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&plane\+Normal\+WS, float plane\+Eq\+WS, \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}pp\+Vtx\+Out)
+\item 
+int \mbox{\hyperlink{b3_convex_hull_contact_8cpp_afca87c45142a5366d6d3547bcaff2b38}{clip\+Face\+Against\+Hull}} (const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&separating\+Normal, const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}hullA, const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&posA, const \mbox{\hyperlink{classb3_quaternion}{b3\+Quaternion}} \&ornA, \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}world\+Verts\+B1, int num\+World\+Verts\+B1, \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}world\+Verts\+B2, int capacity\+World\+Verts\+B2, const float min\+Dist, float max\+Dist, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} $>$ \&verticesA, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&facesA, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&indicesA, \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}contacts\+Out, int contact\+Capacity)
+\item 
+int \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a8114cfa650c0975917c7ffaf19d70a2d}{extract\+Manifold}} (const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}p, int n\+Points, const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&near\+Normal, \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3\+Int4}} \texorpdfstring{$\ast$}{*}contact\+Idx)
+\item 
+int \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a88068e4b1d92f94156d25fd5f8f18507}{clip\+Hull\+Hull\+Single}} (int body\+IndexA, int body\+IndexB, const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&posA, const \mbox{\hyperlink{classb3_quaternion}{b3\+Quaternion}} \&ornA, const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&posB, const \mbox{\hyperlink{classb3_quaternion}{b3\+Quaternion}} \&ornB, int collidable\+IndexA, int collidable\+IndexB, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} $>$ \texorpdfstring{$\ast$}{*}body\+Buf, \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ b3\+Contact4 $>$ \texorpdfstring{$\ast$}{*}global\+Contact\+Out, int \&n\+Contacts, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} $>$ \&host\+Convex\+DataA, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} $>$ \&host\+Convex\+DataB, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&verticesA, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&unique\+EdgesA, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&facesA, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&indicesA, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&verticesB, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&unique\+EdgesB, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&facesB, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&indicesB, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} $>$ \&host\+CollidablesA, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} $>$ \&host\+CollidablesB, const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \&sep\+Normal\+World\+Space, int max\+Contact\+Capacity)
+\item 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ac529491528fa850d783be4ba00534065}{compute\+Contact\+Plane\+Convex}} (int pair\+Index, int body\+IndexA, int body\+IndexB, int collidable\+IndexA, int collidable\+IndexB, const \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}rigid\+Bodies, const \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} \texorpdfstring{$\ast$}{*}collidables, const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}convex\+Shapes, const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \texorpdfstring{$\ast$}{*}convex\+Vertices, const int \texorpdfstring{$\ast$}{*}convex\+Indices, const \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} \texorpdfstring{$\ast$}{*}faces, b3\+Contact4 \texorpdfstring{$\ast$}{*}global\+Contacts\+Out, int \&n\+Global\+Contacts\+Out, int max\+Contact\+Capacity)
+\item 
+\mbox{\hyperlink{b3_scalar_8h_ab997474f47bfdddf0d8c9b25dca2566f}{B3\+\_\+\+FORCE\+\_\+\+INLINE}} \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a8e3bd057cc6faf585e05b9de7a7bdcd2}{My\+Un\+Quantize}} (const unsigned short \texorpdfstring{$\ast$}{*}vec\+In, const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \&quantization, const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \&bvh\+Aabb\+Min)
+\item 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ac566c0e9cd028762e54c064264d7f665}{traverse\+Tree\+Tree}} ()
+\item 
+\mbox{\hyperlink{b3_convex_hull_contact_8cpp_a808945c5ae849a5110b6e3127c99023b}{\+\_\+\+\_\+kernel}} \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a2fd7053c346351a8b42916dfff934ba1}{find\+Compound\+Pairs\+Kernel}} (int pair\+Index, int body\+IndexA, int body\+IndexB, int collidable\+IndexA, int collidable\+IndexB, \+\_\+\+\_\+global const \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}rigid\+Bodies, \+\_\+\+\_\+global const \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} \texorpdfstring{$\ast$}{*}collidables, \+\_\+\+\_\+global const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}convex\+Shapes, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} $>$ \&vertices, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_aabb}{b3\+Aabb}} $>$ \&aabbs\+World\+Space, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_aabb}{b3\+Aabb}} $>$ \&aabbs\+Local\+Space, \+\_\+\+\_\+global const \mbox{\hyperlink{structb3_gpu_child_shape}{b3\+Gpu\+Child\+Shape}} \texorpdfstring{$\ast$}{*}gpu\+Child\+Shapes, \+\_\+\+\_\+global \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3\+Int4}} \texorpdfstring{$\ast$}{*}gpu\+Compound\+Pairs\+Out, \+\_\+\+\_\+global int \texorpdfstring{$\ast$}{*}num\+Compound\+Pairs\+Out, int max\+Num\+Compound\+Pairs\+Capacity, \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ b3\+Quantized\+Bvh\+Node $>$ \&tree\+Nodes\+CPU, \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_quantized_bvh_8h_a03e2ef5394bdd4fc7b7e0c1c85e7475c}{b3\+Bvh\+Subtree\+Info}} $>$ \&sub\+Trees\+CPU, \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_bvh_info}{b3\+Bvh\+Info}} $>$ \&bvh\+Info\+CPU)
+\item 
+\mbox{\hyperlink{b3_convex_hull_contact_8cpp_a808945c5ae849a5110b6e3127c99023b}{\+\_\+\+\_\+kernel}} \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} \mbox{\hyperlink{b3_convex_hull_contact_8cpp_aa73a2c1e134cb6fc8fe257dc456bc690}{process\+Compound\+Pairs\+Kernel}} (\+\_\+\+\_\+global const \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3\+Int4}} \texorpdfstring{$\ast$}{*}gpu\+Compound\+Pairs, \+\_\+\+\_\+global const \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}rigid\+Bodies, \+\_\+\+\_\+global const \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} \texorpdfstring{$\ast$}{*}collidables, \+\_\+\+\_\+global const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}convex\+Shapes, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} $>$ \&vertices, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} $>$ \&unique\+Edges, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&faces, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}, \+\_\+\+\_\+global \mbox{\hyperlink{structb3_aabb}{b3\+Aabb}} \texorpdfstring{$\ast$}{*}aabbs, \+\_\+\+\_\+global const \mbox{\hyperlink{structb3_gpu_child_shape}{b3\+Gpu\+Child\+Shape}} \texorpdfstring{$\ast$}{*}gpu\+Child\+Shapes, \+\_\+\+\_\+global \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} $>$ \&gpu\+Compound\+Sep\+Normals\+Out, \+\_\+\+\_\+global \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&gpu\+Has\+Compound\+Sep\+Normals\+Out, int num\+Compound\+Pairs, int i)
+\item 
+\mbox{\hyperlink{b3_convex_hull_contact_8cpp_a808945c5ae849a5110b6e3127c99023b}{\+\_\+\+\_\+kernel}} \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a77042738d2aa1e34d0bdcbcbe9cd9f2d}{clip\+Compounds\+Hull\+Hull\+Kernel}} (\+\_\+\+\_\+global const \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3\+Int4}} \texorpdfstring{$\ast$}{*}gpu\+Compound\+Pairs, \+\_\+\+\_\+global const \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}rigid\+Bodies, \+\_\+\+\_\+global const \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} \texorpdfstring{$\ast$}{*}collidables, \+\_\+\+\_\+global const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}convex\+Shapes, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} $>$ \&vertices, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} $>$ \&unique\+Edges, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&faces, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aedcdb207abe418517ae3def4e91c9d12}{indices}}, \+\_\+\+\_\+global const \mbox{\hyperlink{structb3_gpu_child_shape}{b3\+Gpu\+Child\+Shape}} \texorpdfstring{$\ast$}{*}gpu\+Child\+Shapes, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} $>$ \&gpu\+Compound\+Sep\+Normals\+Out, \+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&gpu\+Has\+Compound\+Sep\+Normals\+Out, \+\_\+\+\_\+global struct \mbox{\hyperlink{structb3_contact4_data}{b3\+Contact4\+Data}} \texorpdfstring{$\ast$}{*}global\+Contacts\+Out, int \texorpdfstring{$\ast$}{*}n\+Global\+Contacts\+Out, int num\+Compound\+Pairs, int max\+Contact\+Capacity, int i)
+\item 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ae4a1be6ec597e7835a0f344ea1438400}{compute\+Contact\+Compound\+Compound}} (int pair\+Index, int body\+IndexA, int body\+IndexB, int collidable\+IndexA, int collidable\+IndexB, const \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}rigid\+Bodies, const \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} \texorpdfstring{$\ast$}{*}collidables, const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}convex\+Shapes, const \mbox{\hyperlink{structb3_gpu_child_shape}{b3\+Gpu\+Child\+Shape}} \texorpdfstring{$\ast$}{*}cpu\+Child\+Shapes, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_aabb}{b3\+Aabb}} $>$ \&host\+Aabbs\+World\+Space, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_aabb}{b3\+Aabb}} $>$ \&host\+Aabbs\+Local\+Space, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&convex\+Vertices, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&host\+Unique\+Edges, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&convex\+Indices, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&faces, b3\+Contact4 \texorpdfstring{$\ast$}{*}global\+Contacts\+Out, int \&n\+Global\+Contacts\+Out, int max\+Contact\+Capacity, \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ b3\+Quantized\+Bvh\+Node $>$ \&tree\+Nodes\+CPU, \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_quantized_bvh_8h_a03e2ef5394bdd4fc7b7e0c1c85e7475c}{b3\+Bvh\+Subtree\+Info}} $>$ \&sub\+Trees\+CPU, \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_bvh_info}{b3\+Bvh\+Info}} $>$ \&bvh\+Info\+CPU)
+\item 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} \mbox{\hyperlink{b3_convex_hull_contact_8cpp_abaa6a3f0476de0028360430cd6dc42a9}{compute\+Contact\+Plane\+Compound}} (int pair\+Index, int body\+IndexA, int body\+IndexB, int collidable\+IndexA, int collidable\+IndexB, const \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}rigid\+Bodies, const \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} \texorpdfstring{$\ast$}{*}collidables, const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}convex\+Shapes, const \mbox{\hyperlink{structb3_gpu_child_shape}{b3\+Gpu\+Child\+Shape}} \texorpdfstring{$\ast$}{*}cpu\+Child\+Shapes, const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \texorpdfstring{$\ast$}{*}convex\+Vertices, const int \texorpdfstring{$\ast$}{*}convex\+Indices, const \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} \texorpdfstring{$\ast$}{*}faces, b3\+Contact4 \texorpdfstring{$\ast$}{*}global\+Contacts\+Out, int \&n\+Global\+Contacts\+Out, int max\+Contact\+Capacity)
+\item 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ac122f0dfb5093b868e896eee6f82147f}{compute\+Contact\+Sphere\+Convex}} (int pair\+Index, int body\+IndexA, int body\+IndexB, int collidable\+IndexA, int collidable\+IndexB, const \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}rigid\+Bodies, const \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} \texorpdfstring{$\ast$}{*}collidables, const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}convex\+Shapes, const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \texorpdfstring{$\ast$}{*}convex\+Vertices, const int \texorpdfstring{$\ast$}{*}convex\+Indices, const \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} \texorpdfstring{$\ast$}{*}faces, b3\+Contact4 \texorpdfstring{$\ast$}{*}global\+Contacts\+Out, int \&n\+Global\+Contacts\+Out, int max\+Contact\+Capacity)
+\item 
+int \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a15f9d0cb9445c21e7beeac44134e8581}{compute\+Contact\+Convex\+Convex2}} (int pair\+Index, int body\+IndexA, int body\+IndexB, int collidable\+IndexA, int collidable\+IndexB, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} $>$ \&rigid\+Bodies, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} $>$ \&collidables, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} $>$ \&convex\+Shapes, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&convex\+Vertices, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&unique\+Edges, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&convex\+Indices, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&faces, \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ b3\+Contact4 $>$ \&global\+Contacts\+Out, int \&n\+Global\+Contacts\+Out, int max\+Contact\+Capacity, const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ b3\+Contact4 $>$ \&old\+Contacts)
+\end{DoxyCompactItemize}
+\doxysubsubsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a7f76b9109a97fa3a5f480daee4184333}{find\+Separating\+Axis\+On\+Gpu}} = true
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a9da17350576470720c0c21c45f1517f4}{split\+Search\+Sep\+Axis\+Concave}} = false
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_abd3bbd80cca733ff60ba902341d36a6e}{split\+Search\+Sep\+Axis\+Convex}} = true
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a2b6e969013196f11cff0818b07579232}{use\+Mpr\+Gpu}} = true
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a2e4f144cfd0b06e2a2ebd88244b972db}{bvh\+Traversal\+Kernel\+GPU}} = true
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a9c87ca060f553fc2ac3357b9da01a9a9}{find\+Concave\+Separating\+Axis\+Kernel\+GPU}} = true
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_aa9beed2c48d3cc7653a8b14dfd401988}{clip\+Concave\+Faces\+And\+Find\+Contacts\+CPU}} = false
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_aa06ff938a255a5d20ec8b512749a5e2c}{clip\+Convex\+Faces\+And\+Find\+Contacts\+CPU}} = false
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_af32a1c764c989da20ff71bfed872f929}{reduce\+Concave\+Contacts\+On\+GPU}} = true
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a2148888f056293c4dbec1f900807e577}{reduce\+Convex\+Contacts\+On\+GPU}} = true
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_acce90007d96328286212bf12ffda9067}{find\+Convex\+Clipping\+Faces\+GPU}} = true
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a8331908000b7571a4c5baf5c93932caf}{use\+Gjk}} = false
+\item 
+bool \mbox{\hyperlink{b3_convex_hull_contact_8cpp_afe1de2738b48e9f8d8c7479b25c274fd}{use\+Gjk\+Contacts}} = false
+\begin{DoxyCompactList}\small\item\em option for CPU/host testing, when find\+Separating\+Axis\+On\+Gpu = false \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{b3_convex_hull_contact_8cpp_a1bdaf405a034708b9908d8910d651465}{b3g\+\_\+actual\+SATPair\+Tests}} = 0
+\begin{DoxyCompactList}\small\item\em for testing \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{b3_convex_hull_contact_8cpp_aa2587ee5a38b18c22cd2be9dcb667f25}{num\+Aabb\+Checks}} = 0
+\item 
+int \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ae2244aa6d2bc6c50e3b4ab4c734a6f82}{max\+Num\+Aabb\+Checks}} = 0
+\item 
+int \mbox{\hyperlink{b3_convex_hull_contact_8cpp_aaaa028ca6154f21b0fc49f7c8e1b6506}{max\+Depth}} = 0
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Macro Definition Documentation}
+\Hypertarget{b3_convex_hull_contact_8cpp_a808945c5ae849a5110b6e3127c99023b}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!\_\_kernel@{\_\_kernel}}
+\index{\_\_kernel@{\_\_kernel}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{\_\_kernel}{\_\_kernel}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a808945c5ae849a5110b6e3127c99023b} 
+\#define \+\_\+\+\_\+kernel}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_abb4de4fecb22d1004a810608aa3222ec}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!BT\_NARROWPHASE\_BVH\_TRAVERSAL\_PATH@{BT\_NARROWPHASE\_BVH\_TRAVERSAL\_PATH}}
+\index{BT\_NARROWPHASE\_BVH\_TRAVERSAL\_PATH@{BT\_NARROWPHASE\_BVH\_TRAVERSAL\_PATH}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{BT\_NARROWPHASE\_BVH\_TRAVERSAL\_PATH}{BT\_NARROWPHASE\_BVH\_TRAVERSAL\_PATH}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_abb4de4fecb22d1004a810608aa3222ec} 
+\#define BT\+\_\+\+NARROWPHASE\+\_\+\+BVH\+\_\+\+TRAVERSAL\+\_\+\+PATH~"{}src/Bullet3\+Open\+CL/Narrowphase\+Collision/kernels/bvh\+Traversal.\+cl"{}}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_afe5937c96ec0a289e3d4ecd59b6e734d}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!BT\_NARROWPHASE\_CLIPHULL\_PATH@{BT\_NARROWPHASE\_CLIPHULL\_PATH}}
+\index{BT\_NARROWPHASE\_CLIPHULL\_PATH@{BT\_NARROWPHASE\_CLIPHULL\_PATH}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{BT\_NARROWPHASE\_CLIPHULL\_PATH}{BT\_NARROWPHASE\_CLIPHULL\_PATH}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_afe5937c96ec0a289e3d4ecd59b6e734d} 
+\#define BT\+\_\+\+NARROWPHASE\+\_\+\+CLIPHULL\+\_\+\+PATH~"{}src/Bullet3\+Open\+CL/Narrowphase\+Collision/kernels/sat\+Clip\+Hull\+Contacts.\+cl"{}}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a7e39242b8674dd8915999e0c828b58c6}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!BT\_NARROWPHASE\_MPR\_PATH@{BT\_NARROWPHASE\_MPR\_PATH}}
+\index{BT\_NARROWPHASE\_MPR\_PATH@{BT\_NARROWPHASE\_MPR\_PATH}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{BT\_NARROWPHASE\_MPR\_PATH}{BT\_NARROWPHASE\_MPR\_PATH}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a7e39242b8674dd8915999e0c828b58c6} 
+\#define BT\+\_\+\+NARROWPHASE\+\_\+\+MPR\+\_\+\+PATH~"{}src/Bullet3\+Open\+CL/Narrowphase\+Collision/kernels/mpr.\+cl"{}}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_af9ac26e774f17fc376526d43a04ed18d}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!BT\_NARROWPHASE\_PRIMITIVE\_CONTACT\_PATH@{BT\_NARROWPHASE\_PRIMITIVE\_CONTACT\_PATH}}
+\index{BT\_NARROWPHASE\_PRIMITIVE\_CONTACT\_PATH@{BT\_NARROWPHASE\_PRIMITIVE\_CONTACT\_PATH}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{BT\_NARROWPHASE\_PRIMITIVE\_CONTACT\_PATH}{BT\_NARROWPHASE\_PRIMITIVE\_CONTACT\_PATH}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_af9ac26e774f17fc376526d43a04ed18d} 
+\#define BT\+\_\+\+NARROWPHASE\+\_\+\+PRIMITIVE\+\_\+\+CONTACT\+\_\+\+PATH~"{}src/Bullet3\+Open\+CL/Narrowphase\+Collision/kernels/primitive\+Contacts.\+cl"{}}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_ad68e2469ee7363579d010c8a2bb9a79d}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!BT\_NARROWPHASE\_SAT\_CONCAVE\_PATH@{BT\_NARROWPHASE\_SAT\_CONCAVE\_PATH}}
+\index{BT\_NARROWPHASE\_SAT\_CONCAVE\_PATH@{BT\_NARROWPHASE\_SAT\_CONCAVE\_PATH}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{BT\_NARROWPHASE\_SAT\_CONCAVE\_PATH}{BT\_NARROWPHASE\_SAT\_CONCAVE\_PATH}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_ad68e2469ee7363579d010c8a2bb9a79d} 
+\#define BT\+\_\+\+NARROWPHASE\+\_\+\+SAT\+\_\+\+CONCAVE\+\_\+\+PATH~"{}src/Bullet3\+Open\+CL/Narrowphase\+Collision/kernels/sat\+Concave.\+cl"{}}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a00c49d6a390370d949c9c3cf3b586950}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!BT\_NARROWPHASE\_SAT\_PATH@{BT\_NARROWPHASE\_SAT\_PATH}}
+\index{BT\_NARROWPHASE\_SAT\_PATH@{BT\_NARROWPHASE\_SAT\_PATH}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{BT\_NARROWPHASE\_SAT\_PATH}{BT\_NARROWPHASE\_SAT\_PATH}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a00c49d6a390370d949c9c3cf3b586950} 
+\#define BT\+\_\+\+NARROWPHASE\+\_\+\+SAT\+\_\+\+PATH~"{}src/Bullet3\+Open\+CL/Narrowphase\+Collision/kernels/sat.\+cl"{}}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a94b9276e0b71d4d76de37c3697819e35}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!cross3@{cross3}}
+\index{cross3@{cross3}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{cross3}{cross3}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a94b9276e0b71d4d76de37c3697819e35} 
+\#define cross3(\begin{DoxyParamCaption}\item[{}]{\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}}{, }\item[{}]{\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}}{}\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}.cross(\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}))}
+
+\end{DoxyCode}
+\Hypertarget{b3_convex_hull_contact_8cpp_afe5557bcb4d85e0fbfeb9844944938a2}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!dot3F4@{dot3F4}}
+\index{dot3F4@{dot3F4}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{dot3F4}{dot3F4}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_afe5557bcb4d85e0fbfeb9844944938a2} 
+\#define dot3\+F4~\mbox{\hyperlink{b3_quaternion_8h_a2e54540cd0bd00326a5326eba568c32a}{b3\+Dot}}}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!float4@{float4}}
+\index{float4@{float4}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{float4}{float4}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c} 
+\#define float4~\mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}}}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a9968576875bbd2e04e483978f9ab2d34}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!make\_float4@{make\_float4}}
+\index{make\_float4@{make\_float4}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{make\_float4}{make\_float4}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a9968576875bbd2e04e483978f9ab2d34} 
+\#define make\+\_\+float4(\begin{DoxyParamCaption}\item[{}]{\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}}{, }\item[{}]{\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}}{, }\item[{}]{\mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}}{, }\item[{}]{\mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}}{}\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\mbox{\hyperlink{b3_vector3_8h_a77ac15c5bacc6cf72ed264d2b05c1b5c}{b3MakeVector3}}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}},\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}},\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}})}
+
+\end{DoxyCode}
+\Hypertarget{b3_convex_hull_contact_8cpp_a4fb7436a163bdef3561b2b0df58295c9}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!MAX\_PLANE\_CONVEX\_POINTS@{MAX\_PLANE\_CONVEX\_POINTS}}
+\index{MAX\_PLANE\_CONVEX\_POINTS@{MAX\_PLANE\_CONVEX\_POINTS}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{MAX\_PLANE\_CONVEX\_POINTS}{MAX\_PLANE\_CONVEX\_POINTS}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a4fb7436a163bdef3561b2b0df58295c9} 
+\#define MAX\+\_\+\+PLANE\+\_\+\+CONVEX\+\_\+\+POINTS~64}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a4fb7436a163bdef3561b2b0df58295c9}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!MAX\_PLANE\_CONVEX\_POINTS@{MAX\_PLANE\_CONVEX\_POINTS}}
+\index{MAX\_PLANE\_CONVEX\_POINTS@{MAX\_PLANE\_CONVEX\_POINTS}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{MAX\_PLANE\_CONVEX\_POINTS}{MAX\_PLANE\_CONVEX\_POINTS}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a4fb7436a163bdef3561b2b0df58295c9} 
+\#define MAX\+\_\+\+PLANE\+\_\+\+CONVEX\+\_\+\+POINTS~64}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a5c84c1a3c727eb9feb5e7b6ecda33b16}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!MAX\_VERTS@{MAX\_VERTS}}
+\index{MAX\_VERTS@{MAX\_VERTS}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{MAX\_VERTS}{MAX\_VERTS}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a5c84c1a3c727eb9feb5e7b6ecda33b16} 
+\#define MAX\+\_\+\+VERTS~1024}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a0c6207fc85642867e19ef2408a586e90}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!normalize3@{normalize3}}
+\index{normalize3@{normalize3}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{normalize3}{normalize3}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a0c6207fc85642867e19ef2408a586e90} 
+\#define normalize3(\begin{DoxyParamCaption}\item[{}]{\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}}{}\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}.normalize())}
+
+\end{DoxyCode}
+\Hypertarget{b3_convex_hull_contact_8cpp_ac45fecd6b8e2bb65bf0c1e06955a0509}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!PARALLEL\_DO@{PARALLEL\_DO}}
+\index{PARALLEL\_DO@{PARALLEL\_DO}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{PARALLEL\_DO}{PARALLEL\_DO}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_ac45fecd6b8e2bb65bf0c1e06955a0509} 
+\#define PARALLEL\+\_\+\+DO(\begin{DoxyParamCaption}\item[{}]{execution}{, }\item[{}]{n}{}\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ ie\ =\ 0;\ ie\ <\ n;\ ie++)\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \{\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ execution;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \}}
+
+\end{DoxyCode}
+\Hypertarget{b3_convex_hull_contact_8cpp_ae9ce728cfeebe1be73c2f0dc3b845275}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!PARALLEL\_SUM@{PARALLEL\_SUM}}
+\index{PARALLEL\_SUM@{PARALLEL\_SUM}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{PARALLEL\_SUM}{PARALLEL\_SUM}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_ae9ce728cfeebe1be73c2f0dc3b845275} 
+\#define PARALLEL\+\_\+\+SUM(\begin{DoxyParamCaption}\item[{}]{\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}}{, }\item[{}]{n}{}\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 1;\ j\ <\ n;\ j++)\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[0]\ +=\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[j];}
+
+\end{DoxyCode}
+\Hypertarget{b3_convex_hull_contact_8cpp_ae2c51b0b236ec61af592f641db2b8e13}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!REDUCE\_MAX@{REDUCE\_MAX}}
+\index{REDUCE\_MAX@{REDUCE\_MAX}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{REDUCE\_MAX}{REDUCE\_MAX}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_ae2c51b0b236ec61af592f641db2b8e13} 
+\#define REDUCE\+\_\+\+MAX(\begin{DoxyParamCaption}\item[{}]{\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}}{, }\item[{}]{n}{}\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\ \ \ \ \{\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ 0;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ for\ (\textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}}\ =\ 0;\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}}\ <\ n;\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}}++)\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[i]\ =\ (\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[i].\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}\ >\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[i\ +\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}}].\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}})\ ?\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[i]\ :\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[i\ +\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}}];\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \}}
+
+\end{DoxyCode}
+\Hypertarget{b3_convex_hull_contact_8cpp_a9eaaa4245582c43c2a04e121ffc169b5}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!REDUCE\_MIN@{REDUCE\_MIN}}
+\index{REDUCE\_MIN@{REDUCE\_MIN}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{REDUCE\_MIN}{REDUCE\_MIN}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a9eaaa4245582c43c2a04e121ffc169b5} 
+\#define REDUCE\+\_\+\+MIN(\begin{DoxyParamCaption}\item[{}]{\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}}{, }\item[{}]{n}{}\end{DoxyParamCaption})}
+
+{\bfseries Value\+:}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{\ \ \ \ \{\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ 0;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \ \ \ \ for\ (\textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}}\ =\ 0;\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}}\ <\ n;\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}}++)\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[i]\ =\ (\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[i].\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}\ <\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[i\ +\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}}].\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}})\ ?\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[i]\ :\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[i\ +\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}}];\ \(\backslash\)}
+\DoxyCodeLine{\ \ \ \ \}}
+
+\end{DoxyCode}
+
+
+\doxysubsection{Typedef Documentation}
+\Hypertarget{b3_convex_hull_contact_8cpp_ad3a699dce0e332ebcb817fd8a4669014}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!b3VertexArray@{b3VertexArray}}
+\index{b3VertexArray@{b3VertexArray}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{b3VertexArray}{b3VertexArray}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_ad3a699dce0e332ebcb817fd8a4669014} 
+typedef \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$\mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}}$>$ \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ad3a699dce0e332ebcb817fd8a4669014}{b3\+Vertex\+Array}}}
+
+
+
+\doxysubsection{Function Documentation}
+\Hypertarget{b3_convex_hull_contact_8cpp_a77042738d2aa1e34d0bdcbcbe9cd9f2d}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!clipCompoundsHullHullKernel@{clipCompoundsHullHullKernel}}
+\index{clipCompoundsHullHullKernel@{clipCompoundsHullHullKernel}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{clipCompoundsHullHullKernel()}{clipCompoundsHullHullKernel()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a77042738d2aa1e34d0bdcbcbe9cd9f2d} 
+\mbox{\hyperlink{b3_convex_hull_contact_8cpp_a808945c5ae849a5110b6e3127c99023b}{\+\_\+\+\_\+kernel}} \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} clip\+Compounds\+Hull\+Hull\+Kernel (\begin{DoxyParamCaption}\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3\+Int4}} \texorpdfstring{$\ast$}{*}}]{gpu\+Compound\+Pairs}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}}]{rigid\+Bodies}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} \texorpdfstring{$\ast$}{*}}]{collidables}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}}]{convex\+Shapes}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} $>$ \&}]{vertices}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} $>$ \&}]{unique\+Edges}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&}]{faces}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&}]{indices}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{structb3_gpu_child_shape}{b3\+Gpu\+Child\+Shape}} \texorpdfstring{$\ast$}{*}}]{gpu\+Child\+Shapes}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} $>$ \&}]{gpu\+Compound\+Sep\+Normals\+Out}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&}]{gpu\+Has\+Compound\+Sep\+Normals\+Out}{, }\item[{\+\_\+\+\_\+global struct \mbox{\hyperlink{structb3_contact4_data}{b3\+Contact4\+Data}} \texorpdfstring{$\ast$}{*}}]{global\+Contacts\+Out}{, }\item[{int \texorpdfstring{$\ast$}{*}}]{n\+Global\+Contacts\+Out}{, }\item[{int}]{num\+Compound\+Pairs}{, }\item[{int}]{max\+Contact\+Capacity}{, }\item[{int}]{i}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a22a7e21b828897d90fb771f6b75a53a3}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!clipFace@{clipFace}}
+\index{clipFace@{clipFace}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{clipFace()}{clipFace()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a22a7e21b828897d90fb771f6b75a53a3} 
+int clip\+Face (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}}]{p\+Vtx\+In}{, }\item[{int}]{num\+Verts\+In}{, }\item[{\mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&}]{plane\+Normal\+WS}{, }\item[{float}]{plane\+Eq\+WS}{, }\item[{\mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}}]{pp\+Vtx\+Out}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_afca87c45142a5366d6d3547bcaff2b38}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!clipFaceAgainstHull@{clipFaceAgainstHull}}
+\index{clipFaceAgainstHull@{clipFaceAgainstHull}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{clipFaceAgainstHull()}{clipFaceAgainstHull()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_afca87c45142a5366d6d3547bcaff2b38} 
+int clip\+Face\+Against\+Hull (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&}]{separating\+Normal}{, }\item[{const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}}]{hullA}{, }\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&}]{posA}{, }\item[{const \mbox{\hyperlink{classb3_quaternion}{b3\+Quaternion}} \&}]{ornA}{, }\item[{\mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}}]{world\+Verts\+B1}{, }\item[{int}]{num\+World\+Verts\+B1}{, }\item[{\mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}}]{world\+Verts\+B2}{, }\item[{int}]{capacity\+World\+Verts\+B2}{, }\item[{const float}]{min\+Dist}{, }\item[{float}]{max\+Dist}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} $>$ \&}]{verticesA}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&}]{facesA}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&}]{indicesA}{, }\item[{\mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}}]{contacts\+Out}{, }\item[{int}]{contact\+Capacity}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a88068e4b1d92f94156d25fd5f8f18507}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!clipHullHullSingle@{clipHullHullSingle}}
+\index{clipHullHullSingle@{clipHullHullSingle}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{clipHullHullSingle()}{clipHullHullSingle()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a88068e4b1d92f94156d25fd5f8f18507} 
+int clip\+Hull\+Hull\+Single (\begin{DoxyParamCaption}\item[{int}]{body\+IndexA}{, }\item[{int}]{body\+IndexB}{, }\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&}]{posA}{, }\item[{const \mbox{\hyperlink{classb3_quaternion}{b3\+Quaternion}} \&}]{ornA}{, }\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&}]{posB}{, }\item[{const \mbox{\hyperlink{classb3_quaternion}{b3\+Quaternion}} \&}]{ornB}{, }\item[{int}]{collidable\+IndexA}{, }\item[{int}]{collidable\+IndexB}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} $>$ \texorpdfstring{$\ast$}{*}}]{body\+Buf}{, }\item[{\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ b3\+Contact4 $>$ \texorpdfstring{$\ast$}{*}}]{global\+Contact\+Out}{, }\item[{int \&}]{n\+Contacts}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} $>$ \&}]{host\+Convex\+DataA}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} $>$ \&}]{host\+Convex\+DataB}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&}]{verticesA}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&}]{unique\+EdgesA}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&}]{facesA}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&}]{indicesA}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&}]{verticesB}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&}]{unique\+EdgesB}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&}]{facesB}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&}]{indicesB}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} $>$ \&}]{host\+CollidablesA}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} $>$ \&}]{host\+CollidablesB}{, }\item[{const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \&}]{sep\+Normal\+World\+Space}{, }\item[{int}]{max\+Contact\+Capacity}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_ae4a1be6ec597e7835a0f344ea1438400}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!computeContactCompoundCompound@{computeContactCompoundCompound}}
+\index{computeContactCompoundCompound@{computeContactCompoundCompound}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{computeContactCompoundCompound()}{computeContactCompoundCompound()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_ae4a1be6ec597e7835a0f344ea1438400} 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} compute\+Contact\+Compound\+Compound (\begin{DoxyParamCaption}\item[{int}]{pair\+Index}{, }\item[{int}]{body\+IndexA}{, }\item[{int}]{body\+IndexB}{, }\item[{int}]{collidable\+IndexA}{, }\item[{int}]{collidable\+IndexB}{, }\item[{const \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}}]{rigid\+Bodies}{, }\item[{const \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} \texorpdfstring{$\ast$}{*}}]{collidables}{, }\item[{const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}}]{convex\+Shapes}{, }\item[{const \mbox{\hyperlink{structb3_gpu_child_shape}{b3\+Gpu\+Child\+Shape}} \texorpdfstring{$\ast$}{*}}]{cpu\+Child\+Shapes}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_aabb}{b3\+Aabb}} $>$ \&}]{host\+Aabbs\+World\+Space}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_aabb}{b3\+Aabb}} $>$ \&}]{host\+Aabbs\+Local\+Space}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&}]{convex\+Vertices}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&}]{host\+Unique\+Edges}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&}]{convex\+Indices}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&}]{faces}{, }\item[{b3\+Contact4 \texorpdfstring{$\ast$}{*}}]{global\+Contacts\+Out}{, }\item[{int \&}]{n\+Global\+Contacts\+Out}{, }\item[{int}]{max\+Contact\+Capacity}{, }\item[{\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ b3\+Quantized\+Bvh\+Node $>$ \&}]{tree\+Nodes\+CPU}{, }\item[{\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_quantized_bvh_8h_a03e2ef5394bdd4fc7b7e0c1c85e7475c}{b3\+Bvh\+Subtree\+Info}} $>$ \&}]{sub\+Trees\+CPU}{, }\item[{\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_bvh_info}{b3\+Bvh\+Info}} $>$ \&}]{bvh\+Info\+CPU}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a15f9d0cb9445c21e7beeac44134e8581}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!computeContactConvexConvex2@{computeContactConvexConvex2}}
+\index{computeContactConvexConvex2@{computeContactConvexConvex2}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{computeContactConvexConvex2()}{computeContactConvexConvex2()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a15f9d0cb9445c21e7beeac44134e8581} 
+int compute\+Contact\+Convex\+Convex2 (\begin{DoxyParamCaption}\item[{int}]{pair\+Index}{, }\item[{int}]{body\+IndexA}{, }\item[{int}]{body\+IndexB}{, }\item[{int}]{collidable\+IndexA}{, }\item[{int}]{collidable\+IndexB}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} $>$ \&}]{rigid\+Bodies}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} $>$ \&}]{collidables}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} $>$ \&}]{convex\+Shapes}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&}]{convex\+Vertices}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&}]{unique\+Edges}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&}]{convex\+Indices}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&}]{faces}{, }\item[{\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ b3\+Contact4 $>$ \&}]{global\+Contacts\+Out}{, }\item[{int \&}]{n\+Global\+Contacts\+Out}{, }\item[{int}]{max\+Contact\+Capacity}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ b3\+Contact4 $>$ \&}]{old\+Contacts}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_abaa6a3f0476de0028360430cd6dc42a9}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!computeContactPlaneCompound@{computeContactPlaneCompound}}
+\index{computeContactPlaneCompound@{computeContactPlaneCompound}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{computeContactPlaneCompound()}{computeContactPlaneCompound()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_abaa6a3f0476de0028360430cd6dc42a9} 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} compute\+Contact\+Plane\+Compound (\begin{DoxyParamCaption}\item[{int}]{pair\+Index}{, }\item[{int}]{body\+IndexA}{, }\item[{int}]{body\+IndexB}{, }\item[{int}]{collidable\+IndexA}{, }\item[{int}]{collidable\+IndexB}{, }\item[{const \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}}]{rigid\+Bodies}{, }\item[{const \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} \texorpdfstring{$\ast$}{*}}]{collidables}{, }\item[{const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}}]{convex\+Shapes}{, }\item[{const \mbox{\hyperlink{structb3_gpu_child_shape}{b3\+Gpu\+Child\+Shape}} \texorpdfstring{$\ast$}{*}}]{cpu\+Child\+Shapes}{, }\item[{const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \texorpdfstring{$\ast$}{*}}]{convex\+Vertices}{, }\item[{const int \texorpdfstring{$\ast$}{*}}]{convex\+Indices}{, }\item[{const \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} \texorpdfstring{$\ast$}{*}}]{faces}{, }\item[{b3\+Contact4 \texorpdfstring{$\ast$}{*}}]{global\+Contacts\+Out}{, }\item[{int \&}]{n\+Global\+Contacts\+Out}{, }\item[{int}]{max\+Contact\+Capacity}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_ac529491528fa850d783be4ba00534065}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!computeContactPlaneConvex@{computeContactPlaneConvex}}
+\index{computeContactPlaneConvex@{computeContactPlaneConvex}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{computeContactPlaneConvex()}{computeContactPlaneConvex()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_ac529491528fa850d783be4ba00534065} 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} compute\+Contact\+Plane\+Convex (\begin{DoxyParamCaption}\item[{int}]{pair\+Index}{, }\item[{int}]{body\+IndexA}{, }\item[{int}]{body\+IndexB}{, }\item[{int}]{collidable\+IndexA}{, }\item[{int}]{collidable\+IndexB}{, }\item[{const \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}}]{rigid\+Bodies}{, }\item[{const \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} \texorpdfstring{$\ast$}{*}}]{collidables}{, }\item[{const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}}]{convex\+Shapes}{, }\item[{const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \texorpdfstring{$\ast$}{*}}]{convex\+Vertices}{, }\item[{const int \texorpdfstring{$\ast$}{*}}]{convex\+Indices}{, }\item[{const \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} \texorpdfstring{$\ast$}{*}}]{faces}{, }\item[{b3\+Contact4 \texorpdfstring{$\ast$}{*}}]{global\+Contacts\+Out}{, }\item[{int \&}]{n\+Global\+Contacts\+Out}{, }\item[{int}]{max\+Contact\+Capacity}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_ac122f0dfb5093b868e896eee6f82147f}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!computeContactSphereConvex@{computeContactSphereConvex}}
+\index{computeContactSphereConvex@{computeContactSphereConvex}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{computeContactSphereConvex()}{computeContactSphereConvex()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_ac122f0dfb5093b868e896eee6f82147f} 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} compute\+Contact\+Sphere\+Convex (\begin{DoxyParamCaption}\item[{int}]{pair\+Index}{, }\item[{int}]{body\+IndexA}{, }\item[{int}]{body\+IndexB}{, }\item[{int}]{collidable\+IndexA}{, }\item[{int}]{collidable\+IndexB}{, }\item[{const \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}}]{rigid\+Bodies}{, }\item[{const \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} \texorpdfstring{$\ast$}{*}}]{collidables}{, }\item[{const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}}]{convex\+Shapes}{, }\item[{const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \texorpdfstring{$\ast$}{*}}]{convex\+Vertices}{, }\item[{const int \texorpdfstring{$\ast$}{*}}]{convex\+Indices}{, }\item[{const \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} \texorpdfstring{$\ast$}{*}}]{faces}{, }\item[{b3\+Contact4 \texorpdfstring{$\ast$}{*}}]{global\+Contacts\+Out}{, }\item[{int \&}]{n\+Global\+Contacts\+Out}{, }\item[{int}]{max\+Contact\+Capacity}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a8114cfa650c0975917c7ffaf19d70a2d}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!extractManifold@{extractManifold}}
+\index{extractManifold@{extractManifold}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{extractManifold()}{extractManifold()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a8114cfa650c0975917c7ffaf19d70a2d} 
+int extract\+Manifold (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}}]{p}{, }\item[{int}]{n\+Points}{, }\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&}]{near\+Normal}{, }\item[{\mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3\+Int4}} \texorpdfstring{$\ast$}{*}}]{contact\+Idx}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a85d9604a85b0823c59e3eb0467b6a857}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!extractManifoldSequentialGlobal@{extractManifoldSequentialGlobal}}
+\index{extractManifoldSequentialGlobal@{extractManifoldSequentialGlobal}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{extractManifoldSequentialGlobal()}{extractManifoldSequentialGlobal()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a85d9604a85b0823c59e3eb0467b6a857} 
+int extract\+Manifold\+Sequential\+Global (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}}]{p}{, }\item[{int}]{n\+Points}{, }\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&}]{near\+Normal}{, }\item[{\mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3\+Int4}} \texorpdfstring{$\ast$}{*}}]{contact\+Idx}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a2fd7053c346351a8b42916dfff934ba1}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!findCompoundPairsKernel@{findCompoundPairsKernel}}
+\index{findCompoundPairsKernel@{findCompoundPairsKernel}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{findCompoundPairsKernel()}{findCompoundPairsKernel()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a2fd7053c346351a8b42916dfff934ba1} 
+\mbox{\hyperlink{b3_convex_hull_contact_8cpp_a808945c5ae849a5110b6e3127c99023b}{\+\_\+\+\_\+kernel}} \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} find\+Compound\+Pairs\+Kernel (\begin{DoxyParamCaption}\item[{int}]{pair\+Index}{, }\item[{int}]{body\+IndexA}{, }\item[{int}]{body\+IndexB}{, }\item[{int}]{collidable\+IndexA}{, }\item[{int}]{collidable\+IndexB}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}}]{rigid\+Bodies}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} \texorpdfstring{$\ast$}{*}}]{collidables}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}}]{convex\+Shapes}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} $>$ \&}]{vertices}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_aabb}{b3\+Aabb}} $>$ \&}]{aabbs\+World\+Space}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_aabb}{b3\+Aabb}} $>$ \&}]{aabbs\+Local\+Space}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{structb3_gpu_child_shape}{b3\+Gpu\+Child\+Shape}} \texorpdfstring{$\ast$}{*}}]{gpu\+Child\+Shapes}{, }\item[{\+\_\+\+\_\+global \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3\+Int4}} \texorpdfstring{$\ast$}{*}}]{gpu\+Compound\+Pairs\+Out}{, }\item[{\+\_\+\+\_\+global int \texorpdfstring{$\ast$}{*}}]{num\+Compound\+Pairs\+Out}{, }\item[{int}]{max\+Num\+Compound\+Pairs\+Capacity}{, }\item[{\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ b3\+Quantized\+Bvh\+Node $>$ \&}]{tree\+Nodes\+CPU}{, }\item[{\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_quantized_bvh_8h_a03e2ef5394bdd4fc7b7e0c1c85e7475c}{b3\+Bvh\+Subtree\+Info}} $>$ \&}]{sub\+Trees\+CPU}{, }\item[{\mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_bvh_info}{b3\+Bvh\+Info}} $>$ \&}]{bvh\+Info\+CPU}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a2477495c49cbfd932582e781480518d4}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!findSeparatingAxisEdgeEdge@{findSeparatingAxisEdgeEdge}}
+\index{findSeparatingAxisEdgeEdge@{findSeparatingAxisEdgeEdge}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{findSeparatingAxisEdgeEdge()}{findSeparatingAxisEdgeEdge()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a2477495c49cbfd932582e781480518d4} 
+bool find\+Separating\+Axis\+Edge\+Edge (\begin{DoxyParamCaption}\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}}]{hullA}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}}]{hullB}{, }\item[{const \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} \&}]{pos\+A1}{, }\item[{const \mbox{\hyperlink{b3_quat_8h_aa082b3d8522c3f5341df06735cde260b}{b3\+Quat}} \&}]{ornA}{, }\item[{const \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} \&}]{pos\+B1}{, }\item[{const \mbox{\hyperlink{b3_quat_8h_aa082b3d8522c3f5341df06735cde260b}{b3\+Quat}} \&}]{ornB}{, }\item[{const \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} \&}]{Delta\+C2}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} $>$ \&}]{vertices}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} $>$ \&}]{unique\+Edges}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&}]{faces}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&}]{indices}{, }\item[{\mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}}]{sep}{, }\item[{float \texorpdfstring{$\ast$}{*}}]{dmin}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a2db90e2cb63ed740ff26c7d164b930ce}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!IsAlmostZero@{IsAlmostZero}}
+\index{IsAlmostZero@{IsAlmostZero}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{IsAlmostZero()}{IsAlmostZero()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a2db90e2cb63ed740ff26c7d164b930ce} 
+bool Is\+Almost\+Zero (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \&}]{v}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a39421ab2010e1801b99210e1bf06697e}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!IsPointInPolygon@{IsPointInPolygon}}
+\index{IsPointInPolygon@{IsPointInPolygon}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{IsPointInPolygon()}{IsPointInPolygon()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a39421ab2010e1801b99210e1bf06697e} 
+bool Is\+Point\+In\+Polygon (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&}]{p}{, }\item[{const \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} \texorpdfstring{$\ast$}{*}}]{face}{, }\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}}]{base\+Vertex}{, }\item[{const int \texorpdfstring{$\ast$}{*}}]{convex\+Indices}{, }\item[{\mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}}]{out}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_aa833cddb708f2206b498c4e2db17aacc}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!lerp3@{lerp3}}
+\index{lerp3@{lerp3}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{lerp3()}{lerp3()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_aa833cddb708f2206b498c4e2db17aacc} 
+\+\_\+\+\_\+inline \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} lerp3 (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&}]{a}{, }\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&}]{b}{, }\item[{float}]{t}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a8e3bd057cc6faf585e05b9de7a7bdcd2}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!MyUnQuantize@{MyUnQuantize}}
+\index{MyUnQuantize@{MyUnQuantize}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{MyUnQuantize()}{MyUnQuantize()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a8e3bd057cc6faf585e05b9de7a7bdcd2} 
+\mbox{\hyperlink{b3_scalar_8h_ab997474f47bfdddf0d8c9b25dca2566f}{B3\+\_\+\+FORCE\+\_\+\+INLINE}} \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} My\+Un\+Quantize (\begin{DoxyParamCaption}\item[{const unsigned short \texorpdfstring{$\ast$}{*}}]{vec\+In}{, }\item[{const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \&}]{quantization}{, }\item[{const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \&}]{bvh\+Aabb\+Min}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_aa73a2c1e134cb6fc8fe257dc456bc690}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!processCompoundPairsKernel@{processCompoundPairsKernel}}
+\index{processCompoundPairsKernel@{processCompoundPairsKernel}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{processCompoundPairsKernel()}{processCompoundPairsKernel()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_aa73a2c1e134cb6fc8fe257dc456bc690} 
+\mbox{\hyperlink{b3_convex_hull_contact_8cpp_a808945c5ae849a5110b6e3127c99023b}{\+\_\+\+\_\+kernel}} \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} process\+Compound\+Pairs\+Kernel (\begin{DoxyParamCaption}\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{b3_int4_8h_a95d22e4ced1dbbe26f89e7b06a081d54}{b3\+Int4}} \texorpdfstring{$\ast$}{*}}]{gpu\+Compound\+Pairs}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{structb3_rigid_body_data}{b3\+Rigid\+Body\+Data}} \texorpdfstring{$\ast$}{*}}]{rigid\+Bodies}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{structb3_collidable}{b3\+Collidable}} \texorpdfstring{$\ast$}{*}}]{collidables}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \texorpdfstring{$\ast$}{*}}]{convex\+Shapes}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} $>$ \&}]{vertices}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} $>$ \&}]{unique\+Edges}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{structb3_gpu_face}{b3\+Gpu\+Face}} $>$ \&}]{faces}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&}]{indices}{, }\item[{\+\_\+\+\_\+global \mbox{\hyperlink{structb3_aabb}{b3\+Aabb}} \texorpdfstring{$\ast$}{*}}]{aabbs}{, }\item[{\+\_\+\+\_\+global const \mbox{\hyperlink{structb3_gpu_child_shape}{b3\+Gpu\+Child\+Shape}} \texorpdfstring{$\ast$}{*}}]{gpu\+Child\+Shapes}{, }\item[{\+\_\+\+\_\+global \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_float4_8h_a3418582ecf8a3f4d44415729b23856f8}{b3\+Float4}} $>$ \&}]{gpu\+Compound\+Sep\+Normals\+Out}{, }\item[{\+\_\+\+\_\+global \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ int $>$ \&}]{gpu\+Has\+Compound\+Sep\+Normals\+Out}{, }\item[{int}]{num\+Compound\+Pairs}{, }\item[{int}]{i}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a01df508060e3ad66604cd8d155f6fe42}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!project@{project}}
+\index{project@{project}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{project()}{project()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a01df508060e3ad66604cd8d155f6fe42} 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} project (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structb3_convex_polyhedron_data}{b3\+Convex\+Polyhedron\+Data}} \&}]{hull}{, }\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&}]{pos}{, }\item[{const \mbox{\hyperlink{classb3_quaternion}{b3\+Quaternion}} \&}]{orn}{, }\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&}]{dir}{, }\item[{const \mbox{\hyperlink{classb3_aligned_object_array}{b3\+Aligned\+Object\+Array}}$<$ \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} $>$ \&}]{vertices}{, }\item[{\mbox{\hyperlink{b3_scalar_8h_ac6f45f3fb4d0d50710cdaa55e5ddd6ac}{b3\+Scalar}} \&}]{min}{, }\item[{\mbox{\hyperlink{b3_scalar_8h_ac6f45f3fb4d0d50710cdaa55e5ddd6ac}{b3\+Scalar}} \&}]{max}{}\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_ad336a4391348e318c74192a891ddebea}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!signedDistanceFromPointToPlane@{signedDistanceFromPointToPlane}}
+\index{signedDistanceFromPointToPlane@{signedDistanceFromPointToPlane}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{signedDistanceFromPointToPlane()}{signedDistanceFromPointToPlane()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_ad336a4391348e318c74192a891ddebea} 
+float signed\+Distance\+From\+Point\+To\+Plane (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&}]{point}{, }\item[{const \mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \&}]{plane\+Eqn}{, }\item[{\mbox{\hyperlink{b3_convex_hull_contact_8cpp_ada97ec01294ee3122f2f2c8f4058db0c}{float4}} \texorpdfstring{$\ast$}{*}}]{closest\+Point\+On\+Face}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a6184b55ffb6d85df27bb08bb66a41b0b}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!transform@{transform}}
+\index{transform@{transform}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{transform()}{transform()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a6184b55ffb6d85df27bb08bb66a41b0b} 
+\mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} transform (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \texorpdfstring{$\ast$}{*}}]{v}{, }\item[{const \mbox{\hyperlink{b3_vector3_8h_a22c8d3827b387afa3b74e32d614eab50}{b3\+Vector3}} \texorpdfstring{$\ast$}{*}}]{pos}{, }\item[{const \mbox{\hyperlink{classb3_quaternion}{b3\+Quaternion}} \texorpdfstring{$\ast$}{*}}]{orn}{}\end{DoxyParamCaption})}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_ac566c0e9cd028762e54c064264d7f665}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!traverseTreeTree@{traverseTreeTree}}
+\index{traverseTreeTree@{traverseTreeTree}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{traverseTreeTree()}{traverseTreeTree()}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_ac566c0e9cd028762e54c064264d7f665} 
+\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}} traverse\+Tree\+Tree (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+
+
+\doxysubsection{Variable Documentation}
+\Hypertarget{b3_convex_hull_contact_8cpp_a1bdaf405a034708b9908d8910d651465}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!b3g\_actualSATPairTests@{b3g\_actualSATPairTests}}
+\index{b3g\_actualSATPairTests@{b3g\_actualSATPairTests}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{b3g\_actualSATPairTests}{b3g\_actualSATPairTests}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a1bdaf405a034708b9908d8910d651465} 
+int b3g\+\_\+actual\+SATPair\+Tests = 0}
+
+
+
+for testing 
+
+This file was written by Erwin Coumans Separating axis rest based on work from Pierre Terdiman, see And contact clipping based on work from Simon Hobbs \Hypertarget{b3_convex_hull_contact_8cpp_a2e4f144cfd0b06e2a2ebd88244b972db}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!bvhTraversalKernelGPU@{bvhTraversalKernelGPU}}
+\index{bvhTraversalKernelGPU@{bvhTraversalKernelGPU}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{bvhTraversalKernelGPU}{bvhTraversalKernelGPU}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a2e4f144cfd0b06e2a2ebd88244b972db} 
+bool bvh\+Traversal\+Kernel\+GPU = true}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_aa9beed2c48d3cc7653a8b14dfd401988}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!clipConcaveFacesAndFindContactsCPU@{clipConcaveFacesAndFindContactsCPU}}
+\index{clipConcaveFacesAndFindContactsCPU@{clipConcaveFacesAndFindContactsCPU}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{clipConcaveFacesAndFindContactsCPU}{clipConcaveFacesAndFindContactsCPU}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_aa9beed2c48d3cc7653a8b14dfd401988} 
+bool clip\+Concave\+Faces\+And\+Find\+Contacts\+CPU = false}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_aa06ff938a255a5d20ec8b512749a5e2c}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!clipConvexFacesAndFindContactsCPU@{clipConvexFacesAndFindContactsCPU}}
+\index{clipConvexFacesAndFindContactsCPU@{clipConvexFacesAndFindContactsCPU}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{clipConvexFacesAndFindContactsCPU}{clipConvexFacesAndFindContactsCPU}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_aa06ff938a255a5d20ec8b512749a5e2c} 
+bool clip\+Convex\+Faces\+And\+Find\+Contacts\+CPU = false}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a9c87ca060f553fc2ac3357b9da01a9a9}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!findConcaveSeparatingAxisKernelGPU@{findConcaveSeparatingAxisKernelGPU}}
+\index{findConcaveSeparatingAxisKernelGPU@{findConcaveSeparatingAxisKernelGPU}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{findConcaveSeparatingAxisKernelGPU}{findConcaveSeparatingAxisKernelGPU}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a9c87ca060f553fc2ac3357b9da01a9a9} 
+bool find\+Concave\+Separating\+Axis\+Kernel\+GPU = true}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_acce90007d96328286212bf12ffda9067}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!findConvexClippingFacesGPU@{findConvexClippingFacesGPU}}
+\index{findConvexClippingFacesGPU@{findConvexClippingFacesGPU}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{findConvexClippingFacesGPU}{findConvexClippingFacesGPU}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_acce90007d96328286212bf12ffda9067} 
+bool find\+Convex\+Clipping\+Faces\+GPU = true}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a7f76b9109a97fa3a5f480daee4184333}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!findSeparatingAxisOnGpu@{findSeparatingAxisOnGpu}}
+\index{findSeparatingAxisOnGpu@{findSeparatingAxisOnGpu}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{findSeparatingAxisOnGpu}{findSeparatingAxisOnGpu}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a7f76b9109a97fa3a5f480daee4184333} 
+bool find\+Separating\+Axis\+On\+Gpu = true}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_aaaa028ca6154f21b0fc49f7c8e1b6506}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!maxDepth@{maxDepth}}
+\index{maxDepth@{maxDepth}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{maxDepth}{maxDepth}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_aaaa028ca6154f21b0fc49f7c8e1b6506} 
+int max\+Depth = 0}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_ae2244aa6d2bc6c50e3b4ab4c734a6f82}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!maxNumAabbChecks@{maxNumAabbChecks}}
+\index{maxNumAabbChecks@{maxNumAabbChecks}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{maxNumAabbChecks}{maxNumAabbChecks}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_ae2244aa6d2bc6c50e3b4ab4c734a6f82} 
+int max\+Num\+Aabb\+Checks = 0}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_aa2587ee5a38b18c22cd2be9dcb667f25}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!numAabbChecks@{numAabbChecks}}
+\index{numAabbChecks@{numAabbChecks}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{numAabbChecks}{numAabbChecks}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_aa2587ee5a38b18c22cd2be9dcb667f25} 
+int num\+Aabb\+Checks = 0}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_af32a1c764c989da20ff71bfed872f929}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!reduceConcaveContactsOnGPU@{reduceConcaveContactsOnGPU}}
+\index{reduceConcaveContactsOnGPU@{reduceConcaveContactsOnGPU}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{reduceConcaveContactsOnGPU}{reduceConcaveContactsOnGPU}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_af32a1c764c989da20ff71bfed872f929} 
+bool reduce\+Concave\+Contacts\+On\+GPU = true}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a2148888f056293c4dbec1f900807e577}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!reduceConvexContactsOnGPU@{reduceConvexContactsOnGPU}}
+\index{reduceConvexContactsOnGPU@{reduceConvexContactsOnGPU}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{reduceConvexContactsOnGPU}{reduceConvexContactsOnGPU}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a2148888f056293c4dbec1f900807e577} 
+bool reduce\+Convex\+Contacts\+On\+GPU = true}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a9da17350576470720c0c21c45f1517f4}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!splitSearchSepAxisConcave@{splitSearchSepAxisConcave}}
+\index{splitSearchSepAxisConcave@{splitSearchSepAxisConcave}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{splitSearchSepAxisConcave}{splitSearchSepAxisConcave}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a9da17350576470720c0c21c45f1517f4} 
+bool split\+Search\+Sep\+Axis\+Concave = false}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_abd3bbd80cca733ff60ba902341d36a6e}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!splitSearchSepAxisConvex@{splitSearchSepAxisConvex}}
+\index{splitSearchSepAxisConvex@{splitSearchSepAxisConvex}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{splitSearchSepAxisConvex}{splitSearchSepAxisConvex}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_abd3bbd80cca733ff60ba902341d36a6e} 
+bool split\+Search\+Sep\+Axis\+Convex = true}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a8331908000b7571a4c5baf5c93932caf}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!useGjk@{useGjk}}
+\index{useGjk@{useGjk}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{useGjk}{useGjk}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a8331908000b7571a4c5baf5c93932caf} 
+bool use\+Gjk = false}
+
+\Hypertarget{b3_convex_hull_contact_8cpp_afe1de2738b48e9f8d8c7479b25c274fd}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!useGjkContacts@{useGjkContacts}}
+\index{useGjkContacts@{useGjkContacts}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{useGjkContacts}{useGjkContacts}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_afe1de2738b48e9f8d8c7479b25c274fd} 
+bool use\+Gjk\+Contacts = false}
+
+
+
+option for CPU/host testing, when find\+Separating\+Axis\+On\+Gpu = false 
+
+\Hypertarget{b3_convex_hull_contact_8cpp_a2b6e969013196f11cff0818b07579232}\index{b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}!useMprGpu@{useMprGpu}}
+\index{useMprGpu@{useMprGpu}!b3ConvexHullContact.cpp@{b3ConvexHullContact.cpp}}
+\doxysubsubsection{\texorpdfstring{useMprGpu}{useMprGpu}}
+{\footnotesize\ttfamily \label{b3_convex_hull_contact_8cpp_a2b6e969013196f11cff0818b07579232} 
+bool use\+Mpr\+Gpu = true}
+

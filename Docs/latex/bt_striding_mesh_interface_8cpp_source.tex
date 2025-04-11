@@ -1,0 +1,380 @@
+\doxysection{bt\+Striding\+Mesh\+Interface.\+cpp}
+\hypertarget{bt_striding_mesh_interface_8cpp_source}{}\label{bt_striding_mesh_interface_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/CollisionShapes/btStridingMeshInterface.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/CollisionShapes/btStridingMeshInterface.cpp}}
+\mbox{\hyperlink{bt_striding_mesh_interface_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2009\ Erwin\ Coumans\ \ http://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_striding_mesh_interface_8h}{btStridingMeshInterface.h}}"{}}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_serializer_8h}{LinearMath/btSerializer.h}}"{}}}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ btStridingMeshInterface::\string~btStridingMeshInterface()}
+\DoxyCodeLine{00020\ \{}
+\DoxyCodeLine{00021\ \}}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \textcolor{keywordtype}{void}\ btStridingMeshInterface::InternalProcessAllTriangles(\mbox{\hyperlink{classbt_internal_triangle_index_callback}{btInternalTriangleIndexCallback}}*\ callback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00024\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00025\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})aabbMin;}
+\DoxyCodeLine{00026\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})aabbMax;}
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{keywordtype}{int}\ numtotalphysicsverts\ =\ 0;}
+\DoxyCodeLine{00028\ \ \ \ \ \textcolor{keywordtype}{int}\ part,\ graphicssubparts\ =\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_aae93f625fb5ac2277311c1414acb668d}{getNumSubParts}}();}
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*\ vertexbase;}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*\ indexbase;}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keywordtype}{int}\ indexstride;}
+\DoxyCodeLine{00032\ \ \ \ \ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5}{PHY\_ScalarType}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a890efa53b3d7deeeced6f3a0d6653ed3}{type}};}
+\DoxyCodeLine{00033\ \ \ \ \ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5}{PHY\_ScalarType}}\ gfxindextype;}
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}},\ numverts,\ numtriangles;}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keywordtype}{int}\ gfxindex;}
+\DoxyCodeLine{00036\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ triangle[3];}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ meshScaling\ =\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_a76958148fd3f1075574a5b701a8f0dc5}{getScaling}}();}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00041\ \ \ \ \ \textcolor{keywordflow}{for}\ (part\ =\ 0;\ part\ <\ graphicssubparts;\ part++)}
+\DoxyCodeLine{00042\ \ \ \ \ \{}
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_striding_mesh_interface_8h_a150ebcc2da5d7f648929af5734156882}{getLockedReadOnlyVertexIndexBase}}(\&vertexbase,\ numverts,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a890efa53b3d7deeeced6f3a0d6653ed3}{type}},\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}},\ \&indexbase,\ indexstride,\ numtriangles,\ gfxindextype,\ part);}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ numtotalphysicsverts\ +=\ numtriangles\ *\ 3;\ \ \textcolor{comment}{//upper\ bound}}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a890efa53b3d7deeeced6f3a0d6653ed3}{type}})}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a1ad4349bf85ddc19b7a0eee5e3e534c2}{PHY\_FLOAT}}:}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}*\ graphicsbase;}
+\DoxyCodeLine{00055\ }
+\DoxyCodeLine{00056\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (gfxindextype)}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5ad42e034653618937f19225a86f18d9c1}{PHY\_INTEGER}}:}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (gfxindex\ =\ 0;\ gfxindex\ <\ numtriangles;\ gfxindex++)}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}*\ tri\_indices\ =\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}*)(indexbase\ +\ gfxindex\ *\ indexstride);}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{float}*)(vertexbase\ +\ tri\_indices[0]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[0].setValue(graphicsbase[0]\ *\ meshScaling.getX(),\ graphicsbase[1]\ *\ meshScaling.getY(),\ graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{float}*)(vertexbase\ +\ tri\_indices[1]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[1].setValue(graphicsbase[0]\ *\ meshScaling.getX(),\ graphicsbase[1]\ *\ meshScaling.getY(),\ graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{float}*)(vertexbase\ +\ tri\_indices[2]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[2].setValue(graphicsbase[0]\ *\ meshScaling.getX(),\ graphicsbase[1]\ *\ meshScaling.getY(),\ graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ callback-\/>\mbox{\hyperlink{classbt_internal_triangle_index_callback_a4fceb775c86c2d63b41ad9be24ee7fd5}{internalProcessTriangleIndex}}(triangle,\ part,\ gfxindex);}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a64a80d935567c2111346eca34eee6986}{PHY\_SHORT}}:}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (gfxindex\ =\ 0;\ gfxindex\ <\ numtriangles;\ gfxindex++)}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ tri\_indices\ =\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*)(indexbase\ +\ gfxindex\ *\ indexstride);}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{float}*)(vertexbase\ +\ tri\_indices[0]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[0].setValue(graphicsbase[0]\ *\ meshScaling.getX(),\ graphicsbase[1]\ *\ meshScaling.getY(),\ graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{float}*)(vertexbase\ +\ tri\_indices[1]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00081\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[1].setValue(graphicsbase[0]\ *\ meshScaling.getX(),\ graphicsbase[1]\ *\ meshScaling.getY(),\ graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{float}*)(vertexbase\ +\ tri\_indices[2]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00083\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[2].setValue(graphicsbase[0]\ *\ meshScaling.getX(),\ graphicsbase[1]\ *\ meshScaling.getY(),\ graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ callback-\/>\mbox{\hyperlink{classbt_internal_triangle_index_callback_a4fceb775c86c2d63b41ad9be24ee7fd5}{internalProcessTriangleIndex}}(triangle,\ part,\ gfxindex);}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a22cb435d33635ba7440daf26ceddb33d}{PHY\_UCHAR}}:}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (gfxindex\ =\ 0;\ gfxindex\ <\ numtriangles;\ gfxindex++)}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*\ tri\_indices\ =\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*)(indexbase\ +\ gfxindex\ *\ indexstride);}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{float}*)(vertexbase\ +\ tri\_indices[0]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[0].setValue(graphicsbase[0]\ *\ meshScaling.getX(),\ graphicsbase[1]\ *\ meshScaling.getY(),\ graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{float}*)(vertexbase\ +\ tri\_indices[1]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[1].setValue(graphicsbase[0]\ *\ meshScaling.getX(),\ graphicsbase[1]\ *\ meshScaling.getY(),\ graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00097\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{float}*)(vertexbase\ +\ tri\_indices[2]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00098\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[2].setValue(graphicsbase[0]\ *\ meshScaling.getX(),\ graphicsbase[1]\ *\ meshScaling.getY(),\ graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00099\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ callback-\/>\mbox{\hyperlink{classbt_internal_triangle_index_callback_a4fceb775c86c2d63b41ad9be24ee7fd5}{internalProcessTriangleIndex}}(triangle,\ part,\ gfxindex);}
+\DoxyCodeLine{00100\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00101\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00102\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00103\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}((gfxindextype\ ==\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5ad42e034653618937f19225a86f18d9c1}{PHY\_INTEGER}})\ ||\ (gfxindextype\ ==\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a64a80d935567c2111346eca34eee6986}{PHY\_SHORT}}));}
+\DoxyCodeLine{00105\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00106\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00107\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00108\ }
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a5bb40ac23c072b0cbd77057de01a149b}{PHY\_DOUBLE}}:}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}*\ graphicsbase;}
+\DoxyCodeLine{00112\ }
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (gfxindextype)}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5ad42e034653618937f19225a86f18d9c1}{PHY\_INTEGER}}:}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (gfxindex\ =\ 0;\ gfxindex\ <\ numtriangles;\ gfxindex++)}
+\DoxyCodeLine{00118\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00119\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}*\ tri\_indices\ =\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}*)(indexbase\ +\ gfxindex\ *\ indexstride);}
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{double}*)(vertexbase\ +\ tri\_indices[0]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[0].setValue((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[0]\ *\ meshScaling.getX(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[1]\ *\ meshScaling.getY(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{double}*)(vertexbase\ +\ tri\_indices[1]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[1].setValue((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[0]\ *\ meshScaling.getX(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[1]\ *\ meshScaling.getY(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{double}*)(vertexbase\ +\ tri\_indices[2]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00125\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[2].setValue((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[0]\ *\ meshScaling.getX(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[1]\ *\ meshScaling.getY(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ callback-\/>\mbox{\hyperlink{classbt_internal_triangle_index_callback_a4fceb775c86c2d63b41ad9be24ee7fd5}{internalProcessTriangleIndex}}(triangle,\ part,\ gfxindex);}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00128\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00129\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00130\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a64a80d935567c2111346eca34eee6986}{PHY\_SHORT}}:}
+\DoxyCodeLine{00131\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (gfxindex\ =\ 0;\ gfxindex\ <\ numtriangles;\ gfxindex++)}
+\DoxyCodeLine{00133\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ tri\_indices\ =\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*)(indexbase\ +\ gfxindex\ *\ indexstride);}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{double}*)(vertexbase\ +\ tri\_indices[0]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[0].setValue((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[0]\ *\ meshScaling.getX(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[1]\ *\ meshScaling.getY(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{double}*)(vertexbase\ +\ tri\_indices[1]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[1].setValue((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[0]\ *\ meshScaling.getX(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[1]\ *\ meshScaling.getY(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00139\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{double}*)(vertexbase\ +\ tri\_indices[2]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[2].setValue((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[0]\ *\ meshScaling.getX(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[1]\ *\ meshScaling.getY(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ callback-\/>\mbox{\hyperlink{classbt_internal_triangle_index_callback_a4fceb775c86c2d63b41ad9be24ee7fd5}{internalProcessTriangleIndex}}(triangle,\ part,\ gfxindex);}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a22cb435d33635ba7440daf26ceddb33d}{PHY\_UCHAR}}:}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (gfxindex\ =\ 0;\ gfxindex\ <\ numtriangles;\ gfxindex++)}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*\ tri\_indices\ =\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*)(indexbase\ +\ gfxindex\ *\ indexstride);}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{double}*)(vertexbase\ +\ tri\_indices[0]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[0].setValue((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[0]\ *\ meshScaling.getX(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[1]\ *\ meshScaling.getY(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{double}*)(vertexbase\ +\ tri\_indices[1]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[1].setValue((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[0]\ *\ meshScaling.getX(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[1]\ *\ meshScaling.getY(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00154\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{double}*)(vertexbase\ +\ tri\_indices[2]\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ triangle[2].setValue((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[0]\ *\ meshScaling.getX(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[1]\ *\ meshScaling.getY(),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})graphicsbase[2]\ *\ meshScaling.getZ());}
+\DoxyCodeLine{00156\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ callback-\/>\mbox{\hyperlink{classbt_internal_triangle_index_callback_a4fceb775c86c2d63b41ad9be24ee7fd5}{internalProcessTriangleIndex}}(triangle,\ part,\ gfxindex);}
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00160\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}((gfxindextype\ ==\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5ad42e034653618937f19225a86f18d9c1}{PHY\_INTEGER}})\ ||\ (gfxindextype\ ==\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a64a80d935567c2111346eca34eee6986}{PHY\_SHORT}}));}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}((\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a890efa53b3d7deeeced6f3a0d6653ed3}{type}}\ ==\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a1ad4349bf85ddc19b7a0eee5e3e534c2}{PHY\_FLOAT}})\ ||\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a890efa53b3d7deeeced6f3a0d6653ed3}{type}}\ ==\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a5bb40ac23c072b0cbd77057de01a149b}{PHY\_DOUBLE}}));}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00168\ }
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_striding_mesh_interface_8h_a6b3e4f1755e61edd8c90377f3558667f}{unLockReadOnlyVertexBase}}(part);}
+\DoxyCodeLine{00170\ \ \ \ \ \}}
+\DoxyCodeLine{00171\ \}}
+\DoxyCodeLine{00172\ }
+\DoxyCodeLine{00173\ \textcolor{keywordtype}{void}\ btStridingMeshInterface::calculateAabbBruteForce(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax)}
+\DoxyCodeLine{00174\ \{}
+\DoxyCodeLine{00175\ \ \ \ \ \textcolor{keyword}{struct\ }AabbCalculationCallback\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{classbt_internal_triangle_index_callback}{btInternalTriangleIndexCallback}}}
+\DoxyCodeLine{00176\ \ \ \ \ \{}
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{b3_dynamic_bvh_broadphase_8h_a38ee206b82611f5934f73e218114479f}{m\_aabbMin}};}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{b3_dynamic_bvh_broadphase_8h_adc54a2e14c9ae94281febd941b999f20}{m\_aabbMax}};}
+\DoxyCodeLine{00179\ }
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ AabbCalculationCallback()}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00182\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_dynamic_bvh_broadphase_8h_a38ee206b82611f5934f73e218114479f}{m\_aabbMin}}.setValue(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}}),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}}),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}}));}
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_dynamic_bvh_broadphase_8h_adc54a2e14c9ae94281febd941b999f20}{m\_aabbMax}}.setValue(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}}),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}}),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}}));}
+\DoxyCodeLine{00184\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00185\ }
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_internal_triangle_index_callback_a4fceb775c86c2d63b41ad9be24ee7fd5}{internalProcessTriangleIndex}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}*\ triangle,\ \textcolor{keywordtype}{int}\ partId,\ \textcolor{keywordtype}{int}\ triangleIndex)}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})partId;}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})triangleIndex;}
+\DoxyCodeLine{00190\ }
+\DoxyCodeLine{00191\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_dynamic_bvh_broadphase_8h_a38ee206b82611f5934f73e218114479f}{m\_aabbMin}}.setMin(triangle[0]);}
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_dynamic_bvh_broadphase_8h_adc54a2e14c9ae94281febd941b999f20}{m\_aabbMax}}.setMax(triangle[0]);}
+\DoxyCodeLine{00193\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_dynamic_bvh_broadphase_8h_a38ee206b82611f5934f73e218114479f}{m\_aabbMin}}.setMin(triangle[1]);}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_dynamic_bvh_broadphase_8h_adc54a2e14c9ae94281febd941b999f20}{m\_aabbMax}}.setMax(triangle[1]);}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_dynamic_bvh_broadphase_8h_a38ee206b82611f5934f73e218114479f}{m\_aabbMin}}.setMin(triangle[2]);}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_dynamic_bvh_broadphase_8h_adc54a2e14c9ae94281febd941b999f20}{m\_aabbMax}}.setMax(triangle[2]);}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00198\ \ \ \ \ \};}
+\DoxyCodeLine{00199\ }
+\DoxyCodeLine{00200\ \ \ \ \ \textcolor{comment}{//first\ calculate\ the\ total\ aabb\ for\ all\ triangles}}
+\DoxyCodeLine{00201\ \ \ \ \ AabbCalculationCallback\ aabbCallback;}
+\DoxyCodeLine{00202\ \ \ \ \ aabbMin.setValue(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}}),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}}),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}}));}
+\DoxyCodeLine{00203\ \ \ \ \ aabbMax.setValue(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}}),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}}),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}}));}
+\DoxyCodeLine{00204\ \ \ \ \ \mbox{\hyperlink{b3_striding_mesh_interface_8h_ad3d36ac7210e5aae405dec10f97119ad}{InternalProcessAllTriangles}}(\&aabbCallback,\ aabbMin,\ aabbMax);}
+\DoxyCodeLine{00205\ }
+\DoxyCodeLine{00206\ \ \ \ \ aabbMin\ =\ aabbCallback.m\_aabbMin;}
+\DoxyCodeLine{00207\ \ \ \ \ aabbMax\ =\ aabbCallback.m\_aabbMax;}
+\DoxyCodeLine{00208\ \}}
+\DoxyCodeLine{00209\ }
+\DoxyCodeLine{00211\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ btStridingMeshInterface::serialize(\textcolor{keywordtype}{void}*\ dataBuffer,\ \mbox{\hyperlink{classbt_serializer}{btSerializer}}*\ serializer)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00212\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00213\ \ \ \ \ \mbox{\hyperlink{structbt_striding_mesh_interface_data}{btStridingMeshInterfaceData}}*\ trimeshData\ =\ (\mbox{\hyperlink{structbt_striding_mesh_interface_data}{btStridingMeshInterfaceData}}*)dataBuffer;}
+\DoxyCodeLine{00214\ }
+\DoxyCodeLine{00215\ \ \ \ \ trimeshData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_a648047136aef434d7cd738a0175cf80c}{m\_numMeshParts}}\ =\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_aae93f625fb5ac2277311c1414acb668d}{getNumSubParts}}();}
+\DoxyCodeLine{00216\ }
+\DoxyCodeLine{00217\ \ \ \ \ \textcolor{comment}{//void*\ uniquePtr\ =\ 0;}}
+\DoxyCodeLine{00218\ }
+\DoxyCodeLine{00219\ \ \ \ \ trimeshData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}\ =\ 0;}
+\DoxyCodeLine{00220\ }
+\DoxyCodeLine{00221\ \ \ \ \ \textcolor{keywordflow}{if}\ (trimeshData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_a648047136aef434d7cd738a0175cf80c}{m\_numMeshParts}})}
+\DoxyCodeLine{00222\ \ \ \ \ \{}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_chunk}{btChunk}}*\ chunk\ =\ serializer-\/>\mbox{\hyperlink{classbt_serializer_a1b87e5239b884db0686f778d01c1a69a}{allocate}}(\textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_mesh_part_data}{btMeshPartData}}),\ trimeshData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_a648047136aef434d7cd738a0175cf80c}{m\_numMeshParts}});}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_mesh_part_data}{btMeshPartData}}*\ memPtr\ =\ (\mbox{\hyperlink{structbt_mesh_part_data}{btMeshPartData}}*)chunk-\/>\mbox{\hyperlink{classbt_chunk_aa9c3adc50e121d98bbb7e8c91c472fa5}{m\_oldPtr}};}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ trimeshData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}\ =\ (\mbox{\hyperlink{structbt_mesh_part_data}{btMeshPartData}}*)serializer-\/>\mbox{\hyperlink{classbt_serializer_a58b09aa556a85cfcbeb06d741f333d29}{getUniquePointer}}(memPtr);}
+\DoxyCodeLine{00226\ }
+\DoxyCodeLine{00227\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ int\ numtotalphysicsverts\ =\ 0;}}
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ part,\ graphicssubparts\ =\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_aae93f625fb5ac2277311c1414acb668d}{getNumSubParts}}();}
+\DoxyCodeLine{00229\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*\ vertexbase;}
+\DoxyCodeLine{00230\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*\ indexbase;}
+\DoxyCodeLine{00231\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ indexstride;}
+\DoxyCodeLine{00232\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5}{PHY\_ScalarType}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a890efa53b3d7deeeced6f3a0d6653ed3}{type}};}
+\DoxyCodeLine{00233\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5}{PHY\_ScalarType}}\ gfxindextype;}
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}},\ numverts,\ numtriangles;}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ gfxindex;}
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ btVector3\ triangle[3];}}
+\DoxyCodeLine{00237\ }
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ btVector3\ meshScaling\ =\ getScaling();}}
+\DoxyCodeLine{00239\ }
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (part\ =\ 0;\ part\ <\ graphicssubparts;\ part++,\ memPtr++)}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_striding_mesh_interface_8h_a150ebcc2da5d7f648929af5734156882}{getLockedReadOnlyVertexIndexBase}}(\&vertexbase,\ numverts,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a890efa53b3d7deeeced6f3a0d6653ed3}{type}},\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}},\ \&indexbase,\ indexstride,\ numtriangles,\ gfxindextype,\ part);}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_numTriangles\ =\ numtriangles;\ \ \textcolor{comment}{//indices\ =\ 3*numtriangles}}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_numVertices\ =\ numverts;}
+\DoxyCodeLine{00246\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_indices16\ =\ 0;}
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_indices32\ =\ 0;}
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_3indices16\ =\ 0;}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_3indices8\ =\ 0;}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_vertices3f\ =\ 0;}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_vertices3d\ =\ 0;}
+\DoxyCodeLine{00252\ }
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (gfxindextype)}
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00255\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5ad42e034653618937f19225a86f18d9c1}{PHY\_INTEGER}}:}
+\DoxyCodeLine{00256\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numindices\ =\ numtriangles\ *\ 3;}
+\DoxyCodeLine{00258\ }
+\DoxyCodeLine{00259\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numindices)}
+\DoxyCodeLine{00260\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_chunk}{btChunk}}*\ chunk\ =\ serializer-\/>\mbox{\hyperlink{classbt_serializer_a1b87e5239b884db0686f778d01c1a69a}{allocate}}(\textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_int_index_data}{btIntIndexData}}),\ numindices);}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_int_index_data}{btIntIndexData}}*\ tmpIndices\ =\ (\mbox{\hyperlink{structbt_int_index_data}{btIntIndexData}}*)chunk-\/>\mbox{\hyperlink{classbt_chunk_aa9c3adc50e121d98bbb7e8c91c472fa5}{m\_oldPtr}};}
+\DoxyCodeLine{00263\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_indices32\ =\ (\mbox{\hyperlink{structbt_int_index_data}{btIntIndexData}}*)serializer-\/>\mbox{\hyperlink{classbt_serializer_a58b09aa556a85cfcbeb06d741f333d29}{getUniquePointer}}(tmpIndices);}
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (gfxindex\ =\ 0;\ gfxindex\ <\ numtriangles;\ gfxindex++)}
+\DoxyCodeLine{00265\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00266\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}*\ tri\_indices\ =\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}*)(indexbase\ +\ gfxindex\ *\ indexstride);}
+\DoxyCodeLine{00267\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpIndices[gfxindex\ *\ 3].m\_value\ =\ tri\_indices[0];}
+\DoxyCodeLine{00268\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpIndices[gfxindex\ *\ 3\ +\ 1].m\_value\ =\ tri\_indices[1];}
+\DoxyCodeLine{00269\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpIndices[gfxindex\ *\ 3\ +\ 2].m\_value\ =\ tri\_indices[2];}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ serializer-\/>\mbox{\hyperlink{classbt_serializer_ac98913802b276eed28d745ef422ac724}{finalizeChunk}}(chunk,\ \textcolor{stringliteral}{"{}btIntIndexData"{}},\ \mbox{\hyperlink{bt_serializer_8h_ad9334757d82f4dece09b300be73b6bbf}{BT\_ARRAY\_CODE}},\ (\textcolor{keywordtype}{void}*)chunk-\/>\mbox{\hyperlink{classbt_chunk_aa9c3adc50e121d98bbb7e8c91c472fa5}{m\_oldPtr}});}
+\DoxyCodeLine{00272\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00273\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a64a80d935567c2111346eca34eee6986}{PHY\_SHORT}}:}
+\DoxyCodeLine{00276\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00277\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numtriangles)}
+\DoxyCodeLine{00278\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00279\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_chunk}{btChunk}}*\ chunk\ =\ serializer-\/>\mbox{\hyperlink{classbt_serializer_a1b87e5239b884db0686f778d01c1a69a}{allocate}}(\textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_short_int_index_triplet_data}{btShortIntIndexTripletData}}),\ numtriangles);}
+\DoxyCodeLine{00280\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_short_int_index_triplet_data}{btShortIntIndexTripletData}}*\ tmpIndices\ =\ (\mbox{\hyperlink{structbt_short_int_index_triplet_data}{btShortIntIndexTripletData}}*)chunk-\/>\mbox{\hyperlink{classbt_chunk_aa9c3adc50e121d98bbb7e8c91c472fa5}{m\_oldPtr}};}
+\DoxyCodeLine{00281\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_3indices16\ =\ (\mbox{\hyperlink{structbt_short_int_index_triplet_data}{btShortIntIndexTripletData}}*)serializer-\/>\mbox{\hyperlink{classbt_serializer_a58b09aa556a85cfcbeb06d741f333d29}{getUniquePointer}}(tmpIndices);}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (gfxindex\ =\ 0;\ gfxindex\ <\ numtriangles;\ gfxindex++)}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ tri\_indices\ =\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*)(indexbase\ +\ gfxindex\ *\ indexstride);}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpIndices[gfxindex].m\_values[0]\ =\ tri\_indices[0];}
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpIndices[gfxindex].m\_values[1]\ =\ tri\_indices[1];}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpIndices[gfxindex].m\_values[2]\ =\ tri\_indices[2];}
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Fill\ padding\ with\ zeros\ to\ appease\ msan.}}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpIndices[gfxindex].m\_pad[0]\ =\ 0;}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpIndices[gfxindex].m\_pad[1]\ =\ 0;}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ serializer-\/>\mbox{\hyperlink{classbt_serializer_ac98913802b276eed28d745ef422ac724}{finalizeChunk}}(chunk,\ \textcolor{stringliteral}{"{}btShortIntIndexTripletData"{}},\ \mbox{\hyperlink{bt_serializer_8h_ad9334757d82f4dece09b300be73b6bbf}{BT\_ARRAY\_CODE}},\ (\textcolor{keywordtype}{void}*)chunk-\/>\mbox{\hyperlink{classbt_chunk_aa9c3adc50e121d98bbb7e8c91c472fa5}{m\_oldPtr}});}
+\DoxyCodeLine{00293\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00294\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a22cb435d33635ba7440daf26ceddb33d}{PHY\_UCHAR}}:}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numtriangles)}
+\DoxyCodeLine{00299\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_chunk}{btChunk}}*\ chunk\ =\ serializer-\/>\mbox{\hyperlink{classbt_serializer_a1b87e5239b884db0686f778d01c1a69a}{allocate}}(\textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_char_index_triplet_data}{btCharIndexTripletData}}),\ numtriangles);}
+\DoxyCodeLine{00301\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_char_index_triplet_data}{btCharIndexTripletData}}*\ tmpIndices\ =\ (\mbox{\hyperlink{structbt_char_index_triplet_data}{btCharIndexTripletData}}*)chunk-\/>\mbox{\hyperlink{classbt_chunk_aa9c3adc50e121d98bbb7e8c91c472fa5}{m\_oldPtr}};}
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_3indices8\ =\ (\mbox{\hyperlink{structbt_char_index_triplet_data}{btCharIndexTripletData}}*)serializer-\/>\mbox{\hyperlink{classbt_serializer_a58b09aa556a85cfcbeb06d741f333d29}{getUniquePointer}}(tmpIndices);}
+\DoxyCodeLine{00303\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (gfxindex\ =\ 0;\ gfxindex\ <\ numtriangles;\ gfxindex++)}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*\ tri\_indices\ =\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*)(indexbase\ +\ gfxindex\ *\ indexstride);}
+\DoxyCodeLine{00306\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpIndices[gfxindex].m\_values[0]\ =\ tri\_indices[0];}
+\DoxyCodeLine{00307\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpIndices[gfxindex].m\_values[1]\ =\ tri\_indices[1];}
+\DoxyCodeLine{00308\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpIndices[gfxindex].m\_values[2]\ =\ tri\_indices[2];}
+\DoxyCodeLine{00309\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Fill\ padding\ with\ zeros\ to\ appease\ msan.}}
+\DoxyCodeLine{00310\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpIndices[gfxindex].m\_pad\ =\ 0;}
+\DoxyCodeLine{00311\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00312\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ serializer-\/>\mbox{\hyperlink{classbt_serializer_ac98913802b276eed28d745ef422ac724}{finalizeChunk}}(chunk,\ \textcolor{stringliteral}{"{}btCharIndexTripletData"{}},\ \mbox{\hyperlink{bt_serializer_8h_ad9334757d82f4dece09b300be73b6bbf}{BT\_ARRAY\_CODE}},\ (\textcolor{keywordtype}{void}*)chunk-\/>\mbox{\hyperlink{classbt_chunk_aa9c3adc50e121d98bbb7e8c91c472fa5}{m\_oldPtr}});}
+\DoxyCodeLine{00313\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00314\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00315\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00316\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00317\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00318\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(0);}
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//unknown\ index\ type}}
+\DoxyCodeLine{00320\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00321\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00322\ }
+\DoxyCodeLine{00323\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a890efa53b3d7deeeced6f3a0d6653ed3}{type}})}
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00325\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a1ad4349bf85ddc19b7a0eee5e3e534c2}{PHY\_FLOAT}}:}
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}*\ graphicsbase;}
+\DoxyCodeLine{00328\ }
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numverts)}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00331\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_chunk}{btChunk}}*\ chunk\ =\ serializer-\/>\mbox{\hyperlink{classbt_serializer_a1b87e5239b884db0686f778d01c1a69a}{allocate}}(\textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_vector3_float_data}{btVector3FloatData}}),\ numverts);}
+\DoxyCodeLine{00332\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_vector3_float_data}{btVector3FloatData}}*\ tmpVertices\ =\ (\mbox{\hyperlink{structbt_vector3_float_data}{btVector3FloatData}}*)chunk-\/>\mbox{\hyperlink{classbt_chunk_aa9c3adc50e121d98bbb7e8c91c472fa5}{m\_oldPtr}};}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_vertices3f\ =\ (\mbox{\hyperlink{structbt_vector3_float_data}{btVector3FloatData}}*)serializer-\/>\mbox{\hyperlink{classbt_serializer_a58b09aa556a85cfcbeb06d741f333d29}{getUniquePointer}}(tmpVertices);}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numverts;\ i++)}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ graphicsbase\ =\ (\textcolor{keywordtype}{float}*)(vertexbase\ +\ i\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});}
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpVertices[i].m\_floats[0]\ =\ graphicsbase[0];}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpVertices[i].m\_floats[1]\ =\ graphicsbase[1];}
+\DoxyCodeLine{00339\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpVertices[i].m\_floats[2]\ =\ graphicsbase[2];}
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ serializer-\/>\mbox{\hyperlink{classbt_serializer_ac98913802b276eed28d745ef422ac724}{finalizeChunk}}(chunk,\ \textcolor{stringliteral}{"{}btVector3FloatData"{}},\ \mbox{\hyperlink{bt_serializer_8h_ad9334757d82f4dece09b300be73b6bbf}{BT\_ARRAY\_CODE}},\ (\textcolor{keywordtype}{void}*)chunk-\/>\mbox{\hyperlink{classbt_chunk_aa9c3adc50e121d98bbb7e8c91c472fa5}{m\_oldPtr}});}
+\DoxyCodeLine{00342\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00343\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00345\ }
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a5bb40ac23c072b0cbd77057de01a149b}{PHY\_DOUBLE}}:}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00348\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numverts)}
+\DoxyCodeLine{00349\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00350\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_chunk}{btChunk}}*\ chunk\ =\ serializer-\/>\mbox{\hyperlink{classbt_serializer_a1b87e5239b884db0686f778d01c1a69a}{allocate}}(\textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_vector3_double_data}{btVector3DoubleData}}),\ numverts);}
+\DoxyCodeLine{00351\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_vector3_double_data}{btVector3DoubleData}}*\ tmpVertices\ =\ (\mbox{\hyperlink{structbt_vector3_double_data}{btVector3DoubleData}}*)chunk-\/>\mbox{\hyperlink{classbt_chunk_aa9c3adc50e121d98bbb7e8c91c472fa5}{m\_oldPtr}};}
+\DoxyCodeLine{00352\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ memPtr-\/>m\_vertices3d\ =\ (\mbox{\hyperlink{structbt_vector3_double_data}{btVector3DoubleData}}*)serializer-\/>\mbox{\hyperlink{classbt_serializer_a58b09aa556a85cfcbeb06d741f333d29}{getUniquePointer}}(tmpVertices);}
+\DoxyCodeLine{00353\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ numverts;\ i++)}
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{double}*\ graphicsbase\ =\ (\textcolor{keywordtype}{double}*)(vertexbase\ +\ i\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_adec60f1216ca1b900f8d776c5b6190e0}{stride}});\ \ \textcolor{comment}{//for\ now\ convert\ to\ float,\ might\ leave\ it\ at\ double}}
+\DoxyCodeLine{00356\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpVertices[i].m\_floats[0]\ =\ graphicsbase[0];}
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpVertices[i].m\_floats[1]\ =\ graphicsbase[1];}
+\DoxyCodeLine{00358\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpVertices[i].m\_floats[2]\ =\ graphicsbase[2];}
+\DoxyCodeLine{00359\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00360\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ serializer-\/>\mbox{\hyperlink{classbt_serializer_ac98913802b276eed28d745ef422ac724}{finalizeChunk}}(chunk,\ \textcolor{stringliteral}{"{}btVector3DoubleData"{}},\ \mbox{\hyperlink{bt_serializer_8h_ad9334757d82f4dece09b300be73b6bbf}{BT\_ARRAY\_CODE}},\ (\textcolor{keywordtype}{void}*)chunk-\/>\mbox{\hyperlink{classbt_chunk_aa9c3adc50e121d98bbb7e8c91c472fa5}{m\_oldPtr}});}
+\DoxyCodeLine{00361\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00362\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00363\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00364\ }
+\DoxyCodeLine{00365\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00366\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}((\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a890efa53b3d7deeeced6f3a0d6653ed3}{type}}\ ==\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a1ad4349bf85ddc19b7a0eee5e3e534c2}{PHY\_FLOAT}})\ ||\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a890efa53b3d7deeeced6f3a0d6653ed3}{type}}\ ==\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a5bb40ac23c072b0cbd77057de01a149b}{PHY\_DOUBLE}}));}
+\DoxyCodeLine{00367\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00368\ }
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_striding_mesh_interface_8h_a6b3e4f1755e61edd8c90377f3558667f}{unLockReadOnlyVertexBase}}(part);}
+\DoxyCodeLine{00370\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00371\ }
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ serializer-\/>\mbox{\hyperlink{classbt_serializer_ac98913802b276eed28d745ef422ac724}{finalizeChunk}}(chunk,\ \textcolor{stringliteral}{"{}btMeshPartData"{}},\ \mbox{\hyperlink{bt_serializer_8h_ad9334757d82f4dece09b300be73b6bbf}{BT\_ARRAY\_CODE}},\ chunk-\/>\mbox{\hyperlink{classbt_chunk_aa9c3adc50e121d98bbb7e8c91c472fa5}{m\_oldPtr}});}
+\DoxyCodeLine{00373\ \ \ \ \ \}}
+\DoxyCodeLine{00374\ }
+\DoxyCodeLine{00375\ \ \ \ \ \textcolor{comment}{//\ Fill\ padding\ with\ zeros\ to\ appease\ msan.}}
+\DoxyCodeLine{00376\ \ \ \ \ memset(trimeshData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_afddf31910fb3c21906011837c069c62b}{m\_padding}},\ 0,\ \textcolor{keyword}{sizeof}(trimeshData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_afddf31910fb3c21906011837c069c62b}{m\_padding}}));}
+\DoxyCodeLine{00377\ }
+\DoxyCodeLine{00378\ \ \ \ \ m\_scaling.serializeFloat(trimeshData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_af5cad63f6d700f3993611d958222c288}{m\_scaling}});}
+\DoxyCodeLine{00379\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{stringliteral}{"{}btStridingMeshInterfaceData"{}};}
+\DoxyCodeLine{00380\ \}}
+
+\end{DoxyCode}

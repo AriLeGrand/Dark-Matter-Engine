@@ -1,0 +1,461 @@
+\doxysection{bt\+GImpact\+Bvh.\+cpp}
+\hypertarget{bt_g_impact_bvh_8cpp_source}{}\label{bt_g_impact_bvh_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/Gimpact/btGImpactBvh.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/Gimpact/btGImpactBvh.cpp}}
+\mbox{\hyperlink{bt_g_impact_bvh_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ }
+\DoxyCodeLine{00004\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ source\ file\ is\ part\ of\ GIMPACT\ Library.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{}}
+\DoxyCodeLine{00007\ \textcolor{comment}{For\ the\ latest\ info,\ see\ http://gimpact.sourceforge.net/}}
+\DoxyCodeLine{00008\ \textcolor{comment}{}}
+\DoxyCodeLine{00009\ \textcolor{comment}{Copyright\ (c)\ 2007\ Francisco\ Leon\ Najera.\ C.C.\ 80087371.}}
+\DoxyCodeLine{00010\ \textcolor{comment}{email:\ projectileman@yahoo.com}}
+\DoxyCodeLine{00011\ \textcolor{comment}{}}
+\DoxyCodeLine{00012\ \textcolor{comment}{}}
+\DoxyCodeLine{00013\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00015\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,}}
+\DoxyCodeLine{00016\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,}}
+\DoxyCodeLine{00017\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00018\ \textcolor{comment}{}}
+\DoxyCodeLine{00019\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00020\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00021\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00022\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_g_impact_bvh_8h}{btGImpactBvh.h}}"{}}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_quickprof_8h}{LinearMath/btQuickprof.h}}"{}}}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#ifdef\ TRI\_COLLISION\_PROFILING}}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ \mbox{\hyperlink{classbt_clock}{btClock}}\ g\_tree\_clock;}
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00030\ \textcolor{keywordtype}{float}\ g\_accum\_tree\_collision\_time\ =\ 0;}
+\DoxyCodeLine{00031\ \textcolor{keywordtype}{int}\ g\_count\_traversing\ =\ 0;}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \textcolor{keywordtype}{void}\ bt\_begin\_gim02\_tree\_time()}
+\DoxyCodeLine{00034\ \{}
+\DoxyCodeLine{00035\ \ \ \ \ g\_tree\_clock.\mbox{\hyperlink{classbt_clock_a592eb764c2e7b645c9619ab7e483166c}{reset}}();}
+\DoxyCodeLine{00036\ \}}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \textcolor{keywordtype}{void}\ bt\_end\_gim02\_tree\_time()}
+\DoxyCodeLine{00039\ \{}
+\DoxyCodeLine{00040\ \ \ \ \ g\_accum\_tree\_collision\_time\ +=\ g\_tree\_clock.\mbox{\hyperlink{classbt_clock_aa58b76bfde0b0f3f33d0cb91ec6b6938}{getTimeMicroseconds}}();}
+\DoxyCodeLine{00041\ \ \ \ \ g\_count\_traversing++;}
+\DoxyCodeLine{00042\ \}}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00045\ \textcolor{keywordtype}{float}\ btGImpactBvh::getAverageTreeCollisionTime()}
+\DoxyCodeLine{00046\ \{}
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{keywordflow}{if}\ (g\_count\_traversing\ ==\ 0)\ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{keywordtype}{float}\ avgtime\ =\ g\_accum\_tree\_collision\_time;}
+\DoxyCodeLine{00050\ \ \ \ \ avgtime\ /=\ (float)g\_count\_traversing;}
+\DoxyCodeLine{00051\ }
+\DoxyCodeLine{00052\ \ \ \ \ g\_accum\_tree\_collision\_time\ =\ 0;}
+\DoxyCodeLine{00053\ \ \ \ \ g\_count\_traversing\ =\ 0;}
+\DoxyCodeLine{00054\ \ \ \ \ \textcolor{keywordflow}{return}\ avgtime;}
+\DoxyCodeLine{00055\ }
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{comment}{//\ \ float\ avgtime\ =\ g\_count\_traversing;}}
+\DoxyCodeLine{00057\ \ \ \ \ \textcolor{comment}{//\ \ g\_count\_traversing\ =\ 0;}}
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{comment}{//\ \ return\ avgtime;}}
+\DoxyCodeLine{00059\ \}}
+\DoxyCodeLine{00060\ }
+\DoxyCodeLine{00061\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//TRI\_COLLISION\_PROFILING}}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00064\ }
+\DoxyCodeLine{00065\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_bvh_tree_a0a4c7b8aac4746d61db57943813897ae}{btBvhTree::\_calc\_splitting\_axis}}(}
+\DoxyCodeLine{00066\ \ \ \ \ \mbox{\hyperlink{class_g_i_m___b_v_h___d_a_t_a___a_r_r_a_y}{GIM\_BVH\_DATA\_ARRAY}}\&\ primitive\_boxes,\ \textcolor{keywordtype}{int}\ startIndex,\ \textcolor{keywordtype}{int}\ endIndex)}
+\DoxyCodeLine{00067\ \{}
+\DoxyCodeLine{00068\ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00070\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ means(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.));}
+\DoxyCodeLine{00071\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ variance(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.));}
+\DoxyCodeLine{00072\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}\ =\ endIndex\ -\/\ startIndex;}
+\DoxyCodeLine{00073\ }
+\DoxyCodeLine{00074\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ startIndex;\ i\ <\ endIndex;\ i++)}
+\DoxyCodeLine{00075\ \ \ \ \ \{}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ center\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5)\ *\ (primitive\_boxes[i].m\_bound.m\_max\ +}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ primitive\_boxes[i].m\_bound.m\_min);}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ means\ +=\ center;}
+\DoxyCodeLine{00079\ \ \ \ \ \}}
+\DoxyCodeLine{00080\ \ \ \ \ means\ *=\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.)\ /\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})\mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}});}
+\DoxyCodeLine{00081\ }
+\DoxyCodeLine{00082\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ startIndex;\ i\ <\ endIndex;\ i++)}
+\DoxyCodeLine{00083\ \ \ \ \ \{}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ center\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5)\ *\ (primitive\_boxes[i].m\_bound.m\_max\ +}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ primitive\_boxes[i].m\_bound.m\_min);}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ diff2\ =\ center\ -\/\ means;}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ diff2\ =\ diff2\ *\ diff2;}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ variance\ +=\ diff2;}
+\DoxyCodeLine{00089\ \ \ \ \ \}}
+\DoxyCodeLine{00090\ \ \ \ \ variance\ *=\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.)\ /\ ((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})\mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}\ -\/\ 1));}
+\DoxyCodeLine{00091\ }
+\DoxyCodeLine{00092\ \ \ \ \ \textcolor{keywordflow}{return}\ variance.maxAxis();}
+\DoxyCodeLine{00093\ \}}
+\DoxyCodeLine{00094\ }
+\DoxyCodeLine{00095\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_bvh_tree_adab83b12f4b402cfb5993229464bb5bf}{btBvhTree::\_sort\_and\_calc\_splitting\_index}}(}
+\DoxyCodeLine{00096\ \ \ \ \ \mbox{\hyperlink{class_g_i_m___b_v_h___d_a_t_a___a_r_r_a_y}{GIM\_BVH\_DATA\_ARRAY}}\&\ primitive\_boxes,\ \textcolor{keywordtype}{int}\ startIndex,}
+\DoxyCodeLine{00097\ \ \ \ \ \textcolor{keywordtype}{int}\ endIndex,\ \textcolor{keywordtype}{int}\ splitAxis)}
+\DoxyCodeLine{00098\ \{}
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00100\ \ \ \ \ \textcolor{keywordtype}{int}\ splitIndex\ =\ startIndex;}
+\DoxyCodeLine{00101\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}\ =\ endIndex\ -\/\ startIndex;}
+\DoxyCodeLine{00102\ }
+\DoxyCodeLine{00103\ \ \ \ \ \textcolor{comment}{//\ average\ of\ centers}}
+\DoxyCodeLine{00104\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ splitValue\ =\ 0.0f;}
+\DoxyCodeLine{00105\ }
+\DoxyCodeLine{00106\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ means(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.));}
+\DoxyCodeLine{00107\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ startIndex;\ i\ <\ endIndex;\ i++)}
+\DoxyCodeLine{00108\ \ \ \ \ \{}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ center\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5)\ *\ (primitive\_boxes[i].m\_bound.m\_max\ +}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ primitive\_boxes[i].m\_bound.m\_min);}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ means\ +=\ center;}
+\DoxyCodeLine{00112\ \ \ \ \ \}}
+\DoxyCodeLine{00113\ \ \ \ \ means\ *=\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.)\ /\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})\mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}});}
+\DoxyCodeLine{00114\ }
+\DoxyCodeLine{00115\ \ \ \ \ splitValue\ =\ means[splitAxis];}
+\DoxyCodeLine{00116\ }
+\DoxyCodeLine{00117\ \ \ \ \ \textcolor{comment}{//sort\ leafNodes\ so\ all\ values\ larger\ then\ splitValue\ comes\ first,\ and\ smaller\ values\ start\ from\ 'splitIndex'.}}
+\DoxyCodeLine{00118\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ startIndex;\ i\ <\ endIndex;\ i++)}
+\DoxyCodeLine{00119\ \ \ \ \ \{}
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ center\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5)\ *\ (primitive\_boxes[i].m\_bound.m\_max\ +}
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ primitive\_boxes[i].m\_bound.m\_min);}
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (center[splitAxis]\ >\ splitValue)}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//swap}}
+\DoxyCodeLine{00125\ \ \ \ \ \ \ \ \ \ \ \ \ primitive\_boxes.\mbox{\hyperlink{classbt_aligned_object_array_a4aeacaa461686c9394aabd3c139179b4}{swap}}(i,\ splitIndex);}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//swapLeafNodes(i,splitIndex);}}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ \ \ \ \ splitIndex++;}
+\DoxyCodeLine{00128\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00129\ \ \ \ \ \}}
+\DoxyCodeLine{00130\ }
+\DoxyCodeLine{00131\ \ \ \ \ \textcolor{comment}{//if\ the\ splitIndex\ causes\ unbalanced\ trees,\ fix\ this\ by\ using\ the\ center\ in\ between\ startIndex\ and\ endIndex}}
+\DoxyCodeLine{00132\ \ \ \ \ \textcolor{comment}{//otherwise\ the\ tree-\/building\ might\ fail\ due\ to\ stack-\/overflows\ in\ certain\ cases.}}
+\DoxyCodeLine{00133\ \ \ \ \ \textcolor{comment}{//unbalanced1\ is\ unsafe:\ it\ can\ cause\ stack\ overflows}}
+\DoxyCodeLine{00134\ \ \ \ \ \textcolor{comment}{//bool\ unbalanced1\ =\ ((splitIndex==startIndex)\ ||\ (splitIndex\ ==\ (endIndex-\/1)));}}
+\DoxyCodeLine{00135\ }
+\DoxyCodeLine{00136\ \ \ \ \ \textcolor{comment}{//unbalanced2\ should\ work\ too:\ always\ use\ center\ (perfect\ balanced\ trees)}}
+\DoxyCodeLine{00137\ \ \ \ \ \textcolor{comment}{//bool\ unbalanced2\ =\ true;}}
+\DoxyCodeLine{00138\ }
+\DoxyCodeLine{00139\ \ \ \ \ \textcolor{comment}{//this\ should\ be\ safe\ too:}}
+\DoxyCodeLine{00140\ \ \ \ \ \textcolor{keywordtype}{int}\ rangeBalancedIndices\ =\ \mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}\ /\ 3;}
+\DoxyCodeLine{00141\ \ \ \ \ \textcolor{keywordtype}{bool}\ unbalanced\ =\ ((splitIndex\ <=\ (startIndex\ +\ rangeBalancedIndices))\ ||\ (splitIndex\ >=\ (endIndex\ -\/\ 1\ -\/\ rangeBalancedIndices)));}
+\DoxyCodeLine{00142\ }
+\DoxyCodeLine{00143\ \ \ \ \ \textcolor{keywordflow}{if}\ (unbalanced)}
+\DoxyCodeLine{00144\ \ \ \ \ \{}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ splitIndex\ =\ startIndex\ +\ (\mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}\ >>\ 1);}
+\DoxyCodeLine{00146\ \ \ \ \ \}}
+\DoxyCodeLine{00147\ }
+\DoxyCodeLine{00148\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(!((splitIndex\ ==\ startIndex)\ ||\ (splitIndex\ ==\ (endIndex))));}
+\DoxyCodeLine{00149\ }
+\DoxyCodeLine{00150\ \ \ \ \ \textcolor{keywordflow}{return}\ splitIndex;}
+\DoxyCodeLine{00151\ \}}
+\DoxyCodeLine{00152\ }
+\DoxyCodeLine{00153\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_bvh_tree_a04dbb29969ae7bdedc06d650b5f35932}{btBvhTree::\_build\_sub\_tree}}(\mbox{\hyperlink{class_g_i_m___b_v_h___d_a_t_a___a_r_r_a_y}{GIM\_BVH\_DATA\_ARRAY}}\&\ primitive\_boxes,\ \textcolor{keywordtype}{int}\ startIndex,\ \textcolor{keywordtype}{int}\ endIndex)}
+\DoxyCodeLine{00154\ \{}
+\DoxyCodeLine{00155\ \ \ \ \ \textcolor{keywordtype}{int}\ curIndex\ =\ \mbox{\hyperlink{classbt_bvh_tree_a2d08e4099671e71c48786c26f7cd554a}{m\_num\_nodes}};}
+\DoxyCodeLine{00156\ \ \ \ \ \mbox{\hyperlink{classbt_bvh_tree_a2d08e4099671e71c48786c26f7cd554a}{m\_num\_nodes}}++;}
+\DoxyCodeLine{00157\ }
+\DoxyCodeLine{00158\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}((endIndex\ -\/\ startIndex)\ >\ 0);}
+\DoxyCodeLine{00159\ }
+\DoxyCodeLine{00160\ \ \ \ \ \textcolor{keywordflow}{if}\ ((endIndex\ -\/\ startIndex)\ ==\ 1)}
+\DoxyCodeLine{00161\ \ \ \ \ \{}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \textcolor{comment}{//We\ have\ a\ leaf\ node}}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_bvh_tree_a789e785f88d84a857ca1931ff85a4b7d}{setNodeBound}}(curIndex,\ primitive\_boxes[startIndex].m\_bound);}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_bvh_tree_a0b90eb3e890f84648f7c3b7ca52fefb7}{m\_node\_array}}[curIndex].setDataIndex(primitive\_boxes[startIndex].\mbox{\hyperlink{bt_multi_body_constraint_8h_a872c2c8ba01357425e1e3a063f281e65}{m\_data}});}
+\DoxyCodeLine{00165\ }
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00167\ \ \ \ \ \}}
+\DoxyCodeLine{00168\ \ \ \ \ \textcolor{comment}{//calculate\ Best\ Splitting\ Axis\ and\ where\ to\ split\ it.\ Sort\ the\ incoming\ 'leafNodes'\ array\ within\ range\ 'startIndex/endIndex'.}}
+\DoxyCodeLine{00169\ }
+\DoxyCodeLine{00170\ \ \ \ \ \textcolor{comment}{//split\ axis}}
+\DoxyCodeLine{00171\ \ \ \ \ \textcolor{keywordtype}{int}\ splitIndex\ =\ \mbox{\hyperlink{classbt_bvh_tree_a0a4c7b8aac4746d61db57943813897ae}{\_calc\_splitting\_axis}}(primitive\_boxes,\ startIndex,\ endIndex);}
+\DoxyCodeLine{00172\ }
+\DoxyCodeLine{00173\ \ \ \ \ splitIndex\ =\ \mbox{\hyperlink{classbt_bvh_tree_adab83b12f4b402cfb5993229464bb5bf}{\_sort\_and\_calc\_splitting\_index}}(}
+\DoxyCodeLine{00174\ \ \ \ \ \ \ \ \ primitive\_boxes,\ startIndex,\ endIndex,}
+\DoxyCodeLine{00175\ \ \ \ \ \ \ \ \ splitIndex\ \ \textcolor{comment}{//split\ axis}}
+\DoxyCodeLine{00176\ \ \ \ \ );}
+\DoxyCodeLine{00177\ }
+\DoxyCodeLine{00178\ \ \ \ \ \textcolor{comment}{//calc\ this\ node\ bounding\ box}}
+\DoxyCodeLine{00179\ }
+\DoxyCodeLine{00180\ \ \ \ \ \mbox{\hyperlink{bt_box_collision_8h_af5e7af7aae5e601451a7256d35c5db2a}{btAABB}}\ node\_bound;}
+\DoxyCodeLine{00181\ \ \ \ \ node\_bound.invalidate();}
+\DoxyCodeLine{00182\ }
+\DoxyCodeLine{00183\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ startIndex;\ i\ <\ endIndex;\ i++)}
+\DoxyCodeLine{00184\ \ \ \ \ \{}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ node\_bound.merge(primitive\_boxes[i].m\_bound);}
+\DoxyCodeLine{00186\ \ \ \ \ \}}
+\DoxyCodeLine{00187\ }
+\DoxyCodeLine{00188\ \ \ \ \ \mbox{\hyperlink{classbt_bvh_tree_a789e785f88d84a857ca1931ff85a4b7d}{setNodeBound}}(curIndex,\ node\_bound);}
+\DoxyCodeLine{00189\ }
+\DoxyCodeLine{00190\ \ \ \ \ \textcolor{comment}{//build\ left\ branch}}
+\DoxyCodeLine{00191\ \ \ \ \ \mbox{\hyperlink{classbt_bvh_tree_a04dbb29969ae7bdedc06d650b5f35932}{\_build\_sub\_tree}}(primitive\_boxes,\ startIndex,\ splitIndex);}
+\DoxyCodeLine{00192\ }
+\DoxyCodeLine{00193\ \ \ \ \ \textcolor{comment}{//build\ right\ branch}}
+\DoxyCodeLine{00194\ \ \ \ \ \mbox{\hyperlink{classbt_bvh_tree_a04dbb29969ae7bdedc06d650b5f35932}{\_build\_sub\_tree}}(primitive\_boxes,\ splitIndex,\ endIndex);}
+\DoxyCodeLine{00195\ }
+\DoxyCodeLine{00196\ \ \ \ \ \mbox{\hyperlink{classbt_bvh_tree_a0b90eb3e890f84648f7c3b7ca52fefb7}{m\_node\_array}}[curIndex].setEscapeIndex(\mbox{\hyperlink{classbt_bvh_tree_a2d08e4099671e71c48786c26f7cd554a}{m\_num\_nodes}}\ -\/\ curIndex);}
+\DoxyCodeLine{00197\ \}}
+\DoxyCodeLine{00198\ }
+\DoxyCodeLine{00200\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_bvh_tree_aed589b2985838c6268597f4f64a96c46}{btBvhTree::build\_tree}}(}
+\DoxyCodeLine{00201\ \ \ \ \ \mbox{\hyperlink{class_g_i_m___b_v_h___d_a_t_a___a_r_r_a_y}{GIM\_BVH\_DATA\_ARRAY}}\&\ primitive\_boxes)}
+\DoxyCodeLine{00202\ \{}
+\DoxyCodeLine{00203\ \ \ \ \ \textcolor{comment}{//\ initialize\ node\ count\ to\ 0}}
+\DoxyCodeLine{00204\ \ \ \ \ \mbox{\hyperlink{classbt_bvh_tree_a2d08e4099671e71c48786c26f7cd554a}{m\_num\_nodes}}\ =\ 0;}
+\DoxyCodeLine{00205\ \ \ \ \ \textcolor{comment}{//\ allocate\ nodes}}
+\DoxyCodeLine{00206\ \ \ \ \ \mbox{\hyperlink{classbt_bvh_tree_a0b90eb3e890f84648f7c3b7ca52fefb7}{m\_node\_array}}.resize(primitive\_boxes.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ *\ 2);}
+\DoxyCodeLine{00207\ }
+\DoxyCodeLine{00208\ \ \ \ \ \mbox{\hyperlink{classbt_bvh_tree_a04dbb29969ae7bdedc06d650b5f35932}{\_build\_sub\_tree}}(primitive\_boxes,\ 0,\ primitive\_boxes.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00209\ \}}
+\DoxyCodeLine{00210\ }
+\DoxyCodeLine{00212\ }
+\DoxyCodeLine{00213\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_g_impact_bvh_afd14c2dcbbc9ceb6e13d0dee860faa48}{btGImpactBvh::refit}}()}
+\DoxyCodeLine{00214\ \{}
+\DoxyCodeLine{00215\ \ \ \ \ \textcolor{keywordtype}{int}\ nodecount\ =\ \mbox{\hyperlink{classbt_g_impact_bvh_afd5814a39a896a636b74be929719311f}{getNodeCount}}();}
+\DoxyCodeLine{00216\ \ \ \ \ \textcolor{keywordflow}{while}\ (nodecount-\/-\/)}
+\DoxyCodeLine{00217\ \ \ \ \ \{}
+\DoxyCodeLine{00218\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}(nodecount))}
+\DoxyCodeLine{00219\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00220\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_box_collision_8h_af5e7af7aae5e601451a7256d35c5db2a}{btAABB}}\ leafbox;}
+\DoxyCodeLine{00221\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_bvh_ae1278d754c08bce1f1863c1e172e89ec}{m\_primitive\_manager}}-\/>get\_primitive\_box(\mbox{\hyperlink{classbt_g_impact_bvh_a59b86f8c3c63030847563367ce74b2c3}{getNodeData}}(nodecount),\ leafbox);}
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_bvh_a859ecdad42780d5eef09f9825f179640}{setNodeBound}}(nodecount,\ leafbox);}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//const\ GIM\_BVH\_TREE\_NODE\ *\ nodepointer\ =\ get\_node\_pointer(nodecount);}}
+\DoxyCodeLine{00227\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//get\ left\ bound}}
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_box_collision_8h_af5e7af7aae5e601451a7256d35c5db2a}{btAABB}}\ bound;}
+\DoxyCodeLine{00229\ \ \ \ \ \ \ \ \ \ \ \ \ bound.invalidate();}
+\DoxyCodeLine{00230\ }
+\DoxyCodeLine{00231\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_box_collision_8h_af5e7af7aae5e601451a7256d35c5db2a}{btAABB}}\ temp\_box;}
+\DoxyCodeLine{00232\ }
+\DoxyCodeLine{00233\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ child\_node\ =\ \mbox{\hyperlink{classbt_g_impact_bvh_abd3f4e49eae2c602d3bbdacffdee6afb}{getLeftNode}}(nodecount);}
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (child\_node)}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_bvh_af517762c805e92b40344901e517d6375}{getNodeBound}}(child\_node,\ temp\_box);}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bound.merge(temp\_box);}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00239\ }
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ \ \ \ \ child\_node\ =\ \mbox{\hyperlink{classbt_g_impact_bvh_ae7eaa9f96db58dd4e04daaefb0b1f071}{getRightNode}}(nodecount);}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (child\_node)}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_bvh_af517762c805e92b40344901e517d6375}{getNodeBound}}(child\_node,\ temp\_box);}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bound.merge(temp\_box);}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00246\ }
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_bvh_a859ecdad42780d5eef09f9825f179640}{setNodeBound}}(nodecount,\ bound);}
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00249\ \ \ \ \ \}}
+\DoxyCodeLine{00250\ \}}
+\DoxyCodeLine{00251\ }
+\DoxyCodeLine{00253\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_g_impact_bvh_a09c889dd33db157383fb5bdb17d58d51}{btGImpactBvh::buildSet}}()}
+\DoxyCodeLine{00254\ \{}
+\DoxyCodeLine{00255\ \ \ \ \ \textcolor{comment}{//obtain\ primitive\ boxes}}
+\DoxyCodeLine{00256\ \ \ \ \ \mbox{\hyperlink{class_g_i_m___b_v_h___d_a_t_a___a_r_r_a_y}{GIM\_BVH\_DATA\_ARRAY}}\ primitive\_boxes;}
+\DoxyCodeLine{00257\ \ \ \ \ primitive\_boxes.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(\mbox{\hyperlink{classbt_g_impact_bvh_ae1278d754c08bce1f1863c1e172e89ec}{m\_primitive\_manager}}-\/>get\_primitive\_count());}
+\DoxyCodeLine{00258\ }
+\DoxyCodeLine{00259\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ primitive\_boxes.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ i++)}
+\DoxyCodeLine{00260\ \ \ \ \ \{}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_bvh_ae1278d754c08bce1f1863c1e172e89ec}{m\_primitive\_manager}}-\/>get\_primitive\_box(i,\ primitive\_boxes[i].m\_bound);}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ primitive\_boxes[i].m\_data\ =\ i;}
+\DoxyCodeLine{00263\ \ \ \ \ \}}
+\DoxyCodeLine{00264\ }
+\DoxyCodeLine{00265\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_bvh_acfa1fa978bdc38e527f3b776d390e8e4}{m\_box\_tree}}.build\_tree(primitive\_boxes);}
+\DoxyCodeLine{00266\ \}}
+\DoxyCodeLine{00267\ }
+\DoxyCodeLine{00269\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_g_impact_bvh_a3e3865462400694cc0c84504118a243c}{btGImpactBvh::boxQuery}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box_collision_8h_af5e7af7aae5e601451a7256d35c5db2a}{btAABB}}\&\ box,\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<int>}}\&\ collided\_results)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00270\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00271\ \ \ \ \ \textcolor{keywordtype}{int}\ curIndex\ =\ 0;}
+\DoxyCodeLine{00272\ \ \ \ \ \textcolor{keywordtype}{int}\ numNodes\ =\ \mbox{\hyperlink{classbt_g_impact_bvh_afd5814a39a896a636b74be929719311f}{getNodeCount}}();}
+\DoxyCodeLine{00273\ }
+\DoxyCodeLine{00274\ \ \ \ \ \textcolor{keywordflow}{while}\ (curIndex\ <\ numNodes)}
+\DoxyCodeLine{00275\ \ \ \ \ \{}
+\DoxyCodeLine{00276\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_box_collision_8h_af5e7af7aae5e601451a7256d35c5db2a}{btAABB}}\ bound;}
+\DoxyCodeLine{00277\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_bvh_af517762c805e92b40344901e517d6375}{getNodeBound}}(curIndex,\ bound);}
+\DoxyCodeLine{00278\ }
+\DoxyCodeLine{00279\ \ \ \ \ \ \ \ \ \textcolor{comment}{//catch\ bugs\ in\ tree\ data}}
+\DoxyCodeLine{00280\ }
+\DoxyCodeLine{00281\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ aabbOverlap\ =\ bound.has\_collision(box);}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ isleafnode\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}(curIndex);}
+\DoxyCodeLine{00283\ }
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (isleafnode\ \&\&\ aabbOverlap)}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \ \ \ \ collided\_results.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(\mbox{\hyperlink{classbt_g_impact_bvh_a59b86f8c3c63030847563367ce74b2c3}{getNodeData}}(curIndex));}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00288\ }
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (aabbOverlap\ ||\ isleafnode)}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//next\ subnode}}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ \ \ \ \ curIndex++;}
+\DoxyCodeLine{00293\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00294\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//skip\ node}}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ \ \ \ \ curIndex\ +=\ \mbox{\hyperlink{classbt_g_impact_bvh_a4cbf39bfbc23194fe4d1c3e9f8206cb9}{getEscapeNodeIndex}}(curIndex);}
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00299\ \ \ \ \ \}}
+\DoxyCodeLine{00300\ \ \ \ \ \textcolor{keywordflow}{if}\ (collided\_results.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ >\ 0)\ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00301\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00302\ \}}
+\DoxyCodeLine{00303\ }
+\DoxyCodeLine{00305\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_g_impact_bvh_ab704a23868c139007cd9bb0622297a1e}{btGImpactBvh::rayQuery}}(}
+\DoxyCodeLine{00306\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ ray\_dir,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ ray\_origin,}
+\DoxyCodeLine{00307\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<int>}}\&\ collided\_results)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00308\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00309\ \ \ \ \ \textcolor{keywordtype}{int}\ curIndex\ =\ 0;}
+\DoxyCodeLine{00310\ \ \ \ \ \textcolor{keywordtype}{int}\ numNodes\ =\ \mbox{\hyperlink{classbt_g_impact_bvh_afd5814a39a896a636b74be929719311f}{getNodeCount}}();}
+\DoxyCodeLine{00311\ }
+\DoxyCodeLine{00312\ \ \ \ \ \textcolor{keywordflow}{while}\ (curIndex\ <\ numNodes)}
+\DoxyCodeLine{00313\ \ \ \ \ \{}
+\DoxyCodeLine{00314\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_box_collision_8h_af5e7af7aae5e601451a7256d35c5db2a}{btAABB}}\ bound;}
+\DoxyCodeLine{00315\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_bvh_af517762c805e92b40344901e517d6375}{getNodeBound}}(curIndex,\ bound);}
+\DoxyCodeLine{00316\ }
+\DoxyCodeLine{00317\ \ \ \ \ \ \ \ \ \textcolor{comment}{//catch\ bugs\ in\ tree\ data}}
+\DoxyCodeLine{00318\ }
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ aabbOverlap\ =\ bound.collide\_ray(ray\_origin,\ ray\_dir);}
+\DoxyCodeLine{00320\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ isleafnode\ =\ \mbox{\hyperlink{b3_quantized_bvh_8h_afd6c8cbdab3db66ad536cda4cce77a0a}{isLeafNode}}(curIndex);}
+\DoxyCodeLine{00321\ }
+\DoxyCodeLine{00322\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (isleafnode\ \&\&\ aabbOverlap)}
+\DoxyCodeLine{00323\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ \ \ \ \ collided\_results.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(\mbox{\hyperlink{classbt_g_impact_bvh_a59b86f8c3c63030847563367ce74b2c3}{getNodeData}}(curIndex));}
+\DoxyCodeLine{00325\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00326\ }
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (aabbOverlap\ ||\ isleafnode)}
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//next\ subnode}}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ \ \ \ \ curIndex++;}
+\DoxyCodeLine{00331\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00332\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//skip\ node}}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ \ \ \ \ curIndex\ +=\ \mbox{\hyperlink{classbt_g_impact_bvh_a4cbf39bfbc23194fe4d1c3e9f8206cb9}{getEscapeNodeIndex}}(curIndex);}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00337\ \ \ \ \ \}}
+\DoxyCodeLine{00338\ \ \ \ \ \textcolor{keywordflow}{if}\ (collided\_results.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ >\ 0)\ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00339\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00340\ \}}
+\DoxyCodeLine{00341\ }
+\DoxyCodeLine{00342\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_g_impact_bvh_8cpp_acade295a0d2f435840e5b57ac0f00b4a}{\_node\_collision}}(}
+\DoxyCodeLine{00343\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_bvh}{btGImpactBvh}}*\ boxset0,\ \mbox{\hyperlink{classbt_g_impact_bvh}{btGImpactBvh}}*\ boxset1,}
+\DoxyCodeLine{00344\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box_collision_8h_a05bf243ab64eada17a672b1e76474f43}{BT\_BOX\_BOX\_TRANSFORM\_CACHE}}\&\ trans\_cache\_1to0,}
+\DoxyCodeLine{00345\ \ \ \ \ \textcolor{keywordtype}{int}\ node0,\ \textcolor{keywordtype}{int}\ node1,\ \textcolor{keywordtype}{bool}\ complete\_primitive\_tests)}
+\DoxyCodeLine{00346\ \{}
+\DoxyCodeLine{00347\ \ \ \ \ \mbox{\hyperlink{bt_box_collision_8h_af5e7af7aae5e601451a7256d35c5db2a}{btAABB}}\ box0;}
+\DoxyCodeLine{00348\ \ \ \ \ boxset0-\/>\mbox{\hyperlink{classbt_g_impact_bvh_af517762c805e92b40344901e517d6375}{getNodeBound}}(node0,\ box0);}
+\DoxyCodeLine{00349\ \ \ \ \ \mbox{\hyperlink{bt_box_collision_8h_af5e7af7aae5e601451a7256d35c5db2a}{btAABB}}\ box1;}
+\DoxyCodeLine{00350\ \ \ \ \ boxset1-\/>\mbox{\hyperlink{classbt_g_impact_bvh_af517762c805e92b40344901e517d6375}{getNodeBound}}(node1,\ box1);}
+\DoxyCodeLine{00351\ }
+\DoxyCodeLine{00352\ \ \ \ \ \textcolor{keywordflow}{return}\ box0.overlapping\_trans\_cache(box1,\ trans\_cache\_1to0,\ complete\_primitive\_tests);}
+\DoxyCodeLine{00353\ \ \ \ \ \textcolor{comment}{//\ \ box1.appy\_transform\_trans\_cache(trans\_cache\_1to0);}}
+\DoxyCodeLine{00354\ \ \ \ \ \textcolor{comment}{//\ \ return\ box0.has\_collision(box1);}}
+\DoxyCodeLine{00355\ \}}
+\DoxyCodeLine{00356\ }
+\DoxyCodeLine{00357\ \textcolor{comment}{//stackless\ recursive\ collision\ routine}}
+\DoxyCodeLine{00358\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ \_find\_collision\_pairs\_recursive(}
+\DoxyCodeLine{00359\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_bvh}{btGImpactBvh}}*\ boxset0,\ \mbox{\hyperlink{classbt_g_impact_bvh}{btGImpactBvh}}*\ boxset1,}
+\DoxyCodeLine{00360\ \ \ \ \ \mbox{\hyperlink{classbt_pair_set}{btPairSet}}*\ collision\_pairs,}
+\DoxyCodeLine{00361\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box_collision_8h_a05bf243ab64eada17a672b1e76474f43}{BT\_BOX\_BOX\_TRANSFORM\_CACHE}}\&\ trans\_cache\_1to0,}
+\DoxyCodeLine{00362\ \ \ \ \ \textcolor{keywordtype}{int}\ node0,\ \textcolor{keywordtype}{int}\ node1,\ \textcolor{keywordtype}{bool}\ complete\_primitive\_tests)}
+\DoxyCodeLine{00363\ \{}
+\DoxyCodeLine{00364\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_g_impact_bvh_8cpp_acade295a0d2f435840e5b57ac0f00b4a}{\_node\_collision}}(}
+\DoxyCodeLine{00365\ \ \ \ \ \ \ \ \ \ \ \ \ boxset0,\ boxset1,\ trans\_cache\_1to0,}
+\DoxyCodeLine{00366\ \ \ \ \ \ \ \ \ \ \ \ \ node0,\ node1,\ complete\_primitive\_tests)\ ==\ \textcolor{keyword}{false})\ \textcolor{keywordflow}{return};\ \ \textcolor{comment}{//avoid\ colliding\ internal\ nodes}}
+\DoxyCodeLine{00367\ }
+\DoxyCodeLine{00368\ \ \ \ \ \textcolor{keywordflow}{if}\ (boxset0-\/>\mbox{\hyperlink{classbt_g_impact_bvh_a0f8180a21582bf93e89af78f4c446ad3}{isLeafNode}}(node0))}
+\DoxyCodeLine{00369\ \ \ \ \ \{}
+\DoxyCodeLine{00370\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (boxset1-\/>\mbox{\hyperlink{classbt_g_impact_bvh_a0f8180a21582bf93e89af78f4c446ad3}{isLeafNode}}(node1))}
+\DoxyCodeLine{00371\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ collision\ result}}
+\DoxyCodeLine{00373\ \ \ \ \ \ \ \ \ \ \ \ \ collision\_pairs-\/>\mbox{\hyperlink{classbt_pair_set_a61b9bfd0a47a379aa6b7f9e974f19d2a}{push\_pair}}(}
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ boxset0-\/>\mbox{\hyperlink{classbt_g_impact_bvh_a59b86f8c3c63030847563367ce74b2c3}{getNodeData}}(node0),\ boxset1-\/>\mbox{\hyperlink{classbt_g_impact_bvh_a59b86f8c3c63030847563367ce74b2c3}{getNodeData}}(node1));}
+\DoxyCodeLine{00375\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00376\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//collide\ left\ recursive}}
+\DoxyCodeLine{00380\ }
+\DoxyCodeLine{00381\ \ \ \ \ \ \ \ \ \ \ \ \ \_find\_collision\_pairs\_recursive(}
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ boxset0,\ boxset1,}
+\DoxyCodeLine{00383\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ collision\_pairs,\ trans\_cache\_1to0,}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ node0,\ boxset1-\/>\mbox{\hyperlink{classbt_g_impact_bvh_abd3f4e49eae2c602d3bbdacffdee6afb}{getLeftNode}}(node1),\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00385\ }
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//collide\ right\ recursive}}
+\DoxyCodeLine{00387\ \ \ \ \ \ \ \ \ \ \ \ \ \_find\_collision\_pairs\_recursive(}
+\DoxyCodeLine{00388\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ boxset0,\ boxset1,}
+\DoxyCodeLine{00389\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ collision\_pairs,\ trans\_cache\_1to0,}
+\DoxyCodeLine{00390\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ node0,\ boxset1-\/>\mbox{\hyperlink{classbt_g_impact_bvh_ae7eaa9f96db58dd4e04daaefb0b1f071}{getRightNode}}(node1),\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00391\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00392\ \ \ \ \ \}}
+\DoxyCodeLine{00393\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00394\ \ \ \ \ \{}
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (boxset1-\/>\mbox{\hyperlink{classbt_g_impact_bvh_a0f8180a21582bf93e89af78f4c446ad3}{isLeafNode}}(node1))}
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//collide\ left\ recursive}}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ \ \ \ \ \_find\_collision\_pairs\_recursive(}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ boxset0,\ boxset1,}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ collision\_pairs,\ trans\_cache\_1to0,}
+\DoxyCodeLine{00401\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ boxset0-\/>\mbox{\hyperlink{classbt_g_impact_bvh_abd3f4e49eae2c602d3bbdacffdee6afb}{getLeftNode}}(node0),\ node1,\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00402\ }
+\DoxyCodeLine{00403\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//collide\ right\ recursive}}
+\DoxyCodeLine{00404\ }
+\DoxyCodeLine{00405\ \ \ \ \ \ \ \ \ \ \ \ \ \_find\_collision\_pairs\_recursive(}
+\DoxyCodeLine{00406\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ boxset0,\ boxset1,}
+\DoxyCodeLine{00407\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ collision\_pairs,\ trans\_cache\_1to0,}
+\DoxyCodeLine{00408\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ boxset0-\/>\mbox{\hyperlink{classbt_g_impact_bvh_ae7eaa9f96db58dd4e04daaefb0b1f071}{getRightNode}}(node0),\ node1,\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00409\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00410\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00411\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00412\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//collide\ left0\ left1}}
+\DoxyCodeLine{00413\ }
+\DoxyCodeLine{00414\ \ \ \ \ \ \ \ \ \ \ \ \ \_find\_collision\_pairs\_recursive(}
+\DoxyCodeLine{00415\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ boxset0,\ boxset1,}
+\DoxyCodeLine{00416\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ collision\_pairs,\ trans\_cache\_1to0,}
+\DoxyCodeLine{00417\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ boxset0-\/>\mbox{\hyperlink{classbt_g_impact_bvh_abd3f4e49eae2c602d3bbdacffdee6afb}{getLeftNode}}(node0),\ boxset1-\/>\mbox{\hyperlink{classbt_g_impact_bvh_abd3f4e49eae2c602d3bbdacffdee6afb}{getLeftNode}}(node1),\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00418\ }
+\DoxyCodeLine{00419\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//collide\ left0\ right1}}
+\DoxyCodeLine{00420\ }
+\DoxyCodeLine{00421\ \ \ \ \ \ \ \ \ \ \ \ \ \_find\_collision\_pairs\_recursive(}
+\DoxyCodeLine{00422\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ boxset0,\ boxset1,}
+\DoxyCodeLine{00423\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ collision\_pairs,\ trans\_cache\_1to0,}
+\DoxyCodeLine{00424\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ boxset0-\/>\mbox{\hyperlink{classbt_g_impact_bvh_abd3f4e49eae2c602d3bbdacffdee6afb}{getLeftNode}}(node0),\ boxset1-\/>\mbox{\hyperlink{classbt_g_impact_bvh_ae7eaa9f96db58dd4e04daaefb0b1f071}{getRightNode}}(node1),\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00425\ }
+\DoxyCodeLine{00426\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//collide\ right0\ left1}}
+\DoxyCodeLine{00427\ }
+\DoxyCodeLine{00428\ \ \ \ \ \ \ \ \ \ \ \ \ \_find\_collision\_pairs\_recursive(}
+\DoxyCodeLine{00429\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ boxset0,\ boxset1,}
+\DoxyCodeLine{00430\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ collision\_pairs,\ trans\_cache\_1to0,}
+\DoxyCodeLine{00431\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ boxset0-\/>\mbox{\hyperlink{classbt_g_impact_bvh_ae7eaa9f96db58dd4e04daaefb0b1f071}{getRightNode}}(node0),\ boxset1-\/>\mbox{\hyperlink{classbt_g_impact_bvh_abd3f4e49eae2c602d3bbdacffdee6afb}{getLeftNode}}(node1),\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00432\ }
+\DoxyCodeLine{00433\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//collide\ right0\ right1}}
+\DoxyCodeLine{00434\ }
+\DoxyCodeLine{00435\ \ \ \ \ \ \ \ \ \ \ \ \ \_find\_collision\_pairs\_recursive(}
+\DoxyCodeLine{00436\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ boxset0,\ boxset1,}
+\DoxyCodeLine{00437\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ collision\_pairs,\ trans\_cache\_1to0,}
+\DoxyCodeLine{00438\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ boxset0-\/>\mbox{\hyperlink{classbt_g_impact_bvh_ae7eaa9f96db58dd4e04daaefb0b1f071}{getRightNode}}(node0),\ boxset1-\/>\mbox{\hyperlink{classbt_g_impact_bvh_ae7eaa9f96db58dd4e04daaefb0b1f071}{getRightNode}}(node1),\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00439\ }
+\DoxyCodeLine{00440\ \ \ \ \ \ \ \ \ \}\ \ \textcolor{comment}{//\ else\ if\ node1\ is\ not\ a\ leaf}}
+\DoxyCodeLine{00441\ \ \ \ \ \}\ \ \ \ \ \ \textcolor{comment}{//\ else\ if\ node0\ is\ not\ a\ leaf}}
+\DoxyCodeLine{00442\ \}}
+\DoxyCodeLine{00443\ }
+\DoxyCodeLine{00444\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_g_impact_bvh_afae64cf5751011ae6f5e449fc6145ffd}{btGImpactBvh::find\_collision}}(\mbox{\hyperlink{classbt_g_impact_bvh_ab305fcdbd3faf585e253433b7193587e}{btGImpactBvh}}*\ boxset0,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ trans0,}
+\DoxyCodeLine{00445\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_bvh_ab305fcdbd3faf585e253433b7193587e}{btGImpactBvh}}*\ boxset1,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ trans1,}
+\DoxyCodeLine{00446\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_pair_set}{btPairSet}}\&\ collision\_pairs)}
+\DoxyCodeLine{00447\ \{}
+\DoxyCodeLine{00448\ \ \ \ \ \textcolor{keywordflow}{if}\ (boxset0-\/>\mbox{\hyperlink{classbt_g_impact_bvh_afd5814a39a896a636b74be929719311f}{getNodeCount}}()\ ==\ 0\ ||\ boxset1-\/>\mbox{\hyperlink{classbt_g_impact_bvh_afd5814a39a896a636b74be929719311f}{getNodeCount}}()\ ==\ 0)\ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00449\ }
+\DoxyCodeLine{00450\ \ \ \ \ \mbox{\hyperlink{bt_box_collision_8h_a05bf243ab64eada17a672b1e76474f43}{BT\_BOX\_BOX\_TRANSFORM\_CACHE}}\ trans\_cache\_1to0;}
+\DoxyCodeLine{00451\ }
+\DoxyCodeLine{00452\ \ \ \ \ trans\_cache\_1to0.calc\_from\_homogenic(trans0,\ trans1);}
+\DoxyCodeLine{00453\ }
+\DoxyCodeLine{00454\ \textcolor{preprocessor}{\#ifdef\ TRI\_COLLISION\_PROFILING}}
+\DoxyCodeLine{00455\ \ \ \ \ bt\_begin\_gim02\_tree\_time();}
+\DoxyCodeLine{00456\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//TRI\_COLLISION\_PROFILING}}
+\DoxyCodeLine{00457\ }
+\DoxyCodeLine{00458\ \ \ \ \ \_find\_collision\_pairs\_recursive(}
+\DoxyCodeLine{00459\ \ \ \ \ \ \ \ \ boxset0,\ boxset1,}
+\DoxyCodeLine{00460\ \ \ \ \ \ \ \ \ \&collision\_pairs,\ trans\_cache\_1to0,\ 0,\ 0,\ \textcolor{keyword}{true});}
+\DoxyCodeLine{00461\ \textcolor{preprocessor}{\#ifdef\ TRI\_COLLISION\_PROFILING}}
+\DoxyCodeLine{00462\ \ \ \ \ bt\_end\_gim02\_tree\_time();}
+\DoxyCodeLine{00463\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//TRI\_COLLISION\_PROFILING}}
+\DoxyCodeLine{00464\ \}}
+
+\end{DoxyCode}

@@ -1,0 +1,405 @@
+\doxysection{Dx11\+Renderer.\+h}
+\hypertarget{_dx11_renderer_8h_source}{}\label{_dx11_renderer_8h_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/RenderAPI/Dx11Renderer.h@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/RenderAPI/Dx11Renderer.h}}
+\mbox{\hyperlink{_dx11_renderer_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{_renderer_a_p_i_8h}{RendererAPI.h}}"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <windows.h>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <d3d11.h>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <d3dcompiler.h>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <directxmath.h>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <unordered\_map>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <iostream>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{_dx11_shader_8h}{Dx11Shader.h}}"{}}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{_dx11_scene_8h}{Dx11Scene.h}}"{}}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{_input_manager_8h}{include/InputManager.h}}"{}}}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{comment}{//Map\ storing\ the\ key\ and\ the\ state\ of\ the\ key\ (pressed\ or\ not)}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{_u_i_a_p_i_8h}{UIAPI/UIAPI.h}}"{}}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}backends/imgui\_impl\_win32.h"{}}}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{imgui_8h_a665f6b404eea9a640b1222a87236fe19}{IMGUI\_IMPL\_API}}\ LRESULT\ \mbox{\hyperlink{_dx11_renderer_8h_a87a3f9652a75339308cf5fd5699ef1fd}{ImGui\_ImplWin32\_WndProcHandler}}(HWND\ hWnd,\ UINT\ msg,\ WPARAM\ wParam,\ LPARAM\ lParam);}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \textcolor{keyword}{static}\ LRESULT\ CALLBACK\ WndProc(HWND\ hwnd,\ UINT\ msg,\ WPARAM\ wParam,\ LPARAM\ lParam)}
+\DoxyCodeLine{00023\ \{}
+\DoxyCodeLine{00024\ \ \ \ \ \mbox{\hyperlink{class_input_manager}{InputManager}}*\ pInputManager\ =\ \textcolor{keyword}{reinterpret\_cast<}\mbox{\hyperlink{class_input_manager}{InputManager}}*\textcolor{keyword}{>}(GetWindowLongPtr(hwnd,\ GWLP\_USERDATA));}
+\DoxyCodeLine{00025\ \ \ \ \ \textcolor{keywordflow}{switch}\ (msg)}
+\DoxyCodeLine{00026\ \ \ \ \ \{}
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{keywordflow}{case}\ WM\_KEYDOWN:}
+\DoxyCodeLine{00028\ \ \ \ \ \textcolor{keywordflow}{case}\ WM\_KEYUP:}
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{keywordflow}{case}\ WM\_MOUSEMOVE:}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keywordflow}{case}\ WM\_LBUTTONDOWN:}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keywordflow}{case}\ WM\_LBUTTONUP:}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordflow}{case}\ WM\_MOUSEWHEEL:}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{_dx11_renderer_8h_a87a3f9652a75339308cf5fd5699ef1fd}{ImGui\_ImplWin32\_WndProcHandler}}(hwnd,\ msg,\ wParam,\ lParam);}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keywordflow}{case}\ WM\_DESTROY:}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ PostQuitMessage(0);}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ DefWindowProc(hwnd,\ msg,\ wParam,\ lParam);}
+\DoxyCodeLine{00040\ \ \ \ \ \}}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{comment}{//Pass\ messages\ to\ default\ handler\ for\ any\ other\ messages}}
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{keywordflow}{return}\ DefWindowProc(hwnd,\ msg,\ wParam,\ lParam);}
+\DoxyCodeLine{00044\ \}}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \textcolor{keyword}{class\ }\mbox{\hyperlink{class_d_x11_renderer}{DX11Renderer}}\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{class_renderer_a_p_i}{RendererAPI}}\ \{}
+\DoxyCodeLine{00048\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{comment}{//ID3D11DeviceContext*\ d3dContext\ =\ nullptr;}}
+\DoxyCodeLine{00050\ \ \ \ \ ID3D11RenderTargetView*\ renderTargetView\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00051\ \ \ \ \ IDXGISwapChain*\ swapChain\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00052\ \ \ \ \ ID3D11Device*\ device\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00053\ \ \ \ \ ID3D11DeviceContext*\ deviceContext\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00054\ \ \ \ \ HINSTANCE\ hInstance\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00055\ \ \ \ \ LPCTSTR\ WndClassName\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00056\ \ \ \ \ HWND\ hwnd;}
+\DoxyCodeLine{00057\ \ \ \ \ HRESULT\ hr;}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \ \ \ \ std::vector<Dx11Scene>\ scenes;}
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{keywordtype}{int}\ CurrentSceneIdx\ =\ -\/1;}
+\DoxyCodeLine{00061\ }
+\DoxyCodeLine{00062\ \ \ \ \ std::vector<Dx11Shader>\ shaders;}
+\DoxyCodeLine{00063\ \ \ \ \ \mbox{\hyperlink{class_dx11_shader}{Dx11Shader}}\ FinnalPassShader;}
+\DoxyCodeLine{00064\ }
+\DoxyCodeLine{00065\ \ \ \ \ \textcolor{keywordtype}{int}\ ScreenWidth\ =\ 0;}
+\DoxyCodeLine{00066\ }
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{keywordtype}{int}\ ScreenHeight\ =\ 0;}
+\DoxyCodeLine{00068\ }
+\DoxyCodeLine{00069\ \ \ \ \ LARGE\_INTEGER\ frequency;}
+\DoxyCodeLine{00070\ \ \ \ \ LARGE\_INTEGER\ lastTime;}
+\DoxyCodeLine{00071\ }
+\DoxyCodeLine{00072\ \ \ \ \ ID3D11VertexShader*\ VS;}
+\DoxyCodeLine{00073\ \ \ \ \ ID3D11PixelShader*\ PS;}
+\DoxyCodeLine{00074\ \ \ \ \ ID3D10Blob*\ VS\_Buffer;}
+\DoxyCodeLine{00075\ \ \ \ \ ID3D10Blob*\ PS\_Buffer;}
+\DoxyCodeLine{00076\ }
+\DoxyCodeLine{00077\ \ \ \ \ D3D11\_INPUT\_ELEMENT\_DESC\ layout[3]\ =\ \{}
+\DoxyCodeLine{00078\ \ \ \ \ \{\textcolor{stringliteral}{"{}POSITION"{}},\ 0,\ DXGI\_FORMAT\_R32G32B32\_FLOAT,\ 0,\ 0,\ D3D11\_INPUT\_PER\_VERTEX\_DATA,\ 0\},\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Position\ (x,\ y,\ z)}}
+\DoxyCodeLine{00079\ \ \ \ \ \{\textcolor{stringliteral}{"{}NORMAL"{}},\ 0,\ DXGI\_FORMAT\_R32G32B32\_FLOAT,\ 0,\ 12,\ D3D11\_INPUT\_PER\_VERTEX\_DATA,\ 0\},\ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Normal\ (nx,\ ny,\ nz)}}
+\DoxyCodeLine{00080\ \ \ \ \ \{\textcolor{stringliteral}{"{}TEXCOORD"{}},\ 0,\ DXGI\_FORMAT\_R32G32\_FLOAT,\ 0,\ 24,\ D3D11\_INPUT\_PER\_VERTEX\_DATA,\ 0\},\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ UV\ (u,\ v)}}
+\DoxyCodeLine{00081\ \ \ \ \ \};}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00083\ \ \ \ \ UINT\ numElements\ =\ ARRAYSIZE(layout);}
+\DoxyCodeLine{00084\ \ \ \ \ ID3D11InputLayout*\ vertLayout\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00085\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00086\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{class_d_x11_renderer_a768057697411a35ed0c062b3be96715a}{window\_is\_opened}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00087\ }
+\DoxyCodeLine{00088\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_d_x11_renderer_a94d99a488ade7683c7c53054e9177bb4}{Init}}()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Initialize\ Direct3D\ 11\ (create\ device,\ context,\ swap\ chain,\ etc.)}}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ hInstance\ =\ GetModuleHandle(\mbox{\hyperlink{module___n_u_l_l}{NULL}});}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ WndClassName\ =\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385ad20caec3b48a1eef164cb4ca81ba2587}{L}}\textcolor{stringliteral}{"{}win"{}};}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Renderer\ Initialized"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255a7d5ed94020677617ad21b0827127cc4c}{API::RENDERER}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12ad0749aaba8b833466dfcbb0428e4f89c}{LEVEL::SUCCESS}});}
+\DoxyCodeLine{00093\ \ \ \ \ \}}
+\DoxyCodeLine{00094\ }
+\DoxyCodeLine{00095\ \ \ \ \ \mbox{\hyperlink{class_dx11_scene}{Dx11Scene}}\&\ \mbox{\hyperlink{class_d_x11_renderer_a96b00a7e0f5e874fec95682f444adf79}{GetCurrentScene}}()\ \{}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ scenes.at(CurrentSceneIdx);}
+\DoxyCodeLine{00097\ \ \ \ \ \}}
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_d_x11_renderer_ab07c76c5ff6cfb8d683a05182222662c}{AddScene}}()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00100\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{class_dx11_scene}{Dx11Scene}}\ \_(\mbox{\hyperlink{class_d_x11_renderer_a722a14fbe485bdc9514047fb99b58733}{GetDefaultShaderId}}(),\ FinnalPassShader.GetShaderId());}
+\DoxyCodeLine{00101\ \ \ \ \ \ \ \ \ \_.\mbox{\hyperlink{class_dx11_scene_a195d5b62b599837e4826baf2e7da9bae}{SetDxDeviceContext}}(device,\ deviceContext,\ VS\_Buffer);}
+\DoxyCodeLine{00102\ \ \ \ \ \ \ \ \ scenes.push\_back(\_);}
+\DoxyCodeLine{00103\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (CurrentSceneIdx\ ==\ -\/1)\ \{}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \ \ \ \ CurrentSceneIdx\ =\ 0;}
+\DoxyCodeLine{00105\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00106\ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Scene\ added"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255a7d5ed94020677617ad21b0827127cc4c}{API::RENDERER}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12ad0749aaba8b833466dfcbb0428e4f89c}{LEVEL::SUCCESS}});}
+\DoxyCodeLine{00107\ \ \ \ \ \}}
+\DoxyCodeLine{00108\ }
+\DoxyCodeLine{00109\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_d_x11_renderer_abde94b7f5d6b3e0d4f729770727f5b27}{RemoveScene}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_soft_body_8cpp_a7eee887aa26478b2de7daf4c0c2cb61b}{IDX}})\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00110\ \ \ \ \ \}}
+\DoxyCodeLine{00111\ }
+\DoxyCodeLine{00112\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_d_x11_renderer_a002098afb1f51b5ac1ddf94f6a1ff3c5}{Shutdown}}()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00113\ }
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Clean\ up\ Direct3D\ resources}}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Clean\ up\ Direct3D\ resources}}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (renderTargetView)\ \{}
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \ \ \ \ \ \ renderTargetView-\/>Release();}
+\DoxyCodeLine{00118\ \ \ \ \ \ \ \ \ \ \ \ \ renderTargetView\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00119\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (swapChain)\ \{}
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ \ \ \ \ swapChain-\/>Release();}
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ \ \ \ \ swapChain\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (device)\ \{}
+\DoxyCodeLine{00125\ \ \ \ \ \ \ \ \ \ \ \ \ device-\/>Release();}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ \ \ \ \ device\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00128\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (deviceContext)\ \{}
+\DoxyCodeLine{00129\ \ \ \ \ \ \ \ \ \ \ \ \ deviceContext-\/>Release();}
+\DoxyCodeLine{00130\ \ \ \ \ \ \ \ \ \ \ \ \ deviceContext\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00131\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ shaders.clear();}
+\DoxyCodeLine{00133\ }
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Clean\ up\ window\ resources}}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (hwnd)\ \{}
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ \ \ \ \ DestroyWindow(hwnd);}
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \ \ \ \ \ \ hwnd\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00139\ }
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (hInstance)\ \{}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ \ \ \ \ UnregisterClassW(WndClassName,\ hInstance);}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ \ \ \ \ hInstance\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00144\ }
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}DX11Renderer\ Shutdown\ complete"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255a7d5ed94020677617ad21b0827127cc4c}{API::RENDERER}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12ad0749aaba8b833466dfcbb0428e4f89c}{LEVEL::SUCCESS}});}
+\DoxyCodeLine{00146\ \ \ \ \ \}}
+\DoxyCodeLine{00147\ }
+\DoxyCodeLine{00148\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_d_x11_renderer_ae329b005089863d1376a71cbf0fc2349}{LoadShader}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ path[])\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{class_dx11_shader}{Dx11Shader}}\ \_;}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \_.\mbox{\hyperlink{class_dx11_shader_a644af3a6fa2c9daa0b298354e27b0ff0}{SetDxDeviceContext}}(device,\ deviceContext);}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \_.\mbox{\hyperlink{class_dx11_shader_a6abb229aaa54ac415f6bfab5ca671cb1}{InitShader}}(path,\ ScreenWidth,\ ScreenHeight,\ 45.0f,\ 0.1f,\ 100.0f);}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ VS\_Buffer\ =\ \_.\mbox{\hyperlink{class_dx11_shader_a8c70f89aad06a7f013eabc685ef80f19}{GetVSBuffer}}();}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ shaders.push\_back(\_);}
+\DoxyCodeLine{00154\ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Loaded\ Shader\ from:\ "{}}\ +\ std::string(path),\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255aa05d35337eb28027e70aef2ea40ff1df}{API::SHADER}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a551b723eafd6a31d444fcb2f5920fbd3}{LEVEL::INFO}});}
+\DoxyCodeLine{00155\ \ \ \ \ \}}
+\DoxyCodeLine{00156\ }
+\DoxyCodeLine{00157\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_d_x11_renderer_aa23c07397c942f27854f6db0a1aa8d7a}{SetFinnalPassShader}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ path[])\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \ \ FinnalPassShader.SetDxDeviceContext(device,\ deviceContext);}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ FinnalPassShader.InitShader(path,\ ScreenWidth,\ ScreenHeight,\ 45.0f,\ 0.1f,\ 1000.0f);}
+\DoxyCodeLine{00160\ \ \ \ \ \}}
+\DoxyCodeLine{00161\ }
+\DoxyCodeLine{00162\ \ \ \ \ std::vector<uint32\_t>\ \mbox{\hyperlink{class_d_x11_renderer_a6adf0d938cacb90a420abc8c153a284b}{GetShadersIds}}()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ std::vector<uint32\_t>\ Shaders\_ids;}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keyword}{auto}\&\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a57b2a96adb1d51204909a82d861e395e}{shader}}\ :\ shaders)\ \{}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ \ \ \ \ Shaders\_ids.push\_back(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a57b2a96adb1d51204909a82d861e395e}{shader}}.GetShaderId());}
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ Shaders\_ids;}
+\DoxyCodeLine{00168\ \ \ \ \ \}}
+\DoxyCodeLine{00169\ }
+\DoxyCodeLine{00170\ \ \ \ \ \mbox{\hyperlink{bt_convex_hull_computer_8cpp_a435d1572bf3f880d55459d9805097f62}{uint32\_t}}\ \mbox{\hyperlink{class_d_x11_renderer_a8b81bd7d3cd0371789cb6ae7762cd4f5}{GetShaderIdByIdx}}(\textcolor{keywordtype}{int}\ Idx)\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00171\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (Idx\ >\ shaders.size())\ \{}
+\DoxyCodeLine{00172\ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Tried\ to\ access\ nonexistent\ shader\ program,\ returning\ default..."{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255aa05d35337eb28027e70aef2ea40ff1df}{API::SHADER}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a059e9861e0400dfbe05c98a841f3f96b}{LEVEL::WARNING}});}
+\DoxyCodeLine{00173\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{class_d_x11_renderer_a722a14fbe485bdc9514047fb99b58733}{GetDefaultShaderId}}();}
+\DoxyCodeLine{00174\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00175\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ shaders.at(Idx).GetShaderId();}
+\DoxyCodeLine{00176\ \ \ \ \ \}}
+\DoxyCodeLine{00177\ }
+\DoxyCodeLine{00178\ \ \ \ \ \mbox{\hyperlink{bt_convex_hull_computer_8cpp_a435d1572bf3f880d55459d9805097f62}{uint32\_t}}\ \mbox{\hyperlink{class_d_x11_renderer_a722a14fbe485bdc9514047fb99b58733}{GetDefaultShaderId}}()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ shaders.at(0).GetShaderId();}
+\DoxyCodeLine{00180\ \ \ \ \ \}}
+\DoxyCodeLine{00181\ }
+\DoxyCodeLine{00182\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_d_x11_renderer_aee951e196ce0c887fb3ec6c58305c6f5}{BindDefaultShader}}()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ shaders.at(0).Bind();}
+\DoxyCodeLine{00184\ \ \ \ \ \}}
+\DoxyCodeLine{00185\ }
+\DoxyCodeLine{00186\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_d_x11_renderer_a80217c751f079b382359e17c43b5d36e}{BindShaderByIdx}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_soft_body_8cpp_a7eee887aa26478b2de7daf4c0c2cb61b}{IDX}})\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_soft_body_8cpp_a7eee887aa26478b2de7daf4c0c2cb61b}{IDX}}\ >\ shaders.size())\ \{}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Tried\ to\ bind\ inexisting\ shader...\ Switching\ to\ default"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255aa05d35337eb28027e70aef2ea40ff1df}{API::SHADER}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a059e9861e0400dfbe05c98a841f3f96b}{LEVEL::WARNING}});}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \ \ \ \ shaders.at(0).Bind();}
+\DoxyCodeLine{00190\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00191\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \ \ shaders.at(\mbox{\hyperlink{bt_soft_body_8cpp_a7eee887aa26478b2de7daf4c0c2cb61b}{IDX}}).Bind();}
+\DoxyCodeLine{00193\ \ \ \ \ \}}
+\DoxyCodeLine{00194\ }
+\DoxyCodeLine{00195\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{class_d_x11_renderer_a85ea39cc1da6f971c217e979071d2144}{createWindow}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a09012ea95ebbbe1c032db7c68b54291e}{width}},\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}},\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}})\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00196\ }
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ suffix\ =\ \textcolor{stringliteral}{"{}\ [DX11]"{}};}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ std::string\ buff(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}});}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ buff.append(suffix);}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ window\_name\ =\ buff.c\_str();}
+\DoxyCodeLine{00201\ }
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ std::wstring\ wname(window\_name,\ window\_name\ +\ strlen(window\_name));\ \ \textcolor{comment}{//\ Convert\ char*\ to\ std::wstring}}
+\DoxyCodeLine{00203\ }
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ WNDCLASSEXW\ wc\ =\ \{\};\ \ \textcolor{comment}{//\ Use\ WNDCLASSEXW\ for\ Unicode}}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ wc.cbSize\ =\ \textcolor{keyword}{sizeof}(WNDCLASSEXW);}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ wc.style\ =\ CS\_HREDRAW\ |\ CS\_VREDRAW;}
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ wc.lpfnWndProc\ =\ WndProc;}
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ wc.hInstance\ =\ hInstance;}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ wc.hIcon\ =\ LoadIcon(\mbox{\hyperlink{module___n_u_l_l}{NULL}},\ IDI\_WINLOGO);}
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ wc.hCursor\ =\ LoadCursor(\mbox{\hyperlink{module___n_u_l_l}{NULL}},\ IDC\_ARROW);}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ wc.hbrBackground\ =\ (HBRUSH)(COLOR\_WINDOW\ +\ 2);}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ wc.lpszClassName\ =\ WndClassName;}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ wc.hIconSm\ =\ LoadIcon(\mbox{\hyperlink{module___n_u_l_l}{NULL}},\ IDI\_WINLOGO);}
+\DoxyCodeLine{00214\ }
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ RegisterClassExW(\&wc);}
+\DoxyCodeLine{00216\ }
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ hwnd\ =\ CreateWindowExW(0,\ WndClassName,\ wname.c\_str(),\ WS\_OVERLAPPEDWINDOW,\ CW\_USEDEFAULT,\ CW\_USEDEFAULT,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a09012ea95ebbbe1c032db7c68b54291e}{width}},\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}},\ hInstance,\ \mbox{\hyperlink{module___n_u_l_l}{NULL}});}
+\DoxyCodeLine{00218\ }
+\DoxyCodeLine{00219\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!hwnd)\ \{}
+\DoxyCodeLine{00220\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Replace\ MessageBoxW\ with\ console\ logging}}
+\DoxyCodeLine{00221\ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Error\ creating\ window"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255a71ff71526d15db86eb50fcac245d183b}{API::UI}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a6f3a603fac4d817f1848c3173b243b57}{LEVEL::ERRORS}});}
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00224\ }
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ ShowWindow(hwnd,\ 1);}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ UpdateWindow(hwnd);}
+\DoxyCodeLine{00227\ }
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Init\ 3D}}
+\DoxyCodeLine{00229\ }
+\DoxyCodeLine{00230\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Describe\ our\ Buffer}}
+\DoxyCodeLine{00231\ \ \ \ \ \ \ \ \ DXGI\_MODE\_DESC\ bufferDesc;}
+\DoxyCodeLine{00232\ }
+\DoxyCodeLine{00233\ \ \ \ \ \ \ \ \ ZeroMemory(\&bufferDesc,\ \textcolor{keyword}{sizeof}(DXGI\_MODE\_DESC));}
+\DoxyCodeLine{00234\ }
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ bufferDesc.Width\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a09012ea95ebbbe1c032db7c68b54291e}{width}};}
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \ \ bufferDesc.Height\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}};}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ bufferDesc.RefreshRate.Numerator\ =\ 60;}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ bufferDesc.RefreshRate.Denominator\ =\ 1;}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ bufferDesc.Format\ =\ DXGI\_FORMAT\_R8G8B8A8\_UNORM;}
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ bufferDesc.ScanlineOrdering\ =\ DXGI\_MODE\_SCANLINE\_ORDER\_UNSPECIFIED;}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ bufferDesc.Scaling\ =\ DXGI\_MODE\_SCALING\_UNSPECIFIED;}
+\DoxyCodeLine{00242\ }
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Describe\ our\ SwapChain}}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ DXGI\_SWAP\_CHAIN\_DESC\ swapChainDesc;}
+\DoxyCodeLine{00245\ }
+\DoxyCodeLine{00246\ \ \ \ \ \ \ \ \ ZeroMemory(\&swapChainDesc,\ \textcolor{keyword}{sizeof}(DXGI\_SWAP\_CHAIN\_DESC));}
+\DoxyCodeLine{00247\ }
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ swapChainDesc.BufferDesc\ =\ bufferDesc;}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ swapChainDesc.SampleDesc.Count\ =\ 1;}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ swapChainDesc.SampleDesc.Quality\ =\ 0;}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ swapChainDesc.BufferUsage\ =\ DXGI\_USAGE\_RENDER\_TARGET\_OUTPUT;}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ swapChainDesc.BufferCount\ =\ 1;}
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ swapChainDesc.OutputWindow\ =\ hwnd;}
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \ \ swapChainDesc.Windowed\ =\ \mbox{\hyperlink{_free_image_8h_aa8cecfc5c5c054d2875c03e77b7be15d}{TRUE}};}
+\DoxyCodeLine{00255\ \ \ \ \ \ \ \ \ swapChainDesc.SwapEffect\ =\ DXGI\_SWAP\_EFFECT\_DISCARD;}
+\DoxyCodeLine{00256\ }
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Create\ our\ SwapChain\ (maybe\ problem\ here)}}
+\DoxyCodeLine{00258\ \ \ \ \ \ \ \ \ hr\ =\ D3D11CreateDeviceAndSwapChain(\mbox{\hyperlink{module___n_u_l_l}{NULL}},\ D3D\_DRIVER\_TYPE\_HARDWARE,\ \mbox{\hyperlink{module___n_u_l_l}{NULL}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}},\ D3D11\_SDK\_VERSION,\ \&swapChainDesc,\ \&swapChain,\ \&device,\ \mbox{\hyperlink{module___n_u_l_l}{NULL}},\ \&deviceContext);}
+\DoxyCodeLine{00259\ }
+\DoxyCodeLine{00260\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (FAILED(hr))\ \{}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Failed\ to\ create\ swap\ chain"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255a7d5ed94020677617ad21b0827127cc4c}{API::RENDERER}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a6f3a603fac4d817f1848c3173b243b57}{LEVEL::ERRORS}});}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00263\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00264\ }
+\DoxyCodeLine{00265\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Create\ our\ BackBuffer}}
+\DoxyCodeLine{00266\ \ \ \ \ \ \ \ \ ID3D11Texture2D*\ BackBuffer;}
+\DoxyCodeLine{00267\ \ \ \ \ \ \ \ \ hr\ =\ swapChain-\/>GetBuffer(0,\ \_\_uuidof(ID3D11Texture2D),\ (\textcolor{keywordtype}{void}**)\&BackBuffer);}
+\DoxyCodeLine{00268\ }
+\DoxyCodeLine{00269\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (FAILED(hr))\ \{}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Failed\ to\ get\ buffer\ from\ swap\ chain"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255a7d5ed94020677617ad21b0827127cc4c}{API::RENDERER}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a6f3a603fac4d817f1848c3173b243b57}{LEVEL::ERRORS}});}
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00272\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00273\ }
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Create\ our\ Render\ Target}}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ D3D11\_RENDER\_TARGET\_VIEW\_DESC\ rtvDesc\ =\ \{\};}
+\DoxyCodeLine{00276\ \ \ \ \ \ \ \ \ rtvDesc.Format\ =\ DXGI\_FORMAT\_R8G8B8A8\_UNORM\_SRGB;}
+\DoxyCodeLine{00277\ \ \ \ \ \ \ \ \ rtvDesc.ViewDimension\ =\ D3D11\_RTV\_DIMENSION\_TEXTURE2D;}
+\DoxyCodeLine{00278\ }
+\DoxyCodeLine{00279\ \ \ \ \ \ \ \ \ hr\ =\ device-\/>CreateRenderTargetView(BackBuffer,\ \&rtvDesc,\ \&renderTargetView);}
+\DoxyCodeLine{00280\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (FAILED(hr))\ \{}
+\DoxyCodeLine{00281\ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Failed\ to\ create\ render\ target\ view"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255a7d5ed94020677617ad21b0827127cc4c}{API::RENDERER}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a6f3a603fac4d817f1848c3173b243b57}{LEVEL::ERRORS}});}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ \ \ \ \ BackBuffer-\/>Release();}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ BackBuffer-\/>Release();}
+\DoxyCodeLine{00286\ }
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Set\ our\ Render\ Target}}
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ deviceContext-\/>OMSetRenderTargets(1,\ \&renderTargetView,\ \mbox{\hyperlink{module___n_u_l_l}{NULL}});}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{class_d_x11_renderer_a768057697411a35ed0c062b3be96715a}{window\_is\_opened}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ ScreenWidth\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a09012ea95ebbbe1c032db7c68b54291e}{width}};}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ ScreenHeight\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}};}
+\DoxyCodeLine{00292\ }
+\DoxyCodeLine{00293\ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Window\ created\ successfully"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255a71ff71526d15db86eb50fcac245d183b}{API::UI}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12ad0749aaba8b833466dfcbb0428e4f89c}{LEVEL::SUCCESS}});}
+\DoxyCodeLine{00294\ }
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00296\ \ \ \ \ \}}
+\DoxyCodeLine{00297\ }
+\DoxyCodeLine{00298\ }
+\DoxyCodeLine{00299\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_d_x11_renderer_a88642763007e6a11d66e45be90c42c3f}{Clear}}(\textcolor{keywordtype}{float}\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}\ =\ 1.0f,\ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{glad_8h_a9cd653b1648845554169fbc3a3f6d37a}{g}}\ =\ 1.0f,\ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}\ =\ 1.0f,\ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}\ =\ 1.0f)\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{glad_8h_a69995a929d818b8b467d4593c24d98bc}{color}}[]\ =\ \{\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}},\ \mbox{\hyperlink{glad_8h_a9cd653b1648845554169fbc3a3f6d37a}{g}},\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}\ \};}
+\DoxyCodeLine{00301\ \ \ \ \ \ \ \ \ deviceContext-\/>ClearRenderTargetView(renderTargetView,\ \mbox{\hyperlink{glad_8h_a69995a929d818b8b467d4593c24d98bc}{color}});}
+\DoxyCodeLine{00302\ \ \ \ \ \}}
+\DoxyCodeLine{00303\ }
+\DoxyCodeLine{00304\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_d_x11_renderer_a41b2678d24f4875c1e45ba7507d083ea}{DrawIndexed}}(\mbox{\hyperlink{bt_convex_hull_computer_8cpp_a435d1572bf3f880d55459d9805097f62}{uint32\_t}}\ indexCount)\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ deviceContext-\/>DrawIndexed(indexCount,\ 0,\ 0);}
+\DoxyCodeLine{00306\ \ \ \ \ \}}
+\DoxyCodeLine{00307\ }
+\DoxyCodeLine{00308\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_d_x11_renderer_a1ae25df39dd1f4fbbd3329d4f07121cc}{SetViewport}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}},\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a09012ea95ebbbe1c032db7c68b54291e}{width}},\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}})\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00309\ \ \ \ \ \ \ \ \ D3D11\_VIEWPORT\ viewport\ =\ \{\};}
+\DoxyCodeLine{00310\ \ \ \ \ \ \ \ \ viewport.TopLeftX\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{float}\textcolor{keyword}{>}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}});}
+\DoxyCodeLine{00311\ \ \ \ \ \ \ \ \ viewport.TopLeftY\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{float}\textcolor{keyword}{>}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}});}
+\DoxyCodeLine{00312\ \ \ \ \ \ \ \ \ viewport.Width\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{float}\textcolor{keyword}{>}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a09012ea95ebbbe1c032db7c68b54291e}{width}});}
+\DoxyCodeLine{00313\ \ \ \ \ \ \ \ \ viewport.Height\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{float}\textcolor{keyword}{>}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}});}
+\DoxyCodeLine{00314\ \ \ \ \ \ \ \ \ deviceContext-\/>RSSetViewports(1,\ \&viewport);}
+\DoxyCodeLine{00315\ \ \ \ \ \}}
+\DoxyCodeLine{00316\ }
+\DoxyCodeLine{00317\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{class_d_x11_renderer_a45a4cabedd6f5c839ddfa0c2187d76b2}{isWindowOpened}}()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00318\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{class_d_x11_renderer_a768057697411a35ed0c062b3be96715a}{window\_is\_opened}};}
+\DoxyCodeLine{00319\ \ \ \ \ \}}
+\DoxyCodeLine{00320\ }
+\DoxyCodeLine{00321\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_d_x11_renderer_a86a73e319106aff366623638509f09f8}{Present}}()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00322\ \ \ \ \ \ \ \ \ MSG\ msg\ =\ \{\};}
+\DoxyCodeLine{00323\ }
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (PeekMessage(\&msg,\ \textcolor{keyword}{nullptr},\ 0,\ 0,\ PM\_REMOVE))\ \{}
+\DoxyCodeLine{00325\ \ \ \ \ \ \ \ \ \ \ \ \ TranslateMessage(\&msg);}
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{class_d_x11_renderer_a768057697411a35ed0c062b3be96715a}{window\_is\_opened}}\ =\ (msg.message\ !=\ WM\_QUIT);}
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ \ \ \ \ DispatchMessage(\&msg);}
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ swapChain-\/>Present(0,\ 0);}
+\DoxyCodeLine{00330\ \ \ \ \ \}}
+\DoxyCodeLine{00331\ }
+\DoxyCodeLine{00332\ }
+\DoxyCodeLine{00333\ }
+\DoxyCodeLine{00334\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{class_d_x11_renderer_a1f670226dba9112a932d6dc580feb9de}{InitUI}}()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Initializing\ UI"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255a71ff71526d15db86eb50fcac245d183b}{API::UI}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a551b723eafd6a31d444fcb2f5920fbd3}{LEVEL::INFO}});}
+\DoxyCodeLine{00336\ }
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{namespace_im_gui_a4ff6c9ad05a0eba37ce1b5ff1607810a}{ImGui::CreateContext}}();}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_im_gui_i_o}{ImGuiIO}}\&\ io\ =\ \mbox{\hyperlink{namespace_im_gui_a3179e560812f878f3961ce803a5d9302}{ImGui::GetIO}}();}
+\DoxyCodeLine{00339\ }
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!\mbox{\hyperlink{imgui__impl__win32_8cpp_a9f752412a1f6dfdf6fc00dbbd90a8428}{ImGui\_ImplWin32\_Init}}(hwnd))\ \{}
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Failed\ to\ initialize\ ImGui\ for\ Win32"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255a71ff71526d15db86eb50fcac245d183b}{API::UI}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a6f3a603fac4d817f1848c3173b243b57}{LEVEL::ERRORS}});}
+\DoxyCodeLine{00342\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00343\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00344\ }
+\DoxyCodeLine{00345\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!\mbox{\hyperlink{imgui__impl__dx11_8cpp_a6bbf28d9c3bbd7f8159772f07289e848}{ImGui\_ImplDX11\_Init}}(device,\ deviceContext))\ \{}
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}Failed\ to\ initialize\ ImGui\ for\ DX11"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255a71ff71526d15db86eb50fcac245d183b}{API::UI}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12a6f3a603fac4d817f1848c3173b243b57}{LEVEL::ERRORS}});}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00348\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00349\ }
+\DoxyCodeLine{00350\ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}UI\ initialized\ successfully"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255a71ff71526d15db86eb50fcac245d183b}{API::UI}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12ad0749aaba8b833466dfcbb0428e4f89c}{LEVEL::SUCCESS}});}
+\DoxyCodeLine{00351\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00352\ \ \ \ \ \}}
+\DoxyCodeLine{00353\ }
+\DoxyCodeLine{00354\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_d_x11_renderer_a39caa0156273fe5a14ec230a174e0ebf}{DrawUI}}()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ QueryPerformanceFrequency(\&frequency);\ \textcolor{comment}{//\ Get\ the\ frequency\ once}}
+\DoxyCodeLine{00356\ \ \ \ \ \ \ \ \ QueryPerformanceCounter(\&lastTime);\ \ \ \ \textcolor{comment}{//\ Set\ initial\ time}}
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ LARGE\_INTEGER\ currentTime;}
+\DoxyCodeLine{00358\ \ \ \ \ \ \ \ \ QueryPerformanceCounter(\&currentTime);}
+\DoxyCodeLine{00359\ }
+\DoxyCodeLine{00360\ \ \ \ \ \ \ \ \ deltaTime\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{float}\textcolor{keyword}{>}(currentTime.QuadPart\ -\/\ lastTime.QuadPart)\ /\ frequency.QuadPart;}
+\DoxyCodeLine{00361\ \ \ \ \ \ \ \ \ frameCount++;}
+\DoxyCodeLine{00362\ }
+\DoxyCodeLine{00363\ }
+\DoxyCodeLine{00364\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Update\ FPS\ every\ 1\ second}}
+\DoxyCodeLine{00365\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (deltaTime\ >=\ 1.0f)\ \{}
+\DoxyCodeLine{00366\ \ \ \ \ \ \ \ \ \ \ \ \ fps\ =\ frameCount;}
+\DoxyCodeLine{00367\ \ \ \ \ \ \ \ \ \ \ \ \ frameCount\ =\ 0;}
+\DoxyCodeLine{00368\ \ \ \ \ \ \ \ \ \ \ \ \ lastTime\ =\ currentTime;\ \textcolor{comment}{//\ Reset\ timer}}
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00370\ }
+\DoxyCodeLine{00371\ \ \ \ \ \ \ \ \ modelCount\ =\ \mbox{\hyperlink{class_d_x11_renderer_a96b00a7e0f5e874fec95682f444adf79}{GetCurrentScene}}().\mbox{\hyperlink{class_dx11_scene_af748853ead33768aed6cb73cec27ed91}{GetModelCount}}();}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ modelString\ =\ \mbox{\hyperlink{class_d_x11_renderer_a96b00a7e0f5e874fec95682f444adf79}{GetCurrentScene}}().\mbox{\hyperlink{class_dx11_scene_abea4e02fcccac830ca2dd77f31e650b8}{GetModelsName}}();}
+\DoxyCodeLine{00373\ \ \ \ \ \ \ \ \ triangleCount\ =\ \mbox{\hyperlink{class_d_x11_renderer_a96b00a7e0f5e874fec95682f444adf79}{GetCurrentScene}}().\mbox{\hyperlink{class_dx11_scene_a20798bd31b7da10923adb1c5a88fb659}{GetSceneTriangleCount}}();}
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ verticesCount\ =\ \mbox{\hyperlink{class_d_x11_renderer_a96b00a7e0f5e874fec95682f444adf79}{GetCurrentScene}}().\mbox{\hyperlink{class_dx11_scene_ae7616c7235a727e5d4c561ba85d34870}{GetSceneVerticesCount}}();}
+\DoxyCodeLine{00375\ \ \ \ \ \ \ \ \ mouseX\ =\ inputManager.GetMousePosition().first;}
+\DoxyCodeLine{00376\ \ \ \ \ \ \ \ \ mouseY\ =\ inputManager.GetMousePosition().second;}
+\DoxyCodeLine{00377\ }
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__dx11_8cpp_ac732cf6c340b83e31fefa09cf396ef91}{ImGui\_ImplDX11\_NewFrame}}();}
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__win32_8cpp_ade4f55b90fdbd75a562d894d33f1909e}{ImGui\_ImplWin32\_NewFrame}}();}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{namespace_im_gui_ab3f1fc018f903b7ad79fd10663375774}{ImGui::NewFrame}}();}
+\DoxyCodeLine{00381\ }
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ MainUI(\mbox{\hyperlink{module___n_u_l_l}{NULL}},\ ScreenWidth,\ ScreenHeight);}
+\DoxyCodeLine{00383\ }
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_convex_hull_computer_8cpp_a435d1572bf3f880d55459d9805097f62}{uint32\_t}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab21590c4736d1459a5a0674a42b5a655}{texture}}\ =\ \mbox{\hyperlink{class_d_x11_renderer_a96b00a7e0f5e874fec95682f444adf79}{GetCurrentScene}}().\mbox{\hyperlink{class_dx11_scene_a04ac47fae31de1280c9578f0bd7360b0}{GetRenderTarget}}();}
+\DoxyCodeLine{00385\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{namespace_im_gui_a581e58db0bc930bafa4a5d23093a2b99}{ImGui::Begin}}(\textcolor{stringliteral}{"{}FBO\ Display"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}},\ \mbox{\hyperlink{imgui_8h_ad2afd5a59df2ef70ff03f4a851168814aed66fb2663427758583d4ddbfc23ed21}{ImGuiWindowFlags\_NoResize}}\ |\ \mbox{\hyperlink{imgui_8h_ad2afd5a59df2ef70ff03f4a851168814a074987a9c5158a8b254b97c7add750ea}{ImGuiWindowFlags\_NoBackground}});}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{namespace_im_gui_a95b5d733371c3b74caf89dbae8d51419}{ImGui::Image}}((uintptr\_t)\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab21590c4736d1459a5a0674a42b5a655}{texture}},\ \mbox{\hyperlink{struct_im_vec2}{ImVec2}}(ScreenWidth\ /\ 2,\ ScreenHeight\ /\ 2),\ \mbox{\hyperlink{struct_im_vec2}{ImVec2}}(0.0f,\ 1.0f),\ \mbox{\hyperlink{struct_im_vec2}{ImVec2}}(1.0f,\ 0.0f));\ \textcolor{comment}{//\ Adjust\ size\ as\ necessary}}
+\DoxyCodeLine{00387\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{namespace_im_gui_a5479d93794a004c67ceb6d13f37c8254}{ImGui::End}}();}
+\DoxyCodeLine{00388\ }
+\DoxyCodeLine{00389\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{namespace_im_gui_ab51a164f547317c16c441f1599e3946d}{ImGui::Render}}();}
+\DoxyCodeLine{00390\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__dx11_8cpp_ad49984e658afc491c9b16312cf6bdd5b}{ImGui\_ImplDX11\_RenderDrawData}}(\mbox{\hyperlink{namespace_im_gui_ab73131dc44b1267dac04f0c2bb0af983}{ImGui::GetDrawData}}());}
+\DoxyCodeLine{00391\ \ \ \ \ \}}
+\DoxyCodeLine{00392\ }
+\DoxyCodeLine{00393\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_d_x11_renderer_a40dd0081ea8e3c9f83ff87cae315c728}{ClearUI}}()\textcolor{keyword}{\ override\ }\{}
+\DoxyCodeLine{00394\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__dx11_8cpp_aa9731eb4cae116da513d6df90ff93387}{ImGui\_ImplDX11\_Shutdown}}();}
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__win32_8cpp_a4eddd1969cc460312197f2df3dbc992a}{ImGui\_ImplWin32\_Shutdown}}();}
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{namespace_im_gui_ab9132deece575023170cd8e681d0581d}{ImGui::DestroyContext}}();}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ console.Log(\textcolor{stringliteral}{"{}UI\ cleaned"{}},\ \mbox{\hyperlink{_console_manager_8h_ab2d7ab3465c4ea6c2054e6307dde8255a71ff71526d15db86eb50fcac245d183b}{API::UI}},\ \mbox{\hyperlink{_console_manager_8h_a526fd8626902411d5c8bf3b6ca134a12ad0749aaba8b833466dfcbb0428e4f89c}{LEVEL::SUCCESS}});}
+\DoxyCodeLine{00398\ \ \ \ \ \}}
+\DoxyCodeLine{00399\ \};}
+
+\end{DoxyCode}

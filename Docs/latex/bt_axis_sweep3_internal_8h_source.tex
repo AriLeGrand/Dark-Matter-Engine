@@ -1,0 +1,945 @@
+\doxysection{bt\+Axis\+Sweep3\+Internal.\+h}
+\hypertarget{bt_axis_sweep3_internal_8h_source}{}\label{bt_axis_sweep3_internal_8h_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/BroadphaseCollision/btAxisSweep3Internal.h@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/BroadphaseCollision/btAxisSweep3Internal.h}}
+\mbox{\hyperlink{bt_axis_sweep3_internal_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00002\ \textcolor{comment}{//Copyright\ (c)\ 2003-\/2006\ Erwin\ Coumans\ \ https://bulletphysics.org}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{comment}{//}}
+\DoxyCodeLine{00005\ \textcolor{comment}{//\ btAxisSweep3.h}}
+\DoxyCodeLine{00006\ \textcolor{comment}{//}}
+\DoxyCodeLine{00007\ \textcolor{comment}{//\ Copyright\ (c)\ 2006\ Simon\ Hobbs}}
+\DoxyCodeLine{00008\ \textcolor{comment}{//}}
+\DoxyCodeLine{00009\ \textcolor{comment}{//\ This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.\ In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00010\ \textcolor{comment}{//}}
+\DoxyCodeLine{00011\ \textcolor{comment}{//\ Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00012\ \textcolor{comment}{//}}
+\DoxyCodeLine{00013\ \textcolor{comment}{//\ 1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{//}}
+\DoxyCodeLine{00015\ \textcolor{comment}{//\ 2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00016\ \textcolor{comment}{//}}
+\DoxyCodeLine{00017\ \textcolor{comment}{//\ 3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#ifndef\ BT\_AXIS\_SWEEP\_3\_INTERNAL\_H}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#define\ BT\_AXIS\_SWEEP\_3\_INTERNAL\_H}}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_vector3_8h}{LinearMath/btVector3.h}}"{}}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_overlapping_pair_cache_8h}{btOverlappingPairCache.h}}"{}}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_broadphase_interface_8h}{btBroadphaseInterface.h}}"{}}}
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_broadphase_proxy_8h}{btBroadphaseProxy.h}}"{}}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_overlapping_pair_callback_8h}{btOverlappingPairCallback.h}}"{}}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_dbvt_broadphase_8h}{btDbvtBroadphase.h}}"{}}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \textcolor{comment}{//\#define\ DEBUG\_BROADPHASE\ 1}}
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#define\ USE\_OVERLAP\_TEST\_ON\_REMOVES\ 1}}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00035\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00036\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_axis_sweep3_internal_ac995b48f3a60ffac694c1d3c1e891226}{btAxisSweep3Internal}}\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{classbt_broadphase_interface}{btBroadphaseInterface}}}
+\DoxyCodeLine{00037\ \{}
+\DoxyCodeLine{00038\ \textcolor{keyword}{protected}:}
+\DoxyCodeLine{00039\ \ \ \ \ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a374ece6e21a89d616375bebb6493430d}{m\_bpHandleMask}};}
+\DoxyCodeLine{00040\ \ \ \ \ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a18153ae465d1eeda11704d50948b777a}{m\_handleSentinel}};}
+\DoxyCodeLine{00041\ }
+\DoxyCodeLine{00042\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00043\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad90bd2c40561f5151dee7a938a0afe44}{BT\_DECLARE\_ALIGNED\_ALLOCATOR}}();}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00045\ \ \ \ \ \textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}}
+\DoxyCodeLine{00046\ \ \ \ \ \{}
+\DoxyCodeLine{00047\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00048\ \ \ \ \ \ \ \ \ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a9b0b2af45ac13557b01cac97d989871e}{m\_pos}};\ \ \textcolor{comment}{//\ low\ bit\ is\ min/max}}
+\DoxyCodeLine{00049\ \ \ \ \ \ \ \ \ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}};}
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a95258f2743e5b5ff87dd54b54145b9c0}{IsMax}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \textcolor{keyword}{static\_cast<}BP\_FP\_INT\_TYPE\textcolor{keyword}{>}(\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a9b0b2af45ac13557b01cac97d989871e}{m\_pos}}\ \&\ 1);\ \}}
+\DoxyCodeLine{00052\ \ \ \ \ \};}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00054\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}}
+\DoxyCodeLine{00056\ \ \ \ \ \{}
+\DoxyCodeLine{00057\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac450e928bd2366f3ef261614603e7861}{BT\_DECLARE\_ALIGNED\_ALLOCATOR}}();}
+\DoxyCodeLine{00059\ }
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ indexes\ into\ the\ edge\ arrays}}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[3],\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[3];\ \ \textcolor{comment}{//\ 6\ *\ 2\ =\ 12}}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ BP\_FP\_INT\_TYPE\ m\_uniqueId;}}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_a8316a57f7dca9a06f3568acf5180e99e}{m\_dbvtProxy}};\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//for\ faster\ raycast}}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ \textcolor{comment}{//void*\ m\_pOwner;\ this\ is\ now\ in\ btBroadphaseProxy.m\_clientObject}}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_a6e6eb1bf1e98c16b01bf71f5f479c7ff}{SetNextFree}}(BP\_FP\_INT\_TYPE\ next)\ \{\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[0]\ =\ next;\ \}}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_a9cbb76dd696ca9d8d3bb0c8ca4a8f30e}{GetNextFree}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[0];\ \}}
+\DoxyCodeLine{00068\ \ \ \ \ \};\ \ \textcolor{comment}{//\ 24\ bytes\ +\ 24\ for\ Edge\ structures\ =\ 44\ bytes\ total\ per\ entry}}
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00070\ \textcolor{keyword}{protected}:}
+\DoxyCodeLine{00071\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1df6e697fc92e802bd62f9f0dafdc209}{m\_worldAabbMin}};\ \ \textcolor{comment}{//\ overall\ system\ bounds}}
+\DoxyCodeLine{00072\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2b397b8d483f546f7aeacfb55cc3cd6e}{m\_worldAabbMax}};\ \ \textcolor{comment}{//\ overall\ system\ bounds}}
+\DoxyCodeLine{00073\ }
+\DoxyCodeLine{00074\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a9521807b9aa6d623f047fe84e74bc8bb}{m\_quantize}};\ \ \textcolor{comment}{//\ scaling\ factor\ for\ quantization}}
+\DoxyCodeLine{00075\ }
+\DoxyCodeLine{00076\ \ \ \ \ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a47d1b6c41f837b5a2cf537dc262f890b}{m\_numHandles}};\ \ \textcolor{comment}{//\ number\ of\ active\ handles}}
+\DoxyCodeLine{00077\ \ \ \ \ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ab129b793a163c711ef38d56e3d2a20cf}{m\_maxHandles}};\ \ \textcolor{comment}{//\ max\ number\ of\ handles}}
+\DoxyCodeLine{00078\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad9f378e701ce52ccea0e01372850f7eb}{m\_pHandles}};\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ handles\ pool}}
+\DoxyCodeLine{00079\ }
+\DoxyCodeLine{00080\ \ \ \ \ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ae101ad664a9632021ca498894ebc046e}{m\_firstFreeHandle}};\ \ \textcolor{comment}{//\ free\ handles\ list}}
+\DoxyCodeLine{00081\ }
+\DoxyCodeLine{00082\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}*\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[3];\ \ \textcolor{comment}{//\ edge\ arrays\ for\ the\ 3\ axes\ (each\ array\ has\ m\_maxHandles\ *\ 2\ +\ 2\ sentinel\ entries)}}
+\DoxyCodeLine{00083\ \ \ \ \ \textcolor{keywordtype}{void}*\ \mbox{\hyperlink{classbt_axis_sweep3_internal_aa561e1ee29af23667eb4a0ff11c30784}{m\_pEdgesRawPtr}}[3];}
+\DoxyCodeLine{00084\ }
+\DoxyCodeLine{00085\ \ \ \ \ \mbox{\hyperlink{classbt_overlapping_pair_cache}{btOverlappingPairCache}}*\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}};}
+\DoxyCodeLine{00086\ }
+\DoxyCodeLine{00088\ \ \ \ \ \mbox{\hyperlink{classbt_overlapping_pair_callback}{btOverlappingPairCallback}}*\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad26657cfc4245f099042178daf885563}{m\_userPairCallback}};}
+\DoxyCodeLine{00089\ }
+\DoxyCodeLine{00090\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a4ae7463e32030034f503bd6f32835108}{m\_ownsPairCache}};}
+\DoxyCodeLine{00091\ }
+\DoxyCodeLine{00092\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a6ecb6f04fd6ed4e84f99b0e934615537}{m\_invalidPair}};}
+\DoxyCodeLine{00093\ }
+\DoxyCodeLine{00096\ \ \ \ \ \mbox{\hyperlink{structbt_dbvt_broadphase}{btDbvtBroadphase}}*\ \mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}};}
+\DoxyCodeLine{00097\ \ \ \ \ \mbox{\hyperlink{classbt_overlapping_pair_cache}{btOverlappingPairCache}}*\ \mbox{\hyperlink{classbt_axis_sweep3_internal_af5f4d1cb0edb460383d81249947c71da}{m\_nullPairCache}};}
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{comment}{//\ allocation/deallocation}}
+\DoxyCodeLine{00100\ \ \ \ \ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a40b3512ebfeefbec480a906328053988}{allocHandle}}();}
+\DoxyCodeLine{00101\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac40f411fe4911c17c681d47656296b26}{freeHandle}}(BP\_FP\_INT\_TYPE\ handle);}
+\DoxyCodeLine{00102\ }
+\DoxyCodeLine{00103\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a49abf8db2723c3ec699031539ab6e06d}{testOverlap2D}}(\textcolor{keyword}{const}\ Handle*\ pHandleA,\ \textcolor{keyword}{const}\ Handle*\ pHandleB,\ \textcolor{keywordtype}{int}\ axis0,\ \textcolor{keywordtype}{int}\ axis1);}
+\DoxyCodeLine{00104\ }
+\DoxyCodeLine{00105\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_BROADPHASE}}
+\DoxyCodeLine{00106\ \ \ \ \ \textcolor{keywordtype}{void}\ debugPrintAxis(\textcolor{keywordtype}{int}\ axis,\ \textcolor{keywordtype}{bool}\ checkCardinality\ =\ \textcolor{keyword}{true});}
+\DoxyCodeLine{00107\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_BROADPHASE}}
+\DoxyCodeLine{00108\ }
+\DoxyCodeLine{00109\ \ \ \ \ \textcolor{comment}{//Overlap*\ AddOverlap(BP\_FP\_INT\_TYPE\ handleA,\ BP\_FP\_INT\_TYPE\ handleB);}}
+\DoxyCodeLine{00110\ \ \ \ \ \textcolor{comment}{//void\ RemoveOverlap(BP\_FP\_INT\_TYPE\ handleA,\ BP\_FP\_INT\_TYPE\ handleB);}}
+\DoxyCodeLine{00111\ }
+\DoxyCodeLine{00112\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac12a6524d4fe2b30f084be1c556e8087}{sortMinDown}}(\textcolor{keywordtype}{int}\ axis,\ BP\_FP\_INT\_TYPE\ edge,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher,\ \textcolor{keywordtype}{bool}\ updateOverlaps);}
+\DoxyCodeLine{00113\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ae2547559962876e0da7899dadca7f9aa}{sortMinUp}}(\textcolor{keywordtype}{int}\ axis,\ BP\_FP\_INT\_TYPE\ edge,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher,\ \textcolor{keywordtype}{bool}\ updateOverlaps);}
+\DoxyCodeLine{00114\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a345b7d853ad2a2449da0b51b1f35ff49}{sortMaxDown}}(\textcolor{keywordtype}{int}\ axis,\ BP\_FP\_INT\_TYPE\ edge,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher,\ \textcolor{keywordtype}{bool}\ updateOverlaps);}
+\DoxyCodeLine{00115\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_af8e014dfdce82a2d16dde9cb342fa58f}{sortMaxUp}}(\textcolor{keywordtype}{int}\ axis,\ BP\_FP\_INT\_TYPE\ edge,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher,\ \textcolor{keywordtype}{bool}\ updateOverlaps);}
+\DoxyCodeLine{00116\ }
+\DoxyCodeLine{00117\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00118\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac995b48f3a60ffac694c1d3c1e891226}{btAxisSweep3Internal}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ worldAabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ worldAabbMax,\ BP\_FP\_INT\_TYPE\ handleMask,\ BP\_FP\_INT\_TYPE\ handleSentinel,\ BP\_FP\_INT\_TYPE\ maxHandles\ =\ 16384,\ \mbox{\hyperlink{classbt_overlapping_pair_cache}{btOverlappingPairCache}}*\ pairCache\ =\ 0,\ \textcolor{keywordtype}{bool}\ disableRaycastAccelerator\ =\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00119\ }
+\DoxyCodeLine{00120\ \ \ \ \ \textcolor{keyword}{virtual}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_acfb15da7a2d2f1df7b796e239e6ef951}{\string~btAxisSweep3Internal}}();}
+\DoxyCodeLine{00121\ }
+\DoxyCodeLine{00122\ \ \ \ \ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a86d2dfd94fee65d42d8c288de249681b}{getNumHandles}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00123\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a47d1b6c41f837b5a2cf537dc262f890b}{m\_numHandles}};}
+\DoxyCodeLine{00125\ \ \ \ \ \}}
+\DoxyCodeLine{00126\ }
+\DoxyCodeLine{00127\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ab89835d4ecb51e2dadc7e3b6e7c29adb}{calculateOverlappingPairs}}(\mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher);}
+\DoxyCodeLine{00128\ }
+\DoxyCodeLine{00129\ \ \ \ \ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a4b1f4677ebd086c53474fd0f6730b71d}{addHandle}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax,\ \textcolor{keywordtype}{void}*\ pOwner,\ \textcolor{keywordtype}{int}\ collisionFilterGroup,\ \textcolor{keywordtype}{int}\ collisionFilterMask,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher);}
+\DoxyCodeLine{00130\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a4e26f4f8acf63f26451f6396223001bb}{removeHandle}}(BP\_FP\_INT\_TYPE\ handle,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher);}
+\DoxyCodeLine{00131\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac9852514d20572ebdde3e72215b09410}{updateHandle}}(BP\_FP\_INT\_TYPE\ handle,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher);}
+\DoxyCodeLine{00132\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}})\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad9f378e701ce52ccea0e01372850f7eb}{m\_pHandles}}\ +\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}};\ \}}
+\DoxyCodeLine{00133\ }
+\DoxyCodeLine{00134\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_aeecfcc066ca77ec8b9bf2c8d422716ee}{resetPool}}(\mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher);}
+\DoxyCodeLine{00135\ }
+\DoxyCodeLine{00136\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_adc81ed36fde6cccd3e9fcb2ec3bc759c}{processAllOverlappingPairs}}(\mbox{\hyperlink{structbt_overlap_callback}{btOverlapCallback}}*\ callback);}
+\DoxyCodeLine{00137\ }
+\DoxyCodeLine{00138\ \ \ \ \ \textcolor{comment}{//Broadphase\ Interface}}
+\DoxyCodeLine{00139\ \ \ \ \ \textcolor{keyword}{virtual}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a5e669e352c8c3a4a25c73cae1d9c0ded}{createProxy}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax,\ \textcolor{keywordtype}{int}\ shapeType,\ \textcolor{keywordtype}{void}*\ userPtr,\ \textcolor{keywordtype}{int}\ collisionFilterGroup,\ \textcolor{keywordtype}{int}\ collisionFilterMask,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher);}
+\DoxyCodeLine{00140\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad994787298649e89fc55a6d43af65a1e}{destroyProxy}}(\mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ proxy,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher);}
+\DoxyCodeLine{00141\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ab75a4fc28e56239fe76c061f6ee9231c}{setAabb}}(\mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ proxy,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher);}
+\DoxyCodeLine{00142\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a026daa514a4f37ecab5e49266c1203b2}{getAabb}}(\mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ proxy,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00143\ }
+\DoxyCodeLine{00144\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a370bc732655b33bf166114afe22fb9e7}{rayTest}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ rayFrom,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ rayTo,\ \mbox{\hyperlink{structbt_broadphase_ray_callback}{btBroadphaseRayCallback}}\&\ rayCallback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0,\ 0,\ 0),\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0,\ 0,\ 0));}
+\DoxyCodeLine{00145\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac93d0e99a1f936209fae09406663b9b6}{aabbTest}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax,\ \mbox{\hyperlink{structbt_broadphase_aabb_callback}{btBroadphaseAabbCallback}}\&\ callback);}
+\DoxyCodeLine{00146\ }
+\DoxyCodeLine{00147\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a852908ebce2e0b632f18cae17860fc47}{quantize}}(BP\_FP\_INT\_TYPE*\ out,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ point,\ \textcolor{keywordtype}{int}\ isMax)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00149\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a33d53264ea5d7f695e97200ca752fbe5}{unQuantize}}(\mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ proxy,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00150\ }
+\DoxyCodeLine{00151\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a24ac067f6bebde7e1905620d89c83686}{testAabbOverlap}}(\mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ proxy0,\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ proxy1);}
+\DoxyCodeLine{00152\ }
+\DoxyCodeLine{00153\ \ \ \ \ \mbox{\hyperlink{classbt_overlapping_pair_cache}{btOverlappingPairCache}}*\ \mbox{\hyperlink{classbt_axis_sweep3_internal_aa3f52da7e97b9ae6e559256898cb4b0f}{getOverlappingPairCache}}()}
+\DoxyCodeLine{00154\ \ \ \ \ \{}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}};}
+\DoxyCodeLine{00156\ \ \ \ \ \}}
+\DoxyCodeLine{00157\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_overlapping_pair_cache}{btOverlappingPairCache}}*\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a844cc9067095b34cd7195dcefadb4626}{getOverlappingPairCache}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00158\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}};}
+\DoxyCodeLine{00160\ \ \ \ \ \}}
+\DoxyCodeLine{00161\ }
+\DoxyCodeLine{00162\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ae8602eb252ae2085960583bd4f8e7451}{setOverlappingPairUserCallback}}(\mbox{\hyperlink{classbt_overlapping_pair_callback}{btOverlappingPairCallback}}*\ pairCallback)}
+\DoxyCodeLine{00163\ \ \ \ \ \{}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad26657cfc4245f099042178daf885563}{m\_userPairCallback}}\ =\ pairCallback;}
+\DoxyCodeLine{00165\ \ \ \ \ \}}
+\DoxyCodeLine{00166\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_overlapping_pair_callback}{btOverlappingPairCallback}}*\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a49ebc32634f70afbff3c369fe77e1262}{getOverlappingPairUserCallback}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00167\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad26657cfc4245f099042178daf885563}{m\_userPairCallback}};}
+\DoxyCodeLine{00169\ \ \ \ \ \}}
+\DoxyCodeLine{00170\ }
+\DoxyCodeLine{00173\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad1e0037e1ed62ef5049389bb4e8fd5b5}{getBroadphaseAabb}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00174\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00175\ \ \ \ \ \ \ \ \ aabbMin\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1df6e697fc92e802bd62f9f0dafdc209}{m\_worldAabbMin}};}
+\DoxyCodeLine{00176\ \ \ \ \ \ \ \ \ aabbMax\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2b397b8d483f546f7aeacfb55cc3cd6e}{m\_worldAabbMax}};}
+\DoxyCodeLine{00177\ \ \ \ \ \}}
+\DoxyCodeLine{00178\ }
+\DoxyCodeLine{00179\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a5fe22bd436bcafe8f17b939cc6803a2d}{printStats}}()}
+\DoxyCodeLine{00180\ \ \ \ \ \{}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ \textcolor{comment}{/*\ \ \ \ \ \ printf("{}btAxisSweep3.h\(\backslash\)n"{});}}
+\DoxyCodeLine{00182\ \textcolor{comment}{\ \ \ \ \ \ \ \ printf("{}numHandles\ =\ \%d,\ maxHandles\ =\ \%d\(\backslash\)n"{},m\_numHandles,m\_maxHandles);}}
+\DoxyCodeLine{00183\ \textcolor{comment}{\ \ \ \ \ \ \ \ printf("{}aabbMin=\%f,\%f,\%f,aabbMax=\%f,\%f,\%f\(\backslash\)n"{},m\_worldAabbMin.getX(),m\_worldAabbMin.getY(),m\_worldAabbMin.getZ(),}}
+\DoxyCodeLine{00184\ \textcolor{comment}{\ \ \ \ \ \ \ \ \ \ \ \ m\_worldAabbMax.getX(),m\_worldAabbMax.getY(),m\_worldAabbMax.getZ());}}
+\DoxyCodeLine{00185\ \textcolor{comment}{\ \ \ \ \ \ \ \ \ \ \ \ */}}
+\DoxyCodeLine{00186\ \ \ \ \ \}}
+\DoxyCodeLine{00187\ \};}
+\DoxyCodeLine{00188\ }
+\DoxyCodeLine{00190\ }
+\DoxyCodeLine{00191\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_BROADPHASE}}
+\DoxyCodeLine{00192\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00193\ }
+\DoxyCodeLine{00194\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00195\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3}{btAxisSweep3<BP\_FP\_INT\_TYPE>::debugPrintAxis}}(\textcolor{keywordtype}{int}\ axis,\ \textcolor{keywordtype}{bool}\ checkCardinality)}
+\DoxyCodeLine{00196\ \{}
+\DoxyCodeLine{00197\ \ \ \ \ \textcolor{keywordtype}{int}\ numEdges\ =\ m\_pHandles[0].\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[\mbox{\hyperlink{group__ext__quaternion__trigonometric_gac2b65b953ea72827e172fc39035964a7}{axis}}];}
+\DoxyCodeLine{00198\ \ \ \ \ printf(\textcolor{stringliteral}{"{}SAP\ Axis\ \%d,\ numEdges=\%d\(\backslash\)n"{}},\ axis,\ numEdges);}
+\DoxyCodeLine{00199\ }
+\DoxyCodeLine{00200\ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00201\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ numEdges\ +\ 1;\ i++)}
+\DoxyCodeLine{00202\ \ \ \ \ \{}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ Edge*\ pEdge\ =\ m\_pEdges[\mbox{\hyperlink{group__ext__quaternion__trigonometric_gac2b65b953ea72827e172fc39035964a7}{axis}}]\ +\ i;}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ Handle*\ pHandlePrev\ =\ getHandle(pEdge-\/>m\_handle);}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ handleIndex\ =\ pEdge-\/>IsMax()\ ?\ pHandlePrev-\/>m\_maxEdges[\mbox{\hyperlink{group__ext__quaternion__trigonometric_gac2b65b953ea72827e172fc39035964a7}{axis}}]\ :\ pHandlePrev-\/>m\_minEdges[\mbox{\hyperlink{group__ext__quaternion__trigonometric_gac2b65b953ea72827e172fc39035964a7}{axis}}];}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{char}\ beginOrEnd;}
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ beginOrEnd\ =\ pEdge-\/>IsMax()\ ?\ \textcolor{charliteral}{'E'}\ :\ \textcolor{charliteral}{'B'};}
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}\ \ \ \ [\%c,h=\%d,p=\%x,i=\%d]\(\backslash\)n"{}},\ beginOrEnd,\ pEdge-\/>m\_handle,\ pEdge-\/>m\_pos,\ handleIndex);}
+\DoxyCodeLine{00209\ \ \ \ \ \}}
+\DoxyCodeLine{00210\ }
+\DoxyCodeLine{00211\ \ \ \ \ \textcolor{keywordflow}{if}\ (checkCardinality)}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(numEdges\ ==\ m\_numHandles\ *\ 2\ +\ 1);}
+\DoxyCodeLine{00213\ \}}
+\DoxyCodeLine{00214\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_BROADPHASE}}
+\DoxyCodeLine{00215\ }
+\DoxyCodeLine{00216\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00217\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a5e669e352c8c3a4a25c73cae1d9c0ded}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::createProxy}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax,\ \textcolor{keywordtype}{int}\ shapeType,\ \textcolor{keywordtype}{void}*\ userPtr,\ \textcolor{keywordtype}{int}\ collisionFilterGroup,\ \textcolor{keywordtype}{int}\ collisionFilterMask,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher)}
+\DoxyCodeLine{00218\ \{}
+\DoxyCodeLine{00219\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})shapeType;}
+\DoxyCodeLine{00220\ \ \ \ \ BP\_FP\_INT\_TYPE\ handleId\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a4b1f4677ebd086c53474fd0f6730b71d}{addHandle}}(aabbMin,\ aabbMax,\ userPtr,\ collisionFilterGroup,\ collisionFilterMask,\ dispatcher);}
+\DoxyCodeLine{00221\ }
+\DoxyCodeLine{00222\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ handle\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(handleId);}
+\DoxyCodeLine{00223\ }
+\DoxyCodeLine{00224\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}})}
+\DoxyCodeLine{00225\ \ \ \ \ \{}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ rayProxy\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}}-\/>createProxy(aabbMin,\ aabbMax,\ shapeType,\ userPtr,\ collisionFilterGroup,\ collisionFilterMask,\ dispatcher);}
+\DoxyCodeLine{00227\ \ \ \ \ \ \ \ \ handle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_a8316a57f7dca9a06f3568acf5180e99e}{m\_dbvtProxy}}\ =\ rayProxy;}
+\DoxyCodeLine{00228\ \ \ \ \ \}}
+\DoxyCodeLine{00229\ \ \ \ \ \textcolor{keywordflow}{return}\ handle;}
+\DoxyCodeLine{00230\ \}}
+\DoxyCodeLine{00231\ }
+\DoxyCodeLine{00232\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00233\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad994787298649e89fc55a6d43af65a1e}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::destroyProxy}}(\mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ proxy,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher)}
+\DoxyCodeLine{00234\ \{}
+\DoxyCodeLine{00235\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ handle\ =\ \textcolor{keyword}{static\_cast<}\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\textcolor{keyword}{>}(proxy);}
+\DoxyCodeLine{00236\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}})}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}}-\/>destroyProxy(handle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_a8316a57f7dca9a06f3568acf5180e99e}{m\_dbvtProxy}},\ dispatcher);}
+\DoxyCodeLine{00238\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a4e26f4f8acf63f26451f6396223001bb}{removeHandle}}(\textcolor{keyword}{static\_cast<}BP\_FP\_INT\_TYPE\textcolor{keyword}{>}(handle-\/>m\_uniqueId),\ dispatcher);}
+\DoxyCodeLine{00239\ \}}
+\DoxyCodeLine{00240\ }
+\DoxyCodeLine{00241\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00242\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ab75a4fc28e56239fe76c061f6ee9231c}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::setAabb}}(\mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ proxy,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher)}
+\DoxyCodeLine{00243\ \{}
+\DoxyCodeLine{00244\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ handle\ =\ \textcolor{keyword}{static\_cast<}\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\textcolor{keyword}{>}(proxy);}
+\DoxyCodeLine{00245\ \ \ \ \ handle-\/>m\_aabbMin\ =\ aabbMin;}
+\DoxyCodeLine{00246\ \ \ \ \ handle-\/>m\_aabbMax\ =\ aabbMax;}
+\DoxyCodeLine{00247\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac9852514d20572ebdde3e72215b09410}{updateHandle}}(\textcolor{keyword}{static\_cast<}BP\_FP\_INT\_TYPE\textcolor{keyword}{>}(handle-\/>m\_uniqueId),\ aabbMin,\ aabbMax,\ dispatcher);}
+\DoxyCodeLine{00248\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}})}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}}-\/>setAabb(handle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_a8316a57f7dca9a06f3568acf5180e99e}{m\_dbvtProxy}},\ aabbMin,\ aabbMax,\ dispatcher);}
+\DoxyCodeLine{00250\ \}}
+\DoxyCodeLine{00251\ }
+\DoxyCodeLine{00252\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00253\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a370bc732655b33bf166114afe22fb9e7}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::rayTest}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ rayFrom,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ rayTo,\ \mbox{\hyperlink{structbt_broadphase_ray_callback}{btBroadphaseRayCallback}}\&\ rayCallback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax)}
+\DoxyCodeLine{00254\ \{}
+\DoxyCodeLine{00255\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}})}
+\DoxyCodeLine{00256\ \ \ \ \ \{}
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}}-\/>rayTest(rayFrom,\ rayTo,\ rayCallback,\ aabbMin,\ aabbMax);}
+\DoxyCodeLine{00258\ \ \ \ \ \}}
+\DoxyCodeLine{00259\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00260\ \ \ \ \ \{}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \textcolor{comment}{//choose\ axis?}}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ BP\_FP\_INT\_TYPE\ axis\ =\ 0;}
+\DoxyCodeLine{00263\ \ \ \ \ \ \ \ \ \textcolor{comment}{//for\ each\ proxy}}
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (BP\_FP\_INT\_TYPE\ i\ =\ 1;\ i\ <\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a47d1b6c41f837b5a2cf537dc262f890b}{m\_numHandles}}\ *\ 2\ +\ 1;\ i++)}
+\DoxyCodeLine{00265\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00266\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][i].IsMax())}
+\DoxyCodeLine{00267\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00268\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ rayCallback.\mbox{\hyperlink{structbt_broadphase_aabb_callback_a8e04a31537f0becf52cdeb8120a15cc8}{process}}(\mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(\mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][i].m\_handle));}
+\DoxyCodeLine{00269\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00271\ \ \ \ \ \}}
+\DoxyCodeLine{00272\ \}}
+\DoxyCodeLine{00273\ }
+\DoxyCodeLine{00274\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00275\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac93d0e99a1f936209fae09406663b9b6}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::aabbTest}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax,\ \mbox{\hyperlink{structbt_broadphase_aabb_callback}{btBroadphaseAabbCallback}}\&\ callback)}
+\DoxyCodeLine{00276\ \{}
+\DoxyCodeLine{00277\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}})}
+\DoxyCodeLine{00278\ \ \ \ \ \{}
+\DoxyCodeLine{00279\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}}-\/>aabbTest(aabbMin,\ aabbMax,\ callback);}
+\DoxyCodeLine{00280\ \ \ \ \ \}}
+\DoxyCodeLine{00281\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00282\ \ \ \ \ \{}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ \textcolor{comment}{//choose\ axis?}}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ BP\_FP\_INT\_TYPE\ axis\ =\ 0;}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ \textcolor{comment}{//for\ each\ proxy}}
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (BP\_FP\_INT\_TYPE\ i\ =\ 1;\ i\ <\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a47d1b6c41f837b5a2cf537dc262f890b}{m\_numHandles}}\ *\ 2\ +\ 1;\ i++)}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][i].IsMax())}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ handle\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(\mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][i].m\_handle);}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (TestAabbAgainstAabb2(aabbMin,\ aabbMax,\ handle-\/>m\_aabbMin,\ handle-\/>m\_aabbMax))}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00293\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ callback.\mbox{\hyperlink{structbt_broadphase_aabb_callback_a8e04a31537f0becf52cdeb8120a15cc8}{process}}(handle);}
+\DoxyCodeLine{00294\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00297\ \ \ \ \ \}}
+\DoxyCodeLine{00298\ \}}
+\DoxyCodeLine{00299\ }
+\DoxyCodeLine{00300\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00301\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a026daa514a4f37ecab5e49266c1203b2}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::getAabb}}(\mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ proxy,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00302\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00303\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandle\ =\ \textcolor{keyword}{static\_cast<}\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\textcolor{keyword}{>}(proxy);}
+\DoxyCodeLine{00304\ \ \ \ \ aabbMin\ =\ pHandle-\/>m\_aabbMin;}
+\DoxyCodeLine{00305\ \ \ \ \ aabbMax\ =\ pHandle-\/>m\_aabbMax;}
+\DoxyCodeLine{00306\ \}}
+\DoxyCodeLine{00307\ }
+\DoxyCodeLine{00308\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00309\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a33d53264ea5d7f695e97200ca752fbe5}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::unQuantize}}(\mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ proxy,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00310\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00311\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandle\ =\ \textcolor{keyword}{static\_cast<}\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\textcolor{keyword}{>}(proxy);}
+\DoxyCodeLine{00312\ }
+\DoxyCodeLine{00313\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ vecInMin[3];}
+\DoxyCodeLine{00314\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{short}\ vecInMax[3];}
+\DoxyCodeLine{00315\ }
+\DoxyCodeLine{00316\ \ \ \ \ vecInMin[0]\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[0][pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[0]].m\_pos;}
+\DoxyCodeLine{00317\ \ \ \ \ vecInMax[0]\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[0][pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[0]].m\_pos\ +\ 1;}
+\DoxyCodeLine{00318\ \ \ \ \ vecInMin[1]\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[1][pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[1]].m\_pos;}
+\DoxyCodeLine{00319\ \ \ \ \ vecInMax[1]\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[1][pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[1]].m\_pos\ +\ 1;}
+\DoxyCodeLine{00320\ \ \ \ \ vecInMin[2]\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[2][pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[2]].m\_pos;}
+\DoxyCodeLine{00321\ \ \ \ \ vecInMax[2]\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[2][pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[2]].m\_pos\ +\ 1;}
+\DoxyCodeLine{00322\ }
+\DoxyCodeLine{00323\ \ \ \ \ aabbMin.setValue((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})(vecInMin[0])\ /\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_a9521807b9aa6d623f047fe84e74bc8bb}{m\_quantize}}.getX()),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})(vecInMin[1])\ /\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_a9521807b9aa6d623f047fe84e74bc8bb}{m\_quantize}}.getY()),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})(vecInMin[2])\ /\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_a9521807b9aa6d623f047fe84e74bc8bb}{m\_quantize}}.getZ()));}
+\DoxyCodeLine{00324\ \ \ \ \ aabbMin\ +=\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1df6e697fc92e802bd62f9f0dafdc209}{m\_worldAabbMin}};}
+\DoxyCodeLine{00325\ }
+\DoxyCodeLine{00326\ \ \ \ \ aabbMax.setValue((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})(vecInMax[0])\ /\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_a9521807b9aa6d623f047fe84e74bc8bb}{m\_quantize}}.getX()),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})(vecInMax[1])\ /\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_a9521807b9aa6d623f047fe84e74bc8bb}{m\_quantize}}.getY()),\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})(vecInMax[2])\ /\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_a9521807b9aa6d623f047fe84e74bc8bb}{m\_quantize}}.getZ()));}
+\DoxyCodeLine{00327\ \ \ \ \ aabbMax\ +=\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1df6e697fc92e802bd62f9f0dafdc209}{m\_worldAabbMin}};}
+\DoxyCodeLine{00328\ \}}
+\DoxyCodeLine{00329\ }
+\DoxyCodeLine{00330\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00331\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac995b48f3a60ffac694c1d3c1e891226}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::btAxisSweep3Internal}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ worldAabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ worldAabbMax,\ BP\_FP\_INT\_TYPE\ handleMask,\ BP\_FP\_INT\_TYPE\ handleSentinel,\ BP\_FP\_INT\_TYPE\ userMaxHandles,\ \mbox{\hyperlink{classbt_overlapping_pair_cache}{btOverlappingPairCache}}*\ pairCache,\ \textcolor{keywordtype}{bool}\ disableRaycastAccelerator)}
+\DoxyCodeLine{00332\ \ \ \ \ :\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a374ece6e21a89d616375bebb6493430d}{m\_bpHandleMask}}(handleMask),}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a18153ae465d1eeda11704d50948b777a}{m\_handleSentinel}}(handleSentinel),}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}}(pairCache),}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad26657cfc4245f099042178daf885563}{m\_userPairCallback}}(0),}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a4ae7463e32030034f503bd6f32835108}{m\_ownsPairCache}}(false),}
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a6ecb6f04fd6ed4e84f99b0e934615537}{m\_invalidPair}}(0),}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}}(0)}
+\DoxyCodeLine{00339\ \{}
+\DoxyCodeLine{00340\ \ \ \ \ BP\_FP\_INT\_TYPE\ maxHandles\ =\ \textcolor{keyword}{static\_cast<}BP\_FP\_INT\_TYPE\textcolor{keyword}{>}(userMaxHandles\ +\ 1);\ \ \textcolor{comment}{//need\ to\ add\ one\ sentinel\ handle}}
+\DoxyCodeLine{00341\ }
+\DoxyCodeLine{00342\ \ \ \ \ \textcolor{keywordflow}{if}\ (!\mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}})}
+\DoxyCodeLine{00343\ \ \ \ \ \{}
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}*\ ptr\ =\ \mbox{\hyperlink{bt_aligned_allocator_8h_a5798ef3418d84a1761ef917ef6720db7}{btAlignedAlloc}}(\textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_overlapping_pair_cache_8h_a5e1cd167e79b4e3be2c4b151189c8bdd}{btHashedOverlappingPairCache}}),\ 16);}
+\DoxyCodeLine{00345\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}}\ =\ \textcolor{keyword}{new}\ (ptr)\ \mbox{\hyperlink{bt_overlapping_pair_cache_8h_a5e1cd167e79b4e3be2c4b151189c8bdd}{btHashedOverlappingPairCache}}();}
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a4ae7463e32030034f503bd6f32835108}{m\_ownsPairCache}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00347\ \ \ \ \ \}}
+\DoxyCodeLine{00348\ }
+\DoxyCodeLine{00349\ \ \ \ \ \textcolor{keywordflow}{if}\ (!disableRaycastAccelerator)}
+\DoxyCodeLine{00350\ \ \ \ \ \{}
+\DoxyCodeLine{00351\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_af5f4d1cb0edb460383d81249947c71da}{m\_nullPairCache}}\ =\ \textcolor{keyword}{new}\ (\mbox{\hyperlink{bt_aligned_allocator_8h_a5798ef3418d84a1761ef917ef6720db7}{btAlignedAlloc}}(\textcolor{keyword}{sizeof}(btNullPairCache),\ 16))\ btNullPairCache();}
+\DoxyCodeLine{00352\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}}\ =\ \textcolor{keyword}{new}\ (\mbox{\hyperlink{bt_aligned_allocator_8h_a5798ef3418d84a1761ef917ef6720db7}{btAlignedAlloc}}(\textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_dbvt_broadphase}{btDbvtBroadphase}}),\ 16))\ \mbox{\hyperlink{structbt_dbvt_broadphase}{btDbvtBroadphase}}(\mbox{\hyperlink{classbt_axis_sweep3_internal_af5f4d1cb0edb460383d81249947c71da}{m\_nullPairCache}});\ \ \textcolor{comment}{//m\_pairCache);}}
+\DoxyCodeLine{00353\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}}-\/>m\_deferedcollide\ =\ \textcolor{keyword}{true};\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//don't\ add/remove\ pairs}}
+\DoxyCodeLine{00354\ \ \ \ \ \}}
+\DoxyCodeLine{00355\ }
+\DoxyCodeLine{00356\ \ \ \ \ \textcolor{comment}{//btAssert(bounds.HasVolume());}}
+\DoxyCodeLine{00357\ }
+\DoxyCodeLine{00358\ \ \ \ \ \textcolor{comment}{//\ init\ bounds}}
+\DoxyCodeLine{00359\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1df6e697fc92e802bd62f9f0dafdc209}{m\_worldAabbMin}}\ =\ worldAabbMin;}
+\DoxyCodeLine{00360\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2b397b8d483f546f7aeacfb55cc3cd6e}{m\_worldAabbMax}}\ =\ worldAabbMax;}
+\DoxyCodeLine{00361\ }
+\DoxyCodeLine{00362\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ aabbSize\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2b397b8d483f546f7aeacfb55cc3cd6e}{m\_worldAabbMax}}\ -\/\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1df6e697fc92e802bd62f9f0dafdc209}{m\_worldAabbMin}};}
+\DoxyCodeLine{00363\ }
+\DoxyCodeLine{00364\ \ \ \ \ BP\_FP\_INT\_TYPE\ maxInt\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a18153ae465d1eeda11704d50948b777a}{m\_handleSentinel}};}
+\DoxyCodeLine{00365\ }
+\DoxyCodeLine{00366\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a9521807b9aa6d623f047fe84e74bc8bb}{m\_quantize}}\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(maxInt),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(maxInt),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(maxInt))\ /\ aabbSize;}
+\DoxyCodeLine{00367\ }
+\DoxyCodeLine{00368\ \ \ \ \ \textcolor{comment}{//\ allocate\ handles\ buffer,\ using\ btAlignedAlloc,\ and\ put\ all\ handles\ on\ free\ list}}
+\DoxyCodeLine{00369\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad9f378e701ce52ccea0e01372850f7eb}{m\_pHandles}}\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}[maxHandles];}
+\DoxyCodeLine{00370\ }
+\DoxyCodeLine{00371\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ab129b793a163c711ef38d56e3d2a20cf}{m\_maxHandles}}\ =\ maxHandles;}
+\DoxyCodeLine{00372\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a47d1b6c41f837b5a2cf537dc262f890b}{m\_numHandles}}\ =\ 0;}
+\DoxyCodeLine{00373\ }
+\DoxyCodeLine{00374\ \ \ \ \ \textcolor{comment}{//\ handle\ 0\ is\ reserved\ as\ the\ null\ index,\ and\ is\ also\ used\ as\ the\ sentinel}}
+\DoxyCodeLine{00375\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ae101ad664a9632021ca498894ebc046e}{m\_firstFreeHandle}}\ =\ 1;}
+\DoxyCodeLine{00376\ \ \ \ \ \{}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (BP\_FP\_INT\_TYPE\ i\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ae101ad664a9632021ca498894ebc046e}{m\_firstFreeHandle}};\ i\ <\ maxHandles;\ i++)}
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad9f378e701ce52ccea0e01372850f7eb}{m\_pHandles}}[i].SetNextFree(\textcolor{keyword}{static\_cast<}BP\_FP\_INT\_TYPE\textcolor{keyword}{>}(i\ +\ 1));}
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad9f378e701ce52ccea0e01372850f7eb}{m\_pHandles}}[maxHandles\ -\/\ 1].SetNextFree(0);}
+\DoxyCodeLine{00380\ \ \ \ \ \}}
+\DoxyCodeLine{00381\ }
+\DoxyCodeLine{00382\ \ \ \ \ \{}
+\DoxyCodeLine{00383\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ allocate\ edge\ buffers}}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 3;\ i++)}
+\DoxyCodeLine{00385\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_aa561e1ee29af23667eb4a0ff11c30784}{m\_pEdgesRawPtr}}[i]\ =\ \mbox{\hyperlink{bt_aligned_allocator_8h_a5798ef3418d84a1761ef917ef6720db7}{btAlignedAlloc}}(\textcolor{keyword}{sizeof}(\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}})\ *\ maxHandles\ *\ 2,\ 16);}
+\DoxyCodeLine{00387\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[i]\ =\ \textcolor{keyword}{new}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_aa561e1ee29af23667eb4a0ff11c30784}{m\_pEdgesRawPtr}}[i])\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}[maxHandles\ *\ 2];}
+\DoxyCodeLine{00388\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00389\ \ \ \ \ \}}
+\DoxyCodeLine{00390\ \ \ \ \ \textcolor{comment}{//removed\ overlap\ management}}
+\DoxyCodeLine{00391\ }
+\DoxyCodeLine{00392\ \ \ \ \ \textcolor{comment}{//\ make\ boundary\ sentinels}}
+\DoxyCodeLine{00393\ }
+\DoxyCodeLine{00394\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad9f378e701ce52ccea0e01372850f7eb}{m\_pHandles}}[0].m\_clientObject\ =\ 0;}
+\DoxyCodeLine{00395\ }
+\DoxyCodeLine{00396\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ axis\ =\ 0;\ axis\ <\ 3;\ axis++)}
+\DoxyCodeLine{00397\ \ \ \ \ \{}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad9f378e701ce52ccea0e01372850f7eb}{m\_pHandles}}[0].m\_minEdges[axis]\ =\ 0;}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad9f378e701ce52ccea0e01372850f7eb}{m\_pHandles}}[0].m\_maxEdges[axis]\ =\ 1;}
+\DoxyCodeLine{00400\ }
+\DoxyCodeLine{00401\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][0].m\_pos\ =\ 0;}
+\DoxyCodeLine{00402\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][0].m\_handle\ =\ 0;}
+\DoxyCodeLine{00403\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][1].m\_pos\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a18153ae465d1eeda11704d50948b777a}{m\_handleSentinel}};}
+\DoxyCodeLine{00404\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][1].m\_handle\ =\ 0;}
+\DoxyCodeLine{00405\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_BROADPHASE}}
+\DoxyCodeLine{00406\ \ \ \ \ \ \ \ \ debugPrintAxis(axis);}
+\DoxyCodeLine{00407\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_BROADPHASE}}
+\DoxyCodeLine{00408\ \ \ \ \ \}}
+\DoxyCodeLine{00409\ \}}
+\DoxyCodeLine{00410\ }
+\DoxyCodeLine{00411\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00412\ \mbox{\hyperlink{classbt_axis_sweep3_internal_acfb15da7a2d2f1df7b796e239e6ef951}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::\string~btAxisSweep3Internal}}()}
+\DoxyCodeLine{00413\ \{}
+\DoxyCodeLine{00414\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}})}
+\DoxyCodeLine{00415\ \ \ \ \ \{}
+\DoxyCodeLine{00416\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_af5f4d1cb0edb460383d81249947c71da}{m\_nullPairCache}}-\/>\string~btOverlappingPairCache();}
+\DoxyCodeLine{00417\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_aligned_allocator_8h_a053f25687d0cd7a29571c8669cf9bcd4}{btAlignedFree}}(\mbox{\hyperlink{classbt_axis_sweep3_internal_af5f4d1cb0edb460383d81249947c71da}{m\_nullPairCache}});}
+\DoxyCodeLine{00418\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}}-\/>\string~btDbvtBroadphase();}
+\DoxyCodeLine{00419\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_aligned_allocator_8h_a053f25687d0cd7a29571c8669cf9bcd4}{btAlignedFree}}(\mbox{\hyperlink{classbt_axis_sweep3_internal_aa0c964a27cd6722bdd231890b1239528}{m\_raycastAccelerator}});}
+\DoxyCodeLine{00420\ \ \ \ \ \}}
+\DoxyCodeLine{00421\ }
+\DoxyCodeLine{00422\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 2;\ i\ >=\ 0;\ i-\/-\/)}
+\DoxyCodeLine{00423\ \ \ \ \ \{}
+\DoxyCodeLine{00424\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_aligned_allocator_8h_a053f25687d0cd7a29571c8669cf9bcd4}{btAlignedFree}}(\mbox{\hyperlink{classbt_axis_sweep3_internal_aa561e1ee29af23667eb4a0ff11c30784}{m\_pEdgesRawPtr}}[i]);}
+\DoxyCodeLine{00425\ \ \ \ \ \}}
+\DoxyCodeLine{00426\ \ \ \ \ \textcolor{keyword}{delete}[]\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad9f378e701ce52ccea0e01372850f7eb}{m\_pHandles}};}
+\DoxyCodeLine{00427\ }
+\DoxyCodeLine{00428\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_a4ae7463e32030034f503bd6f32835108}{m\_ownsPairCache}})}
+\DoxyCodeLine{00429\ \ \ \ \ \{}
+\DoxyCodeLine{00430\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}}-\/>\string~btOverlappingPairCache();}
+\DoxyCodeLine{00431\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_aligned_allocator_8h_a053f25687d0cd7a29571c8669cf9bcd4}{btAlignedFree}}(\mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}});}
+\DoxyCodeLine{00432\ \ \ \ \ \}}
+\DoxyCodeLine{00433\ \}}
+\DoxyCodeLine{00434\ }
+\DoxyCodeLine{00435\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00436\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a852908ebce2e0b632f18cae17860fc47}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::quantize}}(BP\_FP\_INT\_TYPE*\ out,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ point,\ \textcolor{keywordtype}{int}\ isMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00437\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00438\ \textcolor{preprocessor}{\#ifdef\ OLD\_CLAMPING\_METHOD}}
+\DoxyCodeLine{00441\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ clampedPoint(point);}
+\DoxyCodeLine{00442\ \ \ \ \ clampedPoint.setMax(\mbox{\hyperlink{classbt_axis_sweep3_internal_a1df6e697fc92e802bd62f9f0dafdc209}{m\_worldAabbMin}});}
+\DoxyCodeLine{00443\ \ \ \ \ clampedPoint.setMin(\mbox{\hyperlink{classbt_axis_sweep3_internal_a2b397b8d483f546f7aeacfb55cc3cd6e}{m\_worldAabbMax}});}
+\DoxyCodeLine{00444\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ =\ (clampedPoint\ -\/\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1df6e697fc92e802bd62f9f0dafdc209}{m\_worldAabbMin}})\ *\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a9521807b9aa6d623f047fe84e74bc8bb}{m\_quantize}};}
+\DoxyCodeLine{00445\ \ \ \ \ out[0]\ =\ (BP\_FP\_INT\_TYPE)(((BP\_FP\_INT\_TYPE)\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}.getX()\ \&\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a374ece6e21a89d616375bebb6493430d}{m\_bpHandleMask}})\ |\ isMax);}
+\DoxyCodeLine{00446\ \ \ \ \ out[1]\ =\ (BP\_FP\_INT\_TYPE)(((BP\_FP\_INT\_TYPE)\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}.getY()\ \&\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a374ece6e21a89d616375bebb6493430d}{m\_bpHandleMask}})\ |\ isMax);}
+\DoxyCodeLine{00447\ \ \ \ \ out[2]\ =\ (BP\_FP\_INT\_TYPE)(((BP\_FP\_INT\_TYPE)\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}.getZ()\ \&\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a374ece6e21a89d616375bebb6493430d}{m\_bpHandleMask}})\ |\ isMax);}
+\DoxyCodeLine{00448\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00449\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ =\ (point\ -\/\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1df6e697fc92e802bd62f9f0dafdc209}{m\_worldAabbMin}})\ *\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a9521807b9aa6d623f047fe84e74bc8bb}{m\_quantize}};}
+\DoxyCodeLine{00450\ \ \ \ \ out[0]\ =\ (\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[0]\ <=\ 0)\ ?\ (BP\_FP\_INT\_TYPE)isMax\ :\ (\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[0]\ >=\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a18153ae465d1eeda11704d50948b777a}{m\_handleSentinel}})\ ?\ (BP\_FP\_INT\_TYPE)((\mbox{\hyperlink{classbt_axis_sweep3_internal_a18153ae465d1eeda11704d50948b777a}{m\_handleSentinel}}\ \&\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a374ece6e21a89d616375bebb6493430d}{m\_bpHandleMask}})\ |\ isMax)\ :\ (BP\_FP\_INT\_TYPE)(((BP\_FP\_INT\_TYPE)\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[0]\ \&\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a374ece6e21a89d616375bebb6493430d}{m\_bpHandleMask}})\ |\ isMax);}
+\DoxyCodeLine{00451\ \ \ \ \ out[1]\ =\ (\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[1]\ <=\ 0)\ ?\ (BP\_FP\_INT\_TYPE)isMax\ :\ (\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[1]\ >=\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a18153ae465d1eeda11704d50948b777a}{m\_handleSentinel}})\ ?\ (BP\_FP\_INT\_TYPE)((\mbox{\hyperlink{classbt_axis_sweep3_internal_a18153ae465d1eeda11704d50948b777a}{m\_handleSentinel}}\ \&\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a374ece6e21a89d616375bebb6493430d}{m\_bpHandleMask}})\ |\ isMax)\ :\ (BP\_FP\_INT\_TYPE)(((BP\_FP\_INT\_TYPE)\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[1]\ \&\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a374ece6e21a89d616375bebb6493430d}{m\_bpHandleMask}})\ |\ isMax);}
+\DoxyCodeLine{00452\ \ \ \ \ out[2]\ =\ (\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[2]\ <=\ 0)\ ?\ (BP\_FP\_INT\_TYPE)isMax\ :\ (\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[2]\ >=\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a18153ae465d1eeda11704d50948b777a}{m\_handleSentinel}})\ ?\ (BP\_FP\_INT\_TYPE)((\mbox{\hyperlink{classbt_axis_sweep3_internal_a18153ae465d1eeda11704d50948b777a}{m\_handleSentinel}}\ \&\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a374ece6e21a89d616375bebb6493430d}{m\_bpHandleMask}})\ |\ isMax)\ :\ (BP\_FP\_INT\_TYPE)(((BP\_FP\_INT\_TYPE)\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}[2]\ \&\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a374ece6e21a89d616375bebb6493430d}{m\_bpHandleMask}})\ |\ isMax);}
+\DoxyCodeLine{00453\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//OLD\_CLAMPING\_METHOD}}
+\DoxyCodeLine{00454\ \}}
+\DoxyCodeLine{00455\ }
+\DoxyCodeLine{00456\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00457\ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a40b3512ebfeefbec480a906328053988}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::allocHandle}}()}
+\DoxyCodeLine{00458\ \{}
+\DoxyCodeLine{00459\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{classbt_axis_sweep3_internal_ae101ad664a9632021ca498894ebc046e}{m\_firstFreeHandle}});}
+\DoxyCodeLine{00460\ }
+\DoxyCodeLine{00461\ \ \ \ \ BP\_FP\_INT\_TYPE\ handle\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ae101ad664a9632021ca498894ebc046e}{m\_firstFreeHandle}};}
+\DoxyCodeLine{00462\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ae101ad664a9632021ca498894ebc046e}{m\_firstFreeHandle}}\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(handle)-\/>GetNextFree();}
+\DoxyCodeLine{00463\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a47d1b6c41f837b5a2cf537dc262f890b}{m\_numHandles}}++;}
+\DoxyCodeLine{00464\ }
+\DoxyCodeLine{00465\ \ \ \ \ \textcolor{keywordflow}{return}\ handle;}
+\DoxyCodeLine{00466\ \}}
+\DoxyCodeLine{00467\ }
+\DoxyCodeLine{00468\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00469\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac40f411fe4911c17c681d47656296b26}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::freeHandle}}(BP\_FP\_INT\_TYPE\ handle)}
+\DoxyCodeLine{00470\ \{}
+\DoxyCodeLine{00471\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(handle\ >\ 0\ \&\&\ handle\ <\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ab129b793a163c711ef38d56e3d2a20cf}{m\_maxHandles}});}
+\DoxyCodeLine{00472\ }
+\DoxyCodeLine{00473\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(handle)-\/>SetNextFree(\mbox{\hyperlink{classbt_axis_sweep3_internal_ae101ad664a9632021ca498894ebc046e}{m\_firstFreeHandle}});}
+\DoxyCodeLine{00474\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ae101ad664a9632021ca498894ebc046e}{m\_firstFreeHandle}}\ =\ handle;}
+\DoxyCodeLine{00475\ }
+\DoxyCodeLine{00476\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a47d1b6c41f837b5a2cf537dc262f890b}{m\_numHandles}}-\/-\/;}
+\DoxyCodeLine{00477\ \}}
+\DoxyCodeLine{00478\ }
+\DoxyCodeLine{00479\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00480\ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a4b1f4677ebd086c53474fd0f6730b71d}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::addHandle}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax,\ \textcolor{keywordtype}{void}*\ pOwner,\ \textcolor{keywordtype}{int}\ collisionFilterGroup,\ \textcolor{keywordtype}{int}\ collisionFilterMask,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher)}
+\DoxyCodeLine{00481\ \{}
+\DoxyCodeLine{00482\ \ \ \ \ \textcolor{comment}{//\ quantize\ the\ bounds}}
+\DoxyCodeLine{00483\ \ \ \ \ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_abeb2fef66c4ccdb539acaf9a5de81e8d}{min}}[3],\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a5e0d0c9b1e0345b586502e192758f820}{max}}[3];}
+\DoxyCodeLine{00484\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a13ca4a67063f4affe28dd3d15367c16a}{quantize}}(\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_abeb2fef66c4ccdb539acaf9a5de81e8d}{min}},\ aabbMin,\ 0);}
+\DoxyCodeLine{00485\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a13ca4a67063f4affe28dd3d15367c16a}{quantize}}(\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a5e0d0c9b1e0345b586502e192758f820}{max}},\ aabbMax,\ 1);}
+\DoxyCodeLine{00486\ }
+\DoxyCodeLine{00487\ \ \ \ \ \textcolor{comment}{//\ allocate\ a\ handle}}
+\DoxyCodeLine{00488\ \ \ \ \ BP\_FP\_INT\_TYPE\ handle\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a40b3512ebfeefbec480a906328053988}{allocHandle}}();}
+\DoxyCodeLine{00489\ }
+\DoxyCodeLine{00490\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandle\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(handle);}
+\DoxyCodeLine{00491\ }
+\DoxyCodeLine{00492\ \ \ \ \ pHandle-\/>m\_uniqueId\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(handle);}
+\DoxyCodeLine{00493\ \ \ \ \ \textcolor{comment}{//pHandle-\/>m\_pOverlaps\ =\ 0;}}
+\DoxyCodeLine{00494\ \ \ \ \ pHandle-\/>m\_clientObject\ =\ pOwner;}
+\DoxyCodeLine{00495\ \ \ \ \ pHandle-\/>m\_collisionFilterGroup\ =\ collisionFilterGroup;}
+\DoxyCodeLine{00496\ \ \ \ \ pHandle-\/>m\_collisionFilterMask\ =\ collisionFilterMask;}
+\DoxyCodeLine{00497\ }
+\DoxyCodeLine{00498\ \ \ \ \ \textcolor{comment}{//\ compute\ current\ limit\ of\ edge\ arrays}}
+\DoxyCodeLine{00499\ \ \ \ \ BP\_FP\_INT\_TYPE\ limit\ =\ \textcolor{keyword}{static\_cast<}BP\_FP\_INT\_TYPE\textcolor{keyword}{>}(\mbox{\hyperlink{classbt_axis_sweep3_internal_a47d1b6c41f837b5a2cf537dc262f890b}{m\_numHandles}}\ *\ 2);}
+\DoxyCodeLine{00500\ }
+\DoxyCodeLine{00501\ \ \ \ \ \textcolor{comment}{//\ insert\ new\ edges\ just\ inside\ the\ max\ boundary\ edge}}
+\DoxyCodeLine{00502\ \ \ \ \ \textcolor{keywordflow}{for}\ (BP\_FP\_INT\_TYPE\ axis\ =\ 0;\ axis\ <\ 3;\ axis++)}
+\DoxyCodeLine{00503\ \ \ \ \ \{}
+\DoxyCodeLine{00504\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad9f378e701ce52ccea0e01372850f7eb}{m\_pHandles}}[0].m\_maxEdges[axis]\ +=\ 2;}
+\DoxyCodeLine{00505\ }
+\DoxyCodeLine{00506\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][limit\ +\ 1]\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][limit\ -\/\ 1];}
+\DoxyCodeLine{00507\ }
+\DoxyCodeLine{00508\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][limit\ -\/\ 1].m\_pos\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_abeb2fef66c4ccdb539acaf9a5de81e8d}{min}}[axis];}
+\DoxyCodeLine{00509\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][limit\ -\/\ 1].m\_handle\ =\ handle;}
+\DoxyCodeLine{00510\ }
+\DoxyCodeLine{00511\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][limit].m\_pos\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a5e0d0c9b1e0345b586502e192758f820}{max}}[axis];}
+\DoxyCodeLine{00512\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][limit].m\_handle\ =\ handle;}
+\DoxyCodeLine{00513\ }
+\DoxyCodeLine{00514\ \ \ \ \ \ \ \ \ pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[axis]\ =\ \textcolor{keyword}{static\_cast<}BP\_FP\_INT\_TYPE\textcolor{keyword}{>}(limit\ -\/\ 1);}
+\DoxyCodeLine{00515\ \ \ \ \ \ \ \ \ pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[axis]\ =\ limit;}
+\DoxyCodeLine{00516\ \ \ \ \ \}}
+\DoxyCodeLine{00517\ }
+\DoxyCodeLine{00518\ \ \ \ \ \textcolor{comment}{//\ now\ sort\ the\ new\ edges\ to\ their\ correct\ position}}
+\DoxyCodeLine{00519\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac12a6524d4fe2b30f084be1c556e8087}{sortMinDown}}(0,\ pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[0],\ dispatcher,\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00520\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a345b7d853ad2a2449da0b51b1f35ff49}{sortMaxDown}}(0,\ pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[0],\ dispatcher,\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00521\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac12a6524d4fe2b30f084be1c556e8087}{sortMinDown}}(1,\ pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[1],\ dispatcher,\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00522\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a345b7d853ad2a2449da0b51b1f35ff49}{sortMaxDown}}(1,\ pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[1],\ dispatcher,\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00523\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac12a6524d4fe2b30f084be1c556e8087}{sortMinDown}}(2,\ pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[2],\ dispatcher,\ \textcolor{keyword}{true});}
+\DoxyCodeLine{00524\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a345b7d853ad2a2449da0b51b1f35ff49}{sortMaxDown}}(2,\ pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[2],\ dispatcher,\ \textcolor{keyword}{true});}
+\DoxyCodeLine{00525\ }
+\DoxyCodeLine{00526\ \ \ \ \ \textcolor{keywordflow}{return}\ handle;}
+\DoxyCodeLine{00527\ \}}
+\DoxyCodeLine{00528\ }
+\DoxyCodeLine{00529\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00530\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a4e26f4f8acf63f26451f6396223001bb}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::removeHandle}}(BP\_FP\_INT\_TYPE\ handle,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher)}
+\DoxyCodeLine{00531\ \{}
+\DoxyCodeLine{00532\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandle\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(handle);}
+\DoxyCodeLine{00533\ }
+\DoxyCodeLine{00534\ \ \ \ \ \textcolor{comment}{//explicitly\ remove\ the\ pairs\ containing\ the\ proxy}}
+\DoxyCodeLine{00535\ \ \ \ \ \textcolor{comment}{//we\ could\ do\ it\ also\ in\ the\ sortMinUp\ (passing\ true)}}
+\DoxyCodeLine{00537\ \ \ \ \ \textcolor{keywordflow}{if}\ (!\mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}}-\/>hasDeferredRemoval())}
+\DoxyCodeLine{00538\ \ \ \ \ \{}
+\DoxyCodeLine{00539\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}}-\/>removeOverlappingPairsContainingProxy(pHandle,\ dispatcher);}
+\DoxyCodeLine{00540\ \ \ \ \ \}}
+\DoxyCodeLine{00541\ }
+\DoxyCodeLine{00542\ \ \ \ \ \textcolor{comment}{//\ compute\ current\ limit\ of\ edge\ arrays}}
+\DoxyCodeLine{00543\ \ \ \ \ \textcolor{keywordtype}{int}\ limit\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{int}\textcolor{keyword}{>}(\mbox{\hyperlink{classbt_axis_sweep3_internal_a47d1b6c41f837b5a2cf537dc262f890b}{m\_numHandles}}\ *\ 2);}
+\DoxyCodeLine{00544\ }
+\DoxyCodeLine{00545\ \ \ \ \ \textcolor{keywordtype}{int}\ axis;}
+\DoxyCodeLine{00546\ }
+\DoxyCodeLine{00547\ \ \ \ \ \textcolor{keywordflow}{for}\ (axis\ =\ 0;\ axis\ <\ 3;\ axis++)}
+\DoxyCodeLine{00548\ \ \ \ \ \{}
+\DoxyCodeLine{00549\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad9f378e701ce52ccea0e01372850f7eb}{m\_pHandles}}[0].m\_maxEdges[axis]\ -\/=\ 2;}
+\DoxyCodeLine{00550\ \ \ \ \ \}}
+\DoxyCodeLine{00551\ }
+\DoxyCodeLine{00552\ \ \ \ \ \textcolor{comment}{//\ remove\ the\ edges\ by\ sorting\ them\ up\ to\ the\ end\ of\ the\ list}}
+\DoxyCodeLine{00553\ \ \ \ \ \textcolor{keywordflow}{for}\ (axis\ =\ 0;\ axis\ <\ 3;\ axis++)}
+\DoxyCodeLine{00554\ \ \ \ \ \{}
+\DoxyCodeLine{00555\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}*\ pEdges\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis];}
+\DoxyCodeLine{00556\ \ \ \ \ \ \ \ \ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a5e0d0c9b1e0345b586502e192758f820}{max}}\ =\ pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[axis];}
+\DoxyCodeLine{00557\ \ \ \ \ \ \ \ \ pEdges[\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a5e0d0c9b1e0345b586502e192758f820}{max}}].\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a9b0b2af45ac13557b01cac97d989871e}{m\_pos}}\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a18153ae465d1eeda11704d50948b777a}{m\_handleSentinel}};}
+\DoxyCodeLine{00558\ }
+\DoxyCodeLine{00559\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_af8e014dfdce82a2d16dde9cb342fa58f}{sortMaxUp}}(axis,\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a5e0d0c9b1e0345b586502e192758f820}{max}},\ dispatcher,\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00560\ }
+\DoxyCodeLine{00561\ \ \ \ \ \ \ \ \ BP\_FP\_INT\_TYPE\ i\ =\ pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[axis];}
+\DoxyCodeLine{00562\ \ \ \ \ \ \ \ \ pEdges[i].\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a9b0b2af45ac13557b01cac97d989871e}{m\_pos}}\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a18153ae465d1eeda11704d50948b777a}{m\_handleSentinel}};}
+\DoxyCodeLine{00563\ }
+\DoxyCodeLine{00564\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ae2547559962876e0da7899dadca7f9aa}{sortMinUp}}(axis,\ i,\ dispatcher,\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00565\ }
+\DoxyCodeLine{00566\ \ \ \ \ \ \ \ \ pEdges[limit\ -\/\ 1].\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}}\ =\ 0;}
+\DoxyCodeLine{00567\ \ \ \ \ \ \ \ \ pEdges[limit\ -\/\ 1].\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a9b0b2af45ac13557b01cac97d989871e}{m\_pos}}\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a18153ae465d1eeda11704d50948b777a}{m\_handleSentinel}};}
+\DoxyCodeLine{00568\ }
+\DoxyCodeLine{00569\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_BROADPHASE}}
+\DoxyCodeLine{00570\ \ \ \ \ \ \ \ \ debugPrintAxis(axis,\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00571\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_BROADPHASE}}
+\DoxyCodeLine{00572\ \ \ \ \ \}}
+\DoxyCodeLine{00573\ }
+\DoxyCodeLine{00574\ \ \ \ \ \textcolor{comment}{//\ free\ the\ handle}}
+\DoxyCodeLine{00575\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac40f411fe4911c17c681d47656296b26}{freeHandle}}(handle);}
+\DoxyCodeLine{00576\ \}}
+\DoxyCodeLine{00577\ }
+\DoxyCodeLine{00578\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00579\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_aeecfcc066ca77ec8b9bf2c8d422716ee}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::resetPool}}(\mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ \textcolor{comment}{/*dispatcher*/})}
+\DoxyCodeLine{00580\ \{}
+\DoxyCodeLine{00581\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_a47d1b6c41f837b5a2cf537dc262f890b}{m\_numHandles}}\ ==\ 0)}
+\DoxyCodeLine{00582\ \ \ \ \ \{}
+\DoxyCodeLine{00583\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ae101ad664a9632021ca498894ebc046e}{m\_firstFreeHandle}}\ =\ 1;}
+\DoxyCodeLine{00584\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00585\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (BP\_FP\_INT\_TYPE\ i\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ae101ad664a9632021ca498894ebc046e}{m\_firstFreeHandle}};\ i\ <\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ab129b793a163c711ef38d56e3d2a20cf}{m\_maxHandles}};\ i++)}
+\DoxyCodeLine{00586\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad9f378e701ce52ccea0e01372850f7eb}{m\_pHandles}}[i].SetNextFree(\textcolor{keyword}{static\_cast<}BP\_FP\_INT\_TYPE\textcolor{keyword}{>}(i\ +\ 1));}
+\DoxyCodeLine{00587\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad9f378e701ce52ccea0e01372850f7eb}{m\_pHandles}}[\mbox{\hyperlink{classbt_axis_sweep3_internal_ab129b793a163c711ef38d56e3d2a20cf}{m\_maxHandles}}\ -\/\ 1].SetNextFree(0);}
+\DoxyCodeLine{00588\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00589\ \ \ \ \ \}}
+\DoxyCodeLine{00590\ \}}
+\DoxyCodeLine{00591\ }
+\DoxyCodeLine{00592\ \textcolor{comment}{//\#include\ <stdio.h>}}
+\DoxyCodeLine{00593\ }
+\DoxyCodeLine{00594\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00595\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ab89835d4ecb51e2dadc7e3b6e7c29adb}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::calculateOverlappingPairs}}(\mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher)}
+\DoxyCodeLine{00596\ \{}
+\DoxyCodeLine{00597\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}}-\/>hasDeferredRemoval())}
+\DoxyCodeLine{00598\ \ \ \ \ \{}
+\DoxyCodeLine{00599\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_overlapping_pair_cache_8h_aa589c0e250c448dde0aae29f5610a7ff}{btBroadphasePairArray}}\&\ overlappingPairArray\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}}-\/>getOverlappingPairArray();}
+\DoxyCodeLine{00600\ }
+\DoxyCodeLine{00601\ \ \ \ \ \ \ \ \ \textcolor{comment}{//perform\ a\ sort,\ to\ find\ duplicates\ and\ to\ sort\ 'invalid'\ pairs\ to\ the\ end}}
+\DoxyCodeLine{00602\ \ \ \ \ \ \ \ \ overlappingPairArray.\mbox{\hyperlink{classbt_aligned_object_array_a96e9890d9c406d43b53b0e5ff0723b2f}{quickSort}}(\mbox{\hyperlink{classbt_broadphase_pair_sort_predicate}{btBroadphasePairSortPredicate}}());}
+\DoxyCodeLine{00603\ }
+\DoxyCodeLine{00604\ \ \ \ \ \ \ \ \ overlappingPairArray.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(overlappingPairArray.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ -\/\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a6ecb6f04fd6ed4e84f99b0e934615537}{m\_invalidPair}});}
+\DoxyCodeLine{00605\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a6ecb6f04fd6ed4e84f99b0e934615537}{m\_invalidPair}}\ =\ 0;}
+\DoxyCodeLine{00606\ }
+\DoxyCodeLine{00607\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00608\ }
+\DoxyCodeLine{00609\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_broadphase_proxy_8h_a684535efcadf12b3a0e259f663132484}{btBroadphasePair}}\ previousPair;}
+\DoxyCodeLine{00610\ \ \ \ \ \ \ \ \ previousPair.m\_pProxy0\ =\ 0;}
+\DoxyCodeLine{00611\ \ \ \ \ \ \ \ \ previousPair.m\_pProxy1\ =\ 0;}
+\DoxyCodeLine{00612\ \ \ \ \ \ \ \ \ previousPair.m\_algorithm\ =\ 0;}
+\DoxyCodeLine{00613\ }
+\DoxyCodeLine{00614\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ overlappingPairArray.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ i++)}
+\DoxyCodeLine{00615\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00616\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_broadphase_proxy_8h_a684535efcadf12b3a0e259f663132484}{btBroadphasePair}}\&\ pair\ =\ overlappingPairArray[i];}
+\DoxyCodeLine{00617\ }
+\DoxyCodeLine{00618\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ isDuplicate\ =\ (pair\ ==\ previousPair);}
+\DoxyCodeLine{00619\ }
+\DoxyCodeLine{00620\ \ \ \ \ \ \ \ \ \ \ \ \ previousPair\ =\ pair;}
+\DoxyCodeLine{00621\ }
+\DoxyCodeLine{00622\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ needsRemoval\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00623\ }
+\DoxyCodeLine{00624\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!isDuplicate)}
+\DoxyCodeLine{00625\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00627\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ hasOverlap\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a24ac067f6bebde7e1905620d89c83686}{testAabbOverlap}}(pair.m\_pProxy0,\ pair.m\_pProxy1);}
+\DoxyCodeLine{00628\ }
+\DoxyCodeLine{00629\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (hasOverlap)}
+\DoxyCodeLine{00630\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00631\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ needsRemoval\ =\ \textcolor{keyword}{false};\ \ \textcolor{comment}{//callback-\/>processOverlap(pair);}}
+\DoxyCodeLine{00632\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00633\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00634\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00635\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ needsRemoval\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00636\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00637\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00638\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00639\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00640\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//remove\ duplicate}}
+\DoxyCodeLine{00641\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ needsRemoval\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00642\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//should\ have\ no\ algorithm}}
+\DoxyCodeLine{00643\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(!pair.m\_algorithm);}
+\DoxyCodeLine{00644\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00645\ }
+\DoxyCodeLine{00646\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (needsRemoval)}
+\DoxyCodeLine{00647\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00648\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}}-\/>cleanOverlappingPair(pair,\ dispatcher);}
+\DoxyCodeLine{00649\ }
+\DoxyCodeLine{00650\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ m\_overlappingPairArray.swap(i,m\_overlappingPairArray.size()-\/1);}}
+\DoxyCodeLine{00651\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ m\_overlappingPairArray.pop\_back();}}
+\DoxyCodeLine{00652\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ pair.m\_pProxy0\ =\ 0;}
+\DoxyCodeLine{00653\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ pair.m\_pProxy1\ =\ 0;}
+\DoxyCodeLine{00654\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a6ecb6f04fd6ed4e84f99b0e934615537}{m\_invalidPair}}++;}
+\DoxyCodeLine{00655\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00656\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00657\ }
+\DoxyCodeLine{00659\ \textcolor{preprocessor}{\#define\ CLEAN\_INVALID\_PAIRS\ 1}}
+\DoxyCodeLine{00660\ \textcolor{preprocessor}{\#ifdef\ CLEAN\_INVALID\_PAIRS}}
+\DoxyCodeLine{00661\ }
+\DoxyCodeLine{00662\ \ \ \ \ \ \ \ \ \textcolor{comment}{//perform\ a\ sort,\ to\ sort\ 'invalid'\ pairs\ to\ the\ end}}
+\DoxyCodeLine{00663\ \ \ \ \ \ \ \ \ overlappingPairArray.\mbox{\hyperlink{classbt_aligned_object_array_a96e9890d9c406d43b53b0e5ff0723b2f}{quickSort}}(\mbox{\hyperlink{classbt_broadphase_pair_sort_predicate}{btBroadphasePairSortPredicate}}());}
+\DoxyCodeLine{00664\ }
+\DoxyCodeLine{00665\ \ \ \ \ \ \ \ \ overlappingPairArray.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(overlappingPairArray.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ -\/\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a6ecb6f04fd6ed4e84f99b0e934615537}{m\_invalidPair}});}
+\DoxyCodeLine{00666\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a6ecb6f04fd6ed4e84f99b0e934615537}{m\_invalidPair}}\ =\ 0;}
+\DoxyCodeLine{00667\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//CLEAN\_INVALID\_PAIRS}}
+\DoxyCodeLine{00668\ }
+\DoxyCodeLine{00669\ \ \ \ \ \ \ \ \ \textcolor{comment}{//printf("{}overlappingPairArray.size()=\%d\(\backslash\)n"{},overlappingPairArray.size());}}
+\DoxyCodeLine{00670\ \ \ \ \ \}}
+\DoxyCodeLine{00671\ \}}
+\DoxyCodeLine{00672\ }
+\DoxyCodeLine{00673\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00674\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a24ac067f6bebde7e1905620d89c83686}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::testAabbOverlap}}(\mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ proxy0,\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a834c939d3d20d8cf17a71f90244f8e2b}{btBroadphaseProxy}}*\ proxy1)}
+\DoxyCodeLine{00675\ \{}
+\DoxyCodeLine{00676\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandleA\ =\ \textcolor{keyword}{static\_cast<}\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\textcolor{keyword}{>}(proxy0);}
+\DoxyCodeLine{00677\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandleB\ =\ \textcolor{keyword}{static\_cast<}\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\textcolor{keyword}{>}(proxy1);}
+\DoxyCodeLine{00678\ }
+\DoxyCodeLine{00679\ \ \ \ \ \textcolor{comment}{//optimization\ 1:\ check\ the\ array\ index\ (memory\ address),\ instead\ of\ the\ m\_pos}}
+\DoxyCodeLine{00680\ }
+\DoxyCodeLine{00681\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ axis\ =\ 0;\ axis\ <\ 3;\ axis++)}
+\DoxyCodeLine{00682\ \ \ \ \ \{}
+\DoxyCodeLine{00683\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (pHandleA-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[axis]\ <\ pHandleB-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[axis]\ ||}
+\DoxyCodeLine{00684\ \ \ \ \ \ \ \ \ \ \ \ \ pHandleB-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[axis]\ <\ pHandleA-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[axis])}
+\DoxyCodeLine{00685\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00686\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00687\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00688\ \ \ \ \ \}}
+\DoxyCodeLine{00689\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00690\ \}}
+\DoxyCodeLine{00691\ }
+\DoxyCodeLine{00692\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00693\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a49abf8db2723c3ec699031539ab6e06d}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::testOverlap2D}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandleA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandleB,\ \textcolor{keywordtype}{int}\ axis0,\ \textcolor{keywordtype}{int}\ axis1)}
+\DoxyCodeLine{00694\ \{}
+\DoxyCodeLine{00695\ \ \ \ \ \textcolor{comment}{//optimization\ 1:\ check\ the\ array\ index\ (memory\ address),\ instead\ of\ the\ m\_pos}}
+\DoxyCodeLine{00696\ }
+\DoxyCodeLine{00697\ \ \ \ \ \textcolor{keywordflow}{if}\ (pHandleA-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[axis0]\ <\ pHandleB-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[axis0]\ ||}
+\DoxyCodeLine{00698\ \ \ \ \ \ \ \ \ pHandleB-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[axis0]\ <\ pHandleA-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[axis0]\ ||}
+\DoxyCodeLine{00699\ \ \ \ \ \ \ \ \ pHandleA-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[axis1]\ <\ pHandleB-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[axis1]\ ||}
+\DoxyCodeLine{00700\ \ \ \ \ \ \ \ \ pHandleB-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[axis1]\ <\ pHandleA-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[axis1])}
+\DoxyCodeLine{00701\ \ \ \ \ \{}
+\DoxyCodeLine{00702\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00703\ \ \ \ \ \}}
+\DoxyCodeLine{00704\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00705\ \}}
+\DoxyCodeLine{00706\ }
+\DoxyCodeLine{00707\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00708\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac9852514d20572ebdde3e72215b09410}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::updateHandle}}(BP\_FP\_INT\_TYPE\ handle,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher)}
+\DoxyCodeLine{00709\ \{}
+\DoxyCodeLine{00710\ \ \ \ \ \textcolor{comment}{//\ \ btAssert(bounds.IsFinite());}}
+\DoxyCodeLine{00711\ \ \ \ \ \textcolor{comment}{//btAssert(bounds.HasVolume());}}
+\DoxyCodeLine{00712\ }
+\DoxyCodeLine{00713\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandle\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(handle);}
+\DoxyCodeLine{00714\ }
+\DoxyCodeLine{00715\ \ \ \ \ \textcolor{comment}{//\ quantize\ the\ new\ bounds}}
+\DoxyCodeLine{00716\ \ \ \ \ BP\_FP\_INT\_TYPE\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_abeb2fef66c4ccdb539acaf9a5de81e8d}{min}}[3],\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a5e0d0c9b1e0345b586502e192758f820}{max}}[3];}
+\DoxyCodeLine{00717\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a13ca4a67063f4affe28dd3d15367c16a}{quantize}}(\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_abeb2fef66c4ccdb539acaf9a5de81e8d}{min}},\ aabbMin,\ 0);}
+\DoxyCodeLine{00718\ \ \ \ \ \mbox{\hyperlink{b3_quantized_bvh_8h_a13ca4a67063f4affe28dd3d15367c16a}{quantize}}(\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a5e0d0c9b1e0345b586502e192758f820}{max}},\ aabbMax,\ 1);}
+\DoxyCodeLine{00719\ }
+\DoxyCodeLine{00720\ \ \ \ \ \textcolor{comment}{//\ update\ changed\ edges}}
+\DoxyCodeLine{00721\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ axis\ =\ 0;\ axis\ <\ 3;\ axis++)}
+\DoxyCodeLine{00722\ \ \ \ \ \{}
+\DoxyCodeLine{00723\ \ \ \ \ \ \ \ \ BP\_FP\_INT\_TYPE\ emin\ =\ pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[axis];}
+\DoxyCodeLine{00724\ \ \ \ \ \ \ \ \ BP\_FP\_INT\_TYPE\ emax\ =\ pHandle-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[axis];}
+\DoxyCodeLine{00725\ }
+\DoxyCodeLine{00726\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ dmin\ =\ (int)\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_abeb2fef66c4ccdb539acaf9a5de81e8d}{min}}[axis]\ -\/\ (\textcolor{keywordtype}{int})\mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][emin].m\_pos;}
+\DoxyCodeLine{00727\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ dmax\ =\ (int)\mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a5e0d0c9b1e0345b586502e192758f820}{max}}[axis]\ -\/\ (\textcolor{keywordtype}{int})\mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][emax].m\_pos;}
+\DoxyCodeLine{00728\ }
+\DoxyCodeLine{00729\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][emin].m\_pos\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_abeb2fef66c4ccdb539acaf9a5de81e8d}{min}}[axis];}
+\DoxyCodeLine{00730\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis][emax].m\_pos\ =\ \mbox{\hyperlink{bt_heightfield_terrain_shape_8h_a5e0d0c9b1e0345b586502e192758f820}{max}}[axis];}
+\DoxyCodeLine{00731\ }
+\DoxyCodeLine{00732\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ expand\ (only\ adds\ overlaps)}}
+\DoxyCodeLine{00733\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (dmin\ <\ 0)}
+\DoxyCodeLine{00734\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac12a6524d4fe2b30f084be1c556e8087}{sortMinDown}}(axis,\ emin,\ dispatcher,\ \textcolor{keyword}{true});}
+\DoxyCodeLine{00735\ }
+\DoxyCodeLine{00736\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (dmax\ >\ 0)}
+\DoxyCodeLine{00737\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_af8e014dfdce82a2d16dde9cb342fa58f}{sortMaxUp}}(axis,\ emax,\ dispatcher,\ \textcolor{keyword}{true});}
+\DoxyCodeLine{00738\ }
+\DoxyCodeLine{00739\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ shrink\ (only\ removes\ overlaps)}}
+\DoxyCodeLine{00740\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (dmin\ >\ 0)}
+\DoxyCodeLine{00741\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ae2547559962876e0da7899dadca7f9aa}{sortMinUp}}(axis,\ emin,\ dispatcher,\ \textcolor{keyword}{true});}
+\DoxyCodeLine{00742\ }
+\DoxyCodeLine{00743\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (dmax\ <\ 0)}
+\DoxyCodeLine{00744\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a345b7d853ad2a2449da0b51b1f35ff49}{sortMaxDown}}(axis,\ emax,\ dispatcher,\ \textcolor{keyword}{true});}
+\DoxyCodeLine{00745\ }
+\DoxyCodeLine{00746\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_BROADPHASE}}
+\DoxyCodeLine{00747\ \ \ \ \ \ \ \ \ debugPrintAxis(axis);}
+\DoxyCodeLine{00748\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_BROADPHASE}}
+\DoxyCodeLine{00749\ \ \ \ \ \}}
+\DoxyCodeLine{00750\ \}}
+\DoxyCodeLine{00751\ }
+\DoxyCodeLine{00752\ \textcolor{comment}{//\ sorting\ a\ min\ edge\ downwards\ can\ only\ ever\ *add*\ overlaps}}
+\DoxyCodeLine{00753\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00754\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ac12a6524d4fe2b30f084be1c556e8087}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::sortMinDown}}(\textcolor{keywordtype}{int}\ axis,\ BP\_FP\_INT\_TYPE\ edge,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ \textcolor{comment}{/*\ dispatcher\ */},\ \textcolor{keywordtype}{bool}\ updateOverlaps)}
+\DoxyCodeLine{00755\ \{}
+\DoxyCodeLine{00756\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}*\ pEdge\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis]\ +\ edge;}
+\DoxyCodeLine{00757\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}*\ pPrev\ =\ pEdge\ -\/\ 1;}
+\DoxyCodeLine{00758\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandleEdge\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(pEdge-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}});}
+\DoxyCodeLine{00759\ }
+\DoxyCodeLine{00760\ \ \ \ \ \textcolor{keywordflow}{while}\ (pEdge-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a9b0b2af45ac13557b01cac97d989871e}{m\_pos}}\ <\ pPrev-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a9b0b2af45ac13557b01cac97d989871e}{m\_pos}})}
+\DoxyCodeLine{00761\ \ \ \ \ \{}
+\DoxyCodeLine{00762\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandlePrev\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(pPrev-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}});}
+\DoxyCodeLine{00763\ }
+\DoxyCodeLine{00764\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (pPrev-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a95258f2743e5b5ff87dd54b54145b9c0}{IsMax}}())}
+\DoxyCodeLine{00765\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00766\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ previous\ edge\ is\ a\ maximum\ check\ the\ bounds\ and\ add\ an\ overlap\ if\ necessary}}
+\DoxyCodeLine{00767\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ axis1\ =\ (1\ <<\ axis)\ \&\ 3;}
+\DoxyCodeLine{00768\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ axis2\ =\ (1\ <<\ axis1)\ \&\ 3;}
+\DoxyCodeLine{00769\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (updateOverlaps\ \&\&\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a49abf8db2723c3ec699031539ab6e06d}{testOverlap2D}}(pHandleEdge,\ pHandlePrev,\ axis1,\ axis2))}
+\DoxyCodeLine{00770\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00771\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}}-\/>addOverlappingPair(pHandleEdge,\ pHandlePrev);}
+\DoxyCodeLine{00772\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_ad26657cfc4245f099042178daf885563}{m\_userPairCallback}})}
+\DoxyCodeLine{00773\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad26657cfc4245f099042178daf885563}{m\_userPairCallback}}-\/>addOverlappingPair(pHandleEdge,\ pHandlePrev);}
+\DoxyCodeLine{00774\ }
+\DoxyCodeLine{00775\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//AddOverlap(pEdge-\/>m\_handle,\ pPrev-\/>m\_handle);}}
+\DoxyCodeLine{00776\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00777\ }
+\DoxyCodeLine{00778\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ update\ edge\ reference\ in\ other\ handle}}
+\DoxyCodeLine{00779\ \ \ \ \ \ \ \ \ \ \ \ \ pHandlePrev-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[axis]++;}
+\DoxyCodeLine{00780\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00781\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00782\ \ \ \ \ \ \ \ \ \ \ \ \ pHandlePrev-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[axis]++;}
+\DoxyCodeLine{00783\ }
+\DoxyCodeLine{00784\ \ \ \ \ \ \ \ \ pHandleEdge-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[axis]-\/-\/;}
+\DoxyCodeLine{00785\ }
+\DoxyCodeLine{00786\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ swap\ the\ edges}}
+\DoxyCodeLine{00787\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}\ swap\ =\ *pEdge;}
+\DoxyCodeLine{00788\ \ \ \ \ \ \ \ \ *pEdge\ =\ *pPrev;}
+\DoxyCodeLine{00789\ \ \ \ \ \ \ \ \ *pPrev\ =\ swap;}
+\DoxyCodeLine{00790\ }
+\DoxyCodeLine{00791\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ decrement}}
+\DoxyCodeLine{00792\ \ \ \ \ \ \ \ \ pEdge-\/-\/;}
+\DoxyCodeLine{00793\ \ \ \ \ \ \ \ \ pPrev-\/-\/;}
+\DoxyCodeLine{00794\ \ \ \ \ \}}
+\DoxyCodeLine{00795\ }
+\DoxyCodeLine{00796\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_BROADPHASE}}
+\DoxyCodeLine{00797\ \ \ \ \ debugPrintAxis(axis);}
+\DoxyCodeLine{00798\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_BROADPHASE}}
+\DoxyCodeLine{00799\ \}}
+\DoxyCodeLine{00800\ }
+\DoxyCodeLine{00801\ \textcolor{comment}{//\ sorting\ a\ min\ edge\ upwards\ can\ only\ ever\ *remove*\ overlaps}}
+\DoxyCodeLine{00802\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00803\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_ae2547559962876e0da7899dadca7f9aa}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::sortMinUp}}(\textcolor{keywordtype}{int}\ axis,\ BP\_FP\_INT\_TYPE\ edge,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher,\ \textcolor{keywordtype}{bool}\ updateOverlaps)}
+\DoxyCodeLine{00804\ \{}
+\DoxyCodeLine{00805\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}*\ pEdge\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis]\ +\ edge;}
+\DoxyCodeLine{00806\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}*\ pNext\ =\ pEdge\ +\ 1;}
+\DoxyCodeLine{00807\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandleEdge\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(pEdge-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}});}
+\DoxyCodeLine{00808\ }
+\DoxyCodeLine{00809\ \ \ \ \ \textcolor{keywordflow}{while}\ (pNext-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}}\ \&\&\ (pEdge-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a9b0b2af45ac13557b01cac97d989871e}{m\_pos}}\ >=\ pNext-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a9b0b2af45ac13557b01cac97d989871e}{m\_pos}}))}
+\DoxyCodeLine{00810\ \ \ \ \ \{}
+\DoxyCodeLine{00811\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandleNext\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(pNext-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}});}
+\DoxyCodeLine{00812\ }
+\DoxyCodeLine{00813\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (pNext-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a95258f2743e5b5ff87dd54b54145b9c0}{IsMax}}())}
+\DoxyCodeLine{00814\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00815\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ handle0\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(pEdge-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}});}
+\DoxyCodeLine{00816\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ handle1\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(pNext-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}});}
+\DoxyCodeLine{00817\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ axis1\ =\ (1\ <<\ axis)\ \&\ 3;}
+\DoxyCodeLine{00818\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ axis2\ =\ (1\ <<\ axis1)\ \&\ 3;}
+\DoxyCodeLine{00819\ }
+\DoxyCodeLine{00820\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ next\ edge\ is\ maximum\ remove\ any\ overlap\ between\ the\ two\ handles}}
+\DoxyCodeLine{00821\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (updateOverlaps}
+\DoxyCodeLine{00822\ \#ifdef\ \mbox{\hyperlink{bt_axis_sweep3_internal_8h_ab0112bd0d332cf337fc55c97e964cc32}{USE\_OVERLAP\_TEST\_ON\_REMOVES}}}
+\DoxyCodeLine{00823\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\&\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a49abf8db2723c3ec699031539ab6e06d}{testOverlap2D}}(handle0,\ handle1,\ axis1,\ axis2)}
+\DoxyCodeLine{00824\ \#endif\ \ \textcolor{comment}{//USE\_OVERLAP\_TEST\_ON\_REMOVES}}
+\DoxyCodeLine{00825\ \ \ \ \ \ \ \ \ \ \ \ \ )}
+\DoxyCodeLine{00826\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00827\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}}-\/>removeOverlappingPair(handle0,\ handle1,\ dispatcher);}
+\DoxyCodeLine{00828\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_ad26657cfc4245f099042178daf885563}{m\_userPairCallback}})}
+\DoxyCodeLine{00829\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad26657cfc4245f099042178daf885563}{m\_userPairCallback}}-\/>removeOverlappingPair(handle0,\ handle1,\ dispatcher);}
+\DoxyCodeLine{00830\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00831\ }
+\DoxyCodeLine{00832\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ update\ edge\ reference\ in\ other\ handle}}
+\DoxyCodeLine{00833\ \ \ \ \ \ \ \ \ \ \ \ \ pHandleNext-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[axis]-\/-\/;}
+\DoxyCodeLine{00834\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00835\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00836\ \ \ \ \ \ \ \ \ \ \ \ \ pHandleNext-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[axis]-\/-\/;}
+\DoxyCodeLine{00837\ }
+\DoxyCodeLine{00838\ \ \ \ \ \ \ \ \ pHandleEdge-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[axis]++;}
+\DoxyCodeLine{00839\ }
+\DoxyCodeLine{00840\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ swap\ the\ edges}}
+\DoxyCodeLine{00841\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}\ swap\ =\ *pEdge;}
+\DoxyCodeLine{00842\ \ \ \ \ \ \ \ \ *pEdge\ =\ *pNext;}
+\DoxyCodeLine{00843\ \ \ \ \ \ \ \ \ *pNext\ =\ swap;}
+\DoxyCodeLine{00844\ }
+\DoxyCodeLine{00845\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ increment}}
+\DoxyCodeLine{00846\ \ \ \ \ \ \ \ \ pEdge++;}
+\DoxyCodeLine{00847\ \ \ \ \ \ \ \ \ pNext++;}
+\DoxyCodeLine{00848\ \ \ \ \ \}}
+\DoxyCodeLine{00849\ \}}
+\DoxyCodeLine{00850\ }
+\DoxyCodeLine{00851\ \textcolor{comment}{//\ sorting\ a\ max\ edge\ downwards\ can\ only\ ever\ *remove*\ overlaps}}
+\DoxyCodeLine{00852\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00853\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a345b7d853ad2a2449da0b51b1f35ff49}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::sortMaxDown}}(\textcolor{keywordtype}{int}\ axis,\ BP\_FP\_INT\_TYPE\ edge,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher,\ \textcolor{keywordtype}{bool}\ updateOverlaps)}
+\DoxyCodeLine{00854\ \{}
+\DoxyCodeLine{00855\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}*\ pEdge\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis]\ +\ edge;}
+\DoxyCodeLine{00856\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}*\ pPrev\ =\ pEdge\ -\/\ 1;}
+\DoxyCodeLine{00857\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandleEdge\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(pEdge-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}});}
+\DoxyCodeLine{00858\ }
+\DoxyCodeLine{00859\ \ \ \ \ \textcolor{keywordflow}{while}\ (pEdge-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a9b0b2af45ac13557b01cac97d989871e}{m\_pos}}\ <\ pPrev-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a9b0b2af45ac13557b01cac97d989871e}{m\_pos}})}
+\DoxyCodeLine{00860\ \ \ \ \ \{}
+\DoxyCodeLine{00861\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandlePrev\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(pPrev-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}});}
+\DoxyCodeLine{00862\ }
+\DoxyCodeLine{00863\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!pPrev-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a95258f2743e5b5ff87dd54b54145b9c0}{IsMax}}())}
+\DoxyCodeLine{00864\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00865\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ previous\ edge\ was\ a\ minimum\ remove\ any\ overlap\ between\ the\ two\ handles}}
+\DoxyCodeLine{00866\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ handle0\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(pEdge-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}});}
+\DoxyCodeLine{00867\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ handle1\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(pPrev-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}});}
+\DoxyCodeLine{00868\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ axis1\ =\ (1\ <<\ axis)\ \&\ 3;}
+\DoxyCodeLine{00869\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ axis2\ =\ (1\ <<\ axis1)\ \&\ 3;}
+\DoxyCodeLine{00870\ }
+\DoxyCodeLine{00871\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (updateOverlaps}
+\DoxyCodeLine{00872\ \#ifdef\ \mbox{\hyperlink{bt_axis_sweep3_internal_8h_ab0112bd0d332cf337fc55c97e964cc32}{USE\_OVERLAP\_TEST\_ON\_REMOVES}}}
+\DoxyCodeLine{00873\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\&\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a49abf8db2723c3ec699031539ab6e06d}{testOverlap2D}}(handle0,\ handle1,\ axis1,\ axis2)}
+\DoxyCodeLine{00874\ \#endif\ \ \textcolor{comment}{//USE\_OVERLAP\_TEST\_ON\_REMOVES}}
+\DoxyCodeLine{00875\ \ \ \ \ \ \ \ \ \ \ \ \ )}
+\DoxyCodeLine{00876\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00877\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//this\ is\ done\ during\ the\ overlappingpairarray\ iteration/narrowphase\ collision}}
+\DoxyCodeLine{00878\ }
+\DoxyCodeLine{00879\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}}-\/>removeOverlappingPair(handle0,\ handle1,\ dispatcher);}
+\DoxyCodeLine{00880\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_ad26657cfc4245f099042178daf885563}{m\_userPairCallback}})}
+\DoxyCodeLine{00881\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad26657cfc4245f099042178daf885563}{m\_userPairCallback}}-\/>removeOverlappingPair(handle0,\ handle1,\ dispatcher);}
+\DoxyCodeLine{00882\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00883\ }
+\DoxyCodeLine{00884\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ update\ edge\ reference\ in\ other\ handle}}
+\DoxyCodeLine{00885\ \ \ \ \ \ \ \ \ \ \ \ \ pHandlePrev-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[axis]++;}
+\DoxyCodeLine{00886\ \ \ \ \ \ \ \ \ \ \ \ \ ;}
+\DoxyCodeLine{00887\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00888\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00889\ \ \ \ \ \ \ \ \ \ \ \ \ pHandlePrev-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[axis]++;}
+\DoxyCodeLine{00890\ }
+\DoxyCodeLine{00891\ \ \ \ \ \ \ \ \ pHandleEdge-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[axis]-\/-\/;}
+\DoxyCodeLine{00892\ }
+\DoxyCodeLine{00893\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ swap\ the\ edges}}
+\DoxyCodeLine{00894\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}\ swap\ =\ *pEdge;}
+\DoxyCodeLine{00895\ \ \ \ \ \ \ \ \ *pEdge\ =\ *pPrev;}
+\DoxyCodeLine{00896\ \ \ \ \ \ \ \ \ *pPrev\ =\ swap;}
+\DoxyCodeLine{00897\ }
+\DoxyCodeLine{00898\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ decrement}}
+\DoxyCodeLine{00899\ \ \ \ \ \ \ \ \ pEdge-\/-\/;}
+\DoxyCodeLine{00900\ \ \ \ \ \ \ \ \ pPrev-\/-\/;}
+\DoxyCodeLine{00901\ \ \ \ \ \}}
+\DoxyCodeLine{00902\ }
+\DoxyCodeLine{00903\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_BROADPHASE}}
+\DoxyCodeLine{00904\ \ \ \ \ debugPrintAxis(axis);}
+\DoxyCodeLine{00905\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_BROADPHASE}}
+\DoxyCodeLine{00906\ \}}
+\DoxyCodeLine{00907\ }
+\DoxyCodeLine{00908\ \textcolor{comment}{//\ sorting\ a\ max\ edge\ upwards\ can\ only\ ever\ *add*\ overlaps}}
+\DoxyCodeLine{00909\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ BP\_FP\_INT\_TYPE>}
+\DoxyCodeLine{00910\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_axis_sweep3_internal_af8e014dfdce82a2d16dde9cb342fa58f}{btAxisSweep3Internal<BP\_FP\_INT\_TYPE>::sortMaxUp}}(\textcolor{keywordtype}{int}\ axis,\ BP\_FP\_INT\_TYPE\ edge,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ \textcolor{comment}{/*\ dispatcher\ */},\ \textcolor{keywordtype}{bool}\ updateOverlaps)}
+\DoxyCodeLine{00911\ \{}
+\DoxyCodeLine{00912\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}*\ pEdge\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a1266c6a2b447143e6b5ea94400d6d885}{m\_pEdges}}[axis]\ +\ edge;}
+\DoxyCodeLine{00913\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}*\ pNext\ =\ pEdge\ +\ 1;}
+\DoxyCodeLine{00914\ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandleEdge\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(pEdge-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}});}
+\DoxyCodeLine{00915\ }
+\DoxyCodeLine{00916\ \ \ \ \ \textcolor{keywordflow}{while}\ (pNext-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}}\ \&\&\ (pEdge-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a9b0b2af45ac13557b01cac97d989871e}{m\_pos}}\ >=\ pNext-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a9b0b2af45ac13557b01cac97d989871e}{m\_pos}}))}
+\DoxyCodeLine{00917\ \ \ \ \ \{}
+\DoxyCodeLine{00918\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ pHandleNext\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(pNext-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}});}
+\DoxyCodeLine{00919\ }
+\DoxyCodeLine{00920\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ axis1\ =\ (1\ <<\ axis)\ \&\ 3;}
+\DoxyCodeLine{00921\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ axis2\ =\ (1\ <<\ axis1)\ \&\ 3;}
+\DoxyCodeLine{00922\ }
+\DoxyCodeLine{00923\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!pNext-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a95258f2743e5b5ff87dd54b54145b9c0}{IsMax}}())}
+\DoxyCodeLine{00924\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00925\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ next\ edge\ is\ a\ minimum\ check\ the\ bounds\ and\ add\ an\ overlap\ if\ necessary}}
+\DoxyCodeLine{00926\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (updateOverlaps\ \&\&\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a49abf8db2723c3ec699031539ab6e06d}{testOverlap2D}}(pHandleEdge,\ pHandleNext,\ axis1,\ axis2))}
+\DoxyCodeLine{00927\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00928\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ handle0\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(pEdge-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}});}
+\DoxyCodeLine{00929\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle}{Handle}}*\ handle1\ =\ \mbox{\hyperlink{classbt_axis_sweep3_internal_a2660c140f62d6121f378dc36f8128b9c}{getHandle}}(pNext-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge_a32417224d95d115bfee25315233d815e}{m\_handle}});}
+\DoxyCodeLine{00930\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_a09d00e46ae80be8dfbbba27a8b8a0924}{m\_pairCache}}-\/>addOverlappingPair(handle0,\ handle1);}
+\DoxyCodeLine{00931\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_axis_sweep3_internal_ad26657cfc4245f099042178daf885563}{m\_userPairCallback}})}
+\DoxyCodeLine{00932\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_ad26657cfc4245f099042178daf885563}{m\_userPairCallback}}-\/>addOverlappingPair(handle0,\ handle1);}
+\DoxyCodeLine{00933\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00934\ }
+\DoxyCodeLine{00935\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ update\ edge\ reference\ in\ other\ handle}}
+\DoxyCodeLine{00936\ \ \ \ \ \ \ \ \ \ \ \ \ pHandleNext-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_ac92cbc61a810b16834d8a57b1aca2918}{m\_minEdges}}[axis]-\/-\/;}
+\DoxyCodeLine{00937\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00938\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00939\ \ \ \ \ \ \ \ \ \ \ \ \ pHandleNext-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[axis]-\/-\/;}
+\DoxyCodeLine{00940\ }
+\DoxyCodeLine{00941\ \ \ \ \ \ \ \ \ pHandleEdge-\/>\mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_handle_aae6803386536cfa8a80b0f9e535f8a01}{m\_maxEdges}}[axis]++;}
+\DoxyCodeLine{00942\ }
+\DoxyCodeLine{00943\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ swap\ the\ edges}}
+\DoxyCodeLine{00944\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_axis_sweep3_internal_1_1_edge}{Edge}}\ swap\ =\ *pEdge;}
+\DoxyCodeLine{00945\ \ \ \ \ \ \ \ \ *pEdge\ =\ *pNext;}
+\DoxyCodeLine{00946\ \ \ \ \ \ \ \ \ *pNext\ =\ swap;}
+\DoxyCodeLine{00947\ }
+\DoxyCodeLine{00948\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ increment}}
+\DoxyCodeLine{00949\ \ \ \ \ \ \ \ \ pEdge++;}
+\DoxyCodeLine{00950\ \ \ \ \ \ \ \ \ pNext++;}
+\DoxyCodeLine{00951\ \ \ \ \ \}}
+\DoxyCodeLine{00952\ \}}
+\DoxyCodeLine{00953\ }
+\DoxyCodeLine{00954\ \textcolor{preprocessor}{\#endif}}
+
+\end{DoxyCode}

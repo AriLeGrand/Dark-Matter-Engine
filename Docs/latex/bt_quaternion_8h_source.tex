@@ -1,0 +1,947 @@
+\doxysection{bt\+Quaternion.\+h}
+\hypertarget{bt_quaternion_8h_source}{}\label{bt_quaternion_8h_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/LinearMath/btQuaternion.h@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/LinearMath/btQuaternion.h}}
+\mbox{\hyperlink{bt_quaternion_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2006\ Gino\ van\ den\ Bergen\ /\ Erwin\ Coumans\ \ https://bulletphysics.org}}
+\DoxyCodeLine{00003\ \textcolor{comment}{}}
+\DoxyCodeLine{00004\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00005\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00007\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00009\ \textcolor{comment}{}}
+\DoxyCodeLine{00010\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00011\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \textcolor{preprocessor}{\#ifndef\ BT\_SIMD\_\_QUATERNION\_H\_}}
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#define\ BT\_SIMD\_\_QUATERNION\_H\_}}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_vector3_8h}{btVector3.h}}"{}}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_quad_word_8h}{btQuadWord.h}}"{}}}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_DOUBLE\_PRECISION}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#define\ btQuaternionData\ btQuaternionDoubleData}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#define\ btQuaternionDataName\ "{}btQuaternionDoubleData"{}}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#define\ btQuaternionData\ btQuaternionFloatData}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#define\ btQuaternionDataName\ "{}btQuaternionFloatData"{}}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_USE\_DOUBLE\_PRECISION}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_SSE}}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{comment}{//const\ \_\_m128\ ATTRIBUTE\_ALIGNED16(vOnes)\ =\ \{1.0f,\ 1.0f,\ 1.0f,\ 1.0f\};}}
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#define\ vOnes\ (\_mm\_set\_ps(1.0f,\ 1.0f,\ 1.0f,\ 1.0f))}}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00036\ \textcolor{preprocessor}{\#if\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \textcolor{preprocessor}{\#define\ vQInv\ (\_mm\_set\_ps(+0.0f,\ -\/0.0f,\ -\/0.0f,\ -\/0.0f))}}
+\DoxyCodeLine{00039\ \textcolor{preprocessor}{\#define\ vPPPM\ (\_mm\_set\_ps(-\/0.0f,\ +0.0f,\ +0.0f,\ +0.0f))}}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \textcolor{preprocessor}{\#elif\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00042\ }
+\DoxyCodeLine{00043\ \textcolor{keyword}{const}\ btSimdFloat4\ \mbox{\hyperlink{bt_scalar_8h_a38c30fdd0ea2558373a1b6e41c77d9d2}{ATTRIBUTE\_ALIGNED16}}(vQInv)\ =\ \{-\/0.0f,\ -\/0.0f,\ -\/0.0f,\ +0.0f\};}
+\DoxyCodeLine{00044\ \textcolor{keyword}{const}\ btSimdFloat4\ \mbox{\hyperlink{bt_scalar_8h_a38c30fdd0ea2558373a1b6e41c77d9d2}{ATTRIBUTE\_ALIGNED16}}(vPPPM)\ =\ \{+0.0f,\ +0.0f,\ +0.0f,\ -\/0.0f\};}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00046\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00047\ }
+\DoxyCodeLine{00049\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{bt_quad_word_8h_aaa99e368a937d65e87139675bcbd9bdb}{btQuadWord}}}
+\DoxyCodeLine{00050\ \{}
+\DoxyCodeLine{00051\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00053\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}()\ \{\}}
+\DoxyCodeLine{00054\ }
+\DoxyCodeLine{00055\ \textcolor{preprocessor}{\#if\ (defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE))\ ||\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{comment}{//\ Set\ Vector}}
+\DoxyCodeLine{00057\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(\textcolor{keyword}{const}\ btSimdFloat4\ vec)}
+\DoxyCodeLine{00058\ \ \ \ \ \{}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ mVec128\ =\ vec;}
+\DoxyCodeLine{00060\ \ \ \ \ \}}
+\DoxyCodeLine{00061\ }
+\DoxyCodeLine{00062\ \ \ \ \ \textcolor{comment}{//\ Copy\ constructor}}
+\DoxyCodeLine{00063\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ rhs)}
+\DoxyCodeLine{00064\ \ \ \ \ \{}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ mVec128\ =\ rhs.mVec128;}
+\DoxyCodeLine{00066\ \ \ \ \ \}}
+\DoxyCodeLine{00067\ }
+\DoxyCodeLine{00068\ \ \ \ \ \textcolor{comment}{//\ Assignment\ Operator}}
+\DoxyCodeLine{00069\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&}
+\DoxyCodeLine{00070\ \ \ \ \ \mbox{\hyperlink{b3_matrix3x3_8h_aa288768ee9c28f7edbaaad9214d0ba00}{operator=}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}})}
+\DoxyCodeLine{00071\ \ \ \ \ \{}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ mVec128\ =\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}.mVec128;}
+\DoxyCodeLine{00073\ }
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00075\ \ \ \ \ \}}
+\DoxyCodeLine{00076\ }
+\DoxyCodeLine{00077\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00078\ }
+\DoxyCodeLine{00079\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ template\ <typename\ btScalar>}}
+\DoxyCodeLine{00080\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ explicit\ Quaternion(const\ btScalar\ *v)\ :\ Tuple4<btScalar>(v)\ \{\}}}
+\DoxyCodeLine{00082\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a6a50bf861ae5fa4ad5ea2b7da231847c}{btQuaternion}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ \_x,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ \_y,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ \_z,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ \_w)}
+\DoxyCodeLine{00083\ \ \ \ \ \ \ \ \ :\ \mbox{\hyperlink{bt_quad_word_8h_aaa99e368a937d65e87139675bcbd9bdb}{btQuadWord}}(\_x,\ \_y,\ \_z,\ \_w)}
+\DoxyCodeLine{00084\ \ \ \ \ \{}
+\DoxyCodeLine{00085\ \ \ \ \ \}}
+\DoxyCodeLine{00089\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a2b2e9ed0014eb26ed076808fb76e9d69}{btQuaternion}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ \_axis,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ \_angle)}
+\DoxyCodeLine{00090\ \ \ \ \ \{}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_ade840b704d06ad0092b996b432b8a8a6}{setRotation}}(\_axis,\ \_angle);}
+\DoxyCodeLine{00092\ \ \ \ \ \}}
+\DoxyCodeLine{00097\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a8bd5d699377ba585749d325076616ffb}{btQuaternion}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ yaw,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ pitch,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ roll)}
+\DoxyCodeLine{00098\ \ \ \ \ \{}
+\DoxyCodeLine{00099\ \textcolor{preprocessor}{\#ifndef\ BT\_EULER\_DEFAULT\_ZYX}}
+\DoxyCodeLine{00100\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_aed0a6469d6c6c1e379f1143ad62b3439}{setEuler}}(yaw,\ pitch,\ roll);}
+\DoxyCodeLine{00101\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00102\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_adf15384cff65f630b0537f1b8aeee622}{setEulerZYX}}(yaw,\ pitch,\ roll);}
+\DoxyCodeLine{00103\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00104\ \ \ \ \ \}}
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_ade840b704d06ad0092b996b432b8a8a6}{setRotation}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ axis,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ \_angle)}
+\DoxyCodeLine{00109\ \ \ \ \ \{}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ d\ =\ axis.length();}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(d\ !=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0));}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ s\ =\ \mbox{\hyperlink{bt_scalar_8h_a21de15ec6359a37d7876fa26be384a4b}{btSin}}(\_angle\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5))\ /\ d;}
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_matrix3x3_8h_a652a2de9356ccf7166075446b56eb50a}{setValue}}(axis.x()\ *\ s,\ axis.y()\ *\ s,\ axis.z()\ *\ s,}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a08cebf88560180c665f205810cc02d0f}{btCos}}(\_angle\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5)));}
+\DoxyCodeLine{00115\ \ \ \ \ \}}
+\DoxyCodeLine{00120\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_aed0a6469d6c6c1e379f1143ad62b3439}{setEuler}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ yaw,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ pitch,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ roll)}
+\DoxyCodeLine{00121\ \ \ \ \ \{}
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ halfYaw\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(yaw)\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5);}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ halfPitch\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(pitch)\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5);}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ halfRoll\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(roll)\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5);}
+\DoxyCodeLine{00125\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ cosYaw\ =\ \mbox{\hyperlink{bt_scalar_8h_a08cebf88560180c665f205810cc02d0f}{btCos}}(halfYaw);}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sinYaw\ =\ \mbox{\hyperlink{bt_scalar_8h_a21de15ec6359a37d7876fa26be384a4b}{btSin}}(halfYaw);}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ cosPitch\ =\ \mbox{\hyperlink{bt_scalar_8h_a08cebf88560180c665f205810cc02d0f}{btCos}}(halfPitch);}
+\DoxyCodeLine{00128\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sinPitch\ =\ \mbox{\hyperlink{bt_scalar_8h_a21de15ec6359a37d7876fa26be384a4b}{btSin}}(halfPitch);}
+\DoxyCodeLine{00129\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ cosRoll\ =\ \mbox{\hyperlink{bt_scalar_8h_a08cebf88560180c665f205810cc02d0f}{btCos}}(halfRoll);}
+\DoxyCodeLine{00130\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sinRoll\ =\ \mbox{\hyperlink{bt_scalar_8h_a21de15ec6359a37d7876fa26be384a4b}{btSin}}(halfRoll);}
+\DoxyCodeLine{00131\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_matrix3x3_8h_a652a2de9356ccf7166075446b56eb50a}{setValue}}(cosRoll\ *\ sinPitch\ *\ cosYaw\ +\ sinRoll\ *\ cosPitch\ *\ sinYaw,}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cosRoll\ *\ cosPitch\ *\ sinYaw\ -\/\ sinRoll\ *\ sinPitch\ *\ cosYaw,}
+\DoxyCodeLine{00133\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ sinRoll\ *\ cosPitch\ *\ cosYaw\ -\/\ cosRoll\ *\ sinPitch\ *\ sinYaw,}
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cosRoll\ *\ cosPitch\ *\ cosYaw\ +\ sinRoll\ *\ sinPitch\ *\ sinYaw);}
+\DoxyCodeLine{00135\ \ \ \ \ \}}
+\DoxyCodeLine{00140\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_adf15384cff65f630b0537f1b8aeee622}{setEulerZYX}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ yawZ,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ pitchY,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ rollX)}
+\DoxyCodeLine{00141\ \ \ \ \ \{}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ halfYaw\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(yawZ)\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5);}
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ halfPitch\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(pitchY)\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5);}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ halfRoll\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(rollX)\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5);}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ cosYaw\ =\ \mbox{\hyperlink{bt_scalar_8h_a08cebf88560180c665f205810cc02d0f}{btCos}}(halfYaw);}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sinYaw\ =\ \mbox{\hyperlink{bt_scalar_8h_a21de15ec6359a37d7876fa26be384a4b}{btSin}}(halfYaw);}
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ cosPitch\ =\ \mbox{\hyperlink{bt_scalar_8h_a08cebf88560180c665f205810cc02d0f}{btCos}}(halfPitch);}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sinPitch\ =\ \mbox{\hyperlink{bt_scalar_8h_a21de15ec6359a37d7876fa26be384a4b}{btSin}}(halfPitch);}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ cosRoll\ =\ \mbox{\hyperlink{bt_scalar_8h_a08cebf88560180c665f205810cc02d0f}{btCos}}(halfRoll);}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sinRoll\ =\ \mbox{\hyperlink{bt_scalar_8h_a21de15ec6359a37d7876fa26be384a4b}{btSin}}(halfRoll);}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_matrix3x3_8h_a652a2de9356ccf7166075446b56eb50a}{setValue}}(sinRoll\ *\ cosPitch\ *\ cosYaw\ -\/\ cosRoll\ *\ sinPitch\ *\ sinYaw,\ \ \ \textcolor{comment}{//x}}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cosRoll\ *\ sinPitch\ *\ cosYaw\ +\ sinRoll\ *\ cosPitch\ *\ sinYaw,\ \ \ \textcolor{comment}{//y}}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cosRoll\ *\ cosPitch\ *\ sinYaw\ -\/\ sinRoll\ *\ sinPitch\ *\ cosYaw,\ \ \ \textcolor{comment}{//z}}
+\DoxyCodeLine{00154\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cosRoll\ *\ cosPitch\ *\ cosYaw\ +\ sinRoll\ *\ sinPitch\ *\ sinYaw);\ \ \textcolor{comment}{//formerly\ yzx}}
+\DoxyCodeLine{00155\ \ \ \ \ \}}
+\DoxyCodeLine{00156\ }
+\DoxyCodeLine{00161\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_a149eb5e3304bcce5d989bf93699fed83}{getEulerZYX}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ yawZ,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ pitchY,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ rollX)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00162\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ squ;}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sqx;}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sqy;}
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sqz;}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sarg;}
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ sqx\ =\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0]\ *\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0];}
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \ \ sqy\ =\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]\ *\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1];}
+\DoxyCodeLine{00170\ \ \ \ \ \ \ \ \ sqz\ =\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2]\ *\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2];}
+\DoxyCodeLine{00171\ \ \ \ \ \ \ \ \ squ\ =\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ *\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3];}
+\DoxyCodeLine{00172\ \ \ \ \ \ \ \ \ sarg\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/2.)\ *\ (\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0]\ *\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2]\ -\/\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ *\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]);}
+\DoxyCodeLine{00173\ }
+\DoxyCodeLine{00174\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ If\ the\ pitch\ angle\ is\ PI/2\ or\ -\/PI/2,\ we\ can\ only\ compute}}
+\DoxyCodeLine{00175\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ the\ sum\ roll\ +\ yaw.\ \ However,\ any\ combination\ that\ gives}}
+\DoxyCodeLine{00176\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ the\ right\ sum\ will\ produce\ the\ correct\ orientation,\ so\ we}}
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ set\ rollX\ =\ 0\ and\ compute\ yawZ.}}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (sarg\ <=\ -\/\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.99999))}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ \ \ \ \ pitchY\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/0.5)\ *\ \mbox{\hyperlink{bt_scalar_8h_a1bdff187c878167505bcedbbbabf7b0a}{SIMD\_PI}};}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ \ \ \ \ rollX\ =\ 0;}
+\DoxyCodeLine{00182\ \ \ \ \ \ \ \ \ \ \ \ \ yawZ\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(2)\ *\ \mbox{\hyperlink{bt_scalar_8h_ac7d89f182c6f2997f9a50fe963f6f986}{btAtan2}}(\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0],\ -\/\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]);}
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00184\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (sarg\ >=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.99999))}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \ \ \ \ pitchY\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5)\ *\ \mbox{\hyperlink{bt_scalar_8h_a1bdff187c878167505bcedbbbabf7b0a}{SIMD\_PI}};}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \ \ \ \ rollX\ =\ 0;}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \ \ \ \ yawZ\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(2)\ *\ \mbox{\hyperlink{bt_scalar_8h_ac7d89f182c6f2997f9a50fe963f6f986}{btAtan2}}(-\/\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0],\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]);}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00190\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00191\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \ \ \ \ \ \ pitchY\ =\ \mbox{\hyperlink{bt_scalar_8h_a47baddce9fad101519c2a7456e2d6c9f}{btAsin}}(sarg);}
+\DoxyCodeLine{00193\ \ \ \ \ \ \ \ \ \ \ \ \ rollX\ =\ \mbox{\hyperlink{bt_scalar_8h_ac7d89f182c6f2997f9a50fe963f6f986}{btAtan2}}(2\ *\ (\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]\ *\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2]\ +\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ *\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0]),\ squ\ -\/\ sqx\ -\/\ sqy\ +\ sqz);}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ \ \ \ \ yawZ\ =\ \mbox{\hyperlink{bt_scalar_8h_ac7d89f182c6f2997f9a50fe963f6f986}{btAtan2}}(2\ *\ (\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0]\ *\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]\ +\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ *\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2]),\ squ\ +\ sqx\ -\/\ sqy\ -\/\ sqz);}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00196\ \ \ \ \ \}}
+\DoxyCodeLine{00197\ }
+\DoxyCodeLine{00200\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ \mbox{\hyperlink{classbt_quaternion_aee1cadf3b221af67409f1e5bec84a12b}{operator+=}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ q)}
+\DoxyCodeLine{00201\ \ \ \ \ \{}
+\DoxyCodeLine{00202\ \textcolor{preprocessor}{\#if\ defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ mVec128\ =\ \_mm\_add\_ps(mVec128,\ q.mVec128);}
+\DoxyCodeLine{00204\ \textcolor{preprocessor}{\#elif\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ mVec128\ =\ vaddq\_f32(mVec128,\ q.mVec128);}
+\DoxyCodeLine{00206\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0]\ +=\ q.x();}
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]\ +=\ q.y();}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2]\ +=\ q.z();}
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ +=\ q.m\_floats[3];}
+\DoxyCodeLine{00211\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00213\ \ \ \ \ \}}
+\DoxyCodeLine{00214\ }
+\DoxyCodeLine{00217\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ \mbox{\hyperlink{classbt_quaternion_acef4496425f7ef292acabe5f0e976180}{operator-\/=}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ q)}
+\DoxyCodeLine{00218\ \ \ \ \ \{}
+\DoxyCodeLine{00219\ \textcolor{preprocessor}{\#if\ defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00220\ \ \ \ \ \ \ \ \ mVec128\ =\ \_mm\_sub\_ps(mVec128,\ q.mVec128);}
+\DoxyCodeLine{00221\ \textcolor{preprocessor}{\#elif\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ mVec128\ =\ vsubq\_f32(mVec128,\ q.mVec128);}
+\DoxyCodeLine{00223\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0]\ -\/=\ q.x();}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]\ -\/=\ q.y();}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2]\ -\/=\ q.z();}
+\DoxyCodeLine{00227\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ -\/=\ q.m\_floats[3];}
+\DoxyCodeLine{00228\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00229\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00230\ \ \ \ \ \}}
+\DoxyCodeLine{00231\ }
+\DoxyCodeLine{00234\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ \mbox{\hyperlink{classbt_quaternion_a82f5e977889802688c467de4c2540a0c}{operator*=}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ s)}
+\DoxyCodeLine{00235\ \ \ \ \ \{}
+\DoxyCodeLine{00236\ \textcolor{preprocessor}{\#if\ defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \_\_m128\ vs\ =\ \_mm\_load\_ss(\&s);\ \ \textcolor{comment}{//\ \ \ \ (S\ 0\ 0\ 0)}}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ vs\ =\ bt\_pshufd\_ps(vs,\ 0);\ \ \ \ \ \textcolor{comment}{//\ \ \ \ (S\ S\ S\ S)}}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ mVec128\ =\ \_mm\_mul\_ps(mVec128,\ vs);}
+\DoxyCodeLine{00240\ \textcolor{preprocessor}{\#elif\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ mVec128\ =\ vmulq\_n\_f32(mVec128,\ s);}
+\DoxyCodeLine{00242\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0]\ *=\ s;}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]\ *=\ s;}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2]\ *=\ s;}
+\DoxyCodeLine{00246\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ *=\ s;}
+\DoxyCodeLine{00247\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00249\ \ \ \ \ \}}
+\DoxyCodeLine{00250\ }
+\DoxyCodeLine{00254\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ \mbox{\hyperlink{classbt_quaternion_a2033a6d6fa1d99c73de734b3724402dc}{operator*=}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ q)}
+\DoxyCodeLine{00255\ \ \ \ \ \{}
+\DoxyCodeLine{00256\ \textcolor{preprocessor}{\#if\ defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ \_\_m128\ vQ2\ =\ q.get128();}
+\DoxyCodeLine{00258\ }
+\DoxyCodeLine{00259\ \ \ \ \ \ \ \ \ \_\_m128\ A1\ =\ bt\_pshufd\_ps(mVec128,\ BT\_SHUFFLE(0,\ 1,\ 2,\ 0));}
+\DoxyCodeLine{00260\ \ \ \ \ \ \ \ \ \_\_m128\ B1\ =\ bt\_pshufd\_ps(vQ2,\ BT\_SHUFFLE(3,\ 3,\ 3,\ 0));}
+\DoxyCodeLine{00261\ }
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ A1\ =\ A1\ *\ B1;}
+\DoxyCodeLine{00263\ }
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \ \ \_\_m128\ A2\ =\ bt\_pshufd\_ps(mVec128,\ BT\_SHUFFLE(1,\ 2,\ 0,\ 1));}
+\DoxyCodeLine{00265\ \ \ \ \ \ \ \ \ \_\_m128\ B2\ =\ bt\_pshufd\_ps(vQ2,\ BT\_SHUFFLE(2,\ 0,\ 1,\ 1));}
+\DoxyCodeLine{00266\ }
+\DoxyCodeLine{00267\ \ \ \ \ \ \ \ \ A2\ =\ A2\ *\ B2;}
+\DoxyCodeLine{00268\ }
+\DoxyCodeLine{00269\ \ \ \ \ \ \ \ \ B1\ =\ bt\_pshufd\_ps(mVec128,\ BT\_SHUFFLE(2,\ 0,\ 1,\ 2));}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \ \ B2\ =\ bt\_pshufd\_ps(vQ2,\ BT\_SHUFFLE(1,\ 2,\ 0,\ 2));}
+\DoxyCodeLine{00271\ }
+\DoxyCodeLine{00272\ \ \ \ \ \ \ \ \ B1\ =\ B1\ *\ B2;\ \ \textcolor{comment}{//\ \ \ A3\ *=\ B3}}
+\DoxyCodeLine{00273\ }
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ mVec128\ =\ bt\_splat\_ps(mVec128,\ 3);\ \ \textcolor{comment}{//\ \ A0}}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ mVec128\ =\ mVec128\ *\ vQ2;\ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ A0\ *\ B0}}
+\DoxyCodeLine{00276\ }
+\DoxyCodeLine{00277\ \ \ \ \ \ \ \ \ A1\ =\ A1\ +\ A2;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ AB12}}
+\DoxyCodeLine{00278\ \ \ \ \ \ \ \ \ mVec128\ =\ mVec128\ -\/\ B1;\ \ \ \ \ \ \textcolor{comment}{//\ AB03\ =\ AB0\ -\/\ AB3}}
+\DoxyCodeLine{00279\ \ \ \ \ \ \ \ \ A1\ =\ \_mm\_xor\_ps(A1,\ vPPPM);\ \ \textcolor{comment}{//\ change\ sign\ of\ the\ last\ element}}
+\DoxyCodeLine{00280\ \ \ \ \ \ \ \ \ mVec128\ =\ mVec128\ +\ A1;\ \ \ \ \ \ \textcolor{comment}{//\ AB03\ +\ AB12}}
+\DoxyCodeLine{00281\ }
+\DoxyCodeLine{00282\ \textcolor{preprocessor}{\#elif\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00283\ }
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ float32x4\_t\ vQ1\ =\ mVec128;}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ float32x4\_t\ vQ2\ =\ q.get128();}
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ float32x4\_t\ A0,\ A1,\ B1,\ A2,\ B2,\ A3,\ B3;}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ float32x2\_t\ vQ1zx,\ vQ2wx,\ vQ1yz,\ vQ2zx,\ vQ2yz,\ vQ2xz;}
+\DoxyCodeLine{00288\ }
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ \ \ \ \ float32x2x2\_t\ tmp;}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \ \ \ \ tmp\ =\ vtrn\_f32(vget\_high\_f32(vQ1),\ vget\_low\_f32(vQ1));\ \ \textcolor{comment}{//\ \{z\ x\},\ \{w\ y\}}}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ \ \ \ \ vQ1zx\ =\ tmp.val[0];}
+\DoxyCodeLine{00293\ }
+\DoxyCodeLine{00294\ \ \ \ \ \ \ \ \ \ \ \ \ tmp\ =\ vtrn\_f32(vget\_high\_f32(vQ2),\ vget\_low\_f32(vQ2));\ \ \textcolor{comment}{//\ \{z\ x\},\ \{w\ y\}}}
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ \ \ \ \ vQ2zx\ =\ tmp.val[0];}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ vQ2wx\ =\ vext\_f32(vget\_high\_f32(vQ2),\ vget\_low\_f32(vQ2),\ 1);}
+\DoxyCodeLine{00298\ }
+\DoxyCodeLine{00299\ \ \ \ \ \ \ \ \ vQ1yz\ =\ vext\_f32(vget\_low\_f32(vQ1),\ vget\_high\_f32(vQ1),\ 1);}
+\DoxyCodeLine{00300\ }
+\DoxyCodeLine{00301\ \ \ \ \ \ \ \ \ vQ2yz\ =\ vext\_f32(vget\_low\_f32(vQ2),\ vget\_high\_f32(vQ2),\ 1);}
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ vQ2xz\ =\ vext\_f32(vQ2zx,\ vQ2zx,\ 1);}
+\DoxyCodeLine{00303\ }
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ A1\ =\ vcombine\_f32(vget\_low\_f32(vQ1),\ vQ1zx);\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ X\ Y\ \ z\ x}}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ B1\ =\ vcombine\_f32(vdup\_lane\_f32(vget\_high\_f32(vQ2),\ 1),\ vQ2wx);\ \ \textcolor{comment}{//\ W\ W\ \ W\ X}}
+\DoxyCodeLine{00306\ }
+\DoxyCodeLine{00307\ \ \ \ \ \ \ \ \ A2\ =\ vcombine\_f32(vQ1yz,\ vget\_low\_f32(vQ1));}
+\DoxyCodeLine{00308\ \ \ \ \ \ \ \ \ B2\ =\ vcombine\_f32(vQ2zx,\ vdup\_lane\_f32(vget\_low\_f32(vQ2),\ 1));}
+\DoxyCodeLine{00309\ }
+\DoxyCodeLine{00310\ \ \ \ \ \ \ \ \ A3\ =\ vcombine\_f32(vQ1zx,\ vQ1yz);\ \ \textcolor{comment}{//\ Z\ X\ Y\ Z}}
+\DoxyCodeLine{00311\ \ \ \ \ \ \ \ \ B3\ =\ vcombine\_f32(vQ2yz,\ vQ2xz);\ \ \textcolor{comment}{//\ Y\ Z\ x\ z}}
+\DoxyCodeLine{00312\ }
+\DoxyCodeLine{00313\ \ \ \ \ \ \ \ \ A1\ =\ vmulq\_f32(A1,\ B1);}
+\DoxyCodeLine{00314\ \ \ \ \ \ \ \ \ A2\ =\ vmulq\_f32(A2,\ B2);}
+\DoxyCodeLine{00315\ \ \ \ \ \ \ \ \ A3\ =\ vmulq\_f32(A3,\ B3);\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ A3\ *=\ B3}}
+\DoxyCodeLine{00316\ \ \ \ \ \ \ \ \ A0\ =\ vmulq\_lane\_f32(vQ2,\ vget\_high\_f32(vQ1),\ 1);\ \ \textcolor{comment}{//\ \ \ \ A0\ *\ B0}}
+\DoxyCodeLine{00317\ }
+\DoxyCodeLine{00318\ \ \ \ \ \ \ \ \ A1\ =\ vaddq\_f32(A1,\ A2);\ \ \textcolor{comment}{//\ AB12\ =\ AB1\ +\ AB2}}
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ A0\ =\ vsubq\_f32(A0,\ A3);\ \ \textcolor{comment}{//\ AB03\ =\ AB0\ -\/\ AB3}}
+\DoxyCodeLine{00320\ }
+\DoxyCodeLine{00321\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ change\ the\ sign\ of\ the\ last\ element}}
+\DoxyCodeLine{00322\ \ \ \ \ \ \ \ \ A1\ =\ (btSimdFloat4)veorq\_s32((int32x4\_t)A1,\ (int32x4\_t)vPPPM);}
+\DoxyCodeLine{00323\ \ \ \ \ \ \ \ \ A0\ =\ vaddq\_f32(A0,\ A1);\ \ \textcolor{comment}{//\ AB03\ +\ AB12}}
+\DoxyCodeLine{00324\ }
+\DoxyCodeLine{00325\ \ \ \ \ \ \ \ \ mVec128\ =\ A0;}
+\DoxyCodeLine{00326\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_matrix3x3_8h_a652a2de9356ccf7166075446b56eb50a}{setValue}}(}
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ *\ q.x()\ +\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0]\ *\ q.m\_floats[3]\ +\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]\ *\ q.z()\ -\/\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2]\ *\ q.y(),}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ *\ q.y()\ +\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]\ *\ q.m\_floats[3]\ +\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2]\ *\ q.x()\ -\/\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0]\ *\ q.z(),}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ *\ q.z()\ +\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2]\ *\ q.m\_floats[3]\ +\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0]\ *\ q.y()\ -\/\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]\ *\ q.x(),}
+\DoxyCodeLine{00331\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ *\ q.m\_floats[3]\ -\/\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0]\ *\ q.x()\ -\/\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]\ *\ q.y()\ -\/\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2]\ *\ q.z());}
+\DoxyCodeLine{00332\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00334\ \ \ \ \ \}}
+\DoxyCodeLine{00337\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_quaternion_a406d3d2debf9d463f2ba651b0a196d47}{dot}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ q)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00338\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00339\ \textcolor{preprocessor}{\#if\ defined\ BT\_USE\_SIMD\_VECTOR3\ \&\&\ defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \ \ \_\_m128\ vd;}
+\DoxyCodeLine{00341\ }
+\DoxyCodeLine{00342\ \ \ \ \ \ \ \ \ vd\ =\ \_mm\_mul\_ps(mVec128,\ q.mVec128);}
+\DoxyCodeLine{00343\ }
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \ \ \_\_m128\ t\ =\ \_mm\_movehl\_ps(vd,\ vd);}
+\DoxyCodeLine{00345\ \ \ \ \ \ \ \ \ vd\ =\ \_mm\_add\_ps(vd,\ t);}
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \ \ t\ =\ \_mm\_shuffle\_ps(vd,\ vd,\ 0x55);}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ vd\ =\ \_mm\_add\_ss(vd,\ t);}
+\DoxyCodeLine{00348\ }
+\DoxyCodeLine{00349\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \_mm\_cvtss\_f32(vd);}
+\DoxyCodeLine{00350\ \textcolor{preprocessor}{\#elif\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00351\ \ \ \ \ \ \ \ \ float32x4\_t\ vd\ =\ vmulq\_f32(mVec128,\ q.mVec128);}
+\DoxyCodeLine{00352\ \ \ \ \ \ \ \ \ float32x2\_t\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ =\ vpadd\_f32(vget\_low\_f32(vd),\ vget\_high\_f32(vd));}
+\DoxyCodeLine{00353\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}\ =\ vpadd\_f32(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}});}
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ vget\_lane\_f32(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ 0);}
+\DoxyCodeLine{00355\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00356\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0]\ *\ q.x()\ +}
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]\ *\ q.y()\ +}
+\DoxyCodeLine{00358\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2]\ *\ q.z()\ +}
+\DoxyCodeLine{00359\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ *\ q.m\_floats[3];}
+\DoxyCodeLine{00360\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00361\ \ \ \ \ \}}
+\DoxyCodeLine{00362\ }
+\DoxyCodeLine{00364\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_quaternion_a9266520d0fcd21c667adf870a8a75256}{length2}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00365\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00366\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a406d3d2debf9d463f2ba651b0a196d47}{dot}}(*\textcolor{keyword}{this});}
+\DoxyCodeLine{00367\ \ \ \ \ \}}
+\DoxyCodeLine{00368\ }
+\DoxyCodeLine{00370\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_quaternion_a29bd11309609ea6734a17388a27eda75}{length}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00371\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_scalar_8h_a6b200a8d26a49406ca13329be909ec10}{btSqrt}}(\mbox{\hyperlink{classbt_quaternion_a9266520d0fcd21c667adf870a8a75256}{length2}}());}
+\DoxyCodeLine{00373\ \ \ \ \ \}}
+\DoxyCodeLine{00374\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ \mbox{\hyperlink{classbt_quaternion_aae70c00a99c68eb75366bc68c100c3fd}{safeNormalize}}()}
+\DoxyCodeLine{00375\ \ \ \ \ \{}
+\DoxyCodeLine{00376\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ l2\ =\ \mbox{\hyperlink{classbt_quaternion_a9266520d0fcd21c667adf870a8a75256}{length2}}();}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (l2\ >\ \mbox{\hyperlink{bt_scalar_8h_ae51eef6845bd59f964c1b2dbfe7054b7}{SIMD\_EPSILON}})}
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_aec4020fbd28a795df834621ef75e5364}{normalize}}();}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00381\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00382\ \ \ \ \ \}}
+\DoxyCodeLine{00385\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ \mbox{\hyperlink{classbt_quaternion_aec4020fbd28a795df834621ef75e5364}{normalize}}()}
+\DoxyCodeLine{00386\ \ \ \ \ \{}
+\DoxyCodeLine{00387\ \textcolor{preprocessor}{\#if\ defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00388\ \ \ \ \ \ \ \ \ \_\_m128\ vd;}
+\DoxyCodeLine{00389\ }
+\DoxyCodeLine{00390\ \ \ \ \ \ \ \ \ vd\ =\ \_mm\_mul\_ps(mVec128,\ mVec128);}
+\DoxyCodeLine{00391\ }
+\DoxyCodeLine{00392\ \ \ \ \ \ \ \ \ \_\_m128\ t\ =\ \_mm\_movehl\_ps(vd,\ vd);}
+\DoxyCodeLine{00393\ \ \ \ \ \ \ \ \ vd\ =\ \_mm\_add\_ps(vd,\ t);}
+\DoxyCodeLine{00394\ \ \ \ \ \ \ \ \ t\ =\ \_mm\_shuffle\_ps(vd,\ vd,\ 0x55);}
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ vd\ =\ \_mm\_add\_ss(vd,\ t);}
+\DoxyCodeLine{00396\ }
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ vd\ =\ \_mm\_sqrt\_ss(vd);}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ vd\ =\ \_mm\_div\_ss(vOnes,\ vd);}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ vd\ =\ bt\_pshufd\_ps(vd,\ 0);\ \ \textcolor{comment}{//\ splat}}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ mVec128\ =\ \_mm\_mul\_ps(mVec128,\ vd);}
+\DoxyCodeLine{00401\ }
+\DoxyCodeLine{00402\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00403\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00404\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this}\ /=\ \mbox{\hyperlink{classbt_quaternion_a29bd11309609ea6734a17388a27eda75}{length}}();}
+\DoxyCodeLine{00405\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00406\ \ \ \ \ \}}
+\DoxyCodeLine{00407\ }
+\DoxyCodeLine{00410\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}}
+\DoxyCodeLine{00411\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a1a51cec25a155357f09641510886dbf9}{operator*}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ s)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00412\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00413\ \textcolor{preprocessor}{\#if\ defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00414\ \ \ \ \ \ \ \ \ \_\_m128\ vs\ =\ \_mm\_load\_ss(\&s);\ \ \textcolor{comment}{//\ \ \ \ (S\ 0\ 0\ 0)}}
+\DoxyCodeLine{00415\ \ \ \ \ \ \ \ \ vs\ =\ bt\_pshufd\_ps(vs,\ 0x00);\ \ \textcolor{comment}{//\ \ \ \ (S\ S\ S\ S)}}
+\DoxyCodeLine{00416\ }
+\DoxyCodeLine{00417\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(\_mm\_mul\_ps(mVec128,\ vs));}
+\DoxyCodeLine{00418\ \textcolor{preprocessor}{\#elif\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00419\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(vmulq\_n\_f32(mVec128,\ s));}
+\DoxyCodeLine{00420\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00421\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}()\ *\ s,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}}()\ *\ s,\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}}()\ *\ s,\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ *\ s);}
+\DoxyCodeLine{00422\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00423\ \ \ \ \ \}}
+\DoxyCodeLine{00424\ }
+\DoxyCodeLine{00427\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\ \mbox{\hyperlink{classbt_quaternion_a02e9c919f808155f106be11ba4cee226}{operator/}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ s)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00428\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00429\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(s\ !=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0));}
+\DoxyCodeLine{00430\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this}\ *\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0)\ /\ s);}
+\DoxyCodeLine{00431\ \ \ \ \ \}}
+\DoxyCodeLine{00432\ }
+\DoxyCodeLine{00435\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ \mbox{\hyperlink{classbt_quaternion_ab6fc532fddf0de16f38707f2c661e248}{operator/=}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ s)}
+\DoxyCodeLine{00436\ \ \ \ \ \{}
+\DoxyCodeLine{00437\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(s\ !=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0));}
+\DoxyCodeLine{00438\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this}\ *=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0)\ /\ s;}
+\DoxyCodeLine{00439\ \ \ \ \ \}}
+\DoxyCodeLine{00440\ }
+\DoxyCodeLine{00442\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\ \mbox{\hyperlink{classbt_quaternion_aa23ea377b98256ad7f2236a2a3a33a6e}{normalized}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00443\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00444\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this}\ /\ \mbox{\hyperlink{classbt_quaternion_a29bd11309609ea6734a17388a27eda75}{length}}();}
+\DoxyCodeLine{00445\ \ \ \ \ \}}
+\DoxyCodeLine{00448\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_quaternion_a78254a50772f21074f09388a17d8b02b}{angle}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ q)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00449\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00450\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ s\ =\ \mbox{\hyperlink{bt_scalar_8h_a6b200a8d26a49406ca13329be909ec10}{btSqrt}}(\mbox{\hyperlink{classbt_quaternion_a9266520d0fcd21c667adf870a8a75256}{length2}}()\ *\ q.\mbox{\hyperlink{classbt_quaternion_a9266520d0fcd21c667adf870a8a75256}{length2}}());}
+\DoxyCodeLine{00451\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(s\ !=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0));}
+\DoxyCodeLine{00452\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_scalar_8h_a004c41de4028b1437d1aafbaa0769cd5}{btAcos}}(\mbox{\hyperlink{classbt_quaternion_a406d3d2debf9d463f2ba651b0a196d47}{dot}}(q)\ /\ s);}
+\DoxyCodeLine{00453\ \ \ \ \ \}}
+\DoxyCodeLine{00454\ }
+\DoxyCodeLine{00457\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_quaternion_a1a518843a038c9078deb0f83782ed8aa}{angleShortestPath}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ q)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00458\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00459\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ s\ =\ \mbox{\hyperlink{bt_scalar_8h_a6b200a8d26a49406ca13329be909ec10}{btSqrt}}(\mbox{\hyperlink{classbt_quaternion_a9266520d0fcd21c667adf870a8a75256}{length2}}()\ *\ q.\mbox{\hyperlink{classbt_quaternion_a9266520d0fcd21c667adf870a8a75256}{length2}}());}
+\DoxyCodeLine{00460\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(s\ !=\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0));}
+\DoxyCodeLine{00461\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_quaternion_a406d3d2debf9d463f2ba651b0a196d47}{dot}}(q)\ <\ 0)\ \ \textcolor{comment}{//\ Take\ care\ of\ long\ angle\ case\ see\ http://en.wikipedia.org/wiki/Slerp}}
+\DoxyCodeLine{00462\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_scalar_8h_a004c41de4028b1437d1aafbaa0769cd5}{btAcos}}(\mbox{\hyperlink{classbt_quaternion_a406d3d2debf9d463f2ba651b0a196d47}{dot}}(-\/q)\ /\ s)\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(2.0);}
+\DoxyCodeLine{00463\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00464\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_scalar_8h_a004c41de4028b1437d1aafbaa0769cd5}{btAcos}}(\mbox{\hyperlink{classbt_quaternion_a406d3d2debf9d463f2ba651b0a196d47}{dot}}(q)\ /\ s)\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(2.0);}
+\DoxyCodeLine{00465\ \ \ \ \ \}}
+\DoxyCodeLine{00466\ }
+\DoxyCodeLine{00468\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_quaternion_a65235507c6319f3ea16c884231dff668}{getAngle}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00469\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00470\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ s\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(2.)\ *\ \mbox{\hyperlink{bt_scalar_8h_a004c41de4028b1437d1aafbaa0769cd5}{btAcos}}(\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]);}
+\DoxyCodeLine{00471\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ s;}
+\DoxyCodeLine{00472\ \ \ \ \ \}}
+\DoxyCodeLine{00473\ }
+\DoxyCodeLine{00475\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_quaternion_abe995d64f60c0cd51278da798518933d}{getAngleShortestPath}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00476\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00477\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ s;}
+\DoxyCodeLine{00478\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ >=\ 0)}
+\DoxyCodeLine{00479\ \ \ \ \ \ \ \ \ \ \ \ \ s\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(2.)\ *\ \mbox{\hyperlink{bt_scalar_8h_a004c41de4028b1437d1aafbaa0769cd5}{btAcos}}(\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]);}
+\DoxyCodeLine{00480\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00481\ \ \ \ \ \ \ \ \ \ \ \ \ s\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(2.)\ *\ \mbox{\hyperlink{bt_scalar_8h_a004c41de4028b1437d1aafbaa0769cd5}{btAcos}}(-\/\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]);}
+\DoxyCodeLine{00482\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ s;}
+\DoxyCodeLine{00483\ \ \ \ \ \}}
+\DoxyCodeLine{00484\ }
+\DoxyCodeLine{00486\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{classbt_quaternion_add2fa918491b289939b8a829d3239b00}{getAxis}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00487\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00488\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ s\_squared\ =\ 1.f\ -\/\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ *\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3];}
+\DoxyCodeLine{00489\ }
+\DoxyCodeLine{00490\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (s\_squared\ <\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(10.)\ *\ \mbox{\hyperlink{bt_scalar_8h_ae51eef6845bd59f964c1b2dbfe7054b7}{SIMD\_EPSILON}})\ \ \textcolor{comment}{//Check\ for\ divide\ by\ zero}}
+\DoxyCodeLine{00491\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(1.0,\ 0.0,\ 0.0);\ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Arbitrary}}
+\DoxyCodeLine{00492\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ s\ =\ 1.f\ /\ \mbox{\hyperlink{bt_scalar_8h_a6b200a8d26a49406ca13329be909ec10}{btSqrt}}(s\_squared);}
+\DoxyCodeLine{00493\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0]\ *\ s,\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]\ *\ s,\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2]\ *\ s);}
+\DoxyCodeLine{00494\ \ \ \ \ \}}
+\DoxyCodeLine{00495\ }
+\DoxyCodeLine{00497\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\ \mbox{\hyperlink{classbt_quaternion_ab2f4fcf35da5e846ceba91af625062f7}{inverse}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00498\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00499\ \textcolor{preprocessor}{\#if\ defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00500\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(\_mm\_xor\_ps(mVec128,\ vQInv));}
+\DoxyCodeLine{00501\ \textcolor{preprocessor}{\#elif\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00502\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}((btSimdFloat4)veorq\_s32((int32x4\_t)mVec128,\ (int32x4\_t)vQInv));}
+\DoxyCodeLine{00503\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00504\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(-\/\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0],\ -\/\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1],\ -\/\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2],\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]);}
+\DoxyCodeLine{00505\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00506\ \ \ \ \ \}}
+\DoxyCodeLine{00507\ }
+\DoxyCodeLine{00510\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}}
+\DoxyCodeLine{00511\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a70cace8911befee9f0684391d16985d0}{operator+}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ q2)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00512\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00513\ \textcolor{preprocessor}{\#if\ defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00514\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(\_mm\_add\_ps(mVec128,\ q2.mVec128));}
+\DoxyCodeLine{00515\ \textcolor{preprocessor}{\#elif\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00516\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(vaddq\_f32(mVec128,\ q2.mVec128));}
+\DoxyCodeLine{00517\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00518\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ q1\ =\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00519\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(q1.x()\ +\ q2.x(),\ q1.y()\ +\ q2.y(),\ q1.z()\ +\ q2.z(),\ q1.m\_floats[3]\ +\ q2.m\_floats[3]);}
+\DoxyCodeLine{00520\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00521\ \ \ \ \ \}}
+\DoxyCodeLine{00522\ }
+\DoxyCodeLine{00525\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}}
+\DoxyCodeLine{00526\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a2b440e462111b777fd2229446ba4618c}{operator-\/}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ q2)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00527\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00528\ \textcolor{preprocessor}{\#if\ defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00529\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(\_mm\_sub\_ps(mVec128,\ q2.mVec128));}
+\DoxyCodeLine{00530\ \textcolor{preprocessor}{\#elif\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00531\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(vsubq\_f32(mVec128,\ q2.mVec128));}
+\DoxyCodeLine{00532\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00533\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ q1\ =\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00534\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(q1.x()\ -\/\ q2.x(),\ q1.y()\ -\/\ q2.y(),\ q1.z()\ -\/\ q2.z(),\ q1.m\_floats[3]\ -\/\ q2.m\_floats[3]);}
+\DoxyCodeLine{00535\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00536\ \ \ \ \ \}}
+\DoxyCodeLine{00537\ }
+\DoxyCodeLine{00540\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\ \mbox{\hyperlink{classbt_quaternion_af3e8f7a6be3e581a2cead40723cf873c}{operator-\/}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00541\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00542\ \textcolor{preprocessor}{\#if\ defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00543\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(\_mm\_xor\_ps(mVec128,\ btvMzeroMask));}
+\DoxyCodeLine{00544\ \textcolor{preprocessor}{\#elif\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00545\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}((btSimdFloat4)veorq\_s32((int32x4\_t)mVec128,\ (int32x4\_t)btvMzeroMask));}
+\DoxyCodeLine{00546\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00547\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ q2\ =\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00548\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(-\/q2.x(),\ -\/q2.y(),\ -\/q2.z(),\ -\/q2.m\_floats[3]);}
+\DoxyCodeLine{00549\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00550\ \ \ \ \ \}}
+\DoxyCodeLine{00552\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\ \mbox{\hyperlink{classbt_quaternion_a4c5ce0652f1cff12d1981c49b43483f1}{farthest}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ qd)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00553\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00554\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\ diff,\ sum;}
+\DoxyCodeLine{00555\ \ \ \ \ \ \ \ \ diff\ =\ *\textcolor{keyword}{this}\ -\/\ qd;}
+\DoxyCodeLine{00556\ \ \ \ \ \ \ \ \ sum\ =\ *\textcolor{keyword}{this}\ +\ qd;}
+\DoxyCodeLine{00557\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (diff.\mbox{\hyperlink{classbt_quaternion_a406d3d2debf9d463f2ba651b0a196d47}{dot}}(diff)\ >\ sum.dot(sum))}
+\DoxyCodeLine{00558\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ qd;}
+\DoxyCodeLine{00559\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ (-\/qd);}
+\DoxyCodeLine{00560\ \ \ \ \ \}}
+\DoxyCodeLine{00561\ }
+\DoxyCodeLine{00563\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\ \mbox{\hyperlink{classbt_quaternion_aba0984f947a7ad85a023e2b24ffc4db1}{nearest}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ qd)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00564\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00565\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\ diff,\ sum;}
+\DoxyCodeLine{00566\ \ \ \ \ \ \ \ \ diff\ =\ *\textcolor{keyword}{this}\ -\/\ qd;}
+\DoxyCodeLine{00567\ \ \ \ \ \ \ \ \ sum\ =\ *\textcolor{keyword}{this}\ +\ qd;}
+\DoxyCodeLine{00568\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (diff.\mbox{\hyperlink{classbt_quaternion_a406d3d2debf9d463f2ba651b0a196d47}{dot}}(diff)\ <\ sum.dot(sum))}
+\DoxyCodeLine{00569\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ qd;}
+\DoxyCodeLine{00570\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ (-\/qd);}
+\DoxyCodeLine{00571\ \ \ \ \ \}}
+\DoxyCodeLine{00572\ }
+\DoxyCodeLine{00577\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\ \mbox{\hyperlink{classbt_quaternion_a0b34cbf669afb05d0618ff100a76b0dc}{slerp}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ q,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ t)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00578\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00579\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ magnitude\ =\ \mbox{\hyperlink{bt_scalar_8h_a6b200a8d26a49406ca13329be909ec10}{btSqrt}}(\mbox{\hyperlink{classbt_quaternion_a9266520d0fcd21c667adf870a8a75256}{length2}}()\ *\ q.\mbox{\hyperlink{classbt_quaternion_a9266520d0fcd21c667adf870a8a75256}{length2}}());}
+\DoxyCodeLine{00580\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(magnitude\ >\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0));}
+\DoxyCodeLine{00581\ }
+\DoxyCodeLine{00582\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ product\ =\ \mbox{\hyperlink{classbt_quaternion_a406d3d2debf9d463f2ba651b0a196d47}{dot}}(q)\ /\ magnitude;}
+\DoxyCodeLine{00583\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ absproduct\ =\ \mbox{\hyperlink{bt_scalar_8h_a4c4bd8e065ab617f4e37273d76e6d581}{btFabs}}(product);}
+\DoxyCodeLine{00584\ }
+\DoxyCodeLine{00585\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (absproduct\ <\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0\ -\/\ \mbox{\hyperlink{bt_scalar_8h_ae51eef6845bd59f964c1b2dbfe7054b7}{SIMD\_EPSILON}}))}
+\DoxyCodeLine{00586\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00587\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Take\ care\ of\ long\ angle\ case\ see\ http://en.wikipedia.org/wiki/Slerp}}
+\DoxyCodeLine{00588\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ theta\ =\ \mbox{\hyperlink{bt_scalar_8h_a004c41de4028b1437d1aafbaa0769cd5}{btAcos}}(absproduct);}
+\DoxyCodeLine{00589\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ d\ =\ \mbox{\hyperlink{bt_scalar_8h_a21de15ec6359a37d7876fa26be384a4b}{btSin}}(theta);}
+\DoxyCodeLine{00590\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(d\ >\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0));}
+\DoxyCodeLine{00591\ }
+\DoxyCodeLine{00592\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sign\ =\ (product\ <\ 0)\ ?\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/1)\ :\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1);}
+\DoxyCodeLine{00593\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ s0\ =\ \mbox{\hyperlink{bt_scalar_8h_a21de15ec6359a37d7876fa26be384a4b}{btSin}}((\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0)\ -\/\ t)\ *\ theta)\ /\ d;}
+\DoxyCodeLine{00594\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ s1\ =\ \mbox{\hyperlink{bt_scalar_8h_a21de15ec6359a37d7876fa26be384a4b}{btSin}}(sign\ *\ t\ *\ theta)\ /\ d;}
+\DoxyCodeLine{00595\ }
+\DoxyCodeLine{00596\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}(}
+\DoxyCodeLine{00597\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[0]\ *\ s0\ +\ q.x()\ *\ s1),}
+\DoxyCodeLine{00598\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[1]\ *\ s0\ +\ q.y()\ *\ s1),}
+\DoxyCodeLine{00599\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[2]\ *\ s0\ +\ q.z()\ *\ s1),}
+\DoxyCodeLine{00600\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ (\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3]\ *\ s0\ +\ q.w()\ *\ s1));}
+\DoxyCodeLine{00601\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00602\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00603\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00604\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00605\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00606\ \ \ \ \ \}}
+\DoxyCodeLine{00607\ }
+\DoxyCodeLine{00608\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\&\ \mbox{\hyperlink{classbt_quaternion_a1df267dc1f12293eb04dfc3af8e581ec}{getIdentity}}()}
+\DoxyCodeLine{00609\ \ \ \ \ \{}
+\DoxyCodeLine{00610\ \ \ \ \ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion_a3b5e50d610ee8cdda2aa78e092825675}{btQuaternion}}\ identityQuat(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.));}
+\DoxyCodeLine{00611\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ identityQuat;}
+\DoxyCodeLine{00612\ \ \ \ \ \}}
+\DoxyCodeLine{00613\ }
+\DoxyCodeLine{00614\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ \mbox{\hyperlink{classbt_quaternion_a5c1f2d48537241bf5b9a112d5113380e}{getW}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[3];\ \}}
+\DoxyCodeLine{00615\ }
+\DoxyCodeLine{00616\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_a54df750e6a69c4c5b186329662ee331f}{serialize}}(\textcolor{keyword}{struct}\ \mbox{\hyperlink{bt_quaternion_8h_afa416c7679f5754f6ebad07d95e12b03}{btQuaternionData}}\&\ dataOut)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00617\ }
+\DoxyCodeLine{00618\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_a41402dc9aa4ce3baed794a35ba654580}{deSerialize}}(\textcolor{keyword}{const}\ \textcolor{keyword}{struct}\ \mbox{\hyperlink{structbt_quaternion_float_data}{btQuaternionFloatData}}\&\ dataIn);}
+\DoxyCodeLine{00619\ }
+\DoxyCodeLine{00620\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_a41402dc9aa4ce3baed794a35ba654580}{deSerialize}}(\textcolor{keyword}{const}\ \textcolor{keyword}{struct}\ \mbox{\hyperlink{structbt_quaternion_double_data}{btQuaternionDoubleData}}\&\ dataIn);}
+\DoxyCodeLine{00621\ }
+\DoxyCodeLine{00622\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_a5d0948a49c999907fe3becde29291c2f}{serializeFloat}}(\textcolor{keyword}{struct}\ \mbox{\hyperlink{structbt_quaternion_float_data}{btQuaternionFloatData}}\&\ dataOut)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00623\ }
+\DoxyCodeLine{00624\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_a6702098f35e73359179910aeb70a356a}{deSerializeFloat}}(\textcolor{keyword}{const}\ \textcolor{keyword}{struct}\ \mbox{\hyperlink{structbt_quaternion_float_data}{btQuaternionFloatData}}\&\ dataIn);}
+\DoxyCodeLine{00625\ }
+\DoxyCodeLine{00626\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_a8b5eb85f2f3731a6d50a69a068f55dbf}{serializeDouble}}(\textcolor{keyword}{struct}\ \mbox{\hyperlink{structbt_quaternion_double_data}{btQuaternionDoubleData}}\&\ dataOut)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00627\ }
+\DoxyCodeLine{00628\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_ae4121b29be238c14a6cd6cdd4d3e31ee}{deSerializeDouble}}(\textcolor{keyword}{const}\ \textcolor{keyword}{struct}\ \mbox{\hyperlink{structbt_quaternion_double_data}{btQuaternionDoubleData}}\&\ dataIn);}
+\DoxyCodeLine{00629\ \};}
+\DoxyCodeLine{00630\ }
+\DoxyCodeLine{00632\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}}
+\DoxyCodeLine{00633\ \mbox{\hyperlink{bt_quaternion_8h_a6ce90c8357f7cb19bcaf06378bbc8db0}{operator*}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ q1,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ q2)}
+\DoxyCodeLine{00634\ \{}
+\DoxyCodeLine{00635\ \textcolor{preprocessor}{\#if\ defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00636\ \ \ \ \ \_\_m128\ vQ1\ =\ q1.get128();}
+\DoxyCodeLine{00637\ \ \ \ \ \_\_m128\ vQ2\ =\ q2.get128();}
+\DoxyCodeLine{00638\ \ \ \ \ \_\_m128\ A0,\ A1,\ B1,\ A2,\ B2;}
+\DoxyCodeLine{00639\ }
+\DoxyCodeLine{00640\ \ \ \ \ A1\ =\ bt\_pshufd\_ps(vQ1,\ BT\_SHUFFLE(0,\ 1,\ 2,\ 0));\ \ \textcolor{comment}{//\ X\ Y\ \ z\ x\ \ \ \ \ //\ \ \ \ \ \ vtrn}}
+\DoxyCodeLine{00641\ \ \ \ \ B1\ =\ bt\_pshufd\_ps(vQ2,\ BT\_SHUFFLE(3,\ 3,\ 3,\ 0));\ \ \textcolor{comment}{//\ W\ W\ \ W\ X\ \ \ \ \ //\ vdup\ vext}}
+\DoxyCodeLine{00642\ }
+\DoxyCodeLine{00643\ \ \ \ \ A1\ =\ A1\ *\ B1;}
+\DoxyCodeLine{00644\ }
+\DoxyCodeLine{00645\ \ \ \ \ A2\ =\ bt\_pshufd\_ps(vQ1,\ BT\_SHUFFLE(1,\ 2,\ 0,\ 1));\ \ \textcolor{comment}{//\ Y\ Z\ \ X\ Y\ \ \ \ \ //\ vext}}
+\DoxyCodeLine{00646\ \ \ \ \ B2\ =\ bt\_pshufd\_ps(vQ2,\ BT\_SHUFFLE(2,\ 0,\ 1,\ 1));\ \ \textcolor{comment}{//\ z\ x\ \ Y\ Y\ \ \ \ \ //\ vtrn\ vdup}}
+\DoxyCodeLine{00647\ }
+\DoxyCodeLine{00648\ \ \ \ \ A2\ =\ A2\ *\ B2;}
+\DoxyCodeLine{00649\ }
+\DoxyCodeLine{00650\ \ \ \ \ B1\ =\ bt\_pshufd\_ps(vQ1,\ BT\_SHUFFLE(2,\ 0,\ 1,\ 2));\ \ \textcolor{comment}{//\ z\ x\ Y\ Z\ \ \ \ \ \ //\ vtrn\ vext}}
+\DoxyCodeLine{00651\ \ \ \ \ B2\ =\ bt\_pshufd\_ps(vQ2,\ BT\_SHUFFLE(1,\ 2,\ 0,\ 2));\ \ \textcolor{comment}{//\ Y\ Z\ x\ z\ \ \ \ \ \ //\ vext\ vtrn}}
+\DoxyCodeLine{00652\ }
+\DoxyCodeLine{00653\ \ \ \ \ B1\ =\ B1\ *\ B2;\ \ \textcolor{comment}{//\ \ \ A3\ *=\ B3}}
+\DoxyCodeLine{00654\ }
+\DoxyCodeLine{00655\ \ \ \ \ A0\ =\ bt\_splat\_ps(vQ1,\ 3);\ \ \textcolor{comment}{//\ \ \ A0}}
+\DoxyCodeLine{00656\ \ \ \ \ A0\ =\ A0\ *\ vQ2;\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ A0\ *\ B0}}
+\DoxyCodeLine{00657\ }
+\DoxyCodeLine{00658\ \ \ \ \ A1\ =\ A1\ +\ A2;\ \ \textcolor{comment}{//\ \ \ AB12}}
+\DoxyCodeLine{00659\ \ \ \ \ A0\ =\ A0\ -\/\ B1;\ \ \textcolor{comment}{//\ \ \ AB03\ =\ AB0\ -\/\ AB3}}
+\DoxyCodeLine{00660\ }
+\DoxyCodeLine{00661\ \ \ \ \ A1\ =\ \_mm\_xor\_ps(A1,\ vPPPM);\ \ \textcolor{comment}{//\ change\ sign\ of\ the\ last\ element}}
+\DoxyCodeLine{00662\ \ \ \ \ A0\ =\ A0\ +\ A1;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ AB03\ +\ AB12}}
+\DoxyCodeLine{00663\ }
+\DoxyCodeLine{00664\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}(A0);}
+\DoxyCodeLine{00665\ }
+\DoxyCodeLine{00666\ \textcolor{preprocessor}{\#elif\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00667\ }
+\DoxyCodeLine{00668\ \ \ \ \ float32x4\_t\ vQ1\ =\ q1.get128();}
+\DoxyCodeLine{00669\ \ \ \ \ float32x4\_t\ vQ2\ =\ q2.get128();}
+\DoxyCodeLine{00670\ \ \ \ \ float32x4\_t\ A0,\ A1,\ B1,\ A2,\ B2,\ A3,\ B3;}
+\DoxyCodeLine{00671\ \ \ \ \ float32x2\_t\ vQ1zx,\ vQ2wx,\ vQ1yz,\ vQ2zx,\ vQ2yz,\ vQ2xz;}
+\DoxyCodeLine{00672\ }
+\DoxyCodeLine{00673\ \ \ \ \ \{}
+\DoxyCodeLine{00674\ \ \ \ \ \ \ \ \ float32x2x2\_t\ tmp;}
+\DoxyCodeLine{00675\ \ \ \ \ \ \ \ \ tmp\ =\ vtrn\_f32(vget\_high\_f32(vQ1),\ vget\_low\_f32(vQ1));\ \ \textcolor{comment}{//\ \{z\ x\},\ \{w\ y\}}}
+\DoxyCodeLine{00676\ \ \ \ \ \ \ \ \ vQ1zx\ =\ tmp.val[0];}
+\DoxyCodeLine{00677\ }
+\DoxyCodeLine{00678\ \ \ \ \ \ \ \ \ tmp\ =\ vtrn\_f32(vget\_high\_f32(vQ2),\ vget\_low\_f32(vQ2));\ \ \textcolor{comment}{//\ \{z\ x\},\ \{w\ y\}}}
+\DoxyCodeLine{00679\ \ \ \ \ \ \ \ \ vQ2zx\ =\ tmp.val[0];}
+\DoxyCodeLine{00680\ \ \ \ \ \}}
+\DoxyCodeLine{00681\ \ \ \ \ vQ2wx\ =\ vext\_f32(vget\_high\_f32(vQ2),\ vget\_low\_f32(vQ2),\ 1);}
+\DoxyCodeLine{00682\ }
+\DoxyCodeLine{00683\ \ \ \ \ vQ1yz\ =\ vext\_f32(vget\_low\_f32(vQ1),\ vget\_high\_f32(vQ1),\ 1);}
+\DoxyCodeLine{00684\ }
+\DoxyCodeLine{00685\ \ \ \ \ vQ2yz\ =\ vext\_f32(vget\_low\_f32(vQ2),\ vget\_high\_f32(vQ2),\ 1);}
+\DoxyCodeLine{00686\ \ \ \ \ vQ2xz\ =\ vext\_f32(vQ2zx,\ vQ2zx,\ 1);}
+\DoxyCodeLine{00687\ }
+\DoxyCodeLine{00688\ \ \ \ \ A1\ =\ vcombine\_f32(vget\_low\_f32(vQ1),\ vQ1zx);\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ X\ Y\ \ z\ x}}
+\DoxyCodeLine{00689\ \ \ \ \ B1\ =\ vcombine\_f32(vdup\_lane\_f32(vget\_high\_f32(vQ2),\ 1),\ vQ2wx);\ \ \textcolor{comment}{//\ W\ W\ \ W\ X}}
+\DoxyCodeLine{00690\ }
+\DoxyCodeLine{00691\ \ \ \ \ A2\ =\ vcombine\_f32(vQ1yz,\ vget\_low\_f32(vQ1));}
+\DoxyCodeLine{00692\ \ \ \ \ B2\ =\ vcombine\_f32(vQ2zx,\ vdup\_lane\_f32(vget\_low\_f32(vQ2),\ 1));}
+\DoxyCodeLine{00693\ }
+\DoxyCodeLine{00694\ \ \ \ \ A3\ =\ vcombine\_f32(vQ1zx,\ vQ1yz);\ \ \textcolor{comment}{//\ Z\ X\ Y\ Z}}
+\DoxyCodeLine{00695\ \ \ \ \ B3\ =\ vcombine\_f32(vQ2yz,\ vQ2xz);\ \ \textcolor{comment}{//\ Y\ Z\ x\ z}}
+\DoxyCodeLine{00696\ }
+\DoxyCodeLine{00697\ \ \ \ \ A1\ =\ vmulq\_f32(A1,\ B1);}
+\DoxyCodeLine{00698\ \ \ \ \ A2\ =\ vmulq\_f32(A2,\ B2);}
+\DoxyCodeLine{00699\ \ \ \ \ A3\ =\ vmulq\_f32(A3,\ B3);\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ A3\ *=\ B3}}
+\DoxyCodeLine{00700\ \ \ \ \ A0\ =\ vmulq\_lane\_f32(vQ2,\ vget\_high\_f32(vQ1),\ 1);\ \ \textcolor{comment}{//\ \ \ \ A0\ *\ B0}}
+\DoxyCodeLine{00701\ }
+\DoxyCodeLine{00702\ \ \ \ \ A1\ =\ vaddq\_f32(A1,\ A2);\ \ \textcolor{comment}{//\ AB12\ =\ AB1\ +\ AB2}}
+\DoxyCodeLine{00703\ \ \ \ \ A0\ =\ vsubq\_f32(A0,\ A3);\ \ \textcolor{comment}{//\ AB03\ =\ AB0\ -\/\ AB3}}
+\DoxyCodeLine{00704\ }
+\DoxyCodeLine{00705\ \ \ \ \ \textcolor{comment}{//\ \ change\ the\ sign\ of\ the\ last\ element}}
+\DoxyCodeLine{00706\ \ \ \ \ A1\ =\ (btSimdFloat4)veorq\_s32((int32x4\_t)A1,\ (int32x4\_t)vPPPM);}
+\DoxyCodeLine{00707\ \ \ \ \ A0\ =\ vaddq\_f32(A0,\ A1);\ \ \textcolor{comment}{//\ AB03\ +\ AB12}}
+\DoxyCodeLine{00708\ }
+\DoxyCodeLine{00709\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}(A0);}
+\DoxyCodeLine{00710\ }
+\DoxyCodeLine{00711\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00712\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}(}
+\DoxyCodeLine{00713\ \ \ \ \ \ \ \ \ q1.w()\ *\ q2.x()\ +\ q1.x()\ *\ q2.w()\ +\ q1.y()\ *\ q2.z()\ -\/\ q1.z()\ *\ q2.y(),}
+\DoxyCodeLine{00714\ \ \ \ \ \ \ \ \ q1.w()\ *\ q2.y()\ +\ q1.y()\ *\ q2.w()\ +\ q1.z()\ *\ q2.x()\ -\/\ q1.x()\ *\ q2.z(),}
+\DoxyCodeLine{00715\ \ \ \ \ \ \ \ \ q1.w()\ *\ q2.z()\ +\ q1.z()\ *\ q2.w()\ +\ q1.x()\ *\ q2.y()\ -\/\ q1.y()\ *\ q2.x(),}
+\DoxyCodeLine{00716\ \ \ \ \ \ \ \ \ q1.w()\ *\ q2.w()\ -\/\ q1.x()\ *\ q2.x()\ -\/\ q1.y()\ *\ q2.y()\ -\/\ q1.z()\ *\ q2.z());}
+\DoxyCodeLine{00717\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00718\ \}}
+\DoxyCodeLine{00719\ }
+\DoxyCodeLine{00720\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}}
+\DoxyCodeLine{00721\ \mbox{\hyperlink{bt_quaternion_8h_a6ce90c8357f7cb19bcaf06378bbc8db0}{operator*}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ q,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}})}
+\DoxyCodeLine{00722\ \{}
+\DoxyCodeLine{00723\ \textcolor{preprocessor}{\#if\ defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00724\ \ \ \ \ \_\_m128\ vQ1\ =\ q.get128();}
+\DoxyCodeLine{00725\ \ \ \ \ \_\_m128\ vQ2\ =\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.get128();}
+\DoxyCodeLine{00726\ \ \ \ \ \_\_m128\ A1,\ B1,\ A2,\ B2,\ A3,\ B3;}
+\DoxyCodeLine{00727\ }
+\DoxyCodeLine{00728\ \ \ \ \ A1\ =\ bt\_pshufd\_ps(vQ1,\ BT\_SHUFFLE(3,\ 3,\ 3,\ 0));}
+\DoxyCodeLine{00729\ \ \ \ \ B1\ =\ bt\_pshufd\_ps(vQ2,\ BT\_SHUFFLE(0,\ 1,\ 2,\ 0));}
+\DoxyCodeLine{00730\ }
+\DoxyCodeLine{00731\ \ \ \ \ A1\ =\ A1\ *\ B1;}
+\DoxyCodeLine{00732\ }
+\DoxyCodeLine{00733\ \ \ \ \ A2\ =\ bt\_pshufd\_ps(vQ1,\ BT\_SHUFFLE(1,\ 2,\ 0,\ 1));}
+\DoxyCodeLine{00734\ \ \ \ \ B2\ =\ bt\_pshufd\_ps(vQ2,\ BT\_SHUFFLE(2,\ 0,\ 1,\ 1));}
+\DoxyCodeLine{00735\ }
+\DoxyCodeLine{00736\ \ \ \ \ A2\ =\ A2\ *\ B2;}
+\DoxyCodeLine{00737\ }
+\DoxyCodeLine{00738\ \ \ \ \ A3\ =\ bt\_pshufd\_ps(vQ1,\ BT\_SHUFFLE(2,\ 0,\ 1,\ 2));}
+\DoxyCodeLine{00739\ \ \ \ \ B3\ =\ bt\_pshufd\_ps(vQ2,\ BT\_SHUFFLE(1,\ 2,\ 0,\ 2));}
+\DoxyCodeLine{00740\ }
+\DoxyCodeLine{00741\ \ \ \ \ A3\ =\ A3\ *\ B3;\ \ \textcolor{comment}{//\ \ \ A3\ *=\ B3}}
+\DoxyCodeLine{00742\ }
+\DoxyCodeLine{00743\ \ \ \ \ A1\ =\ A1\ +\ A2;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ AB12}}
+\DoxyCodeLine{00744\ \ \ \ \ A1\ =\ \_mm\_xor\_ps(A1,\ vPPPM);\ \ \textcolor{comment}{//\ change\ sign\ of\ the\ last\ element}}
+\DoxyCodeLine{00745\ \ \ \ \ A1\ =\ A1\ -\/\ A3;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ AB123\ =\ AB12\ -\/\ AB3}}
+\DoxyCodeLine{00746\ }
+\DoxyCodeLine{00747\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}(A1);}
+\DoxyCodeLine{00748\ }
+\DoxyCodeLine{00749\ \textcolor{preprocessor}{\#elif\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00750\ }
+\DoxyCodeLine{00751\ \ \ \ \ float32x4\_t\ vQ1\ =\ q.get128();}
+\DoxyCodeLine{00752\ \ \ \ \ float32x4\_t\ vQ2\ =\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.get128();}
+\DoxyCodeLine{00753\ \ \ \ \ float32x4\_t\ A1,\ B1,\ A2,\ B2,\ A3,\ B3;}
+\DoxyCodeLine{00754\ \ \ \ \ float32x2\_t\ vQ1wx,\ vQ2zx,\ vQ1yz,\ vQ2yz,\ vQ1zx,\ vQ2xz;}
+\DoxyCodeLine{00755\ }
+\DoxyCodeLine{00756\ \ \ \ \ vQ1wx\ =\ vext\_f32(vget\_high\_f32(vQ1),\ vget\_low\_f32(vQ1),\ 1);}
+\DoxyCodeLine{00757\ \ \ \ \ \{}
+\DoxyCodeLine{00758\ \ \ \ \ \ \ \ \ float32x2x2\_t\ tmp;}
+\DoxyCodeLine{00759\ }
+\DoxyCodeLine{00760\ \ \ \ \ \ \ \ \ tmp\ =\ vtrn\_f32(vget\_high\_f32(vQ2),\ vget\_low\_f32(vQ2));\ \ \textcolor{comment}{//\ \{z\ x\},\ \{w\ y\}}}
+\DoxyCodeLine{00761\ \ \ \ \ \ \ \ \ vQ2zx\ =\ tmp.val[0];}
+\DoxyCodeLine{00762\ }
+\DoxyCodeLine{00763\ \ \ \ \ \ \ \ \ tmp\ =\ vtrn\_f32(vget\_high\_f32(vQ1),\ vget\_low\_f32(vQ1));\ \ \textcolor{comment}{//\ \{z\ x\},\ \{w\ y\}}}
+\DoxyCodeLine{00764\ \ \ \ \ \ \ \ \ vQ1zx\ =\ tmp.val[0];}
+\DoxyCodeLine{00765\ \ \ \ \ \}}
+\DoxyCodeLine{00766\ }
+\DoxyCodeLine{00767\ \ \ \ \ vQ1yz\ =\ vext\_f32(vget\_low\_f32(vQ1),\ vget\_high\_f32(vQ1),\ 1);}
+\DoxyCodeLine{00768\ }
+\DoxyCodeLine{00769\ \ \ \ \ vQ2yz\ =\ vext\_f32(vget\_low\_f32(vQ2),\ vget\_high\_f32(vQ2),\ 1);}
+\DoxyCodeLine{00770\ \ \ \ \ vQ2xz\ =\ vext\_f32(vQ2zx,\ vQ2zx,\ 1);}
+\DoxyCodeLine{00771\ }
+\DoxyCodeLine{00772\ \ \ \ \ A1\ =\ vcombine\_f32(vdup\_lane\_f32(vget\_high\_f32(vQ1),\ 1),\ vQ1wx);\ \ \textcolor{comment}{//\ W\ W\ \ W\ X}}
+\DoxyCodeLine{00773\ \ \ \ \ B1\ =\ vcombine\_f32(vget\_low\_f32(vQ2),\ vQ2zx);\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ X\ Y\ \ z\ x}}
+\DoxyCodeLine{00774\ }
+\DoxyCodeLine{00775\ \ \ \ \ A2\ =\ vcombine\_f32(vQ1yz,\ vget\_low\_f32(vQ1));}
+\DoxyCodeLine{00776\ \ \ \ \ B2\ =\ vcombine\_f32(vQ2zx,\ vdup\_lane\_f32(vget\_low\_f32(vQ2),\ 1));}
+\DoxyCodeLine{00777\ }
+\DoxyCodeLine{00778\ \ \ \ \ A3\ =\ vcombine\_f32(vQ1zx,\ vQ1yz);\ \ \textcolor{comment}{//\ Z\ X\ Y\ Z}}
+\DoxyCodeLine{00779\ \ \ \ \ B3\ =\ vcombine\_f32(vQ2yz,\ vQ2xz);\ \ \textcolor{comment}{//\ Y\ Z\ x\ z}}
+\DoxyCodeLine{00780\ }
+\DoxyCodeLine{00781\ \ \ \ \ A1\ =\ vmulq\_f32(A1,\ B1);}
+\DoxyCodeLine{00782\ \ \ \ \ A2\ =\ vmulq\_f32(A2,\ B2);}
+\DoxyCodeLine{00783\ \ \ \ \ A3\ =\ vmulq\_f32(A3,\ B3);\ \ \textcolor{comment}{//\ A3\ *=\ B3}}
+\DoxyCodeLine{00784\ }
+\DoxyCodeLine{00785\ \ \ \ \ A1\ =\ vaddq\_f32(A1,\ A2);\ \ \textcolor{comment}{//\ AB12\ =\ AB1\ +\ AB2}}
+\DoxyCodeLine{00786\ }
+\DoxyCodeLine{00787\ \ \ \ \ \textcolor{comment}{//\ \ change\ the\ sign\ of\ the\ last\ element}}
+\DoxyCodeLine{00788\ \ \ \ \ A1\ =\ (btSimdFloat4)veorq\_s32((int32x4\_t)A1,\ (int32x4\_t)vPPPM);}
+\DoxyCodeLine{00789\ }
+\DoxyCodeLine{00790\ \ \ \ \ A1\ =\ vsubq\_f32(A1,\ A3);\ \ \textcolor{comment}{//\ AB123\ =\ AB12\ -\/\ AB3}}
+\DoxyCodeLine{00791\ }
+\DoxyCodeLine{00792\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}(A1);}
+\DoxyCodeLine{00793\ }
+\DoxyCodeLine{00794\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00795\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}(}
+\DoxyCodeLine{00796\ \ \ \ \ \ \ \ \ q.w()\ *\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.x()\ +\ q.y()\ *\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.z()\ -\/\ q.z()\ *\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.y(),}
+\DoxyCodeLine{00797\ \ \ \ \ \ \ \ \ q.w()\ *\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.y()\ +\ q.z()\ *\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.x()\ -\/\ q.x()\ *\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.z(),}
+\DoxyCodeLine{00798\ \ \ \ \ \ \ \ \ q.w()\ *\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.z()\ +\ q.x()\ *\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.y()\ -\/\ q.y()\ *\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.x(),}
+\DoxyCodeLine{00799\ \ \ \ \ \ \ \ \ -\/q.x()\ *\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.x()\ -\/\ q.y()\ *\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.y()\ -\/\ q.z()\ *\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.z());}
+\DoxyCodeLine{00800\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00801\ \}}
+\DoxyCodeLine{00802\ }
+\DoxyCodeLine{00803\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}}
+\DoxyCodeLine{00804\ \mbox{\hyperlink{bt_quaternion_8h_a6ce90c8357f7cb19bcaf06378bbc8db0}{operator*}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ q)}
+\DoxyCodeLine{00805\ \{}
+\DoxyCodeLine{00806\ \textcolor{preprocessor}{\#if\ defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00807\ \ \ \ \ \_\_m128\ vQ1\ =\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.get128();}
+\DoxyCodeLine{00808\ \ \ \ \ \_\_m128\ vQ2\ =\ q.get128();}
+\DoxyCodeLine{00809\ \ \ \ \ \_\_m128\ A1,\ B1,\ A2,\ B2,\ A3,\ B3;}
+\DoxyCodeLine{00810\ }
+\DoxyCodeLine{00811\ \ \ \ \ A1\ =\ bt\_pshufd\_ps(vQ1,\ BT\_SHUFFLE(0,\ 1,\ 2,\ 0));\ \ \textcolor{comment}{//\ X\ Y\ \ z\ x}}
+\DoxyCodeLine{00812\ \ \ \ \ B1\ =\ bt\_pshufd\_ps(vQ2,\ BT\_SHUFFLE(3,\ 3,\ 3,\ 0));\ \ \textcolor{comment}{//\ W\ W\ \ W\ X}}
+\DoxyCodeLine{00813\ }
+\DoxyCodeLine{00814\ \ \ \ \ A1\ =\ A1\ *\ B1;}
+\DoxyCodeLine{00815\ }
+\DoxyCodeLine{00816\ \ \ \ \ A2\ =\ bt\_pshufd\_ps(vQ1,\ BT\_SHUFFLE(1,\ 2,\ 0,\ 1));}
+\DoxyCodeLine{00817\ \ \ \ \ B2\ =\ bt\_pshufd\_ps(vQ2,\ BT\_SHUFFLE(2,\ 0,\ 1,\ 1));}
+\DoxyCodeLine{00818\ }
+\DoxyCodeLine{00819\ \ \ \ \ A2\ =\ A2\ *\ B2;}
+\DoxyCodeLine{00820\ }
+\DoxyCodeLine{00821\ \ \ \ \ A3\ =\ bt\_pshufd\_ps(vQ1,\ BT\_SHUFFLE(2,\ 0,\ 1,\ 2));}
+\DoxyCodeLine{00822\ \ \ \ \ B3\ =\ bt\_pshufd\_ps(vQ2,\ BT\_SHUFFLE(1,\ 2,\ 0,\ 2));}
+\DoxyCodeLine{00823\ }
+\DoxyCodeLine{00824\ \ \ \ \ A3\ =\ A3\ *\ B3;\ \ \textcolor{comment}{//\ \ \ A3\ *=\ B3}}
+\DoxyCodeLine{00825\ }
+\DoxyCodeLine{00826\ \ \ \ \ A1\ =\ A1\ +\ A2;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ AB12}}
+\DoxyCodeLine{00827\ \ \ \ \ A1\ =\ \_mm\_xor\_ps(A1,\ vPPPM);\ \ \textcolor{comment}{//\ change\ sign\ of\ the\ last\ element}}
+\DoxyCodeLine{00828\ \ \ \ \ A1\ =\ A1\ -\/\ A3;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ AB123\ =\ AB12\ -\/\ AB3}}
+\DoxyCodeLine{00829\ }
+\DoxyCodeLine{00830\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}(A1);}
+\DoxyCodeLine{00831\ }
+\DoxyCodeLine{00832\ \textcolor{preprocessor}{\#elif\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00833\ }
+\DoxyCodeLine{00834\ \ \ \ \ float32x4\_t\ vQ1\ =\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.get128();}
+\DoxyCodeLine{00835\ \ \ \ \ float32x4\_t\ vQ2\ =\ q.get128();}
+\DoxyCodeLine{00836\ \ \ \ \ float32x4\_t\ A1,\ B1,\ A2,\ B2,\ A3,\ B3;}
+\DoxyCodeLine{00837\ \ \ \ \ float32x2\_t\ vQ1zx,\ vQ2wx,\ vQ1yz,\ vQ2zx,\ vQ2yz,\ vQ2xz;}
+\DoxyCodeLine{00838\ }
+\DoxyCodeLine{00839\ \ \ \ \ \{}
+\DoxyCodeLine{00840\ \ \ \ \ \ \ \ \ float32x2x2\_t\ tmp;}
+\DoxyCodeLine{00841\ }
+\DoxyCodeLine{00842\ \ \ \ \ \ \ \ \ tmp\ =\ vtrn\_f32(vget\_high\_f32(vQ1),\ vget\_low\_f32(vQ1));\ \ \textcolor{comment}{//\ \{z\ x\},\ \{w\ y\}}}
+\DoxyCodeLine{00843\ \ \ \ \ \ \ \ \ vQ1zx\ =\ tmp.val[0];}
+\DoxyCodeLine{00844\ }
+\DoxyCodeLine{00845\ \ \ \ \ \ \ \ \ tmp\ =\ vtrn\_f32(vget\_high\_f32(vQ2),\ vget\_low\_f32(vQ2));\ \ \textcolor{comment}{//\ \{z\ x\},\ \{w\ y\}}}
+\DoxyCodeLine{00846\ \ \ \ \ \ \ \ \ vQ2zx\ =\ tmp.val[0];}
+\DoxyCodeLine{00847\ \ \ \ \ \}}
+\DoxyCodeLine{00848\ \ \ \ \ vQ2wx\ =\ vext\_f32(vget\_high\_f32(vQ2),\ vget\_low\_f32(vQ2),\ 1);}
+\DoxyCodeLine{00849\ }
+\DoxyCodeLine{00850\ \ \ \ \ vQ1yz\ =\ vext\_f32(vget\_low\_f32(vQ1),\ vget\_high\_f32(vQ1),\ 1);}
+\DoxyCodeLine{00851\ }
+\DoxyCodeLine{00852\ \ \ \ \ vQ2yz\ =\ vext\_f32(vget\_low\_f32(vQ2),\ vget\_high\_f32(vQ2),\ 1);}
+\DoxyCodeLine{00853\ \ \ \ \ vQ2xz\ =\ vext\_f32(vQ2zx,\ vQ2zx,\ 1);}
+\DoxyCodeLine{00854\ }
+\DoxyCodeLine{00855\ \ \ \ \ A1\ =\ vcombine\_f32(vget\_low\_f32(vQ1),\ vQ1zx);\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ X\ Y\ \ z\ x}}
+\DoxyCodeLine{00856\ \ \ \ \ B1\ =\ vcombine\_f32(vdup\_lane\_f32(vget\_high\_f32(vQ2),\ 1),\ vQ2wx);\ \ \textcolor{comment}{//\ W\ W\ \ W\ X}}
+\DoxyCodeLine{00857\ }
+\DoxyCodeLine{00858\ \ \ \ \ A2\ =\ vcombine\_f32(vQ1yz,\ vget\_low\_f32(vQ1));}
+\DoxyCodeLine{00859\ \ \ \ \ B2\ =\ vcombine\_f32(vQ2zx,\ vdup\_lane\_f32(vget\_low\_f32(vQ2),\ 1));}
+\DoxyCodeLine{00860\ }
+\DoxyCodeLine{00861\ \ \ \ \ A3\ =\ vcombine\_f32(vQ1zx,\ vQ1yz);\ \ \textcolor{comment}{//\ Z\ X\ Y\ Z}}
+\DoxyCodeLine{00862\ \ \ \ \ B3\ =\ vcombine\_f32(vQ2yz,\ vQ2xz);\ \ \textcolor{comment}{//\ Y\ Z\ x\ z}}
+\DoxyCodeLine{00863\ }
+\DoxyCodeLine{00864\ \ \ \ \ A1\ =\ vmulq\_f32(A1,\ B1);}
+\DoxyCodeLine{00865\ \ \ \ \ A2\ =\ vmulq\_f32(A2,\ B2);}
+\DoxyCodeLine{00866\ \ \ \ \ A3\ =\ vmulq\_f32(A3,\ B3);\ \ \textcolor{comment}{//\ A3\ *=\ B3}}
+\DoxyCodeLine{00867\ }
+\DoxyCodeLine{00868\ \ \ \ \ A1\ =\ vaddq\_f32(A1,\ A2);\ \ \textcolor{comment}{//\ AB12\ =\ AB1\ +\ AB2}}
+\DoxyCodeLine{00869\ }
+\DoxyCodeLine{00870\ \ \ \ \ \textcolor{comment}{//\ \ change\ the\ sign\ of\ the\ last\ element}}
+\DoxyCodeLine{00871\ \ \ \ \ A1\ =\ (btSimdFloat4)veorq\_s32((int32x4\_t)A1,\ (int32x4\_t)vPPPM);}
+\DoxyCodeLine{00872\ }
+\DoxyCodeLine{00873\ \ \ \ \ A1\ =\ vsubq\_f32(A1,\ A3);\ \ \textcolor{comment}{//\ AB123\ =\ AB12\ -\/\ AB3}}
+\DoxyCodeLine{00874\ }
+\DoxyCodeLine{00875\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}(A1);}
+\DoxyCodeLine{00876\ }
+\DoxyCodeLine{00877\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00878\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}(}
+\DoxyCodeLine{00879\ \ \ \ \ \ \ \ \ +\mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.x()\ *\ q.w()\ +\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.y()\ *\ q.z()\ -\/\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.z()\ *\ q.y(),}
+\DoxyCodeLine{00880\ \ \ \ \ \ \ \ \ +\mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.y()\ *\ q.w()\ +\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.z()\ *\ q.x()\ -\/\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.x()\ *\ q.z(),}
+\DoxyCodeLine{00881\ \ \ \ \ \ \ \ \ +\mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.z()\ *\ q.w()\ +\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.x()\ *\ q.y()\ -\/\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.y()\ *\ q.x(),}
+\DoxyCodeLine{00882\ \ \ \ \ \ \ \ \ -\/\mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.x()\ *\ q.x()\ -\/\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.y()\ *\ q.y()\ -\/\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}.z()\ *\ q.z());}
+\DoxyCodeLine{00883\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00884\ \}}
+\DoxyCodeLine{00885\ }
+\DoxyCodeLine{00887\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}}
+\DoxyCodeLine{00888\ \mbox{\hyperlink{bt_quaternion_8h_acf9682923e6e26b804cc5df98f656f37}{dot}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ q1,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ q2)}
+\DoxyCodeLine{00889\ \{}
+\DoxyCodeLine{00890\ \ \ \ \ \textcolor{keywordflow}{return}\ q1.\mbox{\hyperlink{classbt_quaternion_a406d3d2debf9d463f2ba651b0a196d47}{dot}}(q2);}
+\DoxyCodeLine{00891\ \}}
+\DoxyCodeLine{00892\ }
+\DoxyCodeLine{00894\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}}
+\DoxyCodeLine{00895\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a1499969c13207ed8ab6f796685d4933f}{length}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ q)}
+\DoxyCodeLine{00896\ \{}
+\DoxyCodeLine{00897\ \ \ \ \ \textcolor{keywordflow}{return}\ q.\mbox{\hyperlink{classbt_quaternion_a29bd11309609ea6734a17388a27eda75}{length}}();}
+\DoxyCodeLine{00898\ \}}
+\DoxyCodeLine{00899\ }
+\DoxyCodeLine{00901\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}}
+\DoxyCodeLine{00902\ \mbox{\hyperlink{bt_quaternion_8h_ad3c0f268bceaf70c8e46fe7153337d7c}{btAngle}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ q1,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ q2)}
+\DoxyCodeLine{00903\ \{}
+\DoxyCodeLine{00904\ \ \ \ \ \textcolor{keywordflow}{return}\ q1.\mbox{\hyperlink{classbt_quaternion_a78254a50772f21074f09388a17d8b02b}{angle}}(q2);}
+\DoxyCodeLine{00905\ \}}
+\DoxyCodeLine{00906\ }
+\DoxyCodeLine{00908\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}}
+\DoxyCodeLine{00909\ \mbox{\hyperlink{b3_matrix3x3_8h_ab650b0d6417309b37ece08789cae5b6d}{inverse}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ q)}
+\DoxyCodeLine{00910\ \{}
+\DoxyCodeLine{00911\ \ \ \ \ \textcolor{keywordflow}{return}\ q.\mbox{\hyperlink{classbt_quaternion_ab2f4fcf35da5e846ceba91af625062f7}{inverse}}();}
+\DoxyCodeLine{00912\ \}}
+\DoxyCodeLine{00913\ }
+\DoxyCodeLine{00919\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}}
+\DoxyCodeLine{00920\ \mbox{\hyperlink{bt_quaternion_8h_af4107eb81c667781dd73a17c832b1954}{slerp}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ q1,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ q2,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ t)}
+\DoxyCodeLine{00921\ \{}
+\DoxyCodeLine{00922\ \ \ \ \ \textcolor{keywordflow}{return}\ q1.\mbox{\hyperlink{classbt_quaternion_a0b34cbf669afb05d0618ff100a76b0dc}{slerp}}(q2,\ t);}
+\DoxyCodeLine{00923\ \}}
+\DoxyCodeLine{00924\ }
+\DoxyCodeLine{00925\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}}
+\DoxyCodeLine{00926\ \mbox{\hyperlink{bt_quaternion_8h_a41643f41d42b592d640c7b33e9f66dd6}{quatRotate}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ rotation,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}})}
+\DoxyCodeLine{00927\ \{}
+\DoxyCodeLine{00928\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\ q\ =\ rotation\ *\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}};}
+\DoxyCodeLine{00929\ \ \ \ \ q\ *=\ rotation.inverse();}
+\DoxyCodeLine{00930\ \textcolor{preprocessor}{\#if\ defined\ BT\_USE\_SIMD\_VECTOR3\ \&\&\ defined(BT\_USE\_SSE\_IN\_API)\ \&\&\ defined(BT\_USE\_SSE)}}
+\DoxyCodeLine{00931\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(\_mm\_and\_ps(q.get128(),\ btvFFF0fMask));}
+\DoxyCodeLine{00932\ \textcolor{preprocessor}{\#elif\ defined(BT\_USE\_NEON)}}
+\DoxyCodeLine{00933\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}((float32x4\_t)vandq\_s32((int32x4\_t)q.get128(),\ btvFFF0Mask));}
+\DoxyCodeLine{00934\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00935\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(q.getX(),\ q.getY(),\ q.getZ());}
+\DoxyCodeLine{00936\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00937\ \}}
+\DoxyCodeLine{00938\ }
+\DoxyCodeLine{00939\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}}
+\DoxyCodeLine{00940\ \mbox{\hyperlink{bt_quaternion_8h_a2884ed105928c310d48521fcacf39eb2}{shortestArcQuat}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a7062a23d1d434121d4a88f530703d06a}{v0}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ \mbox{\hyperlink{glad_8h_a0779c3b73f9aa3a0ac5b0139b5d291d9}{v1}})\ \ \textcolor{comment}{//\ Game\ Programming\ Gems\ 2.10.\ make\ sure\ v0,v1\ are\ normalized}}
+\DoxyCodeLine{00941\ \{}
+\DoxyCodeLine{00942\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ c\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a7062a23d1d434121d4a88f530703d06a}{v0}}.cross(\mbox{\hyperlink{glad_8h_a0779c3b73f9aa3a0ac5b0139b5d291d9}{v1}});}
+\DoxyCodeLine{00943\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ d\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a7062a23d1d434121d4a88f530703d06a}{v0}}.dot(\mbox{\hyperlink{glad_8h_a0779c3b73f9aa3a0ac5b0139b5d291d9}{v1}});}
+\DoxyCodeLine{00944\ }
+\DoxyCodeLine{00945\ \ \ \ \ \textcolor{keywordflow}{if}\ (d\ <\ -\/1.0\ +\ \mbox{\hyperlink{bt_scalar_8h_ae51eef6845bd59f964c1b2dbfe7054b7}{SIMD\_EPSILON}})}
+\DoxyCodeLine{00946\ \ \ \ \ \{}
+\DoxyCodeLine{00947\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ n,\ unused;}
+\DoxyCodeLine{00948\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a0682ea634178928396d78f27c87aec07}{btPlaneSpace1}}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a7062a23d1d434121d4a88f530703d06a}{v0}},\ n,\ unused);}
+\DoxyCodeLine{00949\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}(n.x(),\ n.y(),\ n.z(),\ 0.0f);\ \ \textcolor{comment}{//\ just\ pick\ any\ vector\ that\ is\ orthogonal\ to\ v0}}
+\DoxyCodeLine{00950\ \ \ \ \ \}}
+\DoxyCodeLine{00951\ }
+\DoxyCodeLine{00952\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ s\ =\ \mbox{\hyperlink{bt_scalar_8h_a6b200a8d26a49406ca13329be909ec10}{btSqrt}}((1.0f\ +\ d)\ *\ 2.0f);}
+\DoxyCodeLine{00953\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ rs\ =\ 1.0f\ /\ s;}
+\DoxyCodeLine{00954\ }
+\DoxyCodeLine{00955\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}(c.getX()\ *\ rs,\ c.getY()\ *\ rs,\ c.getZ()\ *\ rs,\ s\ *\ 0.5f);}
+\DoxyCodeLine{00956\ \}}
+\DoxyCodeLine{00957\ }
+\DoxyCodeLine{00958\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}}
+\DoxyCodeLine{00959\ \mbox{\hyperlink{bt_quaternion_8h_a53e99647809eb782ef2a0ad9843952a3}{shortestArcQuatNormalize2}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a7062a23d1d434121d4a88f530703d06a}{v0}},\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ \mbox{\hyperlink{glad_8h_a0779c3b73f9aa3a0ac5b0139b5d291d9}{v1}})}
+\DoxyCodeLine{00960\ \{}
+\DoxyCodeLine{00961\ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a7062a23d1d434121d4a88f530703d06a}{v0}}.normalize();}
+\DoxyCodeLine{00962\ \ \ \ \ \mbox{\hyperlink{glad_8h_a0779c3b73f9aa3a0ac5b0139b5d291d9}{v1}}.normalize();}
+\DoxyCodeLine{00963\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_quaternion_8h_a2884ed105928c310d48521fcacf39eb2}{shortestArcQuat}}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a7062a23d1d434121d4a88f530703d06a}{v0}},\ \mbox{\hyperlink{glad_8h_a0779c3b73f9aa3a0ac5b0139b5d291d9}{v1}});}
+\DoxyCodeLine{00964\ \}}
+\DoxyCodeLine{00965\ }
+\DoxyCodeLine{00966\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structbt_quaternion_float_data}{btQuaternionFloatData}}}
+\DoxyCodeLine{00967\ \{}
+\DoxyCodeLine{00968\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{structbt_quaternion_float_data_a3d7e629f1e6686b1c0679414f480008e}{m\_floats}}[4];}
+\DoxyCodeLine{00969\ \};}
+\DoxyCodeLine{00970\ }
+\DoxyCodeLine{00971\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structbt_quaternion_double_data}{btQuaternionDoubleData}}}
+\DoxyCodeLine{00972\ \{}
+\DoxyCodeLine{00973\ \ \ \ \ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{structbt_quaternion_double_data_afebefcc6e986c50fdff71d604ae07153}{m\_floats}}[4];}
+\DoxyCodeLine{00974\ \};}
+\DoxyCodeLine{00975\ }
+\DoxyCodeLine{00976\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_a5d0948a49c999907fe3becde29291c2f}{btQuaternion::serializeFloat}}(\textcolor{keyword}{struct}\ \mbox{\hyperlink{structbt_quaternion_float_data}{btQuaternionFloatData}}\&\ dataOut)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00977\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00979\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 4;\ i++)}
+\DoxyCodeLine{00980\ \ \ \ \ \ \ \ \ dataOut.\mbox{\hyperlink{structbt_quaternion_float_data_a3d7e629f1e6686b1c0679414f480008e}{m\_floats}}[i]\ =\ \textcolor{keywordtype}{float}(\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[i]);}
+\DoxyCodeLine{00981\ \}}
+\DoxyCodeLine{00982\ }
+\DoxyCodeLine{00983\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_a6702098f35e73359179910aeb70a356a}{btQuaternion::deSerializeFloat}}(\textcolor{keyword}{const}\ \textcolor{keyword}{struct}\ \mbox{\hyperlink{structbt_quaternion_float_data}{btQuaternionFloatData}}\&\ dataIn)}
+\DoxyCodeLine{00984\ \{}
+\DoxyCodeLine{00985\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 4;\ i++)}
+\DoxyCodeLine{00986\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[i]\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(dataIn.\mbox{\hyperlink{structbt_quaternion_float_data_a3d7e629f1e6686b1c0679414f480008e}{m\_floats}}[i]);}
+\DoxyCodeLine{00987\ \}}
+\DoxyCodeLine{00988\ }
+\DoxyCodeLine{00989\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_a8b5eb85f2f3731a6d50a69a068f55dbf}{btQuaternion::serializeDouble}}(\textcolor{keyword}{struct}\ \mbox{\hyperlink{structbt_quaternion_double_data}{btQuaternionDoubleData}}\&\ dataOut)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00990\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00992\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 4;\ i++)}
+\DoxyCodeLine{00993\ \ \ \ \ \ \ \ \ dataOut.\mbox{\hyperlink{structbt_quaternion_double_data_afebefcc6e986c50fdff71d604ae07153}{m\_floats}}[i]\ =\ \textcolor{keywordtype}{double}(\mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[i]);}
+\DoxyCodeLine{00994\ \}}
+\DoxyCodeLine{00995\ }
+\DoxyCodeLine{00996\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_ae4121b29be238c14a6cd6cdd4d3e31ee}{btQuaternion::deSerializeDouble}}(\textcolor{keyword}{const}\ \textcolor{keyword}{struct}\ \mbox{\hyperlink{structbt_quaternion_double_data}{btQuaternionDoubleData}}\&\ dataIn)}
+\DoxyCodeLine{00997\ \{}
+\DoxyCodeLine{00998\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 4;\ i++)}
+\DoxyCodeLine{00999\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[i]\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(dataIn.\mbox{\hyperlink{structbt_quaternion_double_data_afebefcc6e986c50fdff71d604ae07153}{m\_floats}}[i]);}
+\DoxyCodeLine{01000\ \}}
+\DoxyCodeLine{01001\ }
+\DoxyCodeLine{01002\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_a54df750e6a69c4c5b186329662ee331f}{btQuaternion::serialize}}(\textcolor{keyword}{struct}\ \mbox{\hyperlink{bt_quaternion_8h_afa416c7679f5754f6ebad07d95e12b03}{btQuaternionData}}\&\ dataOut)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{01003\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{01005\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 4;\ i++)}
+\DoxyCodeLine{01006\ \ \ \ \ \ \ \ \ dataOut.m\_floats[i]\ =\ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[i];}
+\DoxyCodeLine{01007\ \}}
+\DoxyCodeLine{01008\ }
+\DoxyCodeLine{01009\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_a41402dc9aa4ce3baed794a35ba654580}{btQuaternion::deSerialize}}(\textcolor{keyword}{const}\ \textcolor{keyword}{struct}\ \mbox{\hyperlink{structbt_quaternion_float_data}{btQuaternionFloatData}}\&\ dataIn)}
+\DoxyCodeLine{01010\ \{}
+\DoxyCodeLine{01011\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 4;\ i++)}
+\DoxyCodeLine{01012\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[i]\ =\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})dataIn.\mbox{\hyperlink{structbt_quaternion_float_data_a3d7e629f1e6686b1c0679414f480008e}{m\_floats}}[i];}
+\DoxyCodeLine{01013\ \}}
+\DoxyCodeLine{01014\ }
+\DoxyCodeLine{01015\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_quaternion_a41402dc9aa4ce3baed794a35ba654580}{btQuaternion::deSerialize}}(\textcolor{keyword}{const}\ \textcolor{keyword}{struct}\ \mbox{\hyperlink{structbt_quaternion_double_data}{btQuaternionDoubleData}}\&\ dataIn)}
+\DoxyCodeLine{01016\ \{}
+\DoxyCodeLine{01017\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 4;\ i++)}
+\DoxyCodeLine{01018\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_ac48c7986f7c3a03cd2450337d985d73e}{m\_floats}}[i]\ =\ (\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}})dataIn.\mbox{\hyperlink{structbt_quaternion_double_data_afebefcc6e986c50fdff71d604ae07153}{m\_floats}}[i];}
+\DoxyCodeLine{01019\ \}}
+\DoxyCodeLine{01020\ }
+\DoxyCodeLine{01021\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_SIMD\_\_QUATERNION\_H\_}}
+
+\end{DoxyCode}

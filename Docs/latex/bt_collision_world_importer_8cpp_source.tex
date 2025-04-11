@@ -1,0 +1,1091 @@
+\doxysection{bt\+Collision\+World\+Importer.\+cpp}
+\hypertarget{bt_collision_world_importer_8cpp_source}{}\label{bt_collision_world_importer_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/CollisionDispatch/btCollisionWorldImporter.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/CollisionDispatch/btCollisionWorldImporter.cpp}}
+\mbox{\hyperlink{bt_collision_world_importer_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2014\ Erwin\ Coumans\ \ http://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,}}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,}}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_world_importer_8h}{btCollisionWorldImporter.h}}"{}}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_bullet_collision_common_8h}{btBulletCollisionCommon.h}}"{}}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_serializer_8h}{LinearMath/btSerializer.h}}"{}}\ \ \textcolor{comment}{//for\ btBulletSerializedArrays\ definition}}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#ifdef\ SUPPORT\_GIMPACT\_SHAPE\_IMPORT}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_g_impact_shape_8h}{BulletCollision/Gimpact/btGImpactShape.h}}"{}}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//SUPPORT\_GIMPACT\_SHAPE\_IMPORT}}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \mbox{\hyperlink{classbt_collision_world_importer_aec2288a635680eaa01f80ba780dc36c1}{btCollisionWorldImporter::btCollisionWorldImporter}}(\mbox{\hyperlink{classbt_collision_world}{btCollisionWorld}}*\ world)}
+\DoxyCodeLine{00025\ \ \ \ \ :\ \mbox{\hyperlink{classbt_collision_world_importer_a4f63bddc3c92bebc7e3874c12ec84619}{m\_collisionWorld}}(world),}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_a9c165eae53ab7438976fcbf23bd79f23}{m\_verboseMode}}(0)}
+\DoxyCodeLine{00027\ \{}
+\DoxyCodeLine{00028\ \}}
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00030\ \mbox{\hyperlink{classbt_collision_world_importer_a0a03b82973122f7befb6504f6ba80432}{btCollisionWorldImporter::\string~btCollisionWorldImporter}}()}
+\DoxyCodeLine{00031\ \{}
+\DoxyCodeLine{00032\ \}}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00034\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_collision_world_importer_a2ac8804e9c17dc9e50b09d17bcadc4ea}{btCollisionWorldImporter::convertAllObjects}}(\mbox{\hyperlink{structbt_bullet_serialized_arrays}{btBulletSerializedArrays}}*\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab90b6192ffc82d4cdd7c3ca3bfa0754a}{arrays}})}
+\DoxyCodeLine{00035\ \{}
+\DoxyCodeLine{00036\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_a6a2b2df68f8556671a11211d22d28cba}{m\_shapeMap}}.clear();}
+\DoxyCodeLine{00037\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ae0ce86351ce022f573270aa0ac2632fb}{m\_bodyMap}}.clear();}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab90b6192ffc82d4cdd7c3ca3bfa0754a}{arrays}}-\/>m\_bvhsDouble.size();\ i++)}
+\DoxyCodeLine{00042\ \ \ \ \ \{}
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_optimized_bvh_8h_a692209e97a920ab4c821bf92556c0c60}{btOptimizedBvh}}*\ bvh\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a1a4d83267c041e614767578e4d7ba061}{createOptimizedBvh}}();}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ btQuantizedBvhDoubleData*\ bvhData\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab90b6192ffc82d4cdd7c3ca3bfa0754a}{arrays}}-\/>m\_bvhsDouble[i];}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ bvh-\/>deSerializeDouble(*bvhData);}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ac6eb63e44ae5c428177d6618e7a9e253}{m\_bvhMap}}.insert(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab90b6192ffc82d4cdd7c3ca3bfa0754a}{arrays}}-\/>m\_bvhsDouble[i],\ bvh);}
+\DoxyCodeLine{00047\ \ \ \ \ \}}
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab90b6192ffc82d4cdd7c3ca3bfa0754a}{arrays}}-\/>m\_bvhsFloat.size();\ i++)}
+\DoxyCodeLine{00049\ \ \ \ \ \{}
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_optimized_bvh_8h_a692209e97a920ab4c821bf92556c0c60}{btOptimizedBvh}}*\ bvh\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a1a4d83267c041e614767578e4d7ba061}{createOptimizedBvh}}();}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ btQuantizedBvhFloatData*\ bvhData\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab90b6192ffc82d4cdd7c3ca3bfa0754a}{arrays}}-\/>m\_bvhsFloat[i];}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ \ \ bvh-\/>deSerializeFloat(*bvhData);}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ac6eb63e44ae5c428177d6618e7a9e253}{m\_bvhMap}}.insert(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab90b6192ffc82d4cdd7c3ca3bfa0754a}{arrays}}-\/>m\_bvhsFloat[i],\ bvh);}
+\DoxyCodeLine{00054\ \ \ \ \ \}}
+\DoxyCodeLine{00055\ }
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab90b6192ffc82d4cdd7c3ca3bfa0754a}{arrays}}-\/>m\_colShapeData.size();\ i++)}
+\DoxyCodeLine{00057\ \ \ \ \ \{}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_collision_shape_data}{btCollisionShapeData}}*\ shapeData\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab90b6192ffc82d4cdd7c3ca3bfa0754a}{arrays}}-\/>m\_colShapeData[i];}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ shape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a34febc4b06f735ebb00caefd7cda6a5b}{convertCollisionShape}}(shapeData);}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (shape)}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ printf("{}shapeMap.insert(\%x,\%x)\(\backslash\)n"{},shapeData,shape);}}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_a6a2b2df68f8556671a11211d22d28cba}{m\_shapeMap}}.insert(shapeData,\ shape);}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (shape\ \&\&\ shapeData-\/>\mbox{\hyperlink{structbt_collision_shape_data_a9298642fe38d09383e82f8c329124967}{m\_name}})}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{char}*\ newname\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a33249f29692bfda2fcf6e965d24a1342}{duplicateName}}(shapeData-\/>\mbox{\hyperlink{structbt_collision_shape_data_a9298642fe38d09383e82f8c329124967}{m\_name}});}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ac72d058d0f5f60784bc08cb130cf29d6}{m\_objectNameMap}}.insert(shape,\ newname);}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ab7cd9aefea1418df81680d1a8fb62583}{m\_nameShapeMap}}.insert(newname,\ shape);}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00072\ \ \ \ \ \}}
+\DoxyCodeLine{00073\ }
+\DoxyCodeLine{00074\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab90b6192ffc82d4cdd7c3ca3bfa0754a}{arrays}}-\/>m\_collisionObjectDataDouble.size();\ i++)}
+\DoxyCodeLine{00075\ \ \ \ \ \{}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_collision_object_double_data}{btCollisionObjectDoubleData}}*\ colObjData\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab90b6192ffc82d4cdd7c3ca3bfa0754a}{arrays}}-\/>m\_collisionObjectDataDouble[i];}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}**\ shapePtr\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a6a2b2df68f8556671a11211d22d28cba}{m\_shapeMap}}.find(colObjData-\/>\mbox{\hyperlink{structbt_collision_object_double_data_aa84f7aa94f34591f8a169717cbff5eae}{m\_collisionShape}});}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (shapePtr\ \&\&\ *shapePtr)}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ startTransform;}
+\DoxyCodeLine{00081\ \ \ \ \ \ \ \ \ \ \ \ \ colObjData-\/>\mbox{\hyperlink{structbt_collision_object_double_data_aac64a624d8b06347b2c76c1f726ab3f4}{m\_worldTransform}}.\mbox{\hyperlink{structbt_transform_double_data_a217df5931853c98dc3a53fd6f8715ac4}{m\_origin}}.\mbox{\hyperlink{structbt_vector3_double_data_a69c991016e883f0320d5c646f56d243e}{m\_floats}}[3]\ =\ 0.f;}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \ \ \ \ \ \ startTransform.deSerializeDouble(colObjData-\/>\mbox{\hyperlink{structbt_collision_object_double_data_aac64a624d8b06347b2c76c1f726ab3f4}{m\_worldTransform}});}
+\DoxyCodeLine{00083\ }
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ shape\ =\ (\mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*)*shapePtr;}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ body\ =\ \mbox{\hyperlink{classbt_collision_world_importer_adc1146c088b75d0916a08f72b1306501}{createCollisionObject}}(startTransform,\ shape,\ colObjData-\/>\mbox{\hyperlink{structbt_collision_object_double_data_a1561702f86e4ff606b5a0d5f6ae5bb34}{m\_name}});}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ \ \ \ \ body-\/>setFriction(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(colObjData-\/>\mbox{\hyperlink{structbt_collision_object_double_data_ad3a62b86679687cb6e71b2b6712df549}{m\_friction}}));}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ \ \ \ \ body-\/>setRestitution(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(colObjData-\/>\mbox{\hyperlink{structbt_collision_object_double_data_a1d150d2f021a336e196e6849d6cd2fa0}{m\_restitution}}));}
+\DoxyCodeLine{00088\ }
+\DoxyCodeLine{00089\ \textcolor{preprocessor}{\#ifdef\ USE\_INTERNAL\_EDGE\_UTILITY}}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (shape-\/>getShapeType()\ ==\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5ea420afe83391f77e499f88a6e34efb3f3}{TRIANGLE\_MESH\_SHAPE\_PROXYTYPE}})}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_afb5faf0318ecfcc10193e151dea6c007}{btBvhTriangleMeshShape}}*\ trimesh\ =\ (\mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_afb5faf0318ecfcc10193e151dea6c007}{btBvhTriangleMeshShape}}*)shape;}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (trimesh-\/>getTriangleInfoMap())}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ body-\/>setCollisionFlags(body-\/>getCollisionFlags()\ |\ btCollisionObject::CF\_CUSTOM\_MATERIAL\_CALLBACK);}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00097\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00098\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//USE\_INTERNAL\_EDGE\_UTILITY}}
+\DoxyCodeLine{00099\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ae0ce86351ce022f573270aa0ac2632fb}{m\_bodyMap}}.insert(colObjData,\ body);}
+\DoxyCodeLine{00100\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00101\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00102\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00103\ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}error:\ no\ shape\ found\(\backslash\)n"{}});}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00105\ \ \ \ \ \}}
+\DoxyCodeLine{00106\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab90b6192ffc82d4cdd7c3ca3bfa0754a}{arrays}}-\/>m\_collisionObjectDataFloat.size();\ i++)}
+\DoxyCodeLine{00107\ \ \ \ \ \{}
+\DoxyCodeLine{00108\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_collision_object_float_data}{btCollisionObjectFloatData}}*\ colObjData\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab90b6192ffc82d4cdd7c3ca3bfa0754a}{arrays}}-\/>m\_collisionObjectDataFloat[i];}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}**\ shapePtr\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a6a2b2df68f8556671a11211d22d28cba}{m\_shapeMap}}.find(colObjData-\/>\mbox{\hyperlink{structbt_collision_object_float_data_a1c3088f98ca2897db78afe9b6870e311}{m\_collisionShape}});}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (shapePtr\ \&\&\ *shapePtr)}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ startTransform;}
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \ \ \ \ \ \ colObjData-\/>\mbox{\hyperlink{structbt_collision_object_float_data_acb0af4d684ed6096e1ae7ca24dcc81de}{m\_worldTransform}}.\mbox{\hyperlink{structbt_transform_float_data_abd1afa5a43625ee98a0129bc041cadfb}{m\_origin}}.\mbox{\hyperlink{structbt_vector3_float_data_ab246fb8dc0af06cfb3260d836591dc46}{m\_floats}}[3]\ =\ 0.f;}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ \ \ \ \ startTransform.deSerializeFloat(colObjData-\/>\mbox{\hyperlink{structbt_collision_object_float_data_acb0af4d684ed6096e1ae7ca24dcc81de}{m\_worldTransform}});}
+\DoxyCodeLine{00115\ }
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ shape\ =\ (\mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*)*shapePtr;}
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ body\ =\ \mbox{\hyperlink{classbt_collision_world_importer_adc1146c088b75d0916a08f72b1306501}{createCollisionObject}}(startTransform,\ shape,\ colObjData-\/>\mbox{\hyperlink{structbt_collision_object_float_data_a0a089784f92feef93ee1b10a4635ce4d}{m\_name}});}
+\DoxyCodeLine{00118\ }
+\DoxyCodeLine{00119\ \textcolor{preprocessor}{\#ifdef\ USE\_INTERNAL\_EDGE\_UTILITY}}
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (shape-\/>getShapeType()\ ==\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5ea420afe83391f77e499f88a6e34efb3f3}{TRIANGLE\_MESH\_SHAPE\_PROXYTYPE}})}
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_afb5faf0318ecfcc10193e151dea6c007}{btBvhTriangleMeshShape}}*\ trimesh\ =\ (\mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_afb5faf0318ecfcc10193e151dea6c007}{btBvhTriangleMeshShape}}*)shape;}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (trimesh-\/>getTriangleInfoMap())}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00125\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ body-\/>setCollisionFlags(body-\/>getCollisionFlags()\ |\ btCollisionObject::CF\_CUSTOM\_MATERIAL\_CALLBACK);}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00128\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//USE\_INTERNAL\_EDGE\_UTILITY}}
+\DoxyCodeLine{00129\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ae0ce86351ce022f573270aa0ac2632fb}{m\_bodyMap}}.insert(colObjData,\ body);}
+\DoxyCodeLine{00130\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00131\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00133\ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}error:\ no\ shape\ found\(\backslash\)n"{}});}
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00135\ \ \ \ \ \}}
+\DoxyCodeLine{00136\ }
+\DoxyCodeLine{00137\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00138\ \}}
+\DoxyCodeLine{00139\ }
+\DoxyCodeLine{00140\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_collision_world_importer_a05ffdb6552717e92429807be4571b2b2}{btCollisionWorldImporter::deleteAllData}}()}
+\DoxyCodeLine{00141\ \{}
+\DoxyCodeLine{00142\ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00143\ }
+\DoxyCodeLine{00144\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_collision_world_importer_ace0f10fb239fc469230f09c3c756f41c}{m\_allocatedCollisionObjects}}.size();\ i++)}
+\DoxyCodeLine{00145\ \ \ \ \ \{}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_collision_world_importer_a4f63bddc3c92bebc7e3874c12ec84619}{m\_collisionWorld}})}
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_a4f63bddc3c92bebc7e3874c12ec84619}{m\_collisionWorld}}-\/>removeCollisionObject(\mbox{\hyperlink{classbt_collision_world_importer_ace0f10fb239fc469230f09c3c756f41c}{m\_allocatedCollisionObjects}}[i]);}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}\ \mbox{\hyperlink{classbt_collision_world_importer_ace0f10fb239fc469230f09c3c756f41c}{m\_allocatedCollisionObjects}}[i];}
+\DoxyCodeLine{00149\ \ \ \ \ \}}
+\DoxyCodeLine{00150\ }
+\DoxyCodeLine{00151\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ace0f10fb239fc469230f09c3c756f41c}{m\_allocatedCollisionObjects}}.clear();}
+\DoxyCodeLine{00152\ }
+\DoxyCodeLine{00153\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.size();\ i++)}
+\DoxyCodeLine{00154\ \ \ \ \ \{}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}\ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}[i];}
+\DoxyCodeLine{00156\ \ \ \ \ \}}
+\DoxyCodeLine{00157\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.clear();}
+\DoxyCodeLine{00158\ }
+\DoxyCodeLine{00159\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_collision_world_importer_a0126c4afc85c002aebadbd69c2e4a6e1}{m\_allocatedBvhs}}.size();\ i++)}
+\DoxyCodeLine{00160\ \ \ \ \ \{}
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}\ \mbox{\hyperlink{classbt_collision_world_importer_a0126c4afc85c002aebadbd69c2e4a6e1}{m\_allocatedBvhs}}[i];}
+\DoxyCodeLine{00162\ \ \ \ \ \}}
+\DoxyCodeLine{00163\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_a0126c4afc85c002aebadbd69c2e4a6e1}{m\_allocatedBvhs}}.clear();}
+\DoxyCodeLine{00164\ }
+\DoxyCodeLine{00165\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_collision_world_importer_ad8ac9bf389b9888be66e477e67619ac2}{m\_allocatedTriangleInfoMaps}}.size();\ i++)}
+\DoxyCodeLine{00166\ \ \ \ \ \{}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}\ \mbox{\hyperlink{classbt_collision_world_importer_ad8ac9bf389b9888be66e477e67619ac2}{m\_allocatedTriangleInfoMaps}}[i];}
+\DoxyCodeLine{00168\ \ \ \ \ \}}
+\DoxyCodeLine{00169\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ad8ac9bf389b9888be66e477e67619ac2}{m\_allocatedTriangleInfoMaps}}.clear();}
+\DoxyCodeLine{00170\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_collision_world_importer_a1ad3698c64576dd4fa9b1ec728513840}{m\_allocatedTriangleIndexArrays}}.size();\ i++)}
+\DoxyCodeLine{00171\ \ \ \ \ \{}
+\DoxyCodeLine{00172\ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}\ \mbox{\hyperlink{classbt_collision_world_importer_a1ad3698c64576dd4fa9b1ec728513840}{m\_allocatedTriangleIndexArrays}}[i];}
+\DoxyCodeLine{00173\ \ \ \ \ \}}
+\DoxyCodeLine{00174\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_a1ad3698c64576dd4fa9b1ec728513840}{m\_allocatedTriangleIndexArrays}}.clear();}
+\DoxyCodeLine{00175\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_collision_world_importer_abc5d151b9fbe3da3f34209c263f8bc35}{m\_allocatedNames}}.size();\ i++)}
+\DoxyCodeLine{00176\ \ \ \ \ \{}
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}[]\ \mbox{\hyperlink{classbt_collision_world_importer_abc5d151b9fbe3da3f34209c263f8bc35}{m\_allocatedNames}}[i];}
+\DoxyCodeLine{00178\ \ \ \ \ \}}
+\DoxyCodeLine{00179\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_abc5d151b9fbe3da3f34209c263f8bc35}{m\_allocatedNames}}.clear();}
+\DoxyCodeLine{00180\ }
+\DoxyCodeLine{00181\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_collision_world_importer_ac4b7d51258328286eca0c915de90a21d}{m\_allocatedbtStridingMeshInterfaceDatas}}.size();\ i++)}
+\DoxyCodeLine{00182\ \ \ \ \ \{}
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_striding_mesh_interface_data}{btStridingMeshInterfaceData}}*\ curData\ =\ \mbox{\hyperlink{classbt_collision_world_importer_ac4b7d51258328286eca0c915de90a21d}{m\_allocatedbtStridingMeshInterfaceDatas}}[i];}
+\DoxyCodeLine{00184\ }
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}\ =\ 0;\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}\ <\ curData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_a648047136aef434d7cd738a0175cf80c}{m\_numMeshParts}};\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}++)}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_mesh_part_data}{btMeshPartData}}*\ curPart\ =\ \&curData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}];}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a5c03497ebe3c6012f8d725650af45737}{m\_vertices3f}})}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}[]\ curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a5c03497ebe3c6012f8d725650af45737}{m\_vertices3f}};}
+\DoxyCodeLine{00190\ }
+\DoxyCodeLine{00191\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_ae0a5d2cf600f993b6feca3a438109aaf}{m\_vertices3d}})}
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}[]\ curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_ae0a5d2cf600f993b6feca3a438109aaf}{m\_vertices3d}};}
+\DoxyCodeLine{00193\ }
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a952333850242a2b34cd197200d74a3d2}{m\_indices32}})}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}[]\ curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a952333850242a2b34cd197200d74a3d2}{m\_indices32}};}
+\DoxyCodeLine{00196\ }
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a679c6f515af632f137375bbac2f9d880}{m\_3indices16}})}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}[]\ curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a679c6f515af632f137375bbac2f9d880}{m\_3indices16}};}
+\DoxyCodeLine{00199\ }
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a06f74e1c7cea783c35ba7c7880061dc4}{m\_indices16}})}
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}[]\ curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a06f74e1c7cea783c35ba7c7880061dc4}{m\_indices16}};}
+\DoxyCodeLine{00202\ }
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a2cd4092c984b502b11a3253988197ed0}{m\_3indices8}})}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}[]\ curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a2cd4092c984b502b11a3253988197ed0}{m\_3indices8}};}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}[]\ curData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}};}
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}\ curData;}
+\DoxyCodeLine{00208\ \ \ \ \ \}}
+\DoxyCodeLine{00209\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ac4b7d51258328286eca0c915de90a21d}{m\_allocatedbtStridingMeshInterfaceDatas}}.clear();}
+\DoxyCodeLine{00210\ }
+\DoxyCodeLine{00211\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_collision_world_importer_a92a40357d5f4b066357aac0899af5949}{m\_indexArrays}}.size();\ i++)}
+\DoxyCodeLine{00212\ \ \ \ \ \{}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_aligned_allocator_8h_a053f25687d0cd7a29571c8669cf9bcd4}{btAlignedFree}}(\mbox{\hyperlink{classbt_collision_world_importer_a92a40357d5f4b066357aac0899af5949}{m\_indexArrays}}[i]);}
+\DoxyCodeLine{00214\ \ \ \ \ \}}
+\DoxyCodeLine{00215\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_a92a40357d5f4b066357aac0899af5949}{m\_indexArrays}}.clear();}
+\DoxyCodeLine{00216\ }
+\DoxyCodeLine{00217\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_collision_world_importer_abf64f6a6b778ff89302b7c3555e8fb57}{m\_shortIndexArrays}}.size();\ i++)}
+\DoxyCodeLine{00218\ \ \ \ \ \{}
+\DoxyCodeLine{00219\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_aligned_allocator_8h_a053f25687d0cd7a29571c8669cf9bcd4}{btAlignedFree}}(\mbox{\hyperlink{classbt_collision_world_importer_abf64f6a6b778ff89302b7c3555e8fb57}{m\_shortIndexArrays}}[i]);}
+\DoxyCodeLine{00220\ \ \ \ \ \}}
+\DoxyCodeLine{00221\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_abf64f6a6b778ff89302b7c3555e8fb57}{m\_shortIndexArrays}}.clear();}
+\DoxyCodeLine{00222\ }
+\DoxyCodeLine{00223\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_collision_world_importer_aeec4eec0c145cc676bc2532543c65879}{m\_charIndexArrays}}.size();\ i++)}
+\DoxyCodeLine{00224\ \ \ \ \ \{}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_aligned_allocator_8h_a053f25687d0cd7a29571c8669cf9bcd4}{btAlignedFree}}(\mbox{\hyperlink{classbt_collision_world_importer_aeec4eec0c145cc676bc2532543c65879}{m\_charIndexArrays}}[i]);}
+\DoxyCodeLine{00226\ \ \ \ \ \}}
+\DoxyCodeLine{00227\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_aeec4eec0c145cc676bc2532543c65879}{m\_charIndexArrays}}.clear();}
+\DoxyCodeLine{00228\ }
+\DoxyCodeLine{00229\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_collision_world_importer_ad53737899125b910ed71f6ffdc8e3289}{m\_floatVertexArrays}}.size();\ i++)}
+\DoxyCodeLine{00230\ \ \ \ \ \{}
+\DoxyCodeLine{00231\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_aligned_allocator_8h_a053f25687d0cd7a29571c8669cf9bcd4}{btAlignedFree}}(\mbox{\hyperlink{classbt_collision_world_importer_ad53737899125b910ed71f6ffdc8e3289}{m\_floatVertexArrays}}[i]);}
+\DoxyCodeLine{00232\ \ \ \ \ \}}
+\DoxyCodeLine{00233\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ad53737899125b910ed71f6ffdc8e3289}{m\_floatVertexArrays}}.clear();}
+\DoxyCodeLine{00234\ }
+\DoxyCodeLine{00235\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_collision_world_importer_a814068b35569c787dd5409da5adcf196}{m\_doubleVertexArrays}}.size();\ i++)}
+\DoxyCodeLine{00236\ \ \ \ \ \{}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_aligned_allocator_8h_a053f25687d0cd7a29571c8669cf9bcd4}{btAlignedFree}}(\mbox{\hyperlink{classbt_collision_world_importer_a814068b35569c787dd5409da5adcf196}{m\_doubleVertexArrays}}[i]);}
+\DoxyCodeLine{00238\ \ \ \ \ \}}
+\DoxyCodeLine{00239\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_a814068b35569c787dd5409da5adcf196}{m\_doubleVertexArrays}}.clear();}
+\DoxyCodeLine{00240\ \}}
+\DoxyCodeLine{00241\ }
+\DoxyCodeLine{00242\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a34febc4b06f735ebb00caefd7cda6a5b}{btCollisionWorldImporter::convertCollisionShape}}(\mbox{\hyperlink{structbt_collision_shape_data}{btCollisionShapeData}}*\ shapeData)}
+\DoxyCodeLine{00243\ \{}
+\DoxyCodeLine{00244\ \ \ \ \ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ shape\ =\ 0;}
+\DoxyCodeLine{00245\ }
+\DoxyCodeLine{00246\ \ \ \ \ \textcolor{keywordflow}{switch}\ (shapeData-\/>\mbox{\hyperlink{structbt_collision_shape_data_aa163414b23939ed6030fd19cf404b38a}{m\_shapeType}})}
+\DoxyCodeLine{00247\ \ \ \ \ \{}
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5ea63307446a41f05a41f61560b5a2d4e6e}{STATIC\_PLANE\_PROXYTYPE}}:}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_static_plane_shape_data}{btStaticPlaneShapeData}}*\ planeData\ =\ (\mbox{\hyperlink{structbt_static_plane_shape_data}{btStaticPlaneShapeData}}*)shapeData;}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ planeNormal,\ localScaling;}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ \ \ \ \ planeNormal.deSerializeFloat(planeData-\/>\mbox{\hyperlink{structbt_static_plane_shape_data_af744597a06773b77870eb6f916b73a32}{m\_planeNormal}});}
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ \ \ \ \ localScaling.deSerializeFloat(planeData-\/>\mbox{\hyperlink{structbt_static_plane_shape_data_a25b5dddfd3f4d064726e98d50fe5f514}{m\_localScaling}});}
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a31b5391383d8c1ff152ce3f1513669b1}{createPlaneShape}}(planeNormal,\ planeData-\/>\mbox{\hyperlink{structbt_static_plane_shape_data_a182b2ddfaa9efb2235df867f3bb9a2e1}{m\_planeConstant}});}
+\DoxyCodeLine{00255\ \ \ \ \ \ \ \ \ \ \ \ \ shape-\/>setLocalScaling(localScaling);}
+\DoxyCodeLine{00256\ }
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00258\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00259\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5ea3a16ecb265221a7a860bcff7ce553326}{SCALED\_TRIANGLE\_MESH\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00260\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_scaled_triangle_mesh_shape_data}{btScaledTriangleMeshShapeData}}*\ scaledMesh\ =\ (\mbox{\hyperlink{structbt_scaled_triangle_mesh_shape_data}{btScaledTriangleMeshShapeData}}*)shapeData;}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_collision_shape_data}{btCollisionShapeData}}*\ colShapeData\ =\ (\mbox{\hyperlink{structbt_collision_shape_data}{btCollisionShapeData}}*)\&scaledMesh-\/>\mbox{\hyperlink{structbt_scaled_triangle_mesh_shape_data_a1901d68b68ffa98556d3c2d5afa4bd16}{m\_trimeshShapeData}};}
+\DoxyCodeLine{00263\ \ \ \ \ \ \ \ \ \ \ \ \ colShapeData-\/>\mbox{\hyperlink{structbt_collision_shape_data_aa163414b23939ed6030fd19cf404b38a}{m\_shapeType}}\ =\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5ea420afe83391f77e499f88a6e34efb3f3}{TRIANGLE\_MESH\_SHAPE\_PROXYTYPE}};}
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ childShape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a34febc4b06f735ebb00caefd7cda6a5b}{convertCollisionShape}}(colShapeData);}
+\DoxyCodeLine{00265\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_afb5faf0318ecfcc10193e151dea6c007}{btBvhTriangleMeshShape}}*\ meshShape\ =\ (\mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_afb5faf0318ecfcc10193e151dea6c007}{btBvhTriangleMeshShape}}*)childShape;}
+\DoxyCodeLine{00266\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ localScaling;}
+\DoxyCodeLine{00267\ \ \ \ \ \ \ \ \ \ \ \ \ localScaling.deSerializeFloat(scaledMesh-\/>\mbox{\hyperlink{structbt_scaled_triangle_mesh_shape_data_a7524371453a1b12773a65828840f4950}{m\_localScaling}});}
+\DoxyCodeLine{00268\ }
+\DoxyCodeLine{00269\ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_ad0b83fc3466a56a82785c13dc4f9da42}{createScaledTrangleMeshShape}}(meshShape,\ localScaling);}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00272\ \textcolor{preprocessor}{\#ifdef\ SUPPORT\_GIMPACT\_SHAPE\_IMPORT}}
+\DoxyCodeLine{00273\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5ea2bb1dfd4cf1673309dedf595e8c39e3a}{GIMPACT\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_g_impact_mesh_shape_data}{btGImpactMeshShapeData}}*\ gimpactData\ =\ (\mbox{\hyperlink{structbt_g_impact_mesh_shape_data}{btGImpactMeshShapeData}}*)shapeData;}
+\DoxyCodeLine{00276\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (gimpactData-\/>\mbox{\hyperlink{structbt_g_impact_mesh_shape_data_a405b8aa1e0b9a7d46cf9bc1540214820}{m\_gimpactSubType}}\ ==\ \mbox{\hyperlink{bt_g_impact_shape_8h_a01b6081e3dbbcb5e6211f1a59746fcc3a5dedcc5431f9c3bf41b9599f7fbe88d3}{CONST\_GIMPACT\_TRIMESH\_SHAPE}})}
+\DoxyCodeLine{00277\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00278\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_striding_mesh_interface_data}{btStridingMeshInterfaceData}}*\ interfaceData\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a148f416a26e51ed5406b5bb7af51b5e6}{createStridingMeshInterfaceData}}(\&gimpactData-\/>\mbox{\hyperlink{structbt_g_impact_mesh_shape_data_a635a1bc2cfb2a9c4c73799c4be50df54}{m\_meshInterface}});}
+\DoxyCodeLine{00279\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_triangle_index_vertex_array_8h_a9f78f99541cc9459a202d498d7aa55c2}{btTriangleIndexVertexArray}}*\ meshInterface\ =\ \mbox{\hyperlink{classbt_collision_world_importer_add12831988b54b52f54f4dddb34bb568}{createMeshInterface}}(*interfaceData);}
+\DoxyCodeLine{00280\ }
+\DoxyCodeLine{00281\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape}{btGImpactMeshShape}}*\ gimpactShape\ =\ createGimpactShape(meshInterface);}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ localScaling;}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ localScaling.deSerializeFloat(gimpactData-\/>\mbox{\hyperlink{structbt_g_impact_mesh_shape_data_ae8e15246acba144c3383e86b903894ff}{m\_localScaling}});}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ gimpactShape-\/>\mbox{\hyperlink{classbt_g_impact_mesh_shape_aed8d5e4b2e75538109909d44b244bc35}{setLocalScaling}}(localScaling);}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ gimpactShape-\/>\mbox{\hyperlink{classbt_g_impact_mesh_shape_aab65bdcfd34867e88a505a6377e4f79b}{setMargin}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(gimpactData-\/>\mbox{\hyperlink{structbt_g_impact_mesh_shape_data_aded76ad490cff87f5f8b51e726b9d221}{m\_collisionMargin}}));}
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ gimpactShape-\/>\mbox{\hyperlink{classbt_g_impact_shape_interface_acb26c2d7a2aecabd06b996b72b848492}{updateBound}}();}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ gimpactShape;}
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}unsupported\ gimpact\ sub\ type\(\backslash\)n"{}});}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00293\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00294\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00295\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//SUPPORT\_GIMPACT\_SHAPE\_IMPORT}}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \textcolor{comment}{//The\ btCapsuleShape*\ API\ has\ issue\ passing\ the\ margin/scaling/halfextents\ unmodified\ through\ the\ API}}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ \textcolor{comment}{//so\ deal\ with\ this}}
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5eaf839fbec1af2c064317928e24f21b844}{CAPSULE\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00299\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_capsule_shape_data}{btCapsuleShapeData}}*\ capData\ =\ (\mbox{\hyperlink{structbt_capsule_shape_data}{btCapsuleShapeData}}*)shapeData;}
+\DoxyCodeLine{00301\ }
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (capData-\/>\mbox{\hyperlink{structbt_capsule_shape_data_a49e41ca440c0504025e9b1d546faaea2}{m\_upAxis}})}
+\DoxyCodeLine{00303\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 0:}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00306\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_afe1bb066bbed52fe9b35b52f82c60f5e}{createCapsuleShapeX}}(1,\ 1);}
+\DoxyCodeLine{00307\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00308\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00309\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 1:}
+\DoxyCodeLine{00310\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00311\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_ad4156ddc98a1a90341f16d5a7dba4247}{createCapsuleShapeY}}(1,\ 1);}
+\DoxyCodeLine{00312\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00313\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00314\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 2:}
+\DoxyCodeLine{00315\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00316\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_ad5247569b9a0f815d50c7a5e4565845f}{createCapsuleShapeZ}}(1,\ 1);}
+\DoxyCodeLine{00317\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00318\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00320\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00321\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}error:\ wrong\ up\ axis\ for\ btCapsuleShape\(\backslash\)n"{}});}
+\DoxyCodeLine{00322\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00323\ \ \ \ \ \ \ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (shape)}
+\DoxyCodeLine{00325\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_capsule_shape_8h_a788927789bcaabfb9d590b3158ce163c}{btCapsuleShape}}*\ cap\ =\ (\mbox{\hyperlink{bt_capsule_shape_8h_a788927789bcaabfb9d590b3158ce163c}{btCapsuleShape}}*)shape;}
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cap-\/>deSerializeFloat(capData);}
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00331\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5eab1f834bba23028df46b343dfae4690e6}{CYLINDER\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00332\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5eac237f7e1140ce7cc7a5fa3c81aeac361}{CONE\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5eaa1e1157284cdec30a4c42a5a0800bc65}{BOX\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5eaa16f67e315a603f3a3e4ad7a70a570d9}{SPHERE\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5eaabafac327f4b7d66fcfde5e3dd04591a}{MULTI\_SPHERE\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5eafcbe51b30926873598f099db3b26cd86}{CONVEX\_HULL\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_convex_internal_shape_data}{btConvexInternalShapeData}}*\ bsd\ =\ (\mbox{\hyperlink{structbt_convex_internal_shape_data}{btConvexInternalShapeData}}*)shapeData;}
+\DoxyCodeLine{00339\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ implicitShapeDimensions;}
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \ \ \ \ \ \ implicitShapeDimensions.deSerializeFloat(bsd-\/>\mbox{\hyperlink{structbt_convex_internal_shape_data_a4345edbcc0c3a1c43ac9ef5aaba2a4f9}{m\_implicitShapeDimensions}});}
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ localScaling;}
+\DoxyCodeLine{00342\ \ \ \ \ \ \ \ \ \ \ \ \ localScaling.deSerializeFloat(bsd-\/>\mbox{\hyperlink{structbt_convex_internal_shape_data_aa796d833f0645854758e66f49ba85f8e}{m\_localScaling}});}
+\DoxyCodeLine{00343\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ margin(bsd-\/>\mbox{\hyperlink{structbt_convex_internal_shape_data_a56149d2d6b4bd8312309255dfa313981}{m\_collisionMargin}},\ bsd-\/>\mbox{\hyperlink{structbt_convex_internal_shape_data_a56149d2d6b4bd8312309255dfa313981}{m\_collisionMargin}},\ bsd-\/>\mbox{\hyperlink{structbt_convex_internal_shape_data_a56149d2d6b4bd8312309255dfa313981}{m\_collisionMargin}});}
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (shapeData-\/>\mbox{\hyperlink{structbt_collision_shape_data_aa163414b23939ed6030fd19cf404b38a}{m\_shapeType}})}
+\DoxyCodeLine{00345\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5eaa1e1157284cdec30a4c42a5a0800bc65}{BOX\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00348\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_box_shape_8h_af85a5dfc008b3c2268cd5f0555b3dc8d}{btBoxShape}}*\ box\ =\ (\mbox{\hyperlink{bt_box_shape_8h_af85a5dfc008b3c2268cd5f0555b3dc8d}{btBoxShape}}*)\mbox{\hyperlink{classbt_collision_world_importer_a7b15a719ec0f558c0703e73506763016}{createBoxShape}}(implicitShapeDimensions\ /\ localScaling\ +\ margin);}
+\DoxyCodeLine{00349\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//box-\/>initializePolyhedralFeatures();}}
+\DoxyCodeLine{00350\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ box;}
+\DoxyCodeLine{00351\ }
+\DoxyCodeLine{00352\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00353\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5eaa16f67e315a603f3a3e4ad7a70a570d9}{SPHERE\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00356\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a701163cd8b8384d37bf4da9c33c4f6aa}{createSphereShape}}(implicitShapeDimensions.getX());}
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00358\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00359\ }
+\DoxyCodeLine{00360\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5eab1f834bba23028df46b343dfae4690e6}{CYLINDER\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00361\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00362\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_cylinder_shape_data}{btCylinderShapeData}}*\ cylData\ =\ (\mbox{\hyperlink{structbt_cylinder_shape_data}{btCylinderShapeData}}*)shapeData;}
+\DoxyCodeLine{00363\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ halfExtents\ =\ implicitShapeDimensions\ +\ margin;}
+\DoxyCodeLine{00364\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (cylData-\/>\mbox{\hyperlink{structbt_cylinder_shape_data_a9dcfe1386ff3853ae29c67c44178a2ac}{m\_upAxis}})}
+\DoxyCodeLine{00365\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00366\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 0:}
+\DoxyCodeLine{00367\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00368\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a1e4d3ef3c794801cc321892d80ca6e57}{createCylinderShapeX}}(halfExtents.getY(),\ halfExtents.getX());}
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00370\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00371\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 1:}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00373\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_ad2e35b1f8df44c64c6978917aced589c}{createCylinderShapeY}}(halfExtents.getX(),\ halfExtents.getY());}
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00375\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00376\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 2:}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a8613fba7ca60d7a7b9d149b6d1cf0cd7}{createCylinderShapeZ}}(halfExtents.getX(),\ halfExtents.getZ());}
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00381\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00383\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}unknown\ Cylinder\ up\ axis\(\backslash\)n"{}});}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00385\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00386\ }
+\DoxyCodeLine{00387\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00388\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00389\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5eac237f7e1140ce7cc7a5fa3c81aeac361}{CONE\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00390\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00391\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_cone_shape_data}{btConeShapeData}}*\ conData\ =\ (\mbox{\hyperlink{structbt_cone_shape_data}{btConeShapeData}}*)shapeData;}
+\DoxyCodeLine{00392\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ halfExtents\ =\ implicitShapeDimensions;\ \ \textcolor{comment}{//+margin;}}
+\DoxyCodeLine{00393\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (conData-\/>\mbox{\hyperlink{structbt_cone_shape_data_ab69c236550921a6fe7bde4dca157df07}{m\_upIndex}})}
+\DoxyCodeLine{00394\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 0:}
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_aaeff47a5335cddd185ef094392075229}{createConeShapeX}}(halfExtents.getY(),\ halfExtents.getX());}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 1:}
+\DoxyCodeLine{00401\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00402\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a6d5da2097a2aac72036581622440c101}{createConeShapeY}}(halfExtents.getX(),\ halfExtents.getY());}
+\DoxyCodeLine{00403\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00404\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00405\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 2:}
+\DoxyCodeLine{00406\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00407\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a392387aadbb4e1e7ae8eb9777bca28c8}{createConeShapeZ}}(halfExtents.getX(),\ halfExtents.getZ());}
+\DoxyCodeLine{00408\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00409\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00410\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00411\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00412\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}unknown\ Cone\ up\ axis\(\backslash\)n"{}});}
+\DoxyCodeLine{00413\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00414\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00415\ }
+\DoxyCodeLine{00416\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00417\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00418\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5eaabafac327f4b7d66fcfde5e3dd04591a}{MULTI\_SPHERE\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00419\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00420\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_multi_sphere_shape_data}{btMultiSphereShapeData}}*\ mss\ =\ (\mbox{\hyperlink{structbt_multi_sphere_shape_data}{btMultiSphereShapeData}}*)bsd;}
+\DoxyCodeLine{00421\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numSpheres\ =\ mss-\/>\mbox{\hyperlink{structbt_multi_sphere_shape_data_a244c43eefa09a1eb143422578410c3f3}{m\_localPositionArraySize}};}
+\DoxyCodeLine{00422\ }
+\DoxyCodeLine{00423\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btVector3>}}\ tmpPos;}
+\DoxyCodeLine{00424\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btScalar>}}\ radii;}
+\DoxyCodeLine{00425\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ radii.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(numSpheres);}
+\DoxyCodeLine{00426\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpPos.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(numSpheres);}
+\DoxyCodeLine{00427\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00428\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ numSpheres;\ i++)}
+\DoxyCodeLine{00429\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00430\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpPos[i].deSerializeFloat(mss-\/>\mbox{\hyperlink{structbt_multi_sphere_shape_data_af58e24a22945911c6f7058aa54e3d822}{m\_localPositionArrayPtr}}[i].\mbox{\hyperlink{structbt_position_and_radius_ad3c3f39664da90d0d54f632f584f14dc}{m\_pos}});}
+\DoxyCodeLine{00431\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ radii[i]\ =\ mss-\/>\mbox{\hyperlink{structbt_multi_sphere_shape_data_af58e24a22945911c6f7058aa54e3d822}{m\_localPositionArrayPtr}}[i].\mbox{\hyperlink{structbt_position_and_radius_aaf6d3dc5f4db916e0f91026dcc57be26}{m\_radius}};}
+\DoxyCodeLine{00432\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00433\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a64658f870036e72144a54c4e69fcf288}{createMultiSphereShape}}(\&tmpPos[0],\ \&radii[0],\ numSpheres);}
+\DoxyCodeLine{00434\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00435\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00436\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5eafcbe51b30926873598f099db3b26cd86}{CONVEX\_HULL\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00437\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00438\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ int\ sz\ =\ sizeof(btConvexHullShapeData);}}
+\DoxyCodeLine{00439\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ int\ sz2\ =\ sizeof(btConvexInternalShapeData);}}
+\DoxyCodeLine{00440\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ int\ sz3\ =\ sizeof(btCollisionShapeData);}}
+\DoxyCodeLine{00441\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_convex_hull_shape_data}{btConvexHullShapeData}}*\ convexData\ =\ (\mbox{\hyperlink{structbt_convex_hull_shape_data}{btConvexHullShapeData}}*)bsd;}
+\DoxyCodeLine{00442\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numPoints\ =\ convexData-\/>\mbox{\hyperlink{structbt_convex_hull_shape_data_af34acdf265280b28caf5f86cea62e01c}{m\_numUnscaledPoints}};}
+\DoxyCodeLine{00443\ }
+\DoxyCodeLine{00444\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btVector3>}}\ tmpPoints;}
+\DoxyCodeLine{00445\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpPoints.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(numPoints);}
+\DoxyCodeLine{00446\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00447\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ numPoints;\ i++)}
+\DoxyCodeLine{00448\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00449\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_DOUBLE\_PRECISION}}
+\DoxyCodeLine{00450\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (convexData-\/>\mbox{\hyperlink{structbt_convex_hull_shape_data_a51708f6f6fa6f7c464ff950b178b2a78}{m\_unscaledPointsDoublePtr}})}
+\DoxyCodeLine{00451\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpPoints[i].deSerialize(convexData-\/>\mbox{\hyperlink{structbt_convex_hull_shape_data_a51708f6f6fa6f7c464ff950b178b2a78}{m\_unscaledPointsDoublePtr}}[i]);}
+\DoxyCodeLine{00452\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (convexData-\/>\mbox{\hyperlink{structbt_convex_hull_shape_data_a63aa9c06b833ca0c205f10dcb269e62c}{m\_unscaledPointsFloatPtr}})}
+\DoxyCodeLine{00453\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpPoints[i].deSerializeFloat(convexData-\/>\mbox{\hyperlink{structbt_convex_hull_shape_data_a63aa9c06b833ca0c205f10dcb269e62c}{m\_unscaledPointsFloatPtr}}[i]);}
+\DoxyCodeLine{00454\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00455\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (convexData-\/>\mbox{\hyperlink{structbt_convex_hull_shape_data_a63aa9c06b833ca0c205f10dcb269e62c}{m\_unscaledPointsFloatPtr}})}
+\DoxyCodeLine{00456\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpPoints[i].deSerialize(convexData-\/>\mbox{\hyperlink{structbt_convex_hull_shape_data_a63aa9c06b833ca0c205f10dcb269e62c}{m\_unscaledPointsFloatPtr}}[i]);}
+\DoxyCodeLine{00457\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (convexData-\/>\mbox{\hyperlink{structbt_convex_hull_shape_data_a51708f6f6fa6f7c464ff950b178b2a78}{m\_unscaledPointsDoublePtr}})}
+\DoxyCodeLine{00458\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpPoints[i].deSerializeDouble(convexData-\/>\mbox{\hyperlink{structbt_convex_hull_shape_data_a51708f6f6fa6f7c464ff950b178b2a78}{m\_unscaledPointsDoublePtr}}[i]);}
+\DoxyCodeLine{00459\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_USE\_DOUBLE\_PRECISION}}
+\DoxyCodeLine{00460\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00461\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_convex_hull_shape_8h_a069cf26ba277f9f5f141128fee345eaf}{btConvexHullShape}}*\ hullShape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a90702fc037f9611a23ea5869f7bdc4de}{createConvexHullShape}}();}
+\DoxyCodeLine{00462\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ numPoints;\ i++)}
+\DoxyCodeLine{00463\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00464\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ hullShape-\/>addPoint(tmpPoints[i]);}
+\DoxyCodeLine{00465\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00466\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ hullShape-\/>setMargin(bsd-\/>\mbox{\hyperlink{structbt_convex_internal_shape_data_a56149d2d6b4bd8312309255dfa313981}{m\_collisionMargin}});}
+\DoxyCodeLine{00467\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//hullShape-\/>initializePolyhedralFeatures();}}
+\DoxyCodeLine{00468\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ hullShape;}
+\DoxyCodeLine{00469\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00470\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00471\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00472\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00473\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}error:\ cannot\ create\ shape\ type\ (\%d)\(\backslash\)n"{}},\ shapeData-\/>\mbox{\hyperlink{structbt_collision_shape_data_aa163414b23939ed6030fd19cf404b38a}{m\_shapeType}});}
+\DoxyCodeLine{00474\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00475\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00476\ }
+\DoxyCodeLine{00477\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (shape)}
+\DoxyCodeLine{00478\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00479\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape-\/>setMargin(bsd-\/>\mbox{\hyperlink{structbt_convex_internal_shape_data_a56149d2d6b4bd8312309255dfa313981}{m\_collisionMargin}});}
+\DoxyCodeLine{00480\ }
+\DoxyCodeLine{00481\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ localScaling;}
+\DoxyCodeLine{00482\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ localScaling.deSerializeFloat(bsd-\/>\mbox{\hyperlink{structbt_convex_internal_shape_data_aa796d833f0645854758e66f49ba85f8e}{m\_localScaling}});}
+\DoxyCodeLine{00483\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ shape-\/>setLocalScaling(localScaling);}
+\DoxyCodeLine{00484\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00485\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00486\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00487\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5ea420afe83391f77e499f88a6e34efb3f3}{TRIANGLE\_MESH\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00488\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00489\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_triangle_mesh_shape_data}{btTriangleMeshShapeData}}*\ trimesh\ =\ (\mbox{\hyperlink{structbt_triangle_mesh_shape_data}{btTriangleMeshShapeData}}*)shapeData;}
+\DoxyCodeLine{00490\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_striding_mesh_interface_data}{btStridingMeshInterfaceData}}*\ interfaceData\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a148f416a26e51ed5406b5bb7af51b5e6}{createStridingMeshInterfaceData}}(\&trimesh-\/>\mbox{\hyperlink{structbt_triangle_mesh_shape_data_a09fa7f39afd4977baebde7c100b64e62}{m\_meshInterface}});}
+\DoxyCodeLine{00491\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_triangle_index_vertex_array_8h_a9f78f99541cc9459a202d498d7aa55c2}{btTriangleIndexVertexArray}}*\ meshInterface\ =\ \mbox{\hyperlink{classbt_collision_world_importer_add12831988b54b52f54f4dddb34bb568}{createMeshInterface}}(*interfaceData);}
+\DoxyCodeLine{00492\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!meshInterface-\/>getNumSubParts())}
+\DoxyCodeLine{00493\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00494\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00495\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00496\ }
+\DoxyCodeLine{00497\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ scaling;}
+\DoxyCodeLine{00498\ \ \ \ \ \ \ \ \ \ \ \ \ scaling.deSerializeFloat(trimesh-\/>\mbox{\hyperlink{structbt_triangle_mesh_shape_data_a09fa7f39afd4977baebde7c100b64e62}{m\_meshInterface}}.\mbox{\hyperlink{structbt_striding_mesh_interface_data_af5cad63f6d700f3993611d958222c288}{m\_scaling}});}
+\DoxyCodeLine{00499\ \ \ \ \ \ \ \ \ \ \ \ \ meshInterface-\/>setScaling(scaling);}
+\DoxyCodeLine{00500\ }
+\DoxyCodeLine{00501\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_optimized_bvh_8h_a692209e97a920ab4c821bf92556c0c60}{btOptimizedBvh}}*\ bvh\ =\ 0;}
+\DoxyCodeLine{00502\ \textcolor{preprocessor}{\#if\ 1}}
+\DoxyCodeLine{00503\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (trimesh-\/>\mbox{\hyperlink{structbt_triangle_mesh_shape_data_a425c88562f77aa7489043a2677c59fb9}{m\_quantizedFloatBvh}})}
+\DoxyCodeLine{00504\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00505\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_optimized_bvh_8h_a692209e97a920ab4c821bf92556c0c60}{btOptimizedBvh}}**\ bvhPtr\ =\ \mbox{\hyperlink{classbt_collision_world_importer_ac6eb63e44ae5c428177d6618e7a9e253}{m\_bvhMap}}.find(trimesh-\/>\mbox{\hyperlink{structbt_triangle_mesh_shape_data_a425c88562f77aa7489043a2677c59fb9}{m\_quantizedFloatBvh}});}
+\DoxyCodeLine{00506\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (bvhPtr\ \&\&\ *bvhPtr)}
+\DoxyCodeLine{00507\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00508\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh\ =\ *bvhPtr;}
+\DoxyCodeLine{00509\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00510\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00511\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00512\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a1a4d83267c041e614767578e4d7ba061}{createOptimizedBvh}}();}
+\DoxyCodeLine{00513\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>deSerializeFloat(*trimesh-\/>\mbox{\hyperlink{structbt_triangle_mesh_shape_data_a425c88562f77aa7489043a2677c59fb9}{m\_quantizedFloatBvh}});}
+\DoxyCodeLine{00514\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00515\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00516\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (trimesh-\/>\mbox{\hyperlink{structbt_triangle_mesh_shape_data_a30df8f3147c30cf5e49c4d64fec5aa82}{m\_quantizedDoubleBvh}})}
+\DoxyCodeLine{00517\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00518\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_optimized_bvh_8h_a692209e97a920ab4c821bf92556c0c60}{btOptimizedBvh}}**\ bvhPtr\ =\ \mbox{\hyperlink{classbt_collision_world_importer_ac6eb63e44ae5c428177d6618e7a9e253}{m\_bvhMap}}.find(trimesh-\/>\mbox{\hyperlink{structbt_triangle_mesh_shape_data_a30df8f3147c30cf5e49c4d64fec5aa82}{m\_quantizedDoubleBvh}});}
+\DoxyCodeLine{00519\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (bvhPtr\ \&\&\ *bvhPtr)}
+\DoxyCodeLine{00520\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00521\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh\ =\ *bvhPtr;}
+\DoxyCodeLine{00522\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00523\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00524\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00525\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a1a4d83267c041e614767578e4d7ba061}{createOptimizedBvh}}();}
+\DoxyCodeLine{00526\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bvh-\/>deSerializeDouble(*trimesh-\/>\mbox{\hyperlink{structbt_triangle_mesh_shape_data_a30df8f3147c30cf5e49c4d64fec5aa82}{m\_quantizedDoubleBvh}});}
+\DoxyCodeLine{00527\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00528\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00529\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00530\ }
+\DoxyCodeLine{00531\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_afb5faf0318ecfcc10193e151dea6c007}{btBvhTriangleMeshShape}}*\ trimeshShape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_abdf3499f96c3b916057f58056d085e81}{createBvhTriangleMeshShape}}(meshInterface,\ bvh);}
+\DoxyCodeLine{00532\ \ \ \ \ \ \ \ \ \ \ \ \ trimeshShape-\/>setMargin(trimesh-\/>\mbox{\hyperlink{structbt_triangle_mesh_shape_data_a7e26d428e0a04f8ea794189d7d378d70}{m\_collisionMargin}});}
+\DoxyCodeLine{00533\ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ trimeshShape;}
+\DoxyCodeLine{00534\ }
+\DoxyCodeLine{00535\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (trimesh-\/>\mbox{\hyperlink{structbt_triangle_mesh_shape_data_a95ef1687d4088f7ebe04f0fde7f0084e}{m\_triangleInfoMap}})}
+\DoxyCodeLine{00536\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00537\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_triangle_info_map}{btTriangleInfoMap}}*\ map\ =\ \mbox{\hyperlink{classbt_collision_world_importer_aa868b2adb4497ce2685aab53341bc2ee}{createTriangleInfoMap}}();}
+\DoxyCodeLine{00538\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ map-\/>\mbox{\hyperlink{structbt_triangle_info_map_a729483561a5100a27dae3f92fe57ebca}{deSerialize}}(*trimesh-\/>\mbox{\hyperlink{structbt_triangle_mesh_shape_data_a95ef1687d4088f7ebe04f0fde7f0084e}{m\_triangleInfoMap}});}
+\DoxyCodeLine{00539\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ trimeshShape-\/>setTriangleInfoMap(map);}
+\DoxyCodeLine{00540\ }
+\DoxyCodeLine{00541\ \textcolor{preprocessor}{\#ifdef\ USE\_INTERNAL\_EDGE\_UTILITY}}
+\DoxyCodeLine{00542\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_manifold_result_8cpp_a43803c839660bbce58e5668595835e44}{gContactAddedCallback}}\ =\ btAdjustInternalEdgeContactsCallback;}
+\DoxyCodeLine{00543\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//USE\_INTERNAL\_EDGE\_UTILITY}}
+\DoxyCodeLine{00544\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00545\ }
+\DoxyCodeLine{00546\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//printf("{}trimesh-\/>m\_collisionMargin=\%f\(\backslash\)n"{},trimesh-\/>m\_collisionMargin);}}
+\DoxyCodeLine{00547\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00548\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00549\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5ea24f656d323e53a6e2d39d53ffa261e29}{COMPOUND\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00550\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00551\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_compound_shape_data}{btCompoundShapeData}}*\ compoundData\ =\ (\mbox{\hyperlink{structbt_compound_shape_data}{btCompoundShapeData}}*)shapeData;}
+\DoxyCodeLine{00552\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_compound_shape_8h_a166fd7989d21f3b10dc157d52571e11f}{btCompoundShape}}*\ compoundShape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a62dc71fa177809d1f860700e261a0990}{createCompoundShape}}();}
+\DoxyCodeLine{00553\ }
+\DoxyCodeLine{00554\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//btCompoundShapeChildData*\ childShapeDataArray\ =\ \&compoundData-\/>m\_childShapePtr[0];}}
+\DoxyCodeLine{00555\ }
+\DoxyCodeLine{00556\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btCollisionShape*>}}\ childShapes;}
+\DoxyCodeLine{00557\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ compoundData-\/>\mbox{\hyperlink{structbt_compound_shape_data_a363722a976d98e3090af2b59b5d74d90}{m\_numChildShapes}};\ i++)}
+\DoxyCodeLine{00558\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00559\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//btCompoundShapeChildData*\ ptr\ =\ \&compoundData-\/>m\_childShapePtr[i];}}
+\DoxyCodeLine{00560\ }
+\DoxyCodeLine{00561\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_collision_shape_data}{btCollisionShapeData}}*\ cd\ =\ compoundData-\/>\mbox{\hyperlink{structbt_compound_shape_data_a302e15c37c114251cf38ecc7f6fd85f4}{m\_childShapePtr}}[i].\mbox{\hyperlink{structbt_compound_shape_child_data_ac9fa752831417cb97a78c727b7b047ea}{m\_childShape}};}
+\DoxyCodeLine{00562\ }
+\DoxyCodeLine{00563\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ childShape\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a34febc4b06f735ebb00caefd7cda6a5b}{convertCollisionShape}}(cd);}
+\DoxyCodeLine{00564\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (childShape)}
+\DoxyCodeLine{00565\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00566\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ localTransform;}
+\DoxyCodeLine{00567\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ localTransform.deSerializeFloat(compoundData-\/>\mbox{\hyperlink{structbt_compound_shape_data_a302e15c37c114251cf38ecc7f6fd85f4}{m\_childShapePtr}}[i].\mbox{\hyperlink{structbt_compound_shape_child_data_aa4e204a234cb5fcc33904433d0f87d06}{m\_transform}});}
+\DoxyCodeLine{00568\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ compoundShape-\/>addChildShape(localTransform,\ childShape);}
+\DoxyCodeLine{00569\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00570\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00571\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00572\ \textcolor{preprocessor}{\#ifdef\ \_DEBUG}}
+\DoxyCodeLine{00573\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}error:\ couldn't\ create\ childShape\ for\ compoundShape\(\backslash\)n"{}});}
+\DoxyCodeLine{00574\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00575\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00576\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00577\ \ \ \ \ \ \ \ \ \ \ \ \ shape\ =\ compoundShape;}
+\DoxyCodeLine{00578\ }
+\DoxyCodeLine{00579\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00580\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00581\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5ea3586cafb4235dcfdf1b9ff9c235e5e9d}{SOFTBODY\_SHAPE\_PROXYTYPE}}:}
+\DoxyCodeLine{00582\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00583\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00584\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00585\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00586\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00587\ \textcolor{preprocessor}{\#ifdef\ \_DEBUG}}
+\DoxyCodeLine{00588\ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}unsupported\ shape\ type\ (\%d)\(\backslash\)n"{}},\ shapeData-\/>\mbox{\hyperlink{structbt_collision_shape_data_aa163414b23939ed6030fd19cf404b38a}{m\_shapeType}});}
+\DoxyCodeLine{00589\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00590\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00591\ \ \ \ \ \}}
+\DoxyCodeLine{00592\ }
+\DoxyCodeLine{00593\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{00594\ \}}
+\DoxyCodeLine{00595\ }
+\DoxyCodeLine{00596\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{classbt_collision_world_importer_a33249f29692bfda2fcf6e965d24a1342}{btCollisionWorldImporter::duplicateName}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}})}
+\DoxyCodeLine{00597\ \{}
+\DoxyCodeLine{00598\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}})}
+\DoxyCodeLine{00599\ \ \ \ \ \{}
+\DoxyCodeLine{00600\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ l\ =\ (int)strlen(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}});}
+\DoxyCodeLine{00601\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{char}*\ newName\ =\ \textcolor{keyword}{new}\ \textcolor{keywordtype}{char}[l\ +\ 1];}
+\DoxyCodeLine{00602\ \ \ \ \ \ \ \ \ memcpy(newName,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}},\ l);}
+\DoxyCodeLine{00603\ \ \ \ \ \ \ \ \ newName[l]\ =\ 0;}
+\DoxyCodeLine{00604\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_abc5d151b9fbe3da3f34209c263f8bc35}{m\_allocatedNames}}.push\_back(newName);}
+\DoxyCodeLine{00605\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ newName;}
+\DoxyCodeLine{00606\ \ \ \ \ \}}
+\DoxyCodeLine{00607\ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00608\ \}}
+\DoxyCodeLine{00609\ }
+\DoxyCodeLine{00610\ \mbox{\hyperlink{bt_triangle_index_vertex_array_8h_a9f78f99541cc9459a202d498d7aa55c2}{btTriangleIndexVertexArray}}*\ \mbox{\hyperlink{classbt_collision_world_importer_add12831988b54b52f54f4dddb34bb568}{btCollisionWorldImporter::createMeshInterface}}(\mbox{\hyperlink{structbt_striding_mesh_interface_data}{btStridingMeshInterfaceData}}\&\ meshData)}
+\DoxyCodeLine{00611\ \{}
+\DoxyCodeLine{00612\ \ \ \ \ \mbox{\hyperlink{bt_triangle_index_vertex_array_8h_a9f78f99541cc9459a202d498d7aa55c2}{btTriangleIndexVertexArray}}*\ meshInterface\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a3363b0c196f32569952f9a57c4838e38}{createTriangleMeshContainer}}();}
+\DoxyCodeLine{00613\ }
+\DoxyCodeLine{00614\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a648047136aef434d7cd738a0175cf80c}{m\_numMeshParts}};\ i++)}
+\DoxyCodeLine{00615\ \ \ \ \ \{}
+\DoxyCodeLine{00616\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_triangle_index_vertex_array_8h_a8e31167ffc24bfb00564cebc240ac01b}{btIndexedMesh}}\ meshPart;}
+\DoxyCodeLine{00617\ \ \ \ \ \ \ \ \ meshPart.m\_numTriangles\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_ab9b3399ff8ab865c5388a0da23037bc2}{m\_numTriangles}};}
+\DoxyCodeLine{00618\ \ \ \ \ \ \ \ \ meshPart.m\_numVertices\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a00ac662304bd95c82880f969c9b9c166}{m\_numVertices}};}
+\DoxyCodeLine{00619\ }
+\DoxyCodeLine{00620\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a952333850242a2b34cd197200d74a3d2}{m\_indices32}})}
+\DoxyCodeLine{00621\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00622\ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_indexType\ =\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5ad42e034653618937f19225a86f18d9c1}{PHY\_INTEGER}};}
+\DoxyCodeLine{00623\ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_triangleIndexStride\ =\ 3\ *\ \textcolor{keyword}{sizeof}(int);}
+\DoxyCodeLine{00624\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}*\ indexArray\ =\ (\textcolor{keywordtype}{int}*)\mbox{\hyperlink{bt_aligned_allocator_8h_a5798ef3418d84a1761ef917ef6720db7}{btAlignedAlloc}}(\textcolor{keyword}{sizeof}(\textcolor{keywordtype}{int})\ *\ 3\ *\ meshPart.m\_numTriangles,\ 16);}
+\DoxyCodeLine{00625\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_a92a40357d5f4b066357aac0899af5949}{m\_indexArrays}}.push\_back(indexArray);}
+\DoxyCodeLine{00626\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ 3\ *\ meshPart.m\_numTriangles;\ j++)}
+\DoxyCodeLine{00627\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00628\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ indexArray[j]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a952333850242a2b34cd197200d74a3d2}{m\_indices32}}[j].\mbox{\hyperlink{structbt_int_index_data_afcfedba4aedfa132e0d3d4b206d334e8}{m\_value}};}
+\DoxyCodeLine{00629\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00630\ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_triangleIndexBase\ =\ (\textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*)indexArray;}
+\DoxyCodeLine{00631\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00632\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00633\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00634\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a679c6f515af632f137375bbac2f9d880}{m\_3indices16}})}
+\DoxyCodeLine{00635\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00636\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_indexType\ =\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a64a80d935567c2111346eca34eee6986}{PHY\_SHORT}};}
+\DoxyCodeLine{00637\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_triangleIndexStride\ =\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{short}\ int)\ *\ 3;\ \ \textcolor{comment}{//sizeof(btShortIntIndexTripletData);}}
+\DoxyCodeLine{00638\ }
+\DoxyCodeLine{00639\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ indexArray\ =\ (\textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*)\mbox{\hyperlink{bt_aligned_allocator_8h_a5798ef3418d84a1761ef917ef6720db7}{btAlignedAlloc}}(\textcolor{keyword}{sizeof}(\textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int})\ *\ 3\ *\ meshPart.m\_numTriangles,\ 16);}
+\DoxyCodeLine{00640\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_abf64f6a6b778ff89302b7c3555e8fb57}{m\_shortIndexArrays}}.push\_back(indexArray);}
+\DoxyCodeLine{00641\ }
+\DoxyCodeLine{00642\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ meshPart.m\_numTriangles;\ j++)}
+\DoxyCodeLine{00643\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00644\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ indexArray[3\ *\ j]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a679c6f515af632f137375bbac2f9d880}{m\_3indices16}}[j].\mbox{\hyperlink{structbt_short_int_index_triplet_data_a50f441b58b97b8d2e8e6c0878e92ae44}{m\_values}}[0];}
+\DoxyCodeLine{00645\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ indexArray[3\ *\ j\ +\ 1]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a679c6f515af632f137375bbac2f9d880}{m\_3indices16}}[j].\mbox{\hyperlink{structbt_short_int_index_triplet_data_a50f441b58b97b8d2e8e6c0878e92ae44}{m\_values}}[1];}
+\DoxyCodeLine{00646\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ indexArray[3\ *\ j\ +\ 2]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a679c6f515af632f137375bbac2f9d880}{m\_3indices16}}[j].\mbox{\hyperlink{structbt_short_int_index_triplet_data_a50f441b58b97b8d2e8e6c0878e92ae44}{m\_values}}[2];}
+\DoxyCodeLine{00647\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00648\ }
+\DoxyCodeLine{00649\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_triangleIndexBase\ =\ (\textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*)indexArray;}
+\DoxyCodeLine{00650\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00651\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a06f74e1c7cea783c35ba7c7880061dc4}{m\_indices16}})}
+\DoxyCodeLine{00652\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00653\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_indexType\ =\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a64a80d935567c2111346eca34eee6986}{PHY\_SHORT}};}
+\DoxyCodeLine{00654\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_triangleIndexStride\ =\ 3\ *\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{short}\ int);}
+\DoxyCodeLine{00655\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*\ indexArray\ =\ (\textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int}*)\mbox{\hyperlink{bt_aligned_allocator_8h_a5798ef3418d84a1761ef917ef6720db7}{btAlignedAlloc}}(\textcolor{keyword}{sizeof}(\textcolor{keywordtype}{short}\ \textcolor{keywordtype}{int})\ *\ 3\ *\ meshPart.m\_numTriangles,\ 16);}
+\DoxyCodeLine{00656\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_abf64f6a6b778ff89302b7c3555e8fb57}{m\_shortIndexArrays}}.push\_back(indexArray);}
+\DoxyCodeLine{00657\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ 3\ *\ meshPart.m\_numTriangles;\ j++)}
+\DoxyCodeLine{00658\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00659\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ indexArray[j]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a06f74e1c7cea783c35ba7c7880061dc4}{m\_indices16}}[j].\mbox{\hyperlink{structbt_short_int_index_data_aae4d06473d1b2056177fb30ee7709359}{m\_value}};}
+\DoxyCodeLine{00660\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00661\ }
+\DoxyCodeLine{00662\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_triangleIndexBase\ =\ (\textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*)indexArray;}
+\DoxyCodeLine{00663\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00664\ }
+\DoxyCodeLine{00665\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a2cd4092c984b502b11a3253988197ed0}{m\_3indices8}})}
+\DoxyCodeLine{00666\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00667\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_indexType\ =\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a22cb435d33635ba7440daf26ceddb33d}{PHY\_UCHAR}};}
+\DoxyCodeLine{00668\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_triangleIndexStride\ =\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{unsigned}\ char)\ *\ 3;}
+\DoxyCodeLine{00669\ }
+\DoxyCodeLine{00670\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*\ indexArray\ =\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*)\mbox{\hyperlink{bt_aligned_allocator_8h_a5798ef3418d84a1761ef917ef6720db7}{btAlignedAlloc}}(\textcolor{keyword}{sizeof}(\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char})\ *\ 3\ *\ meshPart.m\_numTriangles,\ 16);}
+\DoxyCodeLine{00671\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_aeec4eec0c145cc676bc2532543c65879}{m\_charIndexArrays}}.push\_back(indexArray);}
+\DoxyCodeLine{00672\ }
+\DoxyCodeLine{00673\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ meshPart.m\_numTriangles;\ j++)}
+\DoxyCodeLine{00674\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00675\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ indexArray[3\ *\ j]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a2cd4092c984b502b11a3253988197ed0}{m\_3indices8}}[j].\mbox{\hyperlink{structbt_char_index_triplet_data_a40dae9aab0fb193b3506b74986fbdb38}{m\_values}}[0];}
+\DoxyCodeLine{00676\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ indexArray[3\ *\ j\ +\ 1]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a2cd4092c984b502b11a3253988197ed0}{m\_3indices8}}[j].\mbox{\hyperlink{structbt_char_index_triplet_data_a40dae9aab0fb193b3506b74986fbdb38}{m\_values}}[1];}
+\DoxyCodeLine{00677\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ indexArray[3\ *\ j\ +\ 2]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a2cd4092c984b502b11a3253988197ed0}{m\_3indices8}}[j].\mbox{\hyperlink{structbt_char_index_triplet_data_a40dae9aab0fb193b3506b74986fbdb38}{m\_values}}[2];}
+\DoxyCodeLine{00678\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00679\ }
+\DoxyCodeLine{00680\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_triangleIndexBase\ =\ (\textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*)indexArray;}
+\DoxyCodeLine{00681\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00682\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00683\ }
+\DoxyCodeLine{00684\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a5c03497ebe3c6012f8d725650af45737}{m\_vertices3f}})}
+\DoxyCodeLine{00685\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00686\ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_vertexType\ =\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a1ad4349bf85ddc19b7a0eee5e3e534c2}{PHY\_FLOAT}};}
+\DoxyCodeLine{00687\ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_vertexStride\ =\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_vector3_float_data}{btVector3FloatData}});}
+\DoxyCodeLine{00688\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_vector3_float_data}{btVector3FloatData}}*\ vertices\ =\ (\mbox{\hyperlink{structbt_vector3_float_data}{btVector3FloatData}}*)\mbox{\hyperlink{bt_aligned_allocator_8h_a5798ef3418d84a1761ef917ef6720db7}{btAlignedAlloc}}(\textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_vector3_float_data}{btVector3FloatData}})\ *\ meshPart.m\_numVertices,\ 16);}
+\DoxyCodeLine{00689\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ad53737899125b910ed71f6ffdc8e3289}{m\_floatVertexArrays}}.push\_back(vertices);}
+\DoxyCodeLine{00690\ }
+\DoxyCodeLine{00691\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ meshPart.m\_numVertices;\ j++)}
+\DoxyCodeLine{00692\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00693\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertices[j].\mbox{\hyperlink{structbt_vector3_float_data_ab246fb8dc0af06cfb3260d836591dc46}{m\_floats}}[0]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a5c03497ebe3c6012f8d725650af45737}{m\_vertices3f}}[j].\mbox{\hyperlink{structbt_vector3_float_data_ab246fb8dc0af06cfb3260d836591dc46}{m\_floats}}[0];}
+\DoxyCodeLine{00694\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertices[j].\mbox{\hyperlink{structbt_vector3_float_data_ab246fb8dc0af06cfb3260d836591dc46}{m\_floats}}[1]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a5c03497ebe3c6012f8d725650af45737}{m\_vertices3f}}[j].\mbox{\hyperlink{structbt_vector3_float_data_ab246fb8dc0af06cfb3260d836591dc46}{m\_floats}}[1];}
+\DoxyCodeLine{00695\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertices[j].\mbox{\hyperlink{structbt_vector3_float_data_ab246fb8dc0af06cfb3260d836591dc46}{m\_floats}}[2]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a5c03497ebe3c6012f8d725650af45737}{m\_vertices3f}}[j].\mbox{\hyperlink{structbt_vector3_float_data_ab246fb8dc0af06cfb3260d836591dc46}{m\_floats}}[2];}
+\DoxyCodeLine{00696\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertices[j].\mbox{\hyperlink{structbt_vector3_float_data_ab246fb8dc0af06cfb3260d836591dc46}{m\_floats}}[3]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_a5c03497ebe3c6012f8d725650af45737}{m\_vertices3f}}[j].\mbox{\hyperlink{structbt_vector3_float_data_ab246fb8dc0af06cfb3260d836591dc46}{m\_floats}}[3];}
+\DoxyCodeLine{00697\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00698\ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_vertexBase\ =\ (\textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*)vertices;}
+\DoxyCodeLine{00699\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00700\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00701\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00702\ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_vertexType\ =\ \mbox{\hyperlink{b3_striding_mesh_interface_8h_af7786741f2d89a33a47c8693b3f847b5a5bb40ac23c072b0cbd77057de01a149b}{PHY\_DOUBLE}};}
+\DoxyCodeLine{00703\ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_vertexStride\ =\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_vector3_double_data}{btVector3DoubleData}});}
+\DoxyCodeLine{00704\ }
+\DoxyCodeLine{00705\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_vector3_double_data}{btVector3DoubleData}}*\ vertices\ =\ (\mbox{\hyperlink{structbt_vector3_double_data}{btVector3DoubleData}}*)\mbox{\hyperlink{bt_aligned_allocator_8h_a5798ef3418d84a1761ef917ef6720db7}{btAlignedAlloc}}(\textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_vector3_double_data}{btVector3DoubleData}})\ *\ meshPart.m\_numVertices,\ 16);}
+\DoxyCodeLine{00706\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_a814068b35569c787dd5409da5adcf196}{m\_doubleVertexArrays}}.push\_back(vertices);}
+\DoxyCodeLine{00707\ }
+\DoxyCodeLine{00708\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ meshPart.m\_numVertices;\ j++)}
+\DoxyCodeLine{00709\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00710\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertices[j].\mbox{\hyperlink{structbt_vector3_double_data_a69c991016e883f0320d5c646f56d243e}{m\_floats}}[0]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_ae0a5d2cf600f993b6feca3a438109aaf}{m\_vertices3d}}[j].\mbox{\hyperlink{structbt_vector3_double_data_a69c991016e883f0320d5c646f56d243e}{m\_floats}}[0];}
+\DoxyCodeLine{00711\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertices[j].\mbox{\hyperlink{structbt_vector3_double_data_a69c991016e883f0320d5c646f56d243e}{m\_floats}}[1]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_ae0a5d2cf600f993b6feca3a438109aaf}{m\_vertices3d}}[j].\mbox{\hyperlink{structbt_vector3_double_data_a69c991016e883f0320d5c646f56d243e}{m\_floats}}[1];}
+\DoxyCodeLine{00712\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertices[j].\mbox{\hyperlink{structbt_vector3_double_data_a69c991016e883f0320d5c646f56d243e}{m\_floats}}[2]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_ae0a5d2cf600f993b6feca3a438109aaf}{m\_vertices3d}}[j].\mbox{\hyperlink{structbt_vector3_double_data_a69c991016e883f0320d5c646f56d243e}{m\_floats}}[2];}
+\DoxyCodeLine{00713\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vertices[j].\mbox{\hyperlink{structbt_vector3_double_data_a69c991016e883f0320d5c646f56d243e}{m\_floats}}[3]\ =\ meshData.\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i].\mbox{\hyperlink{structbt_mesh_part_data_ae0a5d2cf600f993b6feca3a438109aaf}{m\_vertices3d}}[j].\mbox{\hyperlink{structbt_vector3_double_data_a69c991016e883f0320d5c646f56d243e}{m\_floats}}[3];}
+\DoxyCodeLine{00714\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00715\ \ \ \ \ \ \ \ \ \ \ \ \ meshPart.m\_vertexBase\ =\ (\textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*)vertices;}
+\DoxyCodeLine{00716\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00717\ }
+\DoxyCodeLine{00718\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (meshPart.m\_triangleIndexBase\ \&\&\ meshPart.m\_vertexBase)}
+\DoxyCodeLine{00719\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00720\ \ \ \ \ \ \ \ \ \ \ \ \ meshInterface-\/>addIndexedMesh(meshPart,\ meshPart.m\_indexType);}
+\DoxyCodeLine{00721\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00722\ \ \ \ \ \}}
+\DoxyCodeLine{00723\ }
+\DoxyCodeLine{00724\ \ \ \ \ \textcolor{keywordflow}{return}\ meshInterface;}
+\DoxyCodeLine{00725\ \}}
+\DoxyCodeLine{00726\ }
+\DoxyCodeLine{00727\ \mbox{\hyperlink{structbt_striding_mesh_interface_data}{btStridingMeshInterfaceData}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a148f416a26e51ed5406b5bb7af51b5e6}{btCollisionWorldImporter::createStridingMeshInterfaceData}}(\mbox{\hyperlink{structbt_striding_mesh_interface_data}{btStridingMeshInterfaceData}}*\ interfaceData)}
+\DoxyCodeLine{00728\ \{}
+\DoxyCodeLine{00729\ \ \ \ \ \textcolor{comment}{//create\ a\ new\ btStridingMeshInterfaceData\ that\ is\ an\ exact\ copy\ of\ shapedata\ and\ store\ it\ in\ the\ WorldImporter}}
+\DoxyCodeLine{00730\ \ \ \ \ \mbox{\hyperlink{structbt_striding_mesh_interface_data}{btStridingMeshInterfaceData}}*\ newData\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{structbt_striding_mesh_interface_data}{btStridingMeshInterfaceData}};}
+\DoxyCodeLine{00731\ }
+\DoxyCodeLine{00732\ \ \ \ \ newData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_af5cad63f6d700f3993611d958222c288}{m\_scaling}}\ =\ interfaceData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_af5cad63f6d700f3993611d958222c288}{m\_scaling}};}
+\DoxyCodeLine{00733\ \ \ \ \ newData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_a648047136aef434d7cd738a0175cf80c}{m\_numMeshParts}}\ =\ interfaceData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_a648047136aef434d7cd738a0175cf80c}{m\_numMeshParts}};}
+\DoxyCodeLine{00734\ \ \ \ \ newData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{structbt_mesh_part_data}{btMeshPartData}}[newData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_a648047136aef434d7cd738a0175cf80c}{m\_numMeshParts}}];}
+\DoxyCodeLine{00735\ }
+\DoxyCodeLine{00736\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ newData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_a648047136aef434d7cd738a0175cf80c}{m\_numMeshParts}};\ i++)}
+\DoxyCodeLine{00737\ \ \ \ \ \{}
+\DoxyCodeLine{00738\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_mesh_part_data}{btMeshPartData}}*\ curPart\ =\ \&interfaceData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i];}
+\DoxyCodeLine{00739\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_mesh_part_data}{btMeshPartData}}*\ curNewPart\ =\ \&newData-\/>\mbox{\hyperlink{structbt_striding_mesh_interface_data_a62938be6739d1e86a377b33e8ffecbdb}{m\_meshPartsPtr}}[i];}
+\DoxyCodeLine{00740\ }
+\DoxyCodeLine{00741\ \ \ \ \ \ \ \ \ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_ab9b3399ff8ab865c5388a0da23037bc2}{m\_numTriangles}}\ =\ curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_ab9b3399ff8ab865c5388a0da23037bc2}{m\_numTriangles}};}
+\DoxyCodeLine{00742\ \ \ \ \ \ \ \ \ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a00ac662304bd95c82880f969c9b9c166}{m\_numVertices}}\ =\ curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a00ac662304bd95c82880f969c9b9c166}{m\_numVertices}};}
+\DoxyCodeLine{00743\ }
+\DoxyCodeLine{00744\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a5c03497ebe3c6012f8d725650af45737}{m\_vertices3f}})}
+\DoxyCodeLine{00745\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00746\ \ \ \ \ \ \ \ \ \ \ \ \ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a5c03497ebe3c6012f8d725650af45737}{m\_vertices3f}}\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{structbt_vector3_float_data}{btVector3FloatData}}[curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a00ac662304bd95c82880f969c9b9c166}{m\_numVertices}}];}
+\DoxyCodeLine{00747\ \ \ \ \ \ \ \ \ \ \ \ \ memcpy(curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a5c03497ebe3c6012f8d725650af45737}{m\_vertices3f}},\ curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a5c03497ebe3c6012f8d725650af45737}{m\_vertices3f}},\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_vector3_float_data}{btVector3FloatData}})\ *\ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a00ac662304bd95c82880f969c9b9c166}{m\_numVertices}});}
+\DoxyCodeLine{00748\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00749\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00750\ \ \ \ \ \ \ \ \ \ \ \ \ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a5c03497ebe3c6012f8d725650af45737}{m\_vertices3f}}\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00751\ }
+\DoxyCodeLine{00752\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_ae0a5d2cf600f993b6feca3a438109aaf}{m\_vertices3d}})}
+\DoxyCodeLine{00753\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00754\ \ \ \ \ \ \ \ \ \ \ \ \ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_ae0a5d2cf600f993b6feca3a438109aaf}{m\_vertices3d}}\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{structbt_vector3_double_data}{btVector3DoubleData}}[curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a00ac662304bd95c82880f969c9b9c166}{m\_numVertices}}];}
+\DoxyCodeLine{00755\ \ \ \ \ \ \ \ \ \ \ \ \ memcpy(curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_ae0a5d2cf600f993b6feca3a438109aaf}{m\_vertices3d}},\ curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_ae0a5d2cf600f993b6feca3a438109aaf}{m\_vertices3d}},\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_vector3_double_data}{btVector3DoubleData}})\ *\ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a00ac662304bd95c82880f969c9b9c166}{m\_numVertices}});}
+\DoxyCodeLine{00756\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00757\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00758\ \ \ \ \ \ \ \ \ \ \ \ \ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_ae0a5d2cf600f993b6feca3a438109aaf}{m\_vertices3d}}\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00759\ }
+\DoxyCodeLine{00760\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}\ =\ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_ab9b3399ff8ab865c5388a0da23037bc2}{m\_numTriangles}}\ *\ 3;}
+\DoxyCodeLine{00763\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ uninitialized3indices8Workaround\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00764\ }
+\DoxyCodeLine{00765\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a952333850242a2b34cd197200d74a3d2}{m\_indices32}})}
+\DoxyCodeLine{00766\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00767\ \ \ \ \ \ \ \ \ \ \ \ \ uninitialized3indices8Workaround\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00768\ \ \ \ \ \ \ \ \ \ \ \ \ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a952333850242a2b34cd197200d74a3d2}{m\_indices32}}\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{structbt_int_index_data}{btIntIndexData}}[\mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}];}
+\DoxyCodeLine{00769\ \ \ \ \ \ \ \ \ \ \ \ \ memcpy(curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a952333850242a2b34cd197200d74a3d2}{m\_indices32}},\ curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a952333850242a2b34cd197200d74a3d2}{m\_indices32}},\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_int_index_data}{btIntIndexData}})\ *\ \mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}});}
+\DoxyCodeLine{00770\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00771\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00772\ \ \ \ \ \ \ \ \ \ \ \ \ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a952333850242a2b34cd197200d74a3d2}{m\_indices32}}\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00773\ }
+\DoxyCodeLine{00774\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a679c6f515af632f137375bbac2f9d880}{m\_3indices16}})}
+\DoxyCodeLine{00775\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00776\ \ \ \ \ \ \ \ \ \ \ \ \ uninitialized3indices8Workaround\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00777\ \ \ \ \ \ \ \ \ \ \ \ \ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a679c6f515af632f137375bbac2f9d880}{m\_3indices16}}\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{structbt_short_int_index_triplet_data}{btShortIntIndexTripletData}}[curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_ab9b3399ff8ab865c5388a0da23037bc2}{m\_numTriangles}}];}
+\DoxyCodeLine{00778\ \ \ \ \ \ \ \ \ \ \ \ \ memcpy(curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a679c6f515af632f137375bbac2f9d880}{m\_3indices16}},\ curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a679c6f515af632f137375bbac2f9d880}{m\_3indices16}},\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_short_int_index_triplet_data}{btShortIntIndexTripletData}})\ *\ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_ab9b3399ff8ab865c5388a0da23037bc2}{m\_numTriangles}});}
+\DoxyCodeLine{00779\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00780\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00781\ \ \ \ \ \ \ \ \ \ \ \ \ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a679c6f515af632f137375bbac2f9d880}{m\_3indices16}}\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00782\ }
+\DoxyCodeLine{00783\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a06f74e1c7cea783c35ba7c7880061dc4}{m\_indices16}})}
+\DoxyCodeLine{00784\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00785\ \ \ \ \ \ \ \ \ \ \ \ \ uninitialized3indices8Workaround\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00786\ \ \ \ \ \ \ \ \ \ \ \ \ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a06f74e1c7cea783c35ba7c7880061dc4}{m\_indices16}}\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{structbt_short_int_index_data}{btShortIntIndexData}}[\mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}}];}
+\DoxyCodeLine{00787\ \ \ \ \ \ \ \ \ \ \ \ \ memcpy(curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a06f74e1c7cea783c35ba7c7880061dc4}{m\_indices16}},\ curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a06f74e1c7cea783c35ba7c7880061dc4}{m\_indices16}},\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_short_int_index_data}{btShortIntIndexData}})\ *\ \mbox{\hyperlink{bt_shape_hull_8h_a45dc18f0fb2a949156106099bca53c90}{numIndices}});}
+\DoxyCodeLine{00788\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00789\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00790\ \ \ \ \ \ \ \ \ \ \ \ \ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a06f74e1c7cea783c35ba7c7880061dc4}{m\_indices16}}\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00791\ }
+\DoxyCodeLine{00792\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!uninitialized3indices8Workaround\ \&\&\ curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a2cd4092c984b502b11a3253988197ed0}{m\_3indices8}})}
+\DoxyCodeLine{00793\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00794\ \ \ \ \ \ \ \ \ \ \ \ \ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a2cd4092c984b502b11a3253988197ed0}{m\_3indices8}}\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{structbt_char_index_triplet_data}{btCharIndexTripletData}}[curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_ab9b3399ff8ab865c5388a0da23037bc2}{m\_numTriangles}}];}
+\DoxyCodeLine{00795\ \ \ \ \ \ \ \ \ \ \ \ \ memcpy(curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a2cd4092c984b502b11a3253988197ed0}{m\_3indices8}},\ curPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a2cd4092c984b502b11a3253988197ed0}{m\_3indices8}},\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_char_index_triplet_data}{btCharIndexTripletData}})\ *\ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_ab9b3399ff8ab865c5388a0da23037bc2}{m\_numTriangles}});}
+\DoxyCodeLine{00796\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00797\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00798\ \ \ \ \ \ \ \ \ \ \ \ \ curNewPart-\/>\mbox{\hyperlink{structbt_mesh_part_data_a2cd4092c984b502b11a3253988197ed0}{m\_3indices8}}\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00799\ \ \ \ \ \}}
+\DoxyCodeLine{00800\ }
+\DoxyCodeLine{00801\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ac4b7d51258328286eca0c915de90a21d}{m\_allocatedbtStridingMeshInterfaceDatas}}.push\_back(newData);}
+\DoxyCodeLine{00802\ }
+\DoxyCodeLine{00803\ \ \ \ \ \textcolor{keywordflow}{return}\ (newData);}
+\DoxyCodeLine{00804\ \}}
+\DoxyCodeLine{00805\ }
+\DoxyCodeLine{00806\ \textcolor{preprocessor}{\#ifdef\ USE\_INTERNAL\_EDGE\_UTILITY}}
+\DoxyCodeLine{00807\ \textcolor{keyword}{extern}\ \mbox{\hyperlink{bt_manifold_result_8h_a8178602f54d35bf5a63eb98ff892a1bc}{ContactAddedCallback}}\ \mbox{\hyperlink{bt_manifold_result_8cpp_a43803c839660bbce58e5668595835e44}{gContactAddedCallback}};}
+\DoxyCodeLine{00808\ }
+\DoxyCodeLine{00809\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{bool}\ btAdjustInternalEdgeContactsCallback(\mbox{\hyperlink{classbt_manifold_point}{btManifoldPoint}}\&\ cp,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ colObj0,\ \textcolor{keywordtype}{int}\ partId0,\ \textcolor{keywordtype}{int}\ index0,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ colObj1,\ \textcolor{keywordtype}{int}\ partId1,\ \textcolor{keywordtype}{int}\ index1)}
+\DoxyCodeLine{00810\ \{}
+\DoxyCodeLine{00811\ \ \ \ \ \mbox{\hyperlink{bt_internal_edge_utility_8cpp_a6c365fc11e1b969048dc920d3e1113fc}{btAdjustInternalEdgeContacts}}(cp,\ colObj1,\ colObj0,\ partId1,\ index1);}
+\DoxyCodeLine{00812\ \ \ \ \ \textcolor{comment}{//btAdjustInternalEdgeContacts(cp,colObj1,colObj0,\ partId1,index1,\ BT\_TRIANGLE\_CONVEX\_BACKFACE\_MODE);}}
+\DoxyCodeLine{00813\ \ \ \ \ \textcolor{comment}{//btAdjustInternalEdgeContacts(cp,colObj1,colObj0,\ partId1,index1,\ BT\_TRIANGLE\_CONVEX\_DOUBLE\_SIDED+BT\_TRIANGLE\_CONCAVE\_DOUBLE\_SIDED);}}
+\DoxyCodeLine{00814\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00815\ \}}
+\DoxyCodeLine{00816\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//USE\_INTERNAL\_EDGE\_UTILITY}}
+\DoxyCodeLine{00817\ }
+\DoxyCodeLine{00818\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00819\ \textcolor{comment}{btRigidBody*\ \ btWorldImporter::createRigidBody(bool\ isDynamic,\ btScalar\ mass,\ const\ btTransform\&\ startTransform,btCollisionShape*\ shape,const\ char*\ bodyName)}}
+\DoxyCodeLine{00820\ \textcolor{comment}{\{}}
+\DoxyCodeLine{00821\ \textcolor{comment}{\ \ \ \ btVector3\ localInertia;}}
+\DoxyCodeLine{00822\ \textcolor{comment}{\ \ \ \ localInertia.setZero();}}
+\DoxyCodeLine{00823\ \textcolor{comment}{}}
+\DoxyCodeLine{00824\ \textcolor{comment}{\ \ \ \ if\ (mass)}}
+\DoxyCodeLine{00825\ \textcolor{comment}{\ \ \ \ \ \ \ \ shape-\/>calculateLocalInertia(mass,localInertia);}}
+\DoxyCodeLine{00826\ \textcolor{comment}{}}
+\DoxyCodeLine{00827\ \textcolor{comment}{\ \ \ \ btRigidBody*\ body\ =\ new\ btRigidBody(mass,0,shape,localInertia);}}
+\DoxyCodeLine{00828\ \textcolor{comment}{\ \ \ \ body-\/>setWorldTransform(startTransform);}}
+\DoxyCodeLine{00829\ \textcolor{comment}{}}
+\DoxyCodeLine{00830\ \textcolor{comment}{\ \ \ \ if\ (m\_dynamicsWorld)}}
+\DoxyCodeLine{00831\ \textcolor{comment}{\ \ \ \ \ \ \ \ m\_dynamicsWorld-\/>addRigidBody(body);}}
+\DoxyCodeLine{00832\ \textcolor{comment}{}}
+\DoxyCodeLine{00833\ \textcolor{comment}{\ \ \ \ if\ (bodyName)}}
+\DoxyCodeLine{00834\ \textcolor{comment}{\ \ \ \ \{}}
+\DoxyCodeLine{00835\ \textcolor{comment}{\ \ \ \ \ \ \ \ char*\ newname\ =\ duplicateName(bodyName);}}
+\DoxyCodeLine{00836\ \textcolor{comment}{\ \ \ \ \ \ \ \ m\_objectNameMap.insert(body,newname);}}
+\DoxyCodeLine{00837\ \textcolor{comment}{\ \ \ \ \ \ \ \ m\_nameBodyMap.insert(newname,body);}}
+\DoxyCodeLine{00838\ \textcolor{comment}{\ \ \ \ \}}}
+\DoxyCodeLine{00839\ \textcolor{comment}{\ \ \ \ m\_allocatedRigidBodies.push\_back(body);}}
+\DoxyCodeLine{00840\ \textcolor{comment}{\ \ \ \ return\ body;}}
+\DoxyCodeLine{00841\ \textcolor{comment}{}}
+\DoxyCodeLine{00842\ \textcolor{comment}{\}}}
+\DoxyCodeLine{00843\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00844\ }
+\DoxyCodeLine{00845\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ \mbox{\hyperlink{classbt_collision_world_importer_abab468aa002cf61ef6cb31ab80993c27}{btCollisionWorldImporter::getCollisionObjectByName}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}})}
+\DoxyCodeLine{00846\ \{}
+\DoxyCodeLine{00847\ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}**\ bodyPtr\ =\ \mbox{\hyperlink{classbt_collision_world_importer_ac4f8e679a2e09ddcab79e68aa9342b6b}{m\_nameColObjMap}}.find(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}});}
+\DoxyCodeLine{00848\ \ \ \ \ \textcolor{keywordflow}{if}\ (bodyPtr\ \&\&\ *bodyPtr)}
+\DoxyCodeLine{00849\ \ \ \ \ \{}
+\DoxyCodeLine{00850\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *bodyPtr;}
+\DoxyCodeLine{00851\ \ \ \ \ \}}
+\DoxyCodeLine{00852\ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00853\ \}}
+\DoxyCodeLine{00854\ }
+\DoxyCodeLine{00855\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ \mbox{\hyperlink{classbt_collision_world_importer_adc1146c088b75d0916a08f72b1306501}{btCollisionWorldImporter::createCollisionObject}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ startTransform,\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ shape,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ bodyName)}
+\DoxyCodeLine{00856\ \{}
+\DoxyCodeLine{00857\ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ colObj\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}();}
+\DoxyCodeLine{00858\ \ \ \ \ colObj-\/>setWorldTransform(startTransform);}
+\DoxyCodeLine{00859\ \ \ \ \ colObj-\/>setCollisionShape(shape);}
+\DoxyCodeLine{00860\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_a4f63bddc3c92bebc7e3874c12ec84619}{m\_collisionWorld}}-\/>addCollisionObject(colObj);\ \ \textcolor{comment}{//todo:\ flags\ etc}}
+\DoxyCodeLine{00861\ }
+\DoxyCodeLine{00862\ \ \ \ \ \textcolor{keywordflow}{if}\ (bodyName)}
+\DoxyCodeLine{00863\ \ \ \ \ \{}
+\DoxyCodeLine{00864\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{char}*\ newname\ =\ \mbox{\hyperlink{classbt_collision_world_importer_a33249f29692bfda2fcf6e965d24a1342}{duplicateName}}(bodyName);}
+\DoxyCodeLine{00865\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ac72d058d0f5f60784bc08cb130cf29d6}{m\_objectNameMap}}.insert(colObj,\ newname);}
+\DoxyCodeLine{00866\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ac4f8e679a2e09ddcab79e68aa9342b6b}{m\_nameColObjMap}}.insert(newname,\ colObj);}
+\DoxyCodeLine{00867\ \ \ \ \ \}}
+\DoxyCodeLine{00868\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ace0f10fb239fc469230f09c3c756f41c}{m\_allocatedCollisionObjects}}.push\_back(colObj);}
+\DoxyCodeLine{00869\ }
+\DoxyCodeLine{00870\ \ \ \ \ \textcolor{keywordflow}{return}\ colObj;}
+\DoxyCodeLine{00871\ \}}
+\DoxyCodeLine{00872\ }
+\DoxyCodeLine{00873\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a31b5391383d8c1ff152ce3f1513669b1}{btCollisionWorldImporter::createPlaneShape}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ planeNormal,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ planeConstant)}
+\DoxyCodeLine{00874\ \{}
+\DoxyCodeLine{00875\ \ \ \ \ \mbox{\hyperlink{bt_static_plane_shape_8h_ae77a68ab5c1dcbde9294ebfaac68441f}{btStaticPlaneShape}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{bt_static_plane_shape_8h_ae77a68ab5c1dcbde9294ebfaac68441f}{btStaticPlaneShape}}(planeNormal,\ planeConstant);}
+\DoxyCodeLine{00876\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{00877\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{00878\ \}}
+\DoxyCodeLine{00879\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a7b15a719ec0f558c0703e73506763016}{btCollisionWorldImporter::createBoxShape}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ halfExtents)}
+\DoxyCodeLine{00880\ \{}
+\DoxyCodeLine{00881\ \ \ \ \ \mbox{\hyperlink{bt_box_shape_8h_af85a5dfc008b3c2268cd5f0555b3dc8d}{btBoxShape}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{bt_box_shape_8h_af85a5dfc008b3c2268cd5f0555b3dc8d}{btBoxShape}}(halfExtents);}
+\DoxyCodeLine{00882\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{00883\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{00884\ \}}
+\DoxyCodeLine{00885\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a701163cd8b8384d37bf4da9c33c4f6aa}{btCollisionWorldImporter::createSphereShape}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ radius)}
+\DoxyCodeLine{00886\ \{}
+\DoxyCodeLine{00887\ \ \ \ \ \mbox{\hyperlink{bt_sphere_shape_8h_a930d334ca38a868b18921a34affbda3b}{btSphereShape}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{bt_sphere_shape_8h_a930d334ca38a868b18921a34affbda3b}{btSphereShape}}(radius);}
+\DoxyCodeLine{00888\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{00889\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{00890\ \}}
+\DoxyCodeLine{00891\ }
+\DoxyCodeLine{00892\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_afe1bb066bbed52fe9b35b52f82c60f5e}{btCollisionWorldImporter::createCapsuleShapeX}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ radius,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}})}
+\DoxyCodeLine{00893\ \{}
+\DoxyCodeLine{00894\ \ \ \ \ \mbox{\hyperlink{classbt_capsule_shape_x}{btCapsuleShapeX}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{classbt_capsule_shape_x}{btCapsuleShapeX}}(radius,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}});}
+\DoxyCodeLine{00895\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{00896\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{00897\ \}}
+\DoxyCodeLine{00898\ }
+\DoxyCodeLine{00899\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_ad4156ddc98a1a90341f16d5a7dba4247}{btCollisionWorldImporter::createCapsuleShapeY}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ radius,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}})}
+\DoxyCodeLine{00900\ \{}
+\DoxyCodeLine{00901\ \ \ \ \ \mbox{\hyperlink{bt_capsule_shape_8h_a788927789bcaabfb9d590b3158ce163c}{btCapsuleShape}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{bt_capsule_shape_8h_a788927789bcaabfb9d590b3158ce163c}{btCapsuleShape}}(radius,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}});}
+\DoxyCodeLine{00902\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{00903\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{00904\ \}}
+\DoxyCodeLine{00905\ }
+\DoxyCodeLine{00906\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_ad5247569b9a0f815d50c7a5e4565845f}{btCollisionWorldImporter::createCapsuleShapeZ}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ radius,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}})}
+\DoxyCodeLine{00907\ \{}
+\DoxyCodeLine{00908\ \ \ \ \ \mbox{\hyperlink{classbt_capsule_shape_z}{btCapsuleShapeZ}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{classbt_capsule_shape_z}{btCapsuleShapeZ}}(radius,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}});}
+\DoxyCodeLine{00909\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{00910\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{00911\ \}}
+\DoxyCodeLine{00912\ }
+\DoxyCodeLine{00913\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a1e4d3ef3c794801cc321892d80ca6e57}{btCollisionWorldImporter::createCylinderShapeX}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ radius,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}})}
+\DoxyCodeLine{00914\ \{}
+\DoxyCodeLine{00915\ \ \ \ \ \mbox{\hyperlink{classbt_cylinder_shape_x}{btCylinderShapeX}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{classbt_cylinder_shape_x}{btCylinderShapeX}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}},\ radius,\ radius));}
+\DoxyCodeLine{00916\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{00917\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{00918\ \}}
+\DoxyCodeLine{00919\ }
+\DoxyCodeLine{00920\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_ad2e35b1f8df44c64c6978917aced589c}{btCollisionWorldImporter::createCylinderShapeY}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ radius,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}})}
+\DoxyCodeLine{00921\ \{}
+\DoxyCodeLine{00922\ \ \ \ \ \mbox{\hyperlink{bt_cylinder_shape_8h_a381386112893cecd318a83518af91f57}{btCylinderShape}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{bt_cylinder_shape_8h_a381386112893cecd318a83518af91f57}{btCylinderShape}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(radius,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}},\ radius));}
+\DoxyCodeLine{00923\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{00924\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{00925\ \}}
+\DoxyCodeLine{00926\ }
+\DoxyCodeLine{00927\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a8613fba7ca60d7a7b9d149b6d1cf0cd7}{btCollisionWorldImporter::createCylinderShapeZ}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ radius,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}})}
+\DoxyCodeLine{00928\ \{}
+\DoxyCodeLine{00929\ \ \ \ \ \mbox{\hyperlink{classbt_cylinder_shape_z}{btCylinderShapeZ}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{classbt_cylinder_shape_z}{btCylinderShapeZ}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(radius,\ radius,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}}));}
+\DoxyCodeLine{00930\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{00931\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{00932\ \}}
+\DoxyCodeLine{00933\ }
+\DoxyCodeLine{00934\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_aaeff47a5335cddd185ef094392075229}{btCollisionWorldImporter::createConeShapeX}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ radius,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}})}
+\DoxyCodeLine{00935\ \{}
+\DoxyCodeLine{00936\ \ \ \ \ \mbox{\hyperlink{classbt_cone_shape_x}{btConeShapeX}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{classbt_cone_shape_x}{btConeShapeX}}(radius,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}});}
+\DoxyCodeLine{00937\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{00938\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{00939\ \}}
+\DoxyCodeLine{00940\ }
+\DoxyCodeLine{00941\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a6d5da2097a2aac72036581622440c101}{btCollisionWorldImporter::createConeShapeY}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ radius,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}})}
+\DoxyCodeLine{00942\ \{}
+\DoxyCodeLine{00943\ \ \ \ \ \mbox{\hyperlink{bt_cone_shape_8h_a16406780452d81d6bafcd2518007d294}{btConeShape}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{bt_cone_shape_8h_a16406780452d81d6bafcd2518007d294}{btConeShape}}(radius,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}});}
+\DoxyCodeLine{00944\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{00945\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{00946\ \}}
+\DoxyCodeLine{00947\ }
+\DoxyCodeLine{00948\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a392387aadbb4e1e7ae8eb9777bca28c8}{btCollisionWorldImporter::createConeShapeZ}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ radius,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}})}
+\DoxyCodeLine{00949\ \{}
+\DoxyCodeLine{00950\ \ \ \ \ \mbox{\hyperlink{classbt_cone_shape_z}{btConeShapeZ}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{classbt_cone_shape_z}{btConeShapeZ}}(radius,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a456943498a720df0f4b62bafa5dad93c}{height}});}
+\DoxyCodeLine{00951\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{00952\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{00953\ \}}
+\DoxyCodeLine{00954\ }
+\DoxyCodeLine{00955\ \mbox{\hyperlink{bt_triangle_index_vertex_array_8h_a9f78f99541cc9459a202d498d7aa55c2}{btTriangleIndexVertexArray}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a3363b0c196f32569952f9a57c4838e38}{btCollisionWorldImporter::createTriangleMeshContainer}}()}
+\DoxyCodeLine{00956\ \{}
+\DoxyCodeLine{00957\ \ \ \ \ \mbox{\hyperlink{bt_triangle_index_vertex_array_8h_a9f78f99541cc9459a202d498d7aa55c2}{btTriangleIndexVertexArray}}*\ in\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{bt_triangle_index_vertex_array_8h_a9f78f99541cc9459a202d498d7aa55c2}{btTriangleIndexVertexArray}}();}
+\DoxyCodeLine{00958\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_a1ad3698c64576dd4fa9b1ec728513840}{m\_allocatedTriangleIndexArrays}}.push\_back(in);}
+\DoxyCodeLine{00959\ \ \ \ \ \textcolor{keywordflow}{return}\ in;}
+\DoxyCodeLine{00960\ \}}
+\DoxyCodeLine{00961\ }
+\DoxyCodeLine{00962\ \mbox{\hyperlink{bt_optimized_bvh_8h_a692209e97a920ab4c821bf92556c0c60}{btOptimizedBvh}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a1a4d83267c041e614767578e4d7ba061}{btCollisionWorldImporter::createOptimizedBvh}}()}
+\DoxyCodeLine{00963\ \{}
+\DoxyCodeLine{00964\ \ \ \ \ \mbox{\hyperlink{bt_optimized_bvh_8h_a692209e97a920ab4c821bf92556c0c60}{btOptimizedBvh}}*\ bvh\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{bt_optimized_bvh_8h_a692209e97a920ab4c821bf92556c0c60}{btOptimizedBvh}}();}
+\DoxyCodeLine{00965\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_a0126c4afc85c002aebadbd69c2e4a6e1}{m\_allocatedBvhs}}.push\_back(bvh);}
+\DoxyCodeLine{00966\ \ \ \ \ \textcolor{keywordflow}{return}\ bvh;}
+\DoxyCodeLine{00967\ \}}
+\DoxyCodeLine{00968\ }
+\DoxyCodeLine{00969\ \mbox{\hyperlink{structbt_triangle_info_map}{btTriangleInfoMap}}*\ \mbox{\hyperlink{classbt_collision_world_importer_aa868b2adb4497ce2685aab53341bc2ee}{btCollisionWorldImporter::createTriangleInfoMap}}()}
+\DoxyCodeLine{00970\ \{}
+\DoxyCodeLine{00971\ \ \ \ \ \mbox{\hyperlink{structbt_triangle_info_map}{btTriangleInfoMap}}*\ tim\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{structbt_triangle_info_map}{btTriangleInfoMap}}();}
+\DoxyCodeLine{00972\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_ad8ac9bf389b9888be66e477e67619ac2}{m\_allocatedTriangleInfoMaps}}.push\_back(tim);}
+\DoxyCodeLine{00973\ \ \ \ \ \textcolor{keywordflow}{return}\ tim;}
+\DoxyCodeLine{00974\ \}}
+\DoxyCodeLine{00975\ }
+\DoxyCodeLine{00976\ \mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_afb5faf0318ecfcc10193e151dea6c007}{btBvhTriangleMeshShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_abdf3499f96c3b916057f58056d085e81}{btCollisionWorldImporter::createBvhTriangleMeshShape}}(\mbox{\hyperlink{bt_striding_mesh_interface_8h_a6bcaf769f2690f5ee4a9d5205c51e464}{btStridingMeshInterface}}*\ trimesh,\ \mbox{\hyperlink{bt_optimized_bvh_8h_a692209e97a920ab4c821bf92556c0c60}{btOptimizedBvh}}*\ bvh)}
+\DoxyCodeLine{00977\ \{}
+\DoxyCodeLine{00978\ \ \ \ \ \textcolor{keywordflow}{if}\ (bvh)}
+\DoxyCodeLine{00979\ \ \ \ \ \{}
+\DoxyCodeLine{00980\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_afb5faf0318ecfcc10193e151dea6c007}{btBvhTriangleMeshShape}}*\ bvhTriMesh\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_afb5faf0318ecfcc10193e151dea6c007}{btBvhTriangleMeshShape}}(trimesh,\ bvh-\/>isQuantized(),\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00981\ \ \ \ \ \ \ \ \ bvhTriMesh-\/>setOptimizedBvh(bvh);}
+\DoxyCodeLine{00982\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(bvhTriMesh);}
+\DoxyCodeLine{00983\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ bvhTriMesh;}
+\DoxyCodeLine{00984\ \ \ \ \ \}}
+\DoxyCodeLine{00985\ }
+\DoxyCodeLine{00986\ \ \ \ \ \mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_afb5faf0318ecfcc10193e151dea6c007}{btBvhTriangleMeshShape}}*\ ts\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_afb5faf0318ecfcc10193e151dea6c007}{btBvhTriangleMeshShape}}(trimesh,\ \textcolor{keyword}{true});}
+\DoxyCodeLine{00987\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(ts);}
+\DoxyCodeLine{00988\ \ \ \ \ \textcolor{keywordflow}{return}\ ts;}
+\DoxyCodeLine{00989\ \}}
+\DoxyCodeLine{00990\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_ad000fd247e50645d886a4e54f113cd1f}{btCollisionWorldImporter::createConvexTriangleMeshShape}}(\mbox{\hyperlink{bt_striding_mesh_interface_8h_a6bcaf769f2690f5ee4a9d5205c51e464}{btStridingMeshInterface}}*\ trimesh)}
+\DoxyCodeLine{00991\ \{}
+\DoxyCodeLine{00992\ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00993\ \}}
+\DoxyCodeLine{00994\ \textcolor{preprocessor}{\#ifdef\ SUPPORT\_GIMPACT\_SHAPE\_IMPORT}}
+\DoxyCodeLine{00995\ \mbox{\hyperlink{classbt_g_impact_mesh_shape}{btGImpactMeshShape}}*\ btCollisionWorldImporter::createGimpactShape(\mbox{\hyperlink{bt_striding_mesh_interface_8h_a6bcaf769f2690f5ee4a9d5205c51e464}{btStridingMeshInterface}}*\ trimesh)}
+\DoxyCodeLine{00996\ \{}
+\DoxyCodeLine{00997\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape}{btGImpactMeshShape}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{classbt_g_impact_mesh_shape}{btGImpactMeshShape}}(trimesh);}
+\DoxyCodeLine{00998\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(shape);}
+\DoxyCodeLine{00999\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{01000\ \}}
+\DoxyCodeLine{01001\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//SUPPORT\_GIMPACT\_SHAPE\_IMPORT}}
+\DoxyCodeLine{01002\ }
+\DoxyCodeLine{01003\ \mbox{\hyperlink{bt_convex_hull_shape_8h_a069cf26ba277f9f5f141128fee345eaf}{btConvexHullShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a90702fc037f9611a23ea5869f7bdc4de}{btCollisionWorldImporter::createConvexHullShape}}()}
+\DoxyCodeLine{01004\ \{}
+\DoxyCodeLine{01005\ \ \ \ \ \mbox{\hyperlink{bt_convex_hull_shape_8h_a069cf26ba277f9f5f141128fee345eaf}{btConvexHullShape}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{bt_convex_hull_shape_8h_a069cf26ba277f9f5f141128fee345eaf}{btConvexHullShape}}();}
+\DoxyCodeLine{01006\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{01007\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{01008\ \}}
+\DoxyCodeLine{01009\ }
+\DoxyCodeLine{01010\ \mbox{\hyperlink{bt_compound_shape_8h_a166fd7989d21f3b10dc157d52571e11f}{btCompoundShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a62dc71fa177809d1f860700e261a0990}{btCollisionWorldImporter::createCompoundShape}}()}
+\DoxyCodeLine{01011\ \{}
+\DoxyCodeLine{01012\ \ \ \ \ \mbox{\hyperlink{bt_compound_shape_8h_a166fd7989d21f3b10dc157d52571e11f}{btCompoundShape}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{bt_compound_shape_8h_a166fd7989d21f3b10dc157d52571e11f}{btCompoundShape}}();}
+\DoxyCodeLine{01013\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{01014\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{01015\ \}}
+\DoxyCodeLine{01016\ }
+\DoxyCodeLine{01017\ \mbox{\hyperlink{bt_scaled_bvh_triangle_mesh_shape_8h_ab06a36b814f8402c9a5c021d66702d78}{btScaledBvhTriangleMeshShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_ad0b83fc3466a56a82785c13dc4f9da42}{btCollisionWorldImporter::createScaledTrangleMeshShape}}(\mbox{\hyperlink{bt_bvh_triangle_mesh_shape_8h_afb5faf0318ecfcc10193e151dea6c007}{btBvhTriangleMeshShape}}*\ meshShape,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ localScaling)}
+\DoxyCodeLine{01018\ \{}
+\DoxyCodeLine{01019\ \ \ \ \ \mbox{\hyperlink{bt_scaled_bvh_triangle_mesh_shape_8h_ab06a36b814f8402c9a5c021d66702d78}{btScaledBvhTriangleMeshShape}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{bt_scaled_bvh_triangle_mesh_shape_8h_ab06a36b814f8402c9a5c021d66702d78}{btScaledBvhTriangleMeshShape}}(meshShape,\ localScaling);}
+\DoxyCodeLine{01020\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{01021\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{01022\ \}}
+\DoxyCodeLine{01023\ }
+\DoxyCodeLine{01024\ \mbox{\hyperlink{bt_multi_sphere_shape_8h_aa5e37111da99af2c70d93763e761dd03}{btMultiSphereShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a64658f870036e72144a54c4e69fcf288}{btCollisionWorldImporter::createMultiSphereShape}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}*\ positions,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}*\ radi,\ \textcolor{keywordtype}{int}\ numSpheres)}
+\DoxyCodeLine{01025\ \{}
+\DoxyCodeLine{01026\ \ \ \ \ \mbox{\hyperlink{bt_multi_sphere_shape_8h_aa5e37111da99af2c70d93763e761dd03}{btMultiSphereShape}}*\ shape\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{bt_multi_sphere_shape_8h_aa5e37111da99af2c70d93763e761dd03}{btMultiSphereShape}}(positions,\ radi,\ numSpheres);}
+\DoxyCodeLine{01027\ \ \ \ \ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.push\_back(shape);}
+\DoxyCodeLine{01028\ \ \ \ \ \textcolor{keywordflow}{return}\ shape;}
+\DoxyCodeLine{01029\ \}}
+\DoxyCodeLine{01030\ }
+\DoxyCodeLine{01031\ \textcolor{comment}{//\ query\ for\ data}}
+\DoxyCodeLine{01032\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_collision_world_importer_aada5110f846493994ff9649b434d0fc3}{btCollisionWorldImporter::getNumCollisionShapes}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{01033\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{01034\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}.size();}
+\DoxyCodeLine{01035\ \}}
+\DoxyCodeLine{01036\ }
+\DoxyCodeLine{01037\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a763cd10a9ce4c0f722f28719ef5ed8cb}{btCollisionWorldImporter::getCollisionShapeByIndex}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}})}
+\DoxyCodeLine{01038\ \{}
+\DoxyCodeLine{01039\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_collision_world_importer_af7646a14938313a166ca54c133adaaaa}{m\_allocatedCollisionShapes}}[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}];}
+\DoxyCodeLine{01040\ \}}
+\DoxyCodeLine{01041\ }
+\DoxyCodeLine{01042\ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a2f9571bea798b44468908e19caacadfb}{btCollisionWorldImporter::getCollisionShapeByName}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}})}
+\DoxyCodeLine{01043\ \{}
+\DoxyCodeLine{01044\ \ \ \ \ \mbox{\hyperlink{bt_collision_shape_8h_a8eac71f171ceb430195201dfe2d08734}{btCollisionShape}}**\ shapePtr\ =\ \mbox{\hyperlink{classbt_collision_world_importer_ab7cd9aefea1418df81680d1a8fb62583}{m\_nameShapeMap}}.find(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}});}
+\DoxyCodeLine{01045\ \ \ \ \ \textcolor{keywordflow}{if}\ (shapePtr\ \&\&\ *shapePtr)}
+\DoxyCodeLine{01046\ \ \ \ \ \{}
+\DoxyCodeLine{01047\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *shapePtr;}
+\DoxyCodeLine{01048\ \ \ \ \ \}}
+\DoxyCodeLine{01049\ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{01050\ \}}
+\DoxyCodeLine{01051\ }
+\DoxyCodeLine{01052\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{classbt_collision_world_importer_aa7cd0698a1dc6b2bfe48c75a921aae38}{btCollisionWorldImporter::getNameForPointer}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{void}*\ ptr)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{01053\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{01054\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \textcolor{keyword}{const}*\ namePtr\ =\ \mbox{\hyperlink{classbt_collision_world_importer_ac72d058d0f5f60784bc08cb130cf29d6}{m\_objectNameMap}}.find(ptr);}
+\DoxyCodeLine{01055\ \ \ \ \ \textcolor{keywordflow}{if}\ (namePtr\ \&\&\ *namePtr)}
+\DoxyCodeLine{01056\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ *namePtr;}
+\DoxyCodeLine{01057\ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{01058\ \}}
+\DoxyCodeLine{01059\ }
+\DoxyCodeLine{01060\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_collision_world_importer_acbd2969e053b608069c5d53e5c70ca62}{btCollisionWorldImporter::getNumRigidBodies}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{01061\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{01062\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_collision_world_importer_a4c02f64ee95d00e8c33f89ba6c34fb6a}{m\_allocatedRigidBodies}}.size();}
+\DoxyCodeLine{01063\ \}}
+\DoxyCodeLine{01064\ }
+\DoxyCodeLine{01065\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ \mbox{\hyperlink{classbt_collision_world_importer_ac5ae8cdbf57ff057e1f7c6ff8547e9b5}{btCollisionWorldImporter::getRigidBodyByIndex}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}})\textcolor{keyword}{\ const}}
+\DoxyCodeLine{01066\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{01067\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_collision_world_importer_a4c02f64ee95d00e8c33f89ba6c34fb6a}{m\_allocatedRigidBodies}}[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}];}
+\DoxyCodeLine{01068\ \}}
+\DoxyCodeLine{01069\ }
+\DoxyCodeLine{01070\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_collision_world_importer_a43647c2ba1668f1c34503566667d7c41}{btCollisionWorldImporter::getNumBvhs}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{01071\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{01072\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_collision_world_importer_a0126c4afc85c002aebadbd69c2e4a6e1}{m\_allocatedBvhs}}.size();}
+\DoxyCodeLine{01073\ \}}
+\DoxyCodeLine{01074\ \mbox{\hyperlink{bt_optimized_bvh_8h_a692209e97a920ab4c821bf92556c0c60}{btOptimizedBvh}}*\ \mbox{\hyperlink{classbt_collision_world_importer_ac4cea6fc60525d9492ca11b54f9a93b6}{btCollisionWorldImporter::getBvhByIndex}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}})\textcolor{keyword}{\ const}}
+\DoxyCodeLine{01075\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{01076\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_collision_world_importer_a0126c4afc85c002aebadbd69c2e4a6e1}{m\_allocatedBvhs}}[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}];}
+\DoxyCodeLine{01077\ \}}
+\DoxyCodeLine{01078\ }
+\DoxyCodeLine{01079\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_collision_world_importer_a2ddedd5abdfb360336f937f0e2b623dc}{btCollisionWorldImporter::getNumTriangleInfoMaps}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{01080\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{01081\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_collision_world_importer_ad8ac9bf389b9888be66e477e67619ac2}{m\_allocatedTriangleInfoMaps}}.size();}
+\DoxyCodeLine{01082\ \}}
+\DoxyCodeLine{01083\ }
+\DoxyCodeLine{01084\ \mbox{\hyperlink{structbt_triangle_info_map}{btTriangleInfoMap}}*\ \mbox{\hyperlink{classbt_collision_world_importer_a45b16e5a1a4f348ed709164c815db65d}{btCollisionWorldImporter::getTriangleInfoMapByIndex}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}})\textcolor{keyword}{\ const}}
+\DoxyCodeLine{01085\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{01086\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_collision_world_importer_ad8ac9bf389b9888be66e477e67619ac2}{m\_allocatedTriangleInfoMaps}}[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}];}
+\DoxyCodeLine{01087\ \}}
+
+\end{DoxyCode}

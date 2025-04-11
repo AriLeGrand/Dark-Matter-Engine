@@ -1,0 +1,415 @@
+\doxysection{bt\+Box2d\+Box2d\+Collision\+Algorithm.\+cpp}
+\hypertarget{bt_box2d_box2d_collision_algorithm_8cpp_source}{}\label{bt_box2d_box2d_collision_algorithm_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/CollisionDispatch/btBox2dBox2dCollisionAlgorithm.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/CollisionDispatch/btBox2dBox2dCollisionAlgorithm.cpp}}
+\mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{*\ The\ b2CollidePolygons\ routines\ are\ Copyright\ (c)\ 2006-\/2007\ Erin\ Catto\ http://www.gphysics.com}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8h}{btBox2dBox2dCollisionAlgorithm.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_dispatcher_8h}{BulletCollision/CollisionDispatch/btCollisionDispatcher.h}}"{}}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_box_shape_8h}{BulletCollision/CollisionShapes/btBoxShape.h}}"{}}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_object_8h}{BulletCollision/CollisionDispatch/btCollisionObject.h}}"{}}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_box_box_detector_8h}{BulletCollision/CollisionDispatch/btBoxBoxDetector.h}}"{}}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_box2d_shape_8h}{BulletCollision/CollisionShapes/btBox2dShape.h}}"{}}}
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_object_wrapper_8h}{BulletCollision/CollisionDispatch/btCollisionObjectWrapper.h}}"{}}}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#define\ USE\_PERSISTENT\_CONTACTS\ 1}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \mbox{\hyperlink{classbt_box2d_box2d_collision_algorithm_ada986fe8e7553712794c54b4fe1083b7}{btBox2dBox2dCollisionAlgorithm::btBox2dBox2dCollisionAlgorithm}}(\mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}*\ mf,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_algorithm_construction_info}{btCollisionAlgorithmConstructionInfo}}\&\ ci,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ obj0Wrap,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ obj1Wrap)}
+\DoxyCodeLine{00030\ \ \ \ \ :\ \mbox{\hyperlink{classbt_activating_collision_algorithm_a8445dd4e3085b72cd76c9773fccea861}{btActivatingCollisionAlgorithm}}(ci,\ obj0Wrap,\ obj1Wrap),}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ m\_ownManifold(false),}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ m\_manifoldPtr(mf)}
+\DoxyCodeLine{00033\ \{}
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keywordflow}{if}\ (!m\_manifoldPtr\ \&\&\ \mbox{\hyperlink{classbt_collision_algorithm_a11004907cdf3028c635486b435302f90}{m\_dispatcher}}-\/>needsCollision(obj0Wrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_ae58fab885d967232e8eb1096ef8c3215}{getCollisionObject}}(),\ obj1Wrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_ae58fab885d967232e8eb1096ef8c3215}{getCollisionObject}}()))}
+\DoxyCodeLine{00035\ \ \ \ \ \{}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ m\_manifoldPtr\ =\ m\_dispatcher-\/>getNewManifold(obj0Wrap-\/>getCollisionObject(),\ obj1Wrap-\/>getCollisionObject());}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ m\_ownManifold\ =\ true;}
+\DoxyCodeLine{00038\ \ \ \ \ \}}
+\DoxyCodeLine{00039\ \}}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \mbox{\hyperlink{classbt_box2d_box2d_collision_algorithm_a53be3659f2eacf3d59e07770c763dd37}{btBox2dBox2dCollisionAlgorithm::\string~btBox2dBox2dCollisionAlgorithm}}()}
+\DoxyCodeLine{00042\ \{}
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_ownManifold)}
+\DoxyCodeLine{00044\ \ \ \ \ \{}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_manifoldPtr)}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_algorithm_a11004907cdf3028c635486b435302f90}{m\_dispatcher}}-\/>releaseManifold(m\_manifoldPtr);}
+\DoxyCodeLine{00047\ \ \ \ \ \}}
+\DoxyCodeLine{00048\ \}}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a8d4e1150c9d2b008c53f87bbd4113360}{b2CollidePolygons}}(\mbox{\hyperlink{classbt_manifold_result}{btManifoldResult}}*\ manifold,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*\ polyA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ xfA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*\ polyB,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ xfB);}
+\DoxyCodeLine{00051\ }
+\DoxyCodeLine{00052\ \textcolor{comment}{//\#include\ <stdio.h>}}
+\DoxyCodeLine{00053\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_box2d_box2d_collision_algorithm_a3846aea21893fc6bae2c122b5ae8c862}{btBox2dBox2dCollisionAlgorithm::processCollision}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ body0Wrap,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ body1Wrap,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_dispatcher_info}{btDispatcherInfo}}\&\ dispatchInfo,\ \mbox{\hyperlink{classbt_manifold_result}{btManifoldResult}}*\ resultOut)}
+\DoxyCodeLine{00054\ \{}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keywordflow}{if}\ (!m\_manifoldPtr)}
+\DoxyCodeLine{00056\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00057\ }
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*\ box0\ =\ (\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*)body0Wrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a4d0eab4572788c8627d8badff7312a67}{getCollisionShape}}();}
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*\ box1\ =\ (\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*)body1Wrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a4d0eab4572788c8627d8badff7312a67}{getCollisionShape}}();}
+\DoxyCodeLine{00060\ }
+\DoxyCodeLine{00061\ \ \ \ \ resultOut-\/>\mbox{\hyperlink{classbt_manifold_result_a7a46d46b9a13c2896695e458c1d6df1f}{setPersistentManifold}}(m\_manifoldPtr);}
+\DoxyCodeLine{00062\ }
+\DoxyCodeLine{00063\ \ \ \ \ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a8d4e1150c9d2b008c53f87bbd4113360}{b2CollidePolygons}}(resultOut,\ box0,\ body0Wrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a707b16ff995f2b7575bbdc2882b17b6f}{getWorldTransform}}(),\ box1,\ body1Wrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a707b16ff995f2b7575bbdc2882b17b6f}{getWorldTransform}}());}
+\DoxyCodeLine{00064\ }
+\DoxyCodeLine{00065\ \ \ \ \ \textcolor{comment}{//\ \ refreshContactPoints\ is\ only\ necessary\ when\ using\ persistent\ contact\ points.\ otherwise\ all\ points\ are\ newly\ added}}
+\DoxyCodeLine{00066\ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_ownManifold)}
+\DoxyCodeLine{00067\ \ \ \ \ \{}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ resultOut-\/>\mbox{\hyperlink{classbt_manifold_result_adbcfd865252ac9dc8a3543f404e2dcf1}{refreshContactPoints}}();}
+\DoxyCodeLine{00069\ \ \ \ \ \}}
+\DoxyCodeLine{00070\ \}}
+\DoxyCodeLine{00071\ }
+\DoxyCodeLine{00072\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_box2d_box2d_collision_algorithm_accb9ce1c6603be1f06d52cc990a59fd3}{btBox2dBox2dCollisionAlgorithm::calculateTimeOfImpact}}(\mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ \textcolor{comment}{/*body0*/},\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ \textcolor{comment}{/*body1*/},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_dispatcher_info}{btDispatcherInfo}}\&\ \textcolor{comment}{/*dispatchInfo*/},\ \mbox{\hyperlink{classbt_manifold_result}{btManifoldResult}}*\ \textcolor{comment}{/*resultOut*/})}
+\DoxyCodeLine{00073\ \{}
+\DoxyCodeLine{00074\ \ \ \ \ \textcolor{comment}{//not\ yet}}
+\DoxyCodeLine{00075\ \ \ \ \ \textcolor{keywordflow}{return}\ 1.f;}
+\DoxyCodeLine{00076\ \}}
+\DoxyCodeLine{00077\ }
+\DoxyCodeLine{00078\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{struct_clip_vertex}{ClipVertex}}}
+\DoxyCodeLine{00079\ \{}
+\DoxyCodeLine{00080\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{struct_clip_vertex_aef0ba87278279d173dca2bc61df03f56}{v}};}
+\DoxyCodeLine{00081\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct_clip_vertex_af1c55f4364142bb535e84db13c7eb632}{id}};}
+\DoxyCodeLine{00082\ \ \ \ \ \textcolor{comment}{//b2ContactID\ id;}}
+\DoxyCodeLine{00083\ \ \ \ \ \textcolor{comment}{//b2ContactID\ id;}}
+\DoxyCodeLine{00084\ \};}
+\DoxyCodeLine{00085\ }
+\DoxyCodeLine{00086\ \textcolor{preprocessor}{\#define\ b2Dot(a,\ b)\ (a).dot(b)}}
+\DoxyCodeLine{00087\ \textcolor{preprocessor}{\#define\ b2Mul(a,\ b)\ (a)\ *\ (b)}}
+\DoxyCodeLine{00088\ \textcolor{preprocessor}{\#define\ b2MulT(a,\ b)\ (a).transpose()\ *\ (b)}}
+\DoxyCodeLine{00089\ \textcolor{preprocessor}{\#define\ b2Cross(a,\ b)\ (a).cross(b)}}
+\DoxyCodeLine{00090\ \textcolor{preprocessor}{\#define\ btCrossS(a,\ s)\ btVector3(s*\ a.getY(),\ -\/s*\ a.getX(),\ 0.f)}}
+\DoxyCodeLine{00091\ }
+\DoxyCodeLine{00092\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a3f18267da8aa47e5e1b5f4dd91f85b62}{b2\_maxManifoldPoints}}\ =\ 2;}
+\DoxyCodeLine{00093\ }
+\DoxyCodeLine{00094\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{int}\ ClipSegmentToLine(\mbox{\hyperlink{struct_clip_vertex}{ClipVertex}}\ vOut[2],\ \mbox{\hyperlink{struct_clip_vertex}{ClipVertex}}\ vIn[2],}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ normal,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}})}
+\DoxyCodeLine{00096\ \{}
+\DoxyCodeLine{00097\ \ \ \ \ \textcolor{comment}{//\ Start\ with\ no\ output\ points}}
+\DoxyCodeLine{00098\ \ \ \ \ \textcolor{keywordtype}{int}\ numOut\ =\ 0;}
+\DoxyCodeLine{00099\ }
+\DoxyCodeLine{00100\ \ \ \ \ \textcolor{comment}{//\ Calculate\ the\ distance\ of\ end\ points\ to\ the\ line}}
+\DoxyCodeLine{00101\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ distance0\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a60c0164f50ddf2802a75d434e2e8e01e}{b2Dot}}(normal,\ vIn[0].\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}})\ -\/\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}};}
+\DoxyCodeLine{00102\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ distance1\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a60c0164f50ddf2802a75d434e2e8e01e}{b2Dot}}(normal,\ vIn[1].\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}})\ -\/\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}};}
+\DoxyCodeLine{00103\ }
+\DoxyCodeLine{00104\ \ \ \ \ \textcolor{comment}{//\ If\ the\ points\ are\ behind\ the\ plane}}
+\DoxyCodeLine{00105\ \ \ \ \ \textcolor{keywordflow}{if}\ (distance0\ <=\ 0.0f)\ vOut[numOut++]\ =\ vIn[0];}
+\DoxyCodeLine{00106\ \ \ \ \ \textcolor{keywordflow}{if}\ (distance1\ <=\ 0.0f)\ vOut[numOut++]\ =\ vIn[1];}
+\DoxyCodeLine{00107\ }
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{comment}{//\ If\ the\ points\ are\ on\ different\ sides\ of\ the\ plane}}
+\DoxyCodeLine{00109\ \ \ \ \ \textcolor{keywordflow}{if}\ (distance0\ *\ distance1\ <\ 0.0f)}
+\DoxyCodeLine{00110\ \ \ \ \ \{}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Find\ intersection\ point\ of\ edge\ and\ plane}}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ interp\ =\ distance0\ /\ (distance0\ -\/\ distance1);}
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \ \ vOut[numOut].\mbox{\hyperlink{struct_clip_vertex_aef0ba87278279d173dca2bc61df03f56}{v}}\ =\ vIn[0].\mbox{\hyperlink{struct_clip_vertex_aef0ba87278279d173dca2bc61df03f56}{v}}\ +\ interp\ *\ (vIn[1].\mbox{\hyperlink{struct_clip_vertex_aef0ba87278279d173dca2bc61df03f56}{v}}\ -\/\ vIn[0].\mbox{\hyperlink{struct_clip_vertex_aef0ba87278279d173dca2bc61df03f56}{v}});}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (distance0\ >\ 0.0f)}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ \ \ \ \ vOut[numOut].\mbox{\hyperlink{struct_clip_vertex_af1c55f4364142bb535e84db13c7eb632}{id}}\ =\ vIn[0].\mbox{\hyperlink{struct_clip_vertex_af1c55f4364142bb535e84db13c7eb632}{id}};}
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00118\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00119\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \ \ \ \ \ \ vOut[numOut].\mbox{\hyperlink{struct_clip_vertex_af1c55f4364142bb535e84db13c7eb632}{id}}\ =\ vIn[1].\mbox{\hyperlink{struct_clip_vertex_af1c55f4364142bb535e84db13c7eb632}{id}};}
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ ++numOut;}
+\DoxyCodeLine{00123\ \ \ \ \ \}}
+\DoxyCodeLine{00124\ }
+\DoxyCodeLine{00125\ \ \ \ \ \textcolor{keywordflow}{return}\ numOut;}
+\DoxyCodeLine{00126\ \}}
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00128\ \textcolor{comment}{//\ Find\ the\ separation\ between\ poly1\ and\ poly2\ for\ a\ give\ edge\ normal\ on\ poly1.}}
+\DoxyCodeLine{00129\ \textcolor{keyword}{static}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ EdgeSeparation(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*\ poly1,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ xf1,\ \textcolor{keywordtype}{int}\ edge1,}
+\DoxyCodeLine{00130\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*\ poly2,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ xf2)}
+\DoxyCodeLine{00131\ \{}
+\DoxyCodeLine{00132\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}*\ vertices1\ =\ poly1-\/>getVertices();}
+\DoxyCodeLine{00133\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}*\ normals1\ =\ poly1-\/>getNormals();}
+\DoxyCodeLine{00134\ }
+\DoxyCodeLine{00135\ \ \ \ \ \textcolor{keywordtype}{int}\ count2\ =\ poly2-\/>getVertexCount();}
+\DoxyCodeLine{00136\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}*\ vertices2\ =\ poly2-\/>getVertices();}
+\DoxyCodeLine{00137\ }
+\DoxyCodeLine{00138\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(0\ <=\ edge1\ \&\&\ edge1\ <\ poly1-\/>\mbox{\hyperlink{bt_box2d_shape_8h_af5422019d8237e5a98147f4301e8ccab}{getVertexCount}}());}
+\DoxyCodeLine{00139\ }
+\DoxyCodeLine{00140\ \ \ \ \ \textcolor{comment}{//\ Convert\ normal\ from\ poly1's\ frame\ into\ poly2's\ frame.}}
+\DoxyCodeLine{00141\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ normal1World\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a045a893631ec823f3469437534ccd21b}{b2Mul}}(xf1.getBasis(),\ normals1[edge1]);}
+\DoxyCodeLine{00142\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ normal1\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_aa8f1f4d0dc4e6c5ad2b86a202c7abcff}{b2MulT}}(xf2.getBasis(),\ normal1World);}
+\DoxyCodeLine{00143\ }
+\DoxyCodeLine{00144\ \ \ \ \ \textcolor{comment}{//\ Find\ support\ vertex\ on\ poly2\ for\ -\/normal.}}
+\DoxyCodeLine{00145\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}\ =\ 0;}
+\DoxyCodeLine{00146\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{b3_vector3_8h_aea1ffecc03c0c9dad0bb117dd3de44ce}{minDot}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}};}
+\DoxyCodeLine{00147\ }
+\DoxyCodeLine{00148\ \ \ \ \ \textcolor{keywordflow}{if}\ (count2\ >\ 0)}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}\ =\ (int)normal1.minDot(vertices2,\ count2,\ \mbox{\hyperlink{b3_vector3_8h_aea1ffecc03c0c9dad0bb117dd3de44ce}{minDot}});}
+\DoxyCodeLine{00150\ }
+\DoxyCodeLine{00151\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{glad_8h_a0779c3b73f9aa3a0ac5b0139b5d291d9}{v1}}\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a045a893631ec823f3469437534ccd21b}{b2Mul}}(xf1,\ vertices1[edge1]);}
+\DoxyCodeLine{00152\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{glad_8h_a9a09a1837922b2b806f4589096a52049}{v2}}\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a045a893631ec823f3469437534ccd21b}{b2Mul}}(xf2,\ vertices2[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}]);}
+\DoxyCodeLine{00153\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ separation\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a60c0164f50ddf2802a75d434e2e8e01e}{b2Dot}}(\mbox{\hyperlink{glad_8h_a9a09a1837922b2b806f4589096a52049}{v2}}\ -\/\ \mbox{\hyperlink{glad_8h_a0779c3b73f9aa3a0ac5b0139b5d291d9}{v1}},\ normal1World);}
+\DoxyCodeLine{00154\ \ \ \ \ \textcolor{keywordflow}{return}\ separation;}
+\DoxyCodeLine{00155\ \}}
+\DoxyCodeLine{00156\ }
+\DoxyCodeLine{00157\ \textcolor{comment}{//\ Find\ the\ max\ separation\ between\ poly1\ and\ poly2\ using\ edge\ normals\ from\ poly1.}}
+\DoxyCodeLine{00158\ \textcolor{keyword}{static}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ FindMaxSeparation(\textcolor{keywordtype}{int}*\ edgeIndex,}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*\ poly1,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ xf1,}
+\DoxyCodeLine{00160\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*\ poly2,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ xf2)}
+\DoxyCodeLine{00161\ \{}
+\DoxyCodeLine{00162\ \ \ \ \ \textcolor{keywordtype}{int}\ count1\ =\ poly1-\/>getVertexCount();}
+\DoxyCodeLine{00163\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}*\ normals1\ =\ poly1-\/>getNormals();}
+\DoxyCodeLine{00164\ }
+\DoxyCodeLine{00165\ \ \ \ \ \textcolor{comment}{//\ Vector\ pointing\ from\ the\ centroid\ of\ poly1\ to\ the\ centroid\ of\ poly2.}}
+\DoxyCodeLine{00166\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ d\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a045a893631ec823f3469437534ccd21b}{b2Mul}}(xf2,\ poly2-\/>getCentroid())\ -\/\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a045a893631ec823f3469437534ccd21b}{b2Mul}}(xf1,\ poly1-\/>getCentroid());}
+\DoxyCodeLine{00167\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ dLocal1\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_aa8f1f4d0dc4e6c5ad2b86a202c7abcff}{b2MulT}}(xf1.getBasis(),\ d);}
+\DoxyCodeLine{00168\ }
+\DoxyCodeLine{00169\ \ \ \ \ \textcolor{comment}{//\ Find\ edge\ normal\ on\ poly1\ that\ has\ the\ largest\ projection\ onto\ d.}}
+\DoxyCodeLine{00170\ \ \ \ \ \textcolor{keywordtype}{int}\ edge\ =\ 0;}
+\DoxyCodeLine{00171\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{b3_vector3_8h_a7ff74ce3a98c583d3c0b241fe0b99fd0}{maxDot}};}
+\DoxyCodeLine{00172\ \ \ \ \ \textcolor{keywordflow}{if}\ (count1\ >\ 0)}
+\DoxyCodeLine{00173\ \ \ \ \ \ \ \ \ edge\ =\ (int)dLocal1.maxDot(normals1,\ count1,\ \mbox{\hyperlink{b3_vector3_8h_a7ff74ce3a98c583d3c0b241fe0b99fd0}{maxDot}});}
+\DoxyCodeLine{00174\ }
+\DoxyCodeLine{00175\ \ \ \ \ \textcolor{comment}{//\ Get\ the\ separation\ for\ the\ edge\ normal.}}
+\DoxyCodeLine{00176\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ s\ =\ EdgeSeparation(poly1,\ xf1,\ edge,\ poly2,\ xf2);}
+\DoxyCodeLine{00177\ \ \ \ \ \textcolor{keywordflow}{if}\ (s\ >\ 0.0f)}
+\DoxyCodeLine{00178\ \ \ \ \ \{}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ s;}
+\DoxyCodeLine{00180\ \ \ \ \ \}}
+\DoxyCodeLine{00181\ }
+\DoxyCodeLine{00182\ \ \ \ \ \textcolor{comment}{//\ Check\ the\ separation\ for\ the\ previous\ edge\ normal.}}
+\DoxyCodeLine{00183\ \ \ \ \ \textcolor{keywordtype}{int}\ prevEdge\ =\ edge\ -\/\ 1\ >=\ 0\ ?\ edge\ -\/\ 1\ :\ count1\ -\/\ 1;}
+\DoxyCodeLine{00184\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sPrev\ =\ EdgeSeparation(poly1,\ xf1,\ prevEdge,\ poly2,\ xf2);}
+\DoxyCodeLine{00185\ \ \ \ \ \textcolor{keywordflow}{if}\ (sPrev\ >\ 0.0f)}
+\DoxyCodeLine{00186\ \ \ \ \ \{}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ sPrev;}
+\DoxyCodeLine{00188\ \ \ \ \ \}}
+\DoxyCodeLine{00189\ }
+\DoxyCodeLine{00190\ \ \ \ \ \textcolor{comment}{//\ Check\ the\ separation\ for\ the\ next\ edge\ normal.}}
+\DoxyCodeLine{00191\ \ \ \ \ \textcolor{keywordtype}{int}\ nextEdge\ =\ edge\ +\ 1\ <\ count1\ ?\ edge\ +\ 1\ :\ 0;}
+\DoxyCodeLine{00192\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sNext\ =\ EdgeSeparation(poly1,\ xf1,\ nextEdge,\ poly2,\ xf2);}
+\DoxyCodeLine{00193\ \ \ \ \ \textcolor{keywordflow}{if}\ (sNext\ >\ 0.0f)}
+\DoxyCodeLine{00194\ \ \ \ \ \{}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ sNext;}
+\DoxyCodeLine{00196\ \ \ \ \ \}}
+\DoxyCodeLine{00197\ }
+\DoxyCodeLine{00198\ \ \ \ \ \textcolor{comment}{//\ Find\ the\ best\ edge\ and\ the\ search\ direction.}}
+\DoxyCodeLine{00199\ \ \ \ \ \textcolor{keywordtype}{int}\ bestEdge;}
+\DoxyCodeLine{00200\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ bestSeparation;}
+\DoxyCodeLine{00201\ \ \ \ \ \textcolor{keywordtype}{int}\ increment;}
+\DoxyCodeLine{00202\ \ \ \ \ \textcolor{keywordflow}{if}\ (sPrev\ >\ s\ \&\&\ sPrev\ >\ sNext)}
+\DoxyCodeLine{00203\ \ \ \ \ \{}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ increment\ =\ -\/1;}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ bestEdge\ =\ prevEdge;}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ bestSeparation\ =\ sPrev;}
+\DoxyCodeLine{00207\ \ \ \ \ \}}
+\DoxyCodeLine{00208\ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (sNext\ >\ s)}
+\DoxyCodeLine{00209\ \ \ \ \ \{}
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ increment\ =\ 1;}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ bestEdge\ =\ nextEdge;}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ bestSeparation\ =\ sNext;}
+\DoxyCodeLine{00213\ \ \ \ \ \}}
+\DoxyCodeLine{00214\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00215\ \ \ \ \ \{}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ *edgeIndex\ =\ edge;}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ s;}
+\DoxyCodeLine{00218\ \ \ \ \ \}}
+\DoxyCodeLine{00219\ }
+\DoxyCodeLine{00220\ \ \ \ \ \textcolor{comment}{//\ Perform\ a\ local\ search\ for\ the\ best\ edge\ normal.}}
+\DoxyCodeLine{00221\ \ \ \ \ \textcolor{keywordflow}{for}\ (;;)}
+\DoxyCodeLine{00222\ \ \ \ \ \{}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (increment\ ==\ -\/1)}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ \ \ \ \ edge\ =\ bestEdge\ -\/\ 1\ >=\ 0\ ?\ bestEdge\ -\/\ 1\ :\ count1\ -\/\ 1;}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \ \ \ \ edge\ =\ bestEdge\ +\ 1\ <\ count1\ ?\ bestEdge\ +\ 1\ :\ 0;}
+\DoxyCodeLine{00227\ }
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ s\ =\ EdgeSeparation(poly1,\ xf1,\ edge,\ poly2,\ xf2);}
+\DoxyCodeLine{00229\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (s\ >\ 0.0f)}
+\DoxyCodeLine{00230\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00231\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ s;}
+\DoxyCodeLine{00232\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00233\ }
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (s\ >\ bestSeparation)}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \ \ \ \ \ \ bestEdge\ =\ edge;}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \ \ \ \ bestSeparation\ =\ s;}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00243\ \ \ \ \ \}}
+\DoxyCodeLine{00244\ }
+\DoxyCodeLine{00245\ \ \ \ \ *edgeIndex\ =\ bestEdge;}
+\DoxyCodeLine{00246\ \ \ \ \ \textcolor{keywordflow}{return}\ bestSeparation;}
+\DoxyCodeLine{00247\ \}}
+\DoxyCodeLine{00248\ }
+\DoxyCodeLine{00249\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ FindIncidentEdge(\mbox{\hyperlink{struct_clip_vertex}{ClipVertex}}\ c[2],}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*\ poly1,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ xf1,\ \textcolor{keywordtype}{int}\ edge1,}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*\ poly2,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ xf2)}
+\DoxyCodeLine{00252\ \{}
+\DoxyCodeLine{00253\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}*\ normals1\ =\ poly1-\/>getNormals();}
+\DoxyCodeLine{00254\ }
+\DoxyCodeLine{00255\ \ \ \ \ \textcolor{keywordtype}{int}\ count2\ =\ poly2-\/>getVertexCount();}
+\DoxyCodeLine{00256\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}*\ vertices2\ =\ poly2-\/>getVertices();}
+\DoxyCodeLine{00257\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}*\ normals2\ =\ poly2-\/>getNormals();}
+\DoxyCodeLine{00258\ }
+\DoxyCodeLine{00259\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(0\ <=\ edge1\ \&\&\ edge1\ <\ poly1-\/>\mbox{\hyperlink{bt_box2d_shape_8h_af5422019d8237e5a98147f4301e8ccab}{getVertexCount}}());}
+\DoxyCodeLine{00260\ }
+\DoxyCodeLine{00261\ \ \ \ \ \textcolor{comment}{//\ Get\ the\ normal\ of\ the\ reference\ edge\ in\ poly2's\ frame.}}
+\DoxyCodeLine{00262\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ normal1\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_aa8f1f4d0dc4e6c5ad2b86a202c7abcff}{b2MulT}}(xf2.getBasis(),\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a045a893631ec823f3469437534ccd21b}{b2Mul}}(xf1.getBasis(),\ normals1[edge1]));}
+\DoxyCodeLine{00263\ }
+\DoxyCodeLine{00264\ \ \ \ \ \textcolor{comment}{//\ Find\ the\ incident\ edge\ on\ poly2.}}
+\DoxyCodeLine{00265\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}\ =\ 0;}
+\DoxyCodeLine{00266\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{b3_vector3_8h_aea1ffecc03c0c9dad0bb117dd3de44ce}{minDot}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}};}
+\DoxyCodeLine{00267\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ count2;\ ++i)}
+\DoxyCodeLine{00268\ \ \ \ \ \{}
+\DoxyCodeLine{00269\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a60c0164f50ddf2802a75d434e2e8e01e}{b2Dot}}(normal1,\ normals2[i]);}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ <\ \mbox{\hyperlink{b3_vector3_8h_aea1ffecc03c0c9dad0bb117dd3de44ce}{minDot}})}
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00272\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_aea1ffecc03c0c9dad0bb117dd3de44ce}{minDot}}\ =\ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}};}
+\DoxyCodeLine{00273\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}\ =\ i;}
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00275\ \ \ \ \ \}}
+\DoxyCodeLine{00276\ }
+\DoxyCodeLine{00277\ \ \ \ \ \textcolor{comment}{//\ Build\ the\ clip\ vertices\ for\ the\ incident\ edge.}}
+\DoxyCodeLine{00278\ \ \ \ \ \textcolor{keywordtype}{int}\ i1\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}};}
+\DoxyCodeLine{00279\ \ \ \ \ \textcolor{keywordtype}{int}\ i2\ =\ i1\ +\ 1\ <\ count2\ ?\ i1\ +\ 1\ :\ 0;}
+\DoxyCodeLine{00280\ }
+\DoxyCodeLine{00281\ \ \ \ \ c[0].\mbox{\hyperlink{struct_clip_vertex_aef0ba87278279d173dca2bc61df03f56}{v}}\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a045a893631ec823f3469437534ccd21b}{b2Mul}}(xf2,\ vertices2[i1]);}
+\DoxyCodeLine{00282\ \ \ \ \ \textcolor{comment}{//\ \ c[0].id.features.referenceEdge\ =\ (unsigned\ char)edge1;}}
+\DoxyCodeLine{00283\ \ \ \ \ \textcolor{comment}{//\ \ c[0].id.features.incidentEdge\ =\ (unsigned\ char)i1;}}
+\DoxyCodeLine{00284\ \ \ \ \ \textcolor{comment}{//\ \ c[0].id.features.incidentVertex\ =\ 0;}}
+\DoxyCodeLine{00285\ }
+\DoxyCodeLine{00286\ \ \ \ \ c[1].\mbox{\hyperlink{struct_clip_vertex_aef0ba87278279d173dca2bc61df03f56}{v}}\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a045a893631ec823f3469437534ccd21b}{b2Mul}}(xf2,\ vertices2[i2]);}
+\DoxyCodeLine{00287\ \ \ \ \ \textcolor{comment}{//\ \ c[1].id.features.referenceEdge\ =\ (unsigned\ char)edge1;}}
+\DoxyCodeLine{00288\ \ \ \ \ \textcolor{comment}{//\ \ c[1].id.features.incidentEdge\ =\ (unsigned\ char)i2;}}
+\DoxyCodeLine{00289\ \ \ \ \ \textcolor{comment}{//\ \ c[1].id.features.incidentVertex\ =\ 1;}}
+\DoxyCodeLine{00290\ \}}
+\DoxyCodeLine{00291\ }
+\DoxyCodeLine{00292\ \textcolor{comment}{//\ Find\ edge\ normal\ of\ max\ separation\ on\ A\ -\/\ return\ if\ separating\ axis\ is\ found}}
+\DoxyCodeLine{00293\ \textcolor{comment}{//\ Find\ edge\ normal\ of\ max\ separation\ on\ B\ -\/\ return\ if\ separation\ axis\ is\ found}}
+\DoxyCodeLine{00294\ \textcolor{comment}{//\ Choose\ reference\ edge\ as\ min(minA,\ minB)}}
+\DoxyCodeLine{00295\ \textcolor{comment}{//\ Find\ incident\ edge}}
+\DoxyCodeLine{00296\ \textcolor{comment}{//\ Clip}}
+\DoxyCodeLine{00297\ }
+\DoxyCodeLine{00298\ \textcolor{comment}{//\ The\ normal\ points\ from\ 1\ to\ 2}}
+\DoxyCodeLine{00299\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a8d4e1150c9d2b008c53f87bbd4113360}{b2CollidePolygons}}(\mbox{\hyperlink{classbt_manifold_result}{btManifoldResult}}*\ manifold,}
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*\ polyA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ xfA,}
+\DoxyCodeLine{00301\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*\ polyB,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ xfB)}
+\DoxyCodeLine{00302\ \{}
+\DoxyCodeLine{00303\ \ \ \ \ \textcolor{keywordtype}{int}\ edgeA\ =\ 0;}
+\DoxyCodeLine{00304\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ separationA\ =\ FindMaxSeparation(\&edgeA,\ polyA,\ xfA,\ polyB,\ xfB);}
+\DoxyCodeLine{00305\ \ \ \ \ \textcolor{keywordflow}{if}\ (separationA\ >\ 0.0f)}
+\DoxyCodeLine{00306\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00307\ }
+\DoxyCodeLine{00308\ \ \ \ \ \textcolor{keywordtype}{int}\ edgeB\ =\ 0;}
+\DoxyCodeLine{00309\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ separationB\ =\ FindMaxSeparation(\&edgeB,\ polyB,\ xfB,\ polyA,\ xfA);}
+\DoxyCodeLine{00310\ \ \ \ \ \textcolor{keywordflow}{if}\ (separationB\ >\ 0.0f)}
+\DoxyCodeLine{00311\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00312\ }
+\DoxyCodeLine{00313\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*\ poly1;\ \ \textcolor{comment}{//\ reference\ poly}}
+\DoxyCodeLine{00314\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box2d_shape_8h_a309256df462befb46ad095dec46e17cd}{btBox2dShape}}*\ poly2;\ \ \textcolor{comment}{//\ incident\ poly}}
+\DoxyCodeLine{00315\ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ xf1,\ xf2;}
+\DoxyCodeLine{00316\ \ \ \ \ \textcolor{keywordtype}{int}\ edge1;\ \ \textcolor{comment}{//\ reference\ edge}}
+\DoxyCodeLine{00317\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}\ flip;}
+\DoxyCodeLine{00318\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ k\_relativeTol\ =\ 0.98f;}
+\DoxyCodeLine{00319\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ k\_absoluteTol\ =\ 0.001f;}
+\DoxyCodeLine{00320\ }
+\DoxyCodeLine{00321\ \ \ \ \ \textcolor{comment}{//\ TODO\_ERIN\ use\ "{}radius"{}\ of\ poly\ for\ absolute\ tolerance.}}
+\DoxyCodeLine{00322\ \ \ \ \ \textcolor{keywordflow}{if}\ (separationB\ >\ k\_relativeTol\ *\ separationA\ +\ k\_absoluteTol)}
+\DoxyCodeLine{00323\ \ \ \ \ \{}
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ poly1\ =\ polyB;}
+\DoxyCodeLine{00325\ \ \ \ \ \ \ \ \ poly2\ =\ polyA;}
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ xf1\ =\ xfB;}
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ xf2\ =\ xfA;}
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ edge1\ =\ edgeB;}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ flip\ =\ 1;}
+\DoxyCodeLine{00330\ \ \ \ \ \}}
+\DoxyCodeLine{00331\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00332\ \ \ \ \ \{}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \ \ poly1\ =\ polyA;}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ poly2\ =\ polyB;}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ xf1\ =\ xfA;}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ xf2\ =\ xfB;}
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \ \ edge1\ =\ edgeA;}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \ \ flip\ =\ 0;}
+\DoxyCodeLine{00339\ \ \ \ \ \}}
+\DoxyCodeLine{00340\ }
+\DoxyCodeLine{00341\ \ \ \ \ \mbox{\hyperlink{struct_clip_vertex}{ClipVertex}}\ incidentEdge[2];}
+\DoxyCodeLine{00342\ \ \ \ \ FindIncidentEdge(incidentEdge,\ poly1,\ xf1,\ edge1,\ poly2,\ xf2);}
+\DoxyCodeLine{00343\ }
+\DoxyCodeLine{00344\ \ \ \ \ \textcolor{keywordtype}{int}\ count1\ =\ poly1-\/>getVertexCount();}
+\DoxyCodeLine{00345\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}*\ vertices1\ =\ poly1-\/>getVertices();}
+\DoxyCodeLine{00346\ }
+\DoxyCodeLine{00347\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ v11\ =\ vertices1[edge1];}
+\DoxyCodeLine{00348\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ v12\ =\ edge1\ +\ 1\ <\ count1\ ?\ vertices1[edge1\ +\ 1]\ :\ vertices1[0];}
+\DoxyCodeLine{00349\ }
+\DoxyCodeLine{00350\ \ \ \ \ \textcolor{comment}{//btVector3\ dv\ =\ v12\ -\/\ v11;}}
+\DoxyCodeLine{00351\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ sideNormal\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a045a893631ec823f3469437534ccd21b}{b2Mul}}(xf1.getBasis(),\ v12\ -\/\ v11);}
+\DoxyCodeLine{00352\ \ \ \ \ sideNormal.normalize();}
+\DoxyCodeLine{00353\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ frontNormal\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a6923bf7b48cdaa4836817261b8b0290d}{btCrossS}}(sideNormal,\ 1.0f);}
+\DoxyCodeLine{00354\ }
+\DoxyCodeLine{00355\ \ \ \ \ v11\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a045a893631ec823f3469437534ccd21b}{b2Mul}}(xf1,\ v11);}
+\DoxyCodeLine{00356\ \ \ \ \ v12\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a045a893631ec823f3469437534ccd21b}{b2Mul}}(xf1,\ v12);}
+\DoxyCodeLine{00357\ }
+\DoxyCodeLine{00358\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ frontOffset\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a60c0164f50ddf2802a75d434e2e8e01e}{b2Dot}}(frontNormal,\ v11);}
+\DoxyCodeLine{00359\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sideOffset1\ =\ -\/\mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a60c0164f50ddf2802a75d434e2e8e01e}{b2Dot}}(sideNormal,\ v11);}
+\DoxyCodeLine{00360\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sideOffset2\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a60c0164f50ddf2802a75d434e2e8e01e}{b2Dot}}(sideNormal,\ v12);}
+\DoxyCodeLine{00361\ }
+\DoxyCodeLine{00362\ \ \ \ \ \textcolor{comment}{//\ Clip\ incident\ edge\ against\ extruded\ edge1\ side\ edges.}}
+\DoxyCodeLine{00363\ \ \ \ \ \mbox{\hyperlink{struct_clip_vertex}{ClipVertex}}\ clipPoints1[2];}
+\DoxyCodeLine{00364\ \ \ \ \ clipPoints1[0].\mbox{\hyperlink{struct_clip_vertex_aef0ba87278279d173dca2bc61df03f56}{v}}.setValue(0,\ 0,\ 0);}
+\DoxyCodeLine{00365\ \ \ \ \ clipPoints1[1].\mbox{\hyperlink{struct_clip_vertex_aef0ba87278279d173dca2bc61df03f56}{v}}.setValue(0,\ 0,\ 0);}
+\DoxyCodeLine{00366\ }
+\DoxyCodeLine{00367\ \ \ \ \ \mbox{\hyperlink{struct_clip_vertex}{ClipVertex}}\ clipPoints2[2];}
+\DoxyCodeLine{00368\ \ \ \ \ clipPoints2[0].\mbox{\hyperlink{struct_clip_vertex_aef0ba87278279d173dca2bc61df03f56}{v}}.setValue(0,\ 0,\ 0);}
+\DoxyCodeLine{00369\ \ \ \ \ clipPoints2[1].\mbox{\hyperlink{struct_clip_vertex_aef0ba87278279d173dca2bc61df03f56}{v}}.setValue(0,\ 0,\ 0);}
+\DoxyCodeLine{00370\ }
+\DoxyCodeLine{00371\ \ \ \ \ \textcolor{keywordtype}{int}\ np;}
+\DoxyCodeLine{00372\ }
+\DoxyCodeLine{00373\ \ \ \ \ \textcolor{comment}{//\ Clip\ to\ box\ side\ 1}}
+\DoxyCodeLine{00374\ \ \ \ \ np\ =\ ClipSegmentToLine(clipPoints1,\ incidentEdge,\ -\/sideNormal,\ sideOffset1);}
+\DoxyCodeLine{00375\ }
+\DoxyCodeLine{00376\ \ \ \ \ \textcolor{keywordflow}{if}\ (np\ <\ 2)}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00378\ }
+\DoxyCodeLine{00379\ \ \ \ \ \textcolor{comment}{//\ Clip\ to\ negative\ box\ side\ 1}}
+\DoxyCodeLine{00380\ \ \ \ \ np\ =\ ClipSegmentToLine(clipPoints2,\ clipPoints1,\ sideNormal,\ sideOffset2);}
+\DoxyCodeLine{00381\ }
+\DoxyCodeLine{00382\ \ \ \ \ \textcolor{keywordflow}{if}\ (np\ <\ 2)}
+\DoxyCodeLine{00383\ \ \ \ \ \{}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00385\ \ \ \ \ \}}
+\DoxyCodeLine{00386\ }
+\DoxyCodeLine{00387\ \ \ \ \ \textcolor{comment}{//\ Now\ clipPoints2\ contains\ the\ clipped\ points.}}
+\DoxyCodeLine{00388\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ manifoldNormal\ =\ flip\ ?\ -\/frontNormal\ :\ frontNormal;}
+\DoxyCodeLine{00389\ }
+\DoxyCodeLine{00390\ \ \ \ \ \textcolor{keywordtype}{int}\ pointCount\ =\ 0;}
+\DoxyCodeLine{00391\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a3f18267da8aa47e5e1b5f4dd91f85b62}{b2\_maxManifoldPoints}};\ ++i)}
+\DoxyCodeLine{00392\ \ \ \ \ \{}
+\DoxyCodeLine{00393\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ separation\ =\ \mbox{\hyperlink{bt_box2d_box2d_collision_algorithm_8cpp_a60c0164f50ddf2802a75d434e2e8e01e}{b2Dot}}(frontNormal,\ clipPoints2[i].\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}})\ -\/\ frontOffset;}
+\DoxyCodeLine{00394\ }
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (separation\ <=\ 0.0f)}
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//b2ManifoldPoint*\ cp\ =\ manifold-\/>points\ +\ pointCount;}}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//btScalar\ separation\ =\ separation;}}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//cp-\/>localPoint1\ =\ b2MulT(xfA,\ clipPoints2[i].v);}}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//cp-\/>localPoint2\ =\ b2MulT(xfB,\ clipPoints2[i].v);}}
+\DoxyCodeLine{00401\ }
+\DoxyCodeLine{00402\ \ \ \ \ \ \ \ \ \ \ \ \ manifold-\/>\mbox{\hyperlink{classbt_manifold_result_aebe32f0c202d988d0458e88d768602c6}{addContactPoint}}(-\/manifoldNormal,\ clipPoints2[i].\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ separation);}
+\DoxyCodeLine{00403\ }
+\DoxyCodeLine{00404\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ cp-\/>id\ =\ clipPoints2[i].id;}}
+\DoxyCodeLine{00405\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ cp-\/>id.features.flip\ =\ flip;}}
+\DoxyCodeLine{00406\ \ \ \ \ \ \ \ \ \ \ \ \ ++pointCount;}
+\DoxyCodeLine{00407\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00408\ \ \ \ \ \}}
+\DoxyCodeLine{00409\ }
+\DoxyCodeLine{00410\ \ \ \ \ \textcolor{comment}{//\ \ manifold-\/>pointCount\ =\ pointCount;\}}}
+\DoxyCodeLine{00411\ \}}
+
+\end{DoxyCode}

@@ -1,0 +1,698 @@
+\doxysection{bt\+Simulation\+Island\+Manager\+Mt.\+cpp}
+\hypertarget{bt_simulation_island_manager_mt_8cpp_source}{}\label{bt_simulation_island_manager_mt_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/Dynamics/btSimulationIslandManagerMt.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/Dynamics/btSimulationIslandManagerMt.cpp}}
+\mbox{\hyperlink{bt_simulation_island_manager_mt_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2006\ Erwin\ Coumans\ \ https://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_scalar_8h}{LinearMath/btScalar.h}}"{}}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_threads_8h}{LinearMath/btThreads.h}}"{}}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_simulation_island_manager_mt_8h}{btSimulationIslandManagerMt.h}}"{}}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_dispatcher_8h}{BulletCollision/BroadphaseCollision/btDispatcher.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_persistent_manifold_8h}{BulletCollision/NarrowPhaseCollision/btPersistentManifold.h}}"{}}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_object_8h}{BulletCollision/CollisionDispatch/btCollisionObject.h}}"{}}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_world_8h}{BulletCollision/CollisionDispatch/btCollisionWorld.h}}"{}}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_typed_constraint_8h}{BulletDynamics/ConstraintSolver/btTypedConstraint.h}}"{}}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h}{BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolverMt.h}}"{}}\ \ \textcolor{comment}{//\ for\ s\_minimumContactManifoldsForBatching}}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \textcolor{comment}{//\#include\ <stdio.h>}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_quickprof_8h}{LinearMath/btQuickprof.h}}"{}}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_simulation_island_manager_mt_8cpp_a15ef716b59040472c902ff412e3a4e13}{calcBatchCost}}(\textcolor{keywordtype}{int}\ bodies,\ \textcolor{keywordtype}{int}\ manifolds,\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}})}
+\DoxyCodeLine{00030\ \{}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{comment}{//\ rough\ estimate\ of\ the\ cost\ of\ a\ batch,\ used\ for\ merging}}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordtype}{int}\ batchCost\ =\ bodies\ +\ 8\ *\ manifolds\ +\ 4\ *\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}};}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keywordflow}{return}\ batchCost;}
+\DoxyCodeLine{00034\ \}}
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00036\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_simulation_island_manager_mt_8cpp_a15ef716b59040472c902ff412e3a4e13}{calcBatchCost}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{btSimulationIslandManagerMt::Island}}*\ island)}
+\DoxyCodeLine{00037\ \{}
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_simulation_island_manager_mt_8cpp_a15ef716b59040472c902ff412e3a4e13}{calcBatchCost}}(island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}(),\ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac7f43feaf274f5f4e2605be5b60131f9}{manifoldArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}(),\ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_a1de7a7fdbf9dcb236adef56b014c1718}{constraintArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00039\ \}}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_adefb73974031a26f2953328df5505f22}{btSimulationIslandManagerMt::btSimulationIslandManagerMt}}()}
+\DoxyCodeLine{00042\ \{}
+\DoxyCodeLine{00043\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a795550e4b7dad6f428f16fee3842fe6c}{m\_minimumSolverBatchSize}}\ =\ \mbox{\hyperlink{bt_simulation_island_manager_mt_8cpp_a15ef716b59040472c902ff412e3a4e13}{calcBatchCost}}(0,\ 128,\ 0);}
+\DoxyCodeLine{00044\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a3be5ac74f32a76e0673e3782773a85cf}{m\_batchIslandMinBodyCount}}\ =\ 32;}
+\DoxyCodeLine{00045\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_aa3aaead0665a0634f5d59801d2fe2525}{m\_islandDispatch}}\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab735be822e8bf6fdb211e8adaf3c9482}{parallelIslandDispatch}};}
+\DoxyCodeLine{00046\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a0f72fc82f146a4d74a31ae7436b71fcb}{m\_batchIsland}}\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00047\ \}}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a6566f237c887d85591fd89eab99c7a75}{btSimulationIslandManagerMt::\string~btSimulationIslandManagerMt}}()}
+\DoxyCodeLine{00050\ \{}
+\DoxyCodeLine{00051\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a0121c1d2621966ba3a5c66f6c4210235}{m\_allocatedIslands}}.size();\ ++i)}
+\DoxyCodeLine{00052\ \ \ \ \ \{}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \textcolor{keyword}{delete}\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a0121c1d2621966ba3a5c66f6c4210235}{m\_allocatedIslands}}[i];}
+\DoxyCodeLine{00054\ \ \ \ \ \}}
+\DoxyCodeLine{00055\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a0121c1d2621966ba3a5c66f6c4210235}{m\_allocatedIslands}}.resize(0);}
+\DoxyCodeLine{00056\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}}.resize(0);}
+\DoxyCodeLine{00057\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a6194f6eadd31ccae94fc837dab995c90}{m\_freeIslands}}.resize(0);}
+\DoxyCodeLine{00058\ \}}
+\DoxyCodeLine{00059\ }
+\DoxyCodeLine{00060\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_simulation_island_manager_mt_8cpp_acd26b18093e58beee164574f18a0aae3}{getIslandId}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}*\ lhs)}
+\DoxyCodeLine{00061\ \{}
+\DoxyCodeLine{00062\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ rcolObj0\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keyword}{const\ }\mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\textcolor{keyword}{>}(lhs-\/>getBody0());}
+\DoxyCodeLine{00063\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ rcolObj1\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keyword}{const\ }\mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\textcolor{keyword}{>}(lhs-\/>getBody1());}
+\DoxyCodeLine{00064\ \ \ \ \ \textcolor{keywordtype}{int}\ islandId\ =\ rcolObj0-\/>getIslandTag()\ >=\ 0\ ?\ rcolObj0-\/>getIslandTag()\ :\ rcolObj1-\/>getIslandTag();}
+\DoxyCodeLine{00065\ \ \ \ \ \textcolor{keywordflow}{return}\ islandId;}
+\DoxyCodeLine{00066\ \}}
+\DoxyCodeLine{00067\ }
+\DoxyCodeLine{00068\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_simulation_island_manager_mt_8cpp_a1d5c63bd9032518968401c5f9bde82d5}{btGetConstraintIslandId1}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_typed_constraint_8h_ac4d45dd414a1096579ca1009cb892163}{btTypedConstraint}}*\ lhs)}
+\DoxyCodeLine{00069\ \{}
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}\&\ rcolObj0\ =\ lhs-\/>getRigidBodyA();}
+\DoxyCodeLine{00071\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}\&\ rcolObj1\ =\ lhs-\/>getRigidBodyB();}
+\DoxyCodeLine{00072\ \ \ \ \ \textcolor{keywordtype}{int}\ islandId\ =\ rcolObj0.getIslandTag()\ >=\ 0\ ?\ rcolObj0.getIslandTag()\ :\ rcolObj1.getIslandTag();}
+\DoxyCodeLine{00073\ \ \ \ \ \textcolor{keywordflow}{return}\ islandId;}
+\DoxyCodeLine{00074\ \}}
+\DoxyCodeLine{00075\ }
+\DoxyCodeLine{00077\ \textcolor{keyword}{class\ }\mbox{\hyperlink{class_island_batch_size_sort_predicate}{IslandBatchSizeSortPredicate}}}
+\DoxyCodeLine{00078\ \{}
+\DoxyCodeLine{00079\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00080\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{class_island_batch_size_sort_predicate_a76dc58534d2c5bbb0efab2b3e0826939}{operator()}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{btSimulationIslandManagerMt::Island}}*\ lhs,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{btSimulationIslandManagerMt::Island}}*\ rhs)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00081\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ lCost\ =\ \mbox{\hyperlink{bt_simulation_island_manager_mt_8cpp_a15ef716b59040472c902ff412e3a4e13}{calcBatchCost}}(lhs);}
+\DoxyCodeLine{00083\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ rCost\ =\ \mbox{\hyperlink{bt_simulation_island_manager_mt_8cpp_a15ef716b59040472c902ff412e3a4e13}{calcBatchCost}}(rhs);}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ lCost\ >\ rCost;}
+\DoxyCodeLine{00085\ \ \ \ \ \}}
+\DoxyCodeLine{00086\ \};}
+\DoxyCodeLine{00087\ }
+\DoxyCodeLine{00088\ \textcolor{keyword}{class\ }\mbox{\hyperlink{class_island_body_capacity_sort_predicate}{IslandBodyCapacitySortPredicate}}}
+\DoxyCodeLine{00089\ \{}
+\DoxyCodeLine{00090\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00091\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{class_island_body_capacity_sort_predicate_a6c7d565545b5776afa3d51ab762860df}{operator()}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{btSimulationIslandManagerMt::Island}}*\ lhs,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{btSimulationIslandManagerMt::Island}}*\ rhs)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00092\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ lhs-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a1baf76f9f52df3c2d742194ba33e8788}{capacity}}()\ >\ rhs-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a1baf76f9f52df3c2d742194ba33e8788}{capacity}}();}
+\DoxyCodeLine{00094\ \ \ \ \ \}}
+\DoxyCodeLine{00095\ \};}
+\DoxyCodeLine{00096\ }
+\DoxyCodeLine{00097\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_a978e9fb3e192f9b5527c9c2240bb55c8}{btSimulationIslandManagerMt::Island::append}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{Island}}\&\ other)}
+\DoxyCodeLine{00098\ \{}
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{comment}{//\ append\ bodies}}
+\DoxyCodeLine{00100\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ other.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00101\ \ \ \ \ \{}
+\DoxyCodeLine{00102\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}.push\_back(other.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}[i]);}
+\DoxyCodeLine{00103\ \ \ \ \ \}}
+\DoxyCodeLine{00104\ \ \ \ \ \textcolor{comment}{//\ append\ manifolds}}
+\DoxyCodeLine{00105\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ other.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac7f43feaf274f5f4e2605be5b60131f9}{manifoldArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00106\ \ \ \ \ \{}
+\DoxyCodeLine{00107\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac7f43feaf274f5f4e2605be5b60131f9}{manifoldArray}}.push\_back(other.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac7f43feaf274f5f4e2605be5b60131f9}{manifoldArray}}[i]);}
+\DoxyCodeLine{00108\ \ \ \ \ \}}
+\DoxyCodeLine{00109\ \ \ \ \ \textcolor{comment}{//\ append\ constraints}}
+\DoxyCodeLine{00110\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ other.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_a1de7a7fdbf9dcb236adef56b014c1718}{constraintArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00111\ \ \ \ \ \{}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_a1de7a7fdbf9dcb236adef56b014c1718}{constraintArray}}.push\_back(other.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_a1de7a7fdbf9dcb236adef56b014c1718}{constraintArray}}[i]);}
+\DoxyCodeLine{00113\ \ \ \ \ \}}
+\DoxyCodeLine{00114\ \}}
+\DoxyCodeLine{00115\ }
+\DoxyCodeLine{00116\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_simulation_island_manager_mt_8cpp_a31e6116b9f3a38025dfc449d9d31dd4b}{btIsBodyInIsland}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{btSimulationIslandManagerMt::Island}}\&\ island,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ obj)}
+\DoxyCodeLine{00117\ \{}
+\DoxyCodeLine{00118\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ island.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00119\ \ \ \ \ \{}
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (island.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}[i]\ ==\ obj)}
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00124\ \ \ \ \ \}}
+\DoxyCodeLine{00125\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00126\ \}}
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00128\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a2462333f86838384cb316878eeede655}{btSimulationIslandManagerMt::initIslandPools}}()}
+\DoxyCodeLine{00129\ \{}
+\DoxyCodeLine{00130\ \ \ \ \ \textcolor{comment}{//\ reset\ island\ pools}}
+\DoxyCodeLine{00131\ \ \ \ \ \textcolor{keywordtype}{int}\ numElem\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_ab4c8043cd0a2f509f7ec10a7426b4682}{getUnionFind}}().\mbox{\hyperlink{classbt_union_find_a77445a4744996039b1ab939b165b7765}{getNumElements}}();}
+\DoxyCodeLine{00132\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a6bba7389cbd1a85feac3a030abc7bd93}{m\_lookupIslandFromId}}.resize(numElem);}
+\DoxyCodeLine{00133\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a6bba7389cbd1a85feac3a030abc7bd93}{m\_lookupIslandFromId}}.size();\ ++i)}
+\DoxyCodeLine{00134\ \ \ \ \ \{}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a6bba7389cbd1a85feac3a030abc7bd93}{m\_lookupIslandFromId}}[i]\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00136\ \ \ \ \ \}}
+\DoxyCodeLine{00137\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}}.resize(0);}
+\DoxyCodeLine{00138\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a6194f6eadd31ccae94fc837dab995c90}{m\_freeIslands}}.resize(0);}
+\DoxyCodeLine{00139\ \ \ \ \ \textcolor{comment}{//\ check\ whether\ allocated\ islands\ are\ sorted\ by\ body\ capacity\ (largest\ to\ smallest)}}
+\DoxyCodeLine{00140\ \ \ \ \ \textcolor{keywordtype}{int}\ lastCapacity\ =\ 0;}
+\DoxyCodeLine{00141\ \ \ \ \ \textcolor{keywordtype}{bool}\ isSorted\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00142\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a0121c1d2621966ba3a5c66f6c4210235}{m\_allocatedIslands}}.size();\ ++i)}
+\DoxyCodeLine{00143\ \ \ \ \ \{}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{Island}}*\ island\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a0121c1d2621966ba3a5c66f6c4210235}{m\_allocatedIslands}}[i];}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ cap\ =\ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a1baf76f9f52df3c2d742194ba33e8788}{capacity}}();}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (cap\ >\ lastCapacity)}
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ \ \ \ \ isSorted\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ lastCapacity\ =\ cap;}
+\DoxyCodeLine{00152\ \ \ \ \ \}}
+\DoxyCodeLine{00153\ \ \ \ \ \textcolor{keywordflow}{if}\ (!isSorted)}
+\DoxyCodeLine{00154\ \ \ \ \ \{}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a0121c1d2621966ba3a5c66f6c4210235}{m\_allocatedIslands}}.quickSort(\mbox{\hyperlink{class_island_body_capacity_sort_predicate}{IslandBodyCapacitySortPredicate}}());}
+\DoxyCodeLine{00156\ \ \ \ \ \}}
+\DoxyCodeLine{00157\ }
+\DoxyCodeLine{00158\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a0f72fc82f146a4d74a31ae7436b71fcb}{m\_batchIsland}}\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00159\ \ \ \ \ \textcolor{comment}{//\ mark\ all\ islands\ free\ (but\ avoid\ deallocation)}}
+\DoxyCodeLine{00160\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a0121c1d2621966ba3a5c66f6c4210235}{m\_allocatedIslands}}.size();\ ++i)}
+\DoxyCodeLine{00161\ \ \ \ \ \{}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{Island}}*\ island\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a0121c1d2621966ba3a5c66f6c4210235}{m\_allocatedIslands}}[i];}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(0);}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac7f43feaf274f5f4e2605be5b60131f9}{manifoldArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(0);}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_a1de7a7fdbf9dcb236adef56b014c1718}{constraintArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(0);}
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \ \ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac3e0e392e49d66c6cac902ef929e1541}{id}}\ =\ -\/1;}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_a0eeb899db3441f99655a9f312285393b}{isSleeping}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a6194f6eadd31ccae94fc837dab995c90}{m\_freeIslands}}.push\_back(island);}
+\DoxyCodeLine{00169\ \ \ \ \ \}}
+\DoxyCodeLine{00170\ \}}
+\DoxyCodeLine{00171\ }
+\DoxyCodeLine{00172\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{btSimulationIslandManagerMt::Island}}*\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a32a5d4d80cff34d55ed05074243100f2}{btSimulationIslandManagerMt::getIsland}}(\textcolor{keywordtype}{int}\ \textcolor{keywordtype}{id})}
+\DoxyCodeLine{00173\ \{}
+\DoxyCodeLine{00174\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\textcolor{keywordtype}{id}\ >=\ 0);}
+\DoxyCodeLine{00175\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\textcolor{keywordtype}{id}\ <\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a6bba7389cbd1a85feac3a030abc7bd93}{m\_lookupIslandFromId}}.size());}
+\DoxyCodeLine{00176\ \ \ \ \ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{Island}}*\ island\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a6bba7389cbd1a85feac3a030abc7bd93}{m\_lookupIslandFromId}}[\mbox{\hyperlink{glad_8h_a58c2a664503e14ffb8f21012aabff3e9}{id}}];}
+\DoxyCodeLine{00177\ \ \ \ \ \textcolor{keywordflow}{if}\ (island\ ==\ \mbox{\hyperlink{module___n_u_l_l}{NULL}})}
+\DoxyCodeLine{00178\ \ \ \ \ \{}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ search\ for\ existing\ island}}
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}}.size();\ ++i)}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00182\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}}[i]-\/>\textcolor{keywordtype}{id}\ ==\ \textcolor{keywordtype}{id})}
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00184\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ island\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}}[i];}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a6bba7389cbd1a85feac3a030abc7bd93}{m\_lookupIslandFromId}}[\mbox{\hyperlink{glad_8h_a58c2a664503e14ffb8f21012aabff3e9}{id}}]\ =\ island;}
+\DoxyCodeLine{00189\ \ \ \ \ \}}
+\DoxyCodeLine{00190\ \ \ \ \ \textcolor{keywordflow}{return}\ island;}
+\DoxyCodeLine{00191\ \}}
+\DoxyCodeLine{00192\ }
+\DoxyCodeLine{00193\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{btSimulationIslandManagerMt::Island}}*\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a4cd607d42e72962572e4830de9780b11}{btSimulationIslandManagerMt::allocateIsland}}(\textcolor{keywordtype}{int}\ \textcolor{keywordtype}{id},\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}})}
+\DoxyCodeLine{00194\ \{}
+\DoxyCodeLine{00195\ \ \ \ \ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{Island}}*\ island\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00196\ \ \ \ \ \textcolor{keywordtype}{int}\ allocSize\ =\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}};}
+\DoxyCodeLine{00197\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}}\ <\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a3be5ac74f32a76e0673e3782773a85cf}{m\_batchIslandMinBodyCount}})}
+\DoxyCodeLine{00198\ \ \ \ \ \{}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_simulation_island_manager_mt_a0f72fc82f146a4d74a31ae7436b71fcb}{m\_batchIsland}})}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \ \ \ \ \ \ island\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a0f72fc82f146a4d74a31ae7436b71fcb}{m\_batchIsland}};}
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a6bba7389cbd1a85feac3a030abc7bd93}{m\_lookupIslandFromId}}[\mbox{\hyperlink{glad_8h_a58c2a664503e14ffb8f21012aabff3e9}{id}}]\ =\ island;}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ we've\ made\ a\ large\ enough\ batch,}}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ +\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}}\ >=\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a3be5ac74f32a76e0673e3782773a85cf}{m\_batchIslandMinBodyCount}})}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ next\ time\ start\ a\ new\ batch}}
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a0f72fc82f146a4d74a31ae7436b71fcb}{m\_batchIsland}}\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ island;}
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ need\ to\ allocate\ a\ batch\ island}}
+\DoxyCodeLine{00214\ \ \ \ \ \ \ \ \ \ \ \ \ allocSize\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a3be5ac74f32a76e0673e3782773a85cf}{m\_batchIslandMinBodyCount}}\ *\ 2;}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00216\ \ \ \ \ \}}
+\DoxyCodeLine{00217\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<Island*>}}\&\ freeIslands\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a6194f6eadd31ccae94fc837dab995c90}{m\_freeIslands}};}
+\DoxyCodeLine{00218\ }
+\DoxyCodeLine{00219\ \ \ \ \ \textcolor{comment}{//\ search\ for\ free\ island}}
+\DoxyCodeLine{00220\ \ \ \ \ \textcolor{keywordflow}{if}\ (freeIslands.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ >\ 0)}
+\DoxyCodeLine{00221\ \ \ \ \ \{}
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ try\ to\ reuse\ a\ previously\ allocated\ island}}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iFound\ =\ freeIslands.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ linear\ search\ for\ smallest\ island\ that\ can\ hold\ our\ bodies}}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ freeIslands.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ -\/\ 1;\ i\ >=\ 0;\ -\/-\/i)}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00227\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (freeIslands[i]-\/>bodyArray.\mbox{\hyperlink{classbt_aligned_object_array_a1baf76f9f52df3c2d742194ba33e8788}{capacity}}()\ >=\ allocSize)}
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00229\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ iFound\ =\ i;}
+\DoxyCodeLine{00230\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ island\ =\ freeIslands[i];}
+\DoxyCodeLine{00231\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac3e0e392e49d66c6cac902ef929e1541}{id}}\ =\ \mbox{\hyperlink{glad_8h_a58c2a664503e14ffb8f21012aabff3e9}{id}};}
+\DoxyCodeLine{00232\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00233\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ found,\ shrink\ array\ while\ maintaining\ ordering}}
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (island)}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iDest\ =\ iFound;}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iSrc\ =\ iDest\ +\ 1;}
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (iSrc\ <\ freeIslands.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}())}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ freeIslands[iDest++]\ =\ freeIslands[iSrc++];}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ \ \ \ \ freeIslands.\mbox{\hyperlink{classbt_aligned_object_array_a6169be905e03b84ea3bc8d8f7c7fc39d}{pop\_back}}();}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00246\ \ \ \ \ \}}
+\DoxyCodeLine{00247\ \ \ \ \ \textcolor{keywordflow}{if}\ (island\ ==\ \mbox{\hyperlink{module___n_u_l_l}{NULL}})}
+\DoxyCodeLine{00248\ \ \ \ \ \{}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ no\ free\ island\ found,\ allocate}}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ island\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{Island}}();\ \ \textcolor{comment}{//\ TODO:\ change\ this\ to\ use\ the\ pool\ allocator}}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac3e0e392e49d66c6cac902ef929e1541}{id}}\ =\ \mbox{\hyperlink{glad_8h_a58c2a664503e14ffb8f21012aabff3e9}{id}};}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a0bcdc850355c6742c66d50b16b102d9d}{reserve}}(allocSize);}
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a0121c1d2621966ba3a5c66f6c4210235}{m\_allocatedIslands}}.push\_back(island);}
+\DoxyCodeLine{00254\ \ \ \ \ \}}
+\DoxyCodeLine{00255\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a6bba7389cbd1a85feac3a030abc7bd93}{m\_lookupIslandFromId}}[\mbox{\hyperlink{glad_8h_a58c2a664503e14ffb8f21012aabff3e9}{id}}]\ =\ island;}
+\DoxyCodeLine{00256\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}}\ <\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a3be5ac74f32a76e0673e3782773a85cf}{m\_batchIslandMinBodyCount}})}
+\DoxyCodeLine{00257\ \ \ \ \ \{}
+\DoxyCodeLine{00258\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a0f72fc82f146a4d74a31ae7436b71fcb}{m\_batchIsland}}\ =\ island;}
+\DoxyCodeLine{00259\ \ \ \ \ \}}
+\DoxyCodeLine{00260\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}}.push\_back(island);}
+\DoxyCodeLine{00261\ \ \ \ \ \textcolor{keywordflow}{return}\ island;}
+\DoxyCodeLine{00262\ \}}
+\DoxyCodeLine{00263\ }
+\DoxyCodeLine{00264\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_af9139bbf96391f6d6305a4c7329e4141}{btSimulationIslandManagerMt::buildIslands}}(\mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher,\ \mbox{\hyperlink{classbt_collision_world}{btCollisionWorld}}*\ collisionWorld)}
+\DoxyCodeLine{00265\ \{}
+\DoxyCodeLine{00266\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}buildIslands"{}});}
+\DoxyCodeLine{00267\ }
+\DoxyCodeLine{00268\ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a6e21ccefdea3a53d5ec8f6aa2849bf8b}{btCollisionObjectArray}}\&\ collisionObjects\ =\ collisionWorld-\/>\mbox{\hyperlink{classbt_collision_world_a7c0f9eb651b1589905e6e310414875d9}{getCollisionObjectArray}}();}
+\DoxyCodeLine{00269\ }
+\DoxyCodeLine{00270\ \ \ \ \ \textcolor{comment}{//we\ are\ going\ to\ sort\ the\ unionfind\ array,\ and\ store\ the\ element\ id\ in\ the\ size}}
+\DoxyCodeLine{00271\ \ \ \ \ \textcolor{comment}{//afterwards,\ we\ clean\ unionfind,\ to\ make\ sure\ no-\/one\ uses\ it\ anymore}}
+\DoxyCodeLine{00272\ }
+\DoxyCodeLine{00273\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_ab4c8043cd0a2f509f7ec10a7426b4682}{getUnionFind}}().\mbox{\hyperlink{classbt_union_find_a8bf4647f84d20b033e0d0a7188f3b798}{sortIslands}}();}
+\DoxyCodeLine{00274\ \ \ \ \ \textcolor{keywordtype}{int}\ numElem\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_ab4c8043cd0a2f509f7ec10a7426b4682}{getUnionFind}}().\mbox{\hyperlink{classbt_union_find_a77445a4744996039b1ab939b165b7765}{getNumElements}}();}
+\DoxyCodeLine{00275\ }
+\DoxyCodeLine{00276\ \ \ \ \ \textcolor{keywordtype}{int}\ endIslandIndex\ =\ 1;}
+\DoxyCodeLine{00277\ \ \ \ \ \textcolor{keywordtype}{int}\ startIslandIndex;}
+\DoxyCodeLine{00278\ }
+\DoxyCodeLine{00279\ \ \ \ \ \textcolor{comment}{//update\ the\ sleeping\ state\ for\ bodies,\ if\ all\ are\ sleeping}}
+\DoxyCodeLine{00280\ \ \ \ \ \textcolor{keywordflow}{for}\ (startIslandIndex\ =\ 0;\ startIslandIndex\ <\ numElem;\ startIslandIndex\ =\ endIslandIndex)}
+\DoxyCodeLine{00281\ \ \ \ \ \{}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ islandId\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_ab4c8043cd0a2f509f7ec10a7426b4682}{getUnionFind}}().\mbox{\hyperlink{classbt_union_find_a5fe4802c03224b9f1c15e9afaa2b6888}{getElement}}(startIslandIndex).\mbox{\hyperlink{structbt_element_a594cc544e758bd7235492c51e8b357f3}{m\_id}};}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (endIslandIndex\ =\ startIslandIndex\ +\ 1;\ (endIslandIndex\ <\ numElem)\ \&\&\ (\mbox{\hyperlink{classbt_simulation_island_manager_ab4c8043cd0a2f509f7ec10a7426b4682}{getUnionFind}}().\mbox{\hyperlink{classbt_union_find_a5fe4802c03224b9f1c15e9afaa2b6888}{getElement}}(endIslandIndex).\mbox{\hyperlink{structbt_element_a594cc544e758bd7235492c51e8b357f3}{m\_id}}\ ==\ islandId);\ endIslandIndex++)}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00286\ }
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ \textcolor{comment}{//int\ numSleeping\ =\ 0;}}
+\DoxyCodeLine{00288\ }
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ allSleeping\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00290\ }
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ idx;}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (idx\ =\ startIslandIndex;\ idx\ <\ endIslandIndex;\ idx++)}
+\DoxyCodeLine{00293\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00294\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_ab4c8043cd0a2f509f7ec10a7426b4682}{getUnionFind}}().\mbox{\hyperlink{classbt_union_find_a5fe4802c03224b9f1c15e9afaa2b6888}{getElement}}(idx).\mbox{\hyperlink{structbt_element_a8f8cebe2348b576a415e9a475fbabc03}{m\_sz}};}
+\DoxyCodeLine{00295\ }
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ colObj0\ =\ collisionObjects[i];}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((colObj0-\/>getIslandTag()\ !=\ islandId)\ \&\&\ (colObj0-\/>getIslandTag()\ !=\ -\/1))}
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00299\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ printf("{}error\ in\ island\ management\(\backslash\)n"{});}}
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00301\ }
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}((colObj0-\/>getIslandTag()\ ==\ islandId)\ ||\ (colObj0-\/>getIslandTag()\ ==\ -\/1));}
+\DoxyCodeLine{00303\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (colObj0-\/>getIslandTag()\ ==\ islandId)}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (colObj0-\/>getActivationState()\ ==\ \mbox{\hyperlink{bt_collision_object_8h_a2028d11c697dc0df956d63b98de5bb8d}{ACTIVE\_TAG}}\ ||}
+\DoxyCodeLine{00306\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ colObj0-\/>getActivationState()\ ==\ \mbox{\hyperlink{bt_collision_object_8h_a3974157ba49bb9a32bcfcd3d01a5447b}{DISABLE\_DEACTIVATION}})}
+\DoxyCodeLine{00307\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00308\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ allSleeping\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00309\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00310\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00311\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00312\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00313\ }
+\DoxyCodeLine{00314\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (allSleeping)}
+\DoxyCodeLine{00315\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00316\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ idx;}
+\DoxyCodeLine{00317\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (idx\ =\ startIslandIndex;\ idx\ <\ endIslandIndex;\ idx++)}
+\DoxyCodeLine{00318\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_ab4c8043cd0a2f509f7ec10a7426b4682}{getUnionFind}}().\mbox{\hyperlink{classbt_union_find_a5fe4802c03224b9f1c15e9afaa2b6888}{getElement}}(idx).\mbox{\hyperlink{structbt_element_a8f8cebe2348b576a415e9a475fbabc03}{m\_sz}};}
+\DoxyCodeLine{00320\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ colObj0\ =\ collisionObjects[i];}
+\DoxyCodeLine{00321\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((colObj0-\/>getIslandTag()\ !=\ islandId)\ \&\&\ (colObj0-\/>getIslandTag()\ !=\ -\/1))}
+\DoxyCodeLine{00322\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00323\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf("{}error\ in\ island\ management\(\backslash\)n"{});}}
+\DoxyCodeLine{00324\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00325\ }
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}((colObj0-\/>getIslandTag()\ ==\ islandId)\ ||\ (colObj0-\/>getIslandTag()\ ==\ -\/1));}
+\DoxyCodeLine{00327\ }
+\DoxyCodeLine{00328\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (colObj0-\/>getIslandTag()\ ==\ islandId)}
+\DoxyCodeLine{00329\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ colObj0-\/>setActivationState(\mbox{\hyperlink{bt_collision_object_8h_ae008fca1dfbfd49a3a8998397970bcad}{ISLAND\_SLEEPING}});}
+\DoxyCodeLine{00331\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00332\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00335\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ idx;}
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (idx\ =\ startIslandIndex;\ idx\ <\ endIslandIndex;\ idx++)}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00339\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_ab4c8043cd0a2f509f7ec10a7426b4682}{getUnionFind}}().\mbox{\hyperlink{classbt_union_find_a5fe4802c03224b9f1c15e9afaa2b6888}{getElement}}(idx).\mbox{\hyperlink{structbt_element_a8f8cebe2348b576a415e9a475fbabc03}{m\_sz}};}
+\DoxyCodeLine{00340\ }
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ colObj0\ =\ collisionObjects[i];}
+\DoxyCodeLine{00342\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((colObj0-\/>getIslandTag()\ !=\ islandId)\ \&\&\ (colObj0-\/>getIslandTag()\ !=\ -\/1))}
+\DoxyCodeLine{00343\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ printf("{}error\ in\ island\ management\(\backslash\)n"{});}}
+\DoxyCodeLine{00345\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00346\ }
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}((colObj0-\/>getIslandTag()\ ==\ islandId)\ ||\ (colObj0-\/>getIslandTag()\ ==\ -\/1));}
+\DoxyCodeLine{00348\ }
+\DoxyCodeLine{00349\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (colObj0-\/>getIslandTag()\ ==\ islandId)}
+\DoxyCodeLine{00350\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00351\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (colObj0-\/>getActivationState()\ ==\ \mbox{\hyperlink{bt_collision_object_8h_ae008fca1dfbfd49a3a8998397970bcad}{ISLAND\_SLEEPING}})}
+\DoxyCodeLine{00352\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00353\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ colObj0-\/>setActivationState(\mbox{\hyperlink{bt_collision_object_8h_a8d9afce5ce394b140f9449891305266c}{WANTS\_DEACTIVATION}});}
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ colObj0-\/>setDeactivationTime(0.f);}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00356\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00358\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00359\ \ \ \ \ \}}
+\DoxyCodeLine{00360\ \}}
+\DoxyCodeLine{00361\ }
+\DoxyCodeLine{00362\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a01ab4b54820776ea2392f1cd3fb3e5df}{btSimulationIslandManagerMt::addBodiesToIslands}}(\mbox{\hyperlink{classbt_collision_world}{btCollisionWorld}}*\ collisionWorld)}
+\DoxyCodeLine{00363\ \{}
+\DoxyCodeLine{00364\ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a6e21ccefdea3a53d5ec8f6aa2849bf8b}{btCollisionObjectArray}}\&\ collisionObjects\ =\ collisionWorld-\/>\mbox{\hyperlink{classbt_collision_world_a7c0f9eb651b1589905e6e310414875d9}{getCollisionObjectArray}}();}
+\DoxyCodeLine{00365\ \ \ \ \ \textcolor{keywordtype}{int}\ endIslandIndex\ =\ 1;}
+\DoxyCodeLine{00366\ \ \ \ \ \textcolor{keywordtype}{int}\ startIslandIndex;}
+\DoxyCodeLine{00367\ \ \ \ \ \textcolor{keywordtype}{int}\ numElem\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_ab4c8043cd0a2f509f7ec10a7426b4682}{getUnionFind}}().\mbox{\hyperlink{classbt_union_find_a77445a4744996039b1ab939b165b7765}{getNumElements}}();}
+\DoxyCodeLine{00368\ }
+\DoxyCodeLine{00369\ \ \ \ \ \textcolor{comment}{//\ create\ explicit\ islands\ and\ add\ bodies\ to\ each}}
+\DoxyCodeLine{00370\ \ \ \ \ \textcolor{keywordflow}{for}\ (startIslandIndex\ =\ 0;\ startIslandIndex\ <\ numElem;\ startIslandIndex\ =\ endIslandIndex)}
+\DoxyCodeLine{00371\ \ \ \ \ \{}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ islandId\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_ab4c8043cd0a2f509f7ec10a7426b4682}{getUnionFind}}().\mbox{\hyperlink{classbt_union_find_a5fe4802c03224b9f1c15e9afaa2b6888}{getElement}}(startIslandIndex).\mbox{\hyperlink{structbt_element_a594cc544e758bd7235492c51e8b357f3}{m\_id}};}
+\DoxyCodeLine{00373\ }
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ find\ end\ index}}
+\DoxyCodeLine{00375\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (endIslandIndex\ =\ startIslandIndex;\ (endIslandIndex\ <\ numElem)\ \&\&\ (\mbox{\hyperlink{classbt_simulation_island_manager_ab4c8043cd0a2f509f7ec10a7426b4682}{getUnionFind}}().\mbox{\hyperlink{classbt_union_find_a5fe4802c03224b9f1c15e9afaa2b6888}{getElement}}(endIslandIndex).\mbox{\hyperlink{structbt_element_a594cc544e758bd7235492c51e8b357f3}{m\_id}}\ ==\ islandId);\ endIslandIndex++)}
+\DoxyCodeLine{00376\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ check\ if\ island\ is\ sleeping}}
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ islandSleeping\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iElem\ =\ startIslandIndex;\ iElem\ <\ endIslandIndex;\ iElem++)}
+\DoxyCodeLine{00381\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_ab4c8043cd0a2f509f7ec10a7426b4682}{getUnionFind}}().\mbox{\hyperlink{classbt_union_find_a5fe4802c03224b9f1c15e9afaa2b6888}{getElement}}(iElem).\mbox{\hyperlink{structbt_element_a8f8cebe2348b576a415e9a475fbabc03}{m\_sz}};}
+\DoxyCodeLine{00383\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ colObj\ =\ collisionObjects[i];}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (colObj-\/>isActive())}
+\DoxyCodeLine{00385\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ islandSleeping\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00387\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00388\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00389\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!islandSleeping)}
+\DoxyCodeLine{00390\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00391\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ want\ to\ count\ the\ number\ of\ bodies\ before\ allocating\ the\ island\ to\ optimize\ memory\ usage\ of\ the\ Island\ structures}}
+\DoxyCodeLine{00392\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}}\ =\ endIslandIndex\ -\/\ startIslandIndex;}
+\DoxyCodeLine{00393\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{Island}}*\ island\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a4cd607d42e72962572e4830de9780b11}{allocateIsland}}(islandId,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}});}
+\DoxyCodeLine{00394\ \ \ \ \ \ \ \ \ \ \ \ \ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_a0eeb899db3441f99655a9f312285393b}{isSleeping}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00395\ }
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ add\ bodies\ to\ island}}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iElem\ =\ startIslandIndex;\ iElem\ <\ endIslandIndex;\ iElem++)}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_ab4c8043cd0a2f509f7ec10a7426b4682}{getUnionFind}}().\mbox{\hyperlink{classbt_union_find_a5fe4802c03224b9f1c15e9afaa2b6888}{getElement}}(iElem).\mbox{\hyperlink{structbt_element_a8f8cebe2348b576a415e9a475fbabc03}{m\_sz}};}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ colObj\ =\ collisionObjects[i];}
+\DoxyCodeLine{00401\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(colObj);}
+\DoxyCodeLine{00402\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00403\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00404\ \ \ \ \ \}}
+\DoxyCodeLine{00405\ \}}
+\DoxyCodeLine{00406\ }
+\DoxyCodeLine{00407\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a77eadf262f5a0e63053e3efcc9ccfec9}{btSimulationIslandManagerMt::addManifoldsToIslands}}(\mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher)}
+\DoxyCodeLine{00408\ \{}
+\DoxyCodeLine{00409\ \ \ \ \ \textcolor{comment}{//\ walk\ all\ the\ manifolds,\ activating\ bodies\ touched\ by\ kinematic\ objects,\ and\ add\ each\ manifold\ to\ its\ Island}}
+\DoxyCodeLine{00410\ \ \ \ \ \textcolor{keywordtype}{int}\ maxNumManifolds\ =\ dispatcher-\/>\mbox{\hyperlink{classbt_dispatcher_a0c94a046ac053c226d43211c5379c31f}{getNumManifolds}}();}
+\DoxyCodeLine{00411\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ maxNumManifolds;\ i++)}
+\DoxyCodeLine{00412\ \ \ \ \ \{}
+\DoxyCodeLine{00413\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}*\ manifold\ =\ dispatcher-\/>\mbox{\hyperlink{classbt_dispatcher_a0d9d36cd6bb837b95aff718341c02164}{getManifoldByIndexInternal}}(i);}
+\DoxyCodeLine{00414\ }
+\DoxyCodeLine{00415\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ colObj0\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keyword}{const\ }\mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\textcolor{keyword}{>}(manifold-\/>getBody0());}
+\DoxyCodeLine{00416\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ colObj1\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keyword}{const\ }\mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\textcolor{keyword}{>}(manifold-\/>getBody1());}
+\DoxyCodeLine{00417\ }
+\DoxyCodeLine{00419\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (((colObj0)\ \&\&\ colObj0-\/>getActivationState()\ !=\ \mbox{\hyperlink{bt_collision_object_8h_ae008fca1dfbfd49a3a8998397970bcad}{ISLAND\_SLEEPING}})\ ||}
+\DoxyCodeLine{00420\ \ \ \ \ \ \ \ \ \ \ \ \ ((colObj1)\ \&\&\ colObj1-\/>getActivationState()\ !=\ \mbox{\hyperlink{bt_collision_object_8h_ae008fca1dfbfd49a3a8998397970bcad}{ISLAND\_SLEEPING}}))}
+\DoxyCodeLine{00421\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00422\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//kinematic\ objects\ don't\ merge\ islands,\ but\ wake\ up\ all\ connected\ objects}}
+\DoxyCodeLine{00423\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (colObj0-\/>isKinematicObject()\ \&\&\ colObj0-\/>getActivationState()\ !=\ \mbox{\hyperlink{bt_collision_object_8h_ae008fca1dfbfd49a3a8998397970bcad}{ISLAND\_SLEEPING}})}
+\DoxyCodeLine{00424\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00425\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (colObj0-\/>hasContactResponse())}
+\DoxyCodeLine{00426\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ colObj1-\/>activate();}
+\DoxyCodeLine{00427\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00428\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (colObj1-\/>isKinematicObject()\ \&\&\ colObj1-\/>getActivationState()\ !=\ \mbox{\hyperlink{bt_collision_object_8h_ae008fca1dfbfd49a3a8998397970bcad}{ISLAND\_SLEEPING}})}
+\DoxyCodeLine{00429\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00430\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (colObj1-\/>hasContactResponse())}
+\DoxyCodeLine{00431\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ colObj0-\/>activate();}
+\DoxyCodeLine{00432\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00433\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//filtering\ for\ response}}
+\DoxyCodeLine{00434\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (dispatcher-\/>\mbox{\hyperlink{classbt_dispatcher_aa3ac9c7d70da34e5647da1018880624d}{needsResponse}}(colObj0,\ colObj1))}
+\DoxyCodeLine{00435\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00436\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ scatter\ manifolds\ into\ various\ islands}}
+\DoxyCodeLine{00437\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ islandId\ =\ \mbox{\hyperlink{bt_simulation_island_manager_8cpp_acd26b18093e58beee164574f18a0aae3}{getIslandId}}(manifold);}
+\DoxyCodeLine{00438\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ island\ not\ sleeping,}}
+\DoxyCodeLine{00439\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{Island}}*\ island\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a32a5d4d80cff34d55ed05074243100f2}{getIsland}}(islandId))}
+\DoxyCodeLine{00440\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00441\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ island-\/>manifoldArray.push\_back(manifold);}
+\DoxyCodeLine{00442\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00443\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00444\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00445\ \ \ \ \ \}}
+\DoxyCodeLine{00446\ \}}
+\DoxyCodeLine{00447\ }
+\DoxyCodeLine{00448\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a90d07b76e2c9262cbd323561302b354d}{btSimulationIslandManagerMt::addConstraintsToIslands}}(\mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btTypedConstraint*>}}\&\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}})}
+\DoxyCodeLine{00449\ \{}
+\DoxyCodeLine{00450\ \ \ \ \ \textcolor{comment}{//\ walk\ constraints}}
+\DoxyCodeLine{00451\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}}.size();\ i++)}
+\DoxyCodeLine{00452\ \ \ \ \ \{}
+\DoxyCodeLine{00453\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ scatter\ constraints\ into\ various\ islands}}
+\DoxyCodeLine{00454\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_ac4d45dd414a1096579ca1009cb892163}{btTypedConstraint}}*\ constraint\ =\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}}[i];}
+\DoxyCodeLine{00455\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (constraint-\/>isEnabled())}
+\DoxyCodeLine{00456\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00457\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ islandId\ =\ \mbox{\hyperlink{bt_simulation_island_manager_mt_8cpp_a1d5c63bd9032518968401c5f9bde82d5}{btGetConstraintIslandId1}}(constraint);}
+\DoxyCodeLine{00458\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ island\ is\ not\ sleeping,}}
+\DoxyCodeLine{00459\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{Island}}*\ island\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a32a5d4d80cff34d55ed05074243100f2}{getIsland}}(islandId))}
+\DoxyCodeLine{00460\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00461\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ island-\/>constraintArray.push\_back(constraint);}
+\DoxyCodeLine{00462\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00463\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00464\ \ \ \ \ \}}
+\DoxyCodeLine{00465\ \}}
+\DoxyCodeLine{00466\ }
+\DoxyCodeLine{00467\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_af6dcd1da46ee5ac1e6fce9f2a039b2e3}{btSimulationIslandManagerMt::mergeIslands}}()}
+\DoxyCodeLine{00468\ \{}
+\DoxyCodeLine{00469\ \ \ \ \ \textcolor{comment}{//\ sort\ islands\ in\ order\ of\ decreasing\ batch\ size}}
+\DoxyCodeLine{00470\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}}.quickSort(\mbox{\hyperlink{class_island_batch_size_sort_predicate}{IslandBatchSizeSortPredicate}}());}
+\DoxyCodeLine{00471\ }
+\DoxyCodeLine{00472\ \ \ \ \ \textcolor{comment}{//\ merge\ small\ islands\ to\ satisfy\ minimum\ batch\ size}}
+\DoxyCodeLine{00473\ \ \ \ \ \textcolor{comment}{//\ find\ first\ small\ batch\ island}}
+\DoxyCodeLine{00474\ \ \ \ \ \textcolor{keywordtype}{int}\ destIslandIndex\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}}.size();}
+\DoxyCodeLine{00475\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}}.size();\ ++i)}
+\DoxyCodeLine{00476\ \ \ \ \ \{}
+\DoxyCodeLine{00477\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{Island}}*\ island\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}}[i];}
+\DoxyCodeLine{00478\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ batchSize\ =\ \mbox{\hyperlink{bt_simulation_island_manager_mt_8cpp_a15ef716b59040472c902ff412e3a4e13}{calcBatchCost}}(island);}
+\DoxyCodeLine{00479\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (batchSize\ <\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a795550e4b7dad6f428f16fee3842fe6c}{m\_minimumSolverBatchSize}})}
+\DoxyCodeLine{00480\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00481\ \ \ \ \ \ \ \ \ \ \ \ \ destIslandIndex\ =\ i;}
+\DoxyCodeLine{00482\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00483\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00484\ \ \ \ \ \}}
+\DoxyCodeLine{00485\ \ \ \ \ \textcolor{keywordtype}{int}\ lastIndex\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}}.size()\ -\/\ 1;}
+\DoxyCodeLine{00486\ \ \ \ \ \textcolor{keywordflow}{while}\ (destIslandIndex\ <\ lastIndex)}
+\DoxyCodeLine{00487\ \ \ \ \ \{}
+\DoxyCodeLine{00488\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ merge\ islands\ from\ the\ back\ of\ the\ list}}
+\DoxyCodeLine{00489\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{Island}}*\ island\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}}[destIslandIndex];}
+\DoxyCodeLine{00490\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}}\ =\ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();}
+\DoxyCodeLine{00491\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ad78d14cac38555333ae536286a72c72b}{numManifolds}}\ =\ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac7f43feaf274f5f4e2605be5b60131f9}{manifoldArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();}
+\DoxyCodeLine{00492\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}}\ =\ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_a1de7a7fdbf9dcb236adef56b014c1718}{constraintArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();}
+\DoxyCodeLine{00493\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ firstIndex\ =\ lastIndex;}
+\DoxyCodeLine{00494\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ figure\ out\ how\ many\ islands\ we\ want\ to\ merge\ and\ find\ out\ how\ many\ bodies,\ manifolds\ and\ constraints\ we\ will\ have}}
+\DoxyCodeLine{00495\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (\textcolor{keyword}{true})}
+\DoxyCodeLine{00496\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00497\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{Island}}*\ src\ =\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}}[firstIndex];}
+\DoxyCodeLine{00498\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}}\ +=\ src-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();}
+\DoxyCodeLine{00499\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ad78d14cac38555333ae536286a72c72b}{numManifolds}}\ +=\ src-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac7f43feaf274f5f4e2605be5b60131f9}{manifoldArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();}
+\DoxyCodeLine{00500\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}}\ +=\ src-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_a1de7a7fdbf9dcb236adef56b014c1718}{constraintArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();}
+\DoxyCodeLine{00501\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ batchCost\ =\ \mbox{\hyperlink{bt_simulation_island_manager_mt_8cpp_a15ef716b59040472c902ff412e3a4e13}{calcBatchCost}}(\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}},\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ad78d14cac38555333ae536286a72c72b}{numManifolds}},\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}});}
+\DoxyCodeLine{00502\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (batchCost\ >=\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a795550e4b7dad6f428f16fee3842fe6c}{m\_minimumSolverBatchSize}})}
+\DoxyCodeLine{00503\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00504\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00505\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00506\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (firstIndex\ -\/\ 1\ ==\ destIslandIndex)}
+\DoxyCodeLine{00507\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00508\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00509\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00510\ \ \ \ \ \ \ \ \ \ \ \ \ firstIndex-\/-\/;}
+\DoxyCodeLine{00511\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00512\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ reserve\ space\ for\ these\ pointers\ to\ minimize\ reallocation}}
+\DoxyCodeLine{00513\ \ \ \ \ \ \ \ \ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a0bcdc850355c6742c66d50b16b102d9d}{reserve}}(\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}});}
+\DoxyCodeLine{00514\ \ \ \ \ \ \ \ \ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac7f43feaf274f5f4e2605be5b60131f9}{manifoldArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a0bcdc850355c6742c66d50b16b102d9d}{reserve}}(\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_ad78d14cac38555333ae536286a72c72b}{numManifolds}});}
+\DoxyCodeLine{00515\ \ \ \ \ \ \ \ \ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_a1de7a7fdbf9dcb236adef56b014c1718}{constraintArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a0bcdc850355c6742c66d50b16b102d9d}{reserve}}(\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}});}
+\DoxyCodeLine{00516\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ merge\ islands}}
+\DoxyCodeLine{00517\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ firstIndex;\ i\ <=\ lastIndex;\ ++i)}
+\DoxyCodeLine{00518\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00519\ \ \ \ \ \ \ \ \ \ \ \ \ island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_a978e9fb3e192f9b5527c9c2240bb55c8}{append}}(*\mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}}[i]);}
+\DoxyCodeLine{00520\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00521\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ shrink\ array\ to\ exclude\ the\ islands\ that\ were\ merged\ from}}
+\DoxyCodeLine{00522\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}}.resize(firstIndex);}
+\DoxyCodeLine{00523\ \ \ \ \ \ \ \ \ lastIndex\ =\ firstIndex\ -\/\ 1;}
+\DoxyCodeLine{00524\ \ \ \ \ \ \ \ \ destIslandIndex++;}
+\DoxyCodeLine{00525\ \ \ \ \ \}}
+\DoxyCodeLine{00526\ \}}
+\DoxyCodeLine{00527\ }
+\DoxyCodeLine{00528\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab762a3f93be168022b747d098e3b461e}{btSimulationIslandManagerMt::solveIsland}}(\mbox{\hyperlink{classbt_constraint_solver}{btConstraintSolver}}*\ solver,\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{Island}}\&\ island,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params}{SolverParams}}\&\ solverParams)}
+\DoxyCodeLine{00529\ \{}
+\DoxyCodeLine{00530\ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}**\ manifolds\ =\ island.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac7f43feaf274f5f4e2605be5b60131f9}{manifoldArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ ?\ \&island.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac7f43feaf274f5f4e2605be5b60131f9}{manifoldArray}}[0]\ :\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00531\ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_ac4d45dd414a1096579ca1009cb892163}{btTypedConstraint}}**\ constraintsPtr\ =\ island.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_a1de7a7fdbf9dcb236adef56b014c1718}{constraintArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ ?\ \&island.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_a1de7a7fdbf9dcb236adef56b014c1718}{constraintArray}}[0]\ :\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00532\ \ \ \ \ solver-\/>\mbox{\hyperlink{classbt_constraint_solver_a923b7573a8d62805714abd5157dd0963}{solveGroup}}(\&island.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}[0],}
+\DoxyCodeLine{00533\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ island.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac6a9395a916c573ec5132a84196e131b}{bodyArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}(),}
+\DoxyCodeLine{00534\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ manifolds,}
+\DoxyCodeLine{00535\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ island.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac7f43feaf274f5f4e2605be5b60131f9}{manifoldArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}(),}
+\DoxyCodeLine{00536\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ constraintsPtr,}
+\DoxyCodeLine{00537\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ island.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_a1de7a7fdbf9dcb236adef56b014c1718}{constraintArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}(),}
+\DoxyCodeLine{00538\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *solverParams.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params_a2a6a1aa12974e77e65a42856002eae1f}{m\_solverInfo}},}
+\DoxyCodeLine{00539\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ solverParams.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params_aa19c37aa1b821a7348726a6449a87da2}{m\_debugDrawer}},}
+\DoxyCodeLine{00540\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ solverParams.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params_a7781f3c17233778d01c5f3dbf58d1157}{m\_dispatcher}});}
+\DoxyCodeLine{00541\ \}}
+\DoxyCodeLine{00542\ }
+\DoxyCodeLine{00543\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ac125dd1e76e97c63891d4dad6e7abde5}{btSimulationIslandManagerMt::serialIslandDispatch}}(\mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<Island*>}}*\ islandsPtr,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params}{SolverParams}}\&\ solverParams)}
+\DoxyCodeLine{00544\ \{}
+\DoxyCodeLine{00545\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}serialIslandDispatch"{}});}
+\DoxyCodeLine{00546\ \ \ \ \ \textcolor{comment}{//\ serial\ dispatch}}
+\DoxyCodeLine{00547\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<Island*>}}\&\ islands\ =\ *islandsPtr;}
+\DoxyCodeLine{00548\ \ \ \ \ \mbox{\hyperlink{classbt_constraint_solver}{btConstraintSolver}}*\ solver\ =\ solverParams.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params_a94a288802fc21ab856231dc2833106d6}{m\_solverMt}}\ ?\ solverParams.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params_a94a288802fc21ab856231dc2833106d6}{m\_solverMt}}\ :\ solverParams.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params_a7acdfb776f324fec9e03b21b42977a19}{m\_solverPool}};}
+\DoxyCodeLine{00549\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ islands.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00550\ \ \ \ \ \{}
+\DoxyCodeLine{00551\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab762a3f93be168022b747d098e3b461e}{solveIsland}}(solver,\ *islands[i],\ solverParams);}
+\DoxyCodeLine{00552\ \ \ \ \ \}}
+\DoxyCodeLine{00553\ \}}
+\DoxyCodeLine{00554\ }
+\DoxyCodeLine{00555\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{struct_update_island_dispatcher_a42ccf226a67486ccc3e2be61be26f2fa}{UpdateIslandDispatcher}}\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{classbt_i_parallel_for_body}{btIParallelForBody}}}
+\DoxyCodeLine{00556\ \{}
+\DoxyCodeLine{00557\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btSimulationIslandManagerMt::Island*>}}\&\ \mbox{\hyperlink{struct_update_island_dispatcher_a6f73c2009cb31bb559d46acdd5821fae}{m\_islandsPtr}};}
+\DoxyCodeLine{00558\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params}{btSimulationIslandManagerMt::SolverParams}}\&\ \mbox{\hyperlink{struct_update_island_dispatcher_aab863e6f31f7cb848b8af27beb194190}{m\_solverParams}};}
+\DoxyCodeLine{00559\ }
+\DoxyCodeLine{00560\ \ \ \ \ \mbox{\hyperlink{struct_update_island_dispatcher_a42ccf226a67486ccc3e2be61be26f2fa}{UpdateIslandDispatcher}}(\mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btSimulationIslandManagerMt::Island*>}}\&\ islandsPtr,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params}{btSimulationIslandManagerMt::SolverParams}}\&\ solverParams)}
+\DoxyCodeLine{00561\ \ \ \ \ \ \ \ \ :\ \mbox{\hyperlink{struct_update_island_dispatcher_a6f73c2009cb31bb559d46acdd5821fae}{m\_islandsPtr}}(islandsPtr),\ \mbox{\hyperlink{struct_update_island_dispatcher_aab863e6f31f7cb848b8af27beb194190}{m\_solverParams}}(solverParams)}
+\DoxyCodeLine{00562\ \ \ \ \ \{}
+\DoxyCodeLine{00563\ \ \ \ \ \}}
+\DoxyCodeLine{00564\ }
+\DoxyCodeLine{00565\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{struct_update_island_dispatcher_a6a7a7dffeeb5506267ea86f033819f7b}{forLoop}}(\textcolor{keywordtype}{int}\ iBegin,\ \textcolor{keywordtype}{int}\ iEnd)\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}}
+\DoxyCodeLine{00566\ \ \ \ \ \{}
+\DoxyCodeLine{00567\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_constraint_solver}{btConstraintSolver}}*\ solver\ =\ \mbox{\hyperlink{struct_update_island_dispatcher_aab863e6f31f7cb848b8af27beb194190}{m\_solverParams}}.m\_solverPool;}
+\DoxyCodeLine{00568\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ iBegin;\ i\ <\ iEnd;\ ++i)}
+\DoxyCodeLine{00569\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00570\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{btSimulationIslandManagerMt::Island}}*\ island\ =\ \mbox{\hyperlink{struct_update_island_dispatcher_a6f73c2009cb31bb559d46acdd5821fae}{m\_islandsPtr}}[i];}
+\DoxyCodeLine{00571\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab762a3f93be168022b747d098e3b461e}{btSimulationIslandManagerMt::solveIsland}}(solver,\ *island,\ \mbox{\hyperlink{struct_update_island_dispatcher_aab863e6f31f7cb848b8af27beb194190}{m\_solverParams}});}
+\DoxyCodeLine{00572\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00573\ \ \ \ \ \}}
+\DoxyCodeLine{00574\ \};}
+\DoxyCodeLine{00575\ }
+\DoxyCodeLine{00576\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab735be822e8bf6fdb211e8adaf3c9482}{btSimulationIslandManagerMt::parallelIslandDispatch}}(\mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<Island*>}}*\ islandsPtr,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params}{SolverParams}}\&\ solverParams)}
+\DoxyCodeLine{00577\ \{}
+\DoxyCodeLine{00578\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}parallelIslandDispatch"{}});}
+\DoxyCodeLine{00579\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00580\ \ \ \ \ \textcolor{comment}{//\ if\ there\ are\ islands\ with\ many\ contacts,\ it\ may\ be\ faster\ to\ submit\ these}}
+\DoxyCodeLine{00581\ \ \ \ \ \textcolor{comment}{//\ large\ islands\ *serially*\ to\ a\ single\ parallel\ constraint\ solver,\ and\ then\ later}}
+\DoxyCodeLine{00582\ \ \ \ \ \textcolor{comment}{//\ submit\ the\ remaining\ smaller\ islands\ in\ parallel\ to\ multiple\ sequential\ solvers.}}
+\DoxyCodeLine{00583\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00584\ \ \ \ \ \textcolor{comment}{//\ Some\ task\ schedulers\ do\ not\ deal\ well\ with\ nested\ parallelFor\ loops.\ One\ implementation}}
+\DoxyCodeLine{00585\ \ \ \ \ \textcolor{comment}{//\ of\ OpenMP\ was\ actually\ slower\ than\ doing\ everything\ single-\/threaded.\ Intel\ TBB}}
+\DoxyCodeLine{00586\ \ \ \ \ \textcolor{comment}{//\ on\ the\ other\ hand,\ seems\ to\ do\ a\ pretty\ respectable\ job\ with\ it.}}
+\DoxyCodeLine{00587\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00588\ \ \ \ \ \textcolor{comment}{//\ When\ solving\ islands\ in\ parallel,\ the\ worst\ case\ performance\ happens\ when\ there}}
+\DoxyCodeLine{00589\ \ \ \ \ \textcolor{comment}{//\ is\ one\ very\ large\ island\ and\ then\ perhaps\ a\ smattering\ of\ very\ small}}
+\DoxyCodeLine{00590\ \ \ \ \ \textcolor{comment}{//\ islands\ -\/-\/\ one\ worker\ thread\ takes\ the\ large\ island\ and\ the\ remaining\ workers}}
+\DoxyCodeLine{00591\ \ \ \ \ \textcolor{comment}{//\ tear\ through\ the\ smaller\ islands\ and\ then\ sit\ idle\ waiting\ for\ the\ first\ worker}}
+\DoxyCodeLine{00592\ \ \ \ \ \textcolor{comment}{//\ to\ finish.\ Solving\ islands\ in\ parallel\ works\ best\ when\ there\ are\ numerous\ small}}
+\DoxyCodeLine{00593\ \ \ \ \ \textcolor{comment}{//\ islands,\ roughly\ equal\ in\ size.}}
+\DoxyCodeLine{00594\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00595\ \ \ \ \ \textcolor{comment}{//\ By\ contrast,\ the\ other\ approach\ -\/-\/\ the\ parallel\ constraint\ solver\ -\/-\/\ is\ only}}
+\DoxyCodeLine{00596\ \ \ \ \ \textcolor{comment}{//\ able\ to\ deliver\ a\ worthwhile\ speedup\ when\ the\ island\ is\ large.\ For\ smaller\ islands,}}
+\DoxyCodeLine{00597\ \ \ \ \ \textcolor{comment}{//\ it\ is\ difficult\ to\ extract\ a\ useful\ amount\ of\ parallelism\ -\/-\/\ the\ overhead\ of\ grouping}}
+\DoxyCodeLine{00598\ \ \ \ \ \textcolor{comment}{//\ the\ constraints\ into\ batches\ and\ sending\ the\ batches\ to\ worker\ threads\ can\ nullify}}
+\DoxyCodeLine{00599\ \ \ \ \ \textcolor{comment}{//\ any\ gains\ from\ parallelism.}}
+\DoxyCodeLine{00600\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00601\ }
+\DoxyCodeLine{00602\ \ \ \ \ \mbox{\hyperlink{struct_update_island_dispatcher}{UpdateIslandDispatcher}}\ dispatcher(*islandsPtr,\ solverParams);}
+\DoxyCodeLine{00603\ \ \ \ \ \textcolor{comment}{//\ We\ take\ advantage\ of\ the\ fact\ the\ islands\ are\ sorted\ in\ order\ of\ decreasing\ size}}
+\DoxyCodeLine{00604\ \ \ \ \ \textcolor{keywordtype}{int}\ iBegin\ =\ 0;}
+\DoxyCodeLine{00605\ \ \ \ \ \textcolor{keywordflow}{if}\ (solverParams.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params_a94a288802fc21ab856231dc2833106d6}{m\_solverMt}})}
+\DoxyCodeLine{00606\ \ \ \ \ \{}
+\DoxyCodeLine{00607\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (iBegin\ <\ islandsPtr-\/>\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}())}
+\DoxyCodeLine{00608\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00609\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island}{btSimulationIslandManagerMt::Island}}*\ island\ =\ (*islandsPtr)[iBegin];}
+\DoxyCodeLine{00610\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (island-\/>\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_island_ac7f43feaf274f5f4e2605be5b60131f9}{manifoldArray}}.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ <\ btSequentialImpulseConstraintSolverMt::s\_minimumContactManifoldsForBatching)}
+\DoxyCodeLine{00611\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00612\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ OK\ to\ submit\ the\ rest\ of\ the\ array\ in\ parallel}}
+\DoxyCodeLine{00613\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00614\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00615\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ serial\ dispatch\ to\ parallel\ solver\ for\ large\ islands\ (if\ any)}}
+\DoxyCodeLine{00616\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_ab762a3f93be168022b747d098e3b461e}{solveIsland}}(solverParams.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params_a94a288802fc21ab856231dc2833106d6}{m\_solverMt}},\ *island,\ solverParams);}
+\DoxyCodeLine{00617\ \ \ \ \ \ \ \ \ \ \ \ \ ++iBegin;}
+\DoxyCodeLine{00618\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00619\ \ \ \ \ \}}
+\DoxyCodeLine{00620\ \ \ \ \ \textcolor{comment}{//\ parallel\ dispatch\ to\ sequential\ solvers\ for\ rest}}
+\DoxyCodeLine{00621\ \ \ \ \ \mbox{\hyperlink{bt_threads_8cpp_afca0fc71d5b9916c985bbec9e244d919}{btParallelFor}}(iBegin,\ islandsPtr-\/>\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}(),\ 1,\ dispatcher);}
+\DoxyCodeLine{00622\ \}}
+\DoxyCodeLine{00623\ }
+\DoxyCodeLine{00625\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a23e63a23d42c4a0b180510d925823db0}{btSimulationIslandManagerMt::buildAndProcessIslands}}(\mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher,}
+\DoxyCodeLine{00626\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_world}{btCollisionWorld}}*\ collisionWorld,}
+\DoxyCodeLine{00627\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btTypedConstraint*>}}\&\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},}
+\DoxyCodeLine{00628\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params}{SolverParams}}\&\ solverParams)}
+\DoxyCodeLine{00629\ \{}
+\DoxyCodeLine{00630\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}buildAndProcessIslands"{}});}
+\DoxyCodeLine{00631\ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a6e21ccefdea3a53d5ec8f6aa2849bf8b}{btCollisionObjectArray}}\&\ collisionObjects\ =\ collisionWorld-\/>\mbox{\hyperlink{classbt_collision_world_a7c0f9eb651b1589905e6e310414875d9}{getCollisionObjectArray}}();}
+\DoxyCodeLine{00632\ }
+\DoxyCodeLine{00633\ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_af9139bbf96391f6d6305a4c7329e4141}{buildIslands}}(dispatcher,\ collisionWorld);}
+\DoxyCodeLine{00634\ }
+\DoxyCodeLine{00635\ \ \ \ \ \textcolor{keywordflow}{if}\ (!\mbox{\hyperlink{classbt_simulation_island_manager_ae18b05fce2ab10d425ba0ec0aff0336e}{getSplitIslands}}())}
+\DoxyCodeLine{00636\ \ \ \ \ \{}
+\DoxyCodeLine{00637\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}**\ manifolds\ =\ dispatcher-\/>\mbox{\hyperlink{classbt_dispatcher_ad25da3f77bb6ef93231c70837c17fc57}{getInternalManifoldPointer}}();}
+\DoxyCodeLine{00638\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ maxNumManifolds\ =\ dispatcher-\/>\mbox{\hyperlink{classbt_dispatcher_a0c94a046ac053c226d43211c5379c31f}{getNumManifolds}}();}
+\DoxyCodeLine{00639\ }
+\DoxyCodeLine{00640\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ maxNumManifolds;\ i++)}
+\DoxyCodeLine{00641\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00642\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}*\ manifold\ =\ manifolds[i];}
+\DoxyCodeLine{00643\ }
+\DoxyCodeLine{00644\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ colObj0\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keyword}{const\ }\mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\textcolor{keyword}{>}(manifold-\/>getBody0());}
+\DoxyCodeLine{00645\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ colObj1\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keyword}{const\ }\mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\textcolor{keyword}{>}(manifold-\/>getBody1());}
+\DoxyCodeLine{00646\ }
+\DoxyCodeLine{00648\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (((colObj0)\ \&\&\ colObj0-\/>getActivationState()\ !=\ \mbox{\hyperlink{bt_collision_object_8h_ae008fca1dfbfd49a3a8998397970bcad}{ISLAND\_SLEEPING}})\ ||}
+\DoxyCodeLine{00649\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ((colObj1)\ \&\&\ colObj1-\/>getActivationState()\ !=\ \mbox{\hyperlink{bt_collision_object_8h_ae008fca1dfbfd49a3a8998397970bcad}{ISLAND\_SLEEPING}}))}
+\DoxyCodeLine{00650\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00651\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//kinematic\ objects\ don't\ merge\ islands,\ but\ wake\ up\ all\ connected\ objects}}
+\DoxyCodeLine{00652\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (colObj0-\/>isKinematicObject()\ \&\&\ colObj0-\/>getActivationState()\ !=\ \mbox{\hyperlink{bt_collision_object_8h_ae008fca1dfbfd49a3a8998397970bcad}{ISLAND\_SLEEPING}})}
+\DoxyCodeLine{00653\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00654\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (colObj0-\/>hasContactResponse())}
+\DoxyCodeLine{00655\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ colObj1-\/>activate();}
+\DoxyCodeLine{00656\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00657\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (colObj1-\/>isKinematicObject()\ \&\&\ colObj1-\/>getActivationState()\ !=\ \mbox{\hyperlink{bt_collision_object_8h_ae008fca1dfbfd49a3a8998397970bcad}{ISLAND\_SLEEPING}})}
+\DoxyCodeLine{00658\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00659\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (colObj1-\/>hasContactResponse())}
+\DoxyCodeLine{00660\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ colObj0-\/>activate();}
+\DoxyCodeLine{00661\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00662\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00663\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00664\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_ac4d45dd414a1096579ca1009cb892163}{btTypedConstraint}}**\ constraintsPtr\ =\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}}.size()\ ?\ \&\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}}[0]\ :\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00665\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_constraint_solver}{btConstraintSolver}}*\ solver\ =\ solverParams.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params_a94a288802fc21ab856231dc2833106d6}{m\_solverMt}}\ ?\ solverParams.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params_a94a288802fc21ab856231dc2833106d6}{m\_solverMt}}\ :\ solverParams.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params_a7acdfb776f324fec9e03b21b42977a19}{m\_solverPool}};}
+\DoxyCodeLine{00666\ \ \ \ \ \ \ \ \ solver-\/>\mbox{\hyperlink{classbt_constraint_solver_a923b7573a8d62805714abd5157dd0963}{solveGroup}}(\&collisionObjects[0],}
+\DoxyCodeLine{00667\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ collisionObjects.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}(),}
+\DoxyCodeLine{00668\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ manifolds,}
+\DoxyCodeLine{00669\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ maxNumManifolds,}
+\DoxyCodeLine{00670\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ constraintsPtr,}
+\DoxyCodeLine{00671\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}}.size(),}
+\DoxyCodeLine{00672\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *solverParams.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params_a2a6a1aa12974e77e65a42856002eae1f}{m\_solverInfo}},}
+\DoxyCodeLine{00673\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ solverParams.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params_aa19c37aa1b821a7348726a6449a87da2}{m\_debugDrawer}},}
+\DoxyCodeLine{00674\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ solverParams.\mbox{\hyperlink{structbt_simulation_island_manager_mt_1_1_solver_params_a7781f3c17233778d01c5f3dbf58d1157}{m\_dispatcher}});}
+\DoxyCodeLine{00675\ \ \ \ \ \}}
+\DoxyCodeLine{00676\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00677\ \ \ \ \ \{}
+\DoxyCodeLine{00678\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a2462333f86838384cb316878eeede655}{initIslandPools}}();}
+\DoxyCodeLine{00679\ }
+\DoxyCodeLine{00680\ \ \ \ \ \ \ \ \ \textcolor{comment}{//traverse\ the\ simulation\ islands,\ and\ call\ the\ solver,\ unless\ all\ objects\ are\ sleeping/deactivated}}
+\DoxyCodeLine{00681\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a01ab4b54820776ea2392f1cd3fb3e5df}{addBodiesToIslands}}(collisionWorld);}
+\DoxyCodeLine{00682\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a77eadf262f5a0e63053e3efcc9ccfec9}{addManifoldsToIslands}}(dispatcher);}
+\DoxyCodeLine{00683\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_a90d07b76e2c9262cbd323561302b354d}{addConstraintsToIslands}}(\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}});}
+\DoxyCodeLine{00684\ }
+\DoxyCodeLine{00685\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ m\_activeIslands\ array\ should\ now\ contain\ all\ non-\/sleeping\ Islands,\ and\ each\ Island\ should}}
+\DoxyCodeLine{00686\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ have\ all\ the\ necessary\ bodies,\ manifolds\ and\ constraints.}}
+\DoxyCodeLine{00687\ }
+\DoxyCodeLine{00688\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ we\ want\ to\ merge\ islands\ with\ small\ batch\ counts,}}
+\DoxyCodeLine{00689\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_simulation_island_manager_mt_a795550e4b7dad6f428f16fee3842fe6c}{m\_minimumSolverBatchSize}}\ >\ 1)}
+\DoxyCodeLine{00690\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00691\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_af6dcd1da46ee5ac1e6fce9f2a039b2e3}{mergeIslands}}();}
+\DoxyCodeLine{00692\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00693\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ dispatch\ islands\ to\ solver}}
+\DoxyCodeLine{00694\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_simulation_island_manager_mt_aa3aaead0665a0634f5d59801d2fe2525}{m\_islandDispatch}}(\&\mbox{\hyperlink{classbt_simulation_island_manager_mt_ab688ca57d7039b7cd5ba746871749a39}{m\_activeIslands}},\ solverParams);}
+\DoxyCodeLine{00695\ \ \ \ \ \}}
+\DoxyCodeLine{00696\ \}}
+
+\end{DoxyCode}

@@ -1,0 +1,889 @@
+\doxysection{bt\+Mpr\+Penetration.\+h}
+\hypertarget{bt_mpr_penetration_8h_source}{}\label{bt_mpr_penetration_8h_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/NarrowPhaseCollision/btMprPenetration.h@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/NarrowPhaseCollision/btMprPenetration.h}}
+\mbox{\hyperlink{bt_mpr_penetration_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ }
+\DoxyCodeLine{00002\ \textcolor{comment}{/***}}
+\DoxyCodeLine{00003\ \textcolor{comment}{\ *\ -\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/}}
+\DoxyCodeLine{00004\ \textcolor{comment}{\ *\ Copyright\ (c)2012\ Daniel\ Fiser\ <danfis@danfis.cz>}}
+\DoxyCodeLine{00005\ \textcolor{comment}{\ *}}
+\DoxyCodeLine{00006\ \textcolor{comment}{\ *\ \ This\ file\ was\ ported\ from\ mpr.c\ file,\ part\ of\ libccd.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{\ *\ \ The\ Minkoski\ Portal\ Refinement\ implementation\ was\ ported\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{\ *\ \ to\ OpenCL\ by\ Erwin\ Coumans\ for\ the\ Bullet\ 3\ Physics\ library.}}
+\DoxyCodeLine{00009\ \textcolor{comment}{\ *\ \ The\ original\ MPR\ idea\ and\ implementation\ is\ by\ Gary\ Snethen}}
+\DoxyCodeLine{00010\ \textcolor{comment}{\ *\ \ in\ XenoCollide,\ see\ http://github.com/erwincoumans/xenocollide}}
+\DoxyCodeLine{00011\ \textcolor{comment}{\ *}}
+\DoxyCodeLine{00012\ \textcolor{comment}{\ *\ \ Distributed\ under\ the\ OSI-\/approved\ BSD\ License\ (the\ "{}License"{});}}
+\DoxyCodeLine{00013\ \textcolor{comment}{\ *\ \ see\ <http://www.opensource.org/licenses/bsd-\/license.php>.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{\ *\ \ This\ software\ is\ distributed\ WITHOUT\ ANY\ WARRANTY;\ without\ even\ the}}
+\DoxyCodeLine{00015\ \textcolor{comment}{\ *\ \ implied\ warranty\ of\ MERCHANTABILITY\ or\ FITNESS\ FOR\ A\ PARTICULAR\ PURPOSE.}}
+\DoxyCodeLine{00016\ \textcolor{comment}{\ *\ \ See\ the\ License\ for\ more\ information.}}
+\DoxyCodeLine{00017\ \textcolor{comment}{\ */}}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#ifndef\ BT\_MPR\_PENETRATION\_H}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#define\ BT\_MPR\_PENETRATION\_H}}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#define\ BT\_DEBUG\_MPR1}}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_transform_8h}{LinearMath/btTransform.h}}"{}}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_aligned_object_array_8h}{LinearMath/btAlignedObjectArray.h}}"{}}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \textcolor{comment}{//\#define\ MPR\_AVERAGE\_CONTACT\_POSITIONS}}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structbt_mpr_collision_description_a8f4639f14468b354fdd9604ae98177fd}{btMprCollisionDescription}}}
+\DoxyCodeLine{00032\ \{}
+\DoxyCodeLine{00033\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{structbt_mpr_collision_description_a1e9166e619fc677cad5d8ac0e47d532e}{m\_firstDir}};}
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{structbt_mpr_collision_description_ae8c392a5b3a4f0ad0f876a0210f70acd}{m\_maxGjkIterations}};}
+\DoxyCodeLine{00035\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{structbt_mpr_collision_description_a08701698c10b22f9b8bc12834789d4d5}{m\_maximumDistanceSquared}};}
+\DoxyCodeLine{00036\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{structbt_mpr_collision_description_a8620eee8760708547abd5ec20f700188}{m\_gjkRelError2}};}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \ \ \ \ \mbox{\hyperlink{structbt_mpr_collision_description_a8f4639f14468b354fdd9604ae98177fd}{btMprCollisionDescription}}()}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ :\ \mbox{\hyperlink{structbt_mpr_collision_description_a1e9166e619fc677cad5d8ac0e47d532e}{m\_firstDir}}(0,\ 1,\ 0),}
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_mpr_collision_description_ae8c392a5b3a4f0ad0f876a0210f70acd}{m\_maxGjkIterations}}(1000),}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_mpr_collision_description_a08701698c10b22f9b8bc12834789d4d5}{m\_maximumDistanceSquared}}(1e30f),}
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_mpr_collision_description_a8620eee8760708547abd5ec20f700188}{m\_gjkRelError2}}(1.0e-\/6)}
+\DoxyCodeLine{00043\ \ \ \ \ \{}
+\DoxyCodeLine{00044\ \ \ \ \ \}}
+\DoxyCodeLine{00045\ \ \ \ \ \textcolor{keyword}{virtual}\ \mbox{\hyperlink{structbt_mpr_collision_description_acb0438e461633f6fa1792f78010e1d8c}{\string~btMprCollisionDescription}}()}
+\DoxyCodeLine{00046\ \ \ \ \ \{}
+\DoxyCodeLine{00047\ \ \ \ \ \}}
+\DoxyCodeLine{00048\ \};}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structbt_mpr_distance_info}{btMprDistanceInfo}}}
+\DoxyCodeLine{00051\ \{}
+\DoxyCodeLine{00052\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{structbt_mpr_distance_info_a054c4f80ee6e5cd8df036f0d361e31b0}{m\_pointOnA}};}
+\DoxyCodeLine{00053\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{structbt_mpr_distance_info_a408235a4523525e5f19914d79208ea7e}{m\_pointOnB}};}
+\DoxyCodeLine{00054\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{structbt_mpr_distance_info_a9a4d0dd2ce0b62e19ceef0c1069fe24d}{m\_normalBtoA}};}
+\DoxyCodeLine{00055\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{structbt_mpr_distance_info_a89c61d5a10778b3ed118918e40184e03}{m\_distance}};}
+\DoxyCodeLine{00056\ \};}
+\DoxyCodeLine{00057\ }
+\DoxyCodeLine{00058\ \textcolor{preprocessor}{\#ifdef\ \_\_cplusplus}}
+\DoxyCodeLine{00059\ \textcolor{preprocessor}{\#define\ BT\_MPR\_SQRT\ sqrtf}}
+\DoxyCodeLine{00060\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00061\ \textcolor{preprocessor}{\#define\ BT\_MPR\_SQRT\ sqrt}}
+\DoxyCodeLine{00062\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00063\ \textcolor{preprocessor}{\#define\ BT\_MPR\_FMIN(x,\ y)\ ((x)\ <\ (y)\ ?\ (x)\ :\ (y))}}
+\DoxyCodeLine{00064\ \textcolor{preprocessor}{\#define\ BT\_MPR\_FABS\ fabs}}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \textcolor{preprocessor}{\#define\ BT\_MPR\_TOLERANCE\ 1E-\/6f}}
+\DoxyCodeLine{00067\ \textcolor{preprocessor}{\#define\ BT\_MPR\_MAX\_ITERATIONS\ 1000}}
+\DoxyCodeLine{00068\ }
+\DoxyCodeLine{00069\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{struct__bt_mpr_support__t}{\_btMprSupport\_t}}}
+\DoxyCodeLine{00070\ \{}
+\DoxyCodeLine{00071\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{struct__bt_mpr_support__t_acb1c4482f63f4e62041dd9e299ae7484}{v}};\ \ \ }
+\DoxyCodeLine{00072\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{struct__bt_mpr_support__t_a218f7af17e27c0e43fe0685390238a16}{v1}};\ \ }
+\DoxyCodeLine{00073\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{struct__bt_mpr_support__t_a21324c5741d2419b4c1a384cdc3e8ef0}{v2}};\ \ }
+\DoxyCodeLine{00074\ \};}
+\DoxyCodeLine{00075\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{struct__bt_mpr_support__t}{\_btMprSupport\_t}}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a6cf7b0405b1c7a90cbeadc5a9018b2e9}{btMprSupport\_t}};}
+\DoxyCodeLine{00076\ }
+\DoxyCodeLine{00077\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{struct__bt_mpr_simplex__t}{\_btMprSimplex\_t}}}
+\DoxyCodeLine{00078\ \{}
+\DoxyCodeLine{00079\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a6cf7b0405b1c7a90cbeadc5a9018b2e9}{btMprSupport\_t}}\ \mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[4];}
+\DoxyCodeLine{00080\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct__bt_mpr_simplex__t_a3f19f86e42b7dfe695a21ba2d48430be}{last}};\ \ }
+\DoxyCodeLine{00081\ \};}
+\DoxyCodeLine{00082\ \textcolor{keyword}{typedef}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{struct__bt_mpr_simplex__t}{\_btMprSimplex\_t}}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}};}
+\DoxyCodeLine{00083\ }
+\DoxyCodeLine{00084\ \textcolor{keyword}{inline}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a6cf7b0405b1c7a90cbeadc5a9018b2e9}{btMprSupport\_t}}\ *\mbox{\hyperlink{bt_mpr_penetration_8h_a9478f98597f24bbbc586f31996ce3002}{btMprSimplexPointW}}(\mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *s,\ \textcolor{keywordtype}{int}\ idx)}
+\DoxyCodeLine{00085\ \{}
+\DoxyCodeLine{00086\ \ \ \ \ \textcolor{keywordflow}{return}\ \&s-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[idx];}
+\DoxyCodeLine{00087\ \}}
+\DoxyCodeLine{00088\ }
+\DoxyCodeLine{00089\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a50e796368af227a424278becd3a3dac4}{btMprSimplexSetSize}}(\mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *s,\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}})}
+\DoxyCodeLine{00090\ \{}
+\DoxyCodeLine{00091\ \ \ \ \ s-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_a3f19f86e42b7dfe695a21ba2d48430be}{last}}\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}\ -\/\ 1;}
+\DoxyCodeLine{00092\ \}}
+\DoxyCodeLine{00093\ }
+\DoxyCodeLine{00094\ \textcolor{preprocessor}{\#ifdef\ DEBUG\_MPR}}
+\DoxyCodeLine{00095\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ btPrintPortalVertex(\mbox{\hyperlink{struct__bt_mpr_simplex__t}{\_btMprSimplex\_t}}\ *portal,\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}})}
+\DoxyCodeLine{00096\ \{}
+\DoxyCodeLine{00097\ \ \ \ \ printf(\textcolor{stringliteral}{"{}portal[\%d].v\ =\ \%f,\%f,\%f,\ v1=\%f,\%f,\%f,\ v2=\%f,\%f,\%f\(\backslash\)n"{}},\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}},\ portal-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}].\mbox{\hyperlink{struct__bt_mpr_support__t_acb1c4482f63f4e62041dd9e299ae7484}{v}}.x(),\ portal-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}].\mbox{\hyperlink{struct__bt_mpr_support__t_acb1c4482f63f4e62041dd9e299ae7484}{v}}.y(),\ portal-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}].\mbox{\hyperlink{struct__bt_mpr_support__t_acb1c4482f63f4e62041dd9e299ae7484}{v}}.z(),}
+\DoxyCodeLine{00098\ \ \ \ \ \ \ \ \ \ \ \ portal-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}].\mbox{\hyperlink{struct__bt_mpr_support__t_a218f7af17e27c0e43fe0685390238a16}{v1}}.x(),\ portal-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}].\mbox{\hyperlink{struct__bt_mpr_support__t_a218f7af17e27c0e43fe0685390238a16}{v1}}.y(),\ portal-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}].\mbox{\hyperlink{struct__bt_mpr_support__t_a218f7af17e27c0e43fe0685390238a16}{v1}}.z(),}
+\DoxyCodeLine{00099\ \ \ \ \ \ \ \ \ \ \ \ portal-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}].\mbox{\hyperlink{struct__bt_mpr_support__t_a21324c5741d2419b4c1a384cdc3e8ef0}{v2}}.x(),\ portal-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}].\mbox{\hyperlink{struct__bt_mpr_support__t_a21324c5741d2419b4c1a384cdc3e8ef0}{v2}}.y(),\ portal-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}].\mbox{\hyperlink{struct__bt_mpr_support__t_a21324c5741d2419b4c1a384cdc3e8ef0}{v2}}.z());}
+\DoxyCodeLine{00100\ \}}
+\DoxyCodeLine{00101\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//DEBUG\_MPR}}
+\DoxyCodeLine{00102\ }
+\DoxyCodeLine{00103\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_mpr_penetration_8h_ae9991312729620e30e7435ef7ba0a098}{btMprSimplexSize}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *s)}
+\DoxyCodeLine{00104\ \{}
+\DoxyCodeLine{00105\ \ \ \ \ \textcolor{keywordflow}{return}\ s-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_a3f19f86e42b7dfe695a21ba2d48430be}{last}}\ +\ 1;}
+\DoxyCodeLine{00106\ \}}
+\DoxyCodeLine{00107\ }
+\DoxyCodeLine{00108\ \textcolor{keyword}{inline}\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a6cf7b0405b1c7a90cbeadc5a9018b2e9}{btMprSupport\_t}}\ *\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *s,\ \textcolor{keywordtype}{int}\ idx)}
+\DoxyCodeLine{00109\ \{}
+\DoxyCodeLine{00110\ \ \ \ \ \textcolor{comment}{//\ here\ is\ no\ check\ on\ boundaries}}
+\DoxyCodeLine{00111\ \ \ \ \ \textcolor{keywordflow}{return}\ \&s-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[idx];}
+\DoxyCodeLine{00112\ \}}
+\DoxyCodeLine{00113\ }
+\DoxyCodeLine{00114\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a46a032b1391a0d70cfe0f245ace6d875}{btMprSupportCopy}}(\mbox{\hyperlink{bt_mpr_penetration_8h_a6cf7b0405b1c7a90cbeadc5a9018b2e9}{btMprSupport\_t}}\ *d,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a6cf7b0405b1c7a90cbeadc5a9018b2e9}{btMprSupport\_t}}\ *s)}
+\DoxyCodeLine{00115\ \{}
+\DoxyCodeLine{00116\ \ \ \ \ *d\ =\ *s;}
+\DoxyCodeLine{00117\ \}}
+\DoxyCodeLine{00118\ }
+\DoxyCodeLine{00119\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a88eee2cbfec2d087b3108cb6e777aa85}{btMprSimplexSet}}(\mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *s,\ \textcolor{keywordtype}{size\_t}\ pos,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a6cf7b0405b1c7a90cbeadc5a9018b2e9}{btMprSupport\_t}}\ *\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}})}
+\DoxyCodeLine{00120\ \{}
+\DoxyCodeLine{00121\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a46a032b1391a0d70cfe0f245ace6d875}{btMprSupportCopy}}(s-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}\ +\ pos,\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}});}
+\DoxyCodeLine{00122\ \}}
+\DoxyCodeLine{00123\ }
+\DoxyCodeLine{00124\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a71c5cbc98a508ef6d542d68457444c9c}{btMprSimplexSwap}}(\mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *s,\ \textcolor{keywordtype}{size\_t}\ pos1,\ \textcolor{keywordtype}{size\_t}\ pos2)}
+\DoxyCodeLine{00125\ \{}
+\DoxyCodeLine{00126\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a6cf7b0405b1c7a90cbeadc5a9018b2e9}{btMprSupport\_t}}\ supp;}
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00128\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a46a032b1391a0d70cfe0f245ace6d875}{btMprSupportCopy}}(\&supp,\ \&s-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[pos1]);}
+\DoxyCodeLine{00129\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a46a032b1391a0d70cfe0f245ace6d875}{btMprSupportCopy}}(\&s-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[pos1],\ \&s-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[pos2]);}
+\DoxyCodeLine{00130\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a46a032b1391a0d70cfe0f245ace6d875}{btMprSupportCopy}}(\&s-\/>\mbox{\hyperlink{struct__bt_mpr_simplex__t_ac63416d0309eb08953f678bb57a5b506}{ps}}[pos2],\ \&supp);}
+\DoxyCodeLine{00131\ \}}
+\DoxyCodeLine{00132\ }
+\DoxyCodeLine{00133\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}(\textcolor{keywordtype}{float}\ \mbox{\hyperlink{glad_8h_aa857b95cc76669c2a9109239ef40a47c}{val}})}
+\DoxyCodeLine{00134\ \{}
+\DoxyCodeLine{00135\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a8638deeaeb87fe8111a24e1d4f36ed0b}{BT\_MPR\_FABS}}(\mbox{\hyperlink{glad_8h_aa857b95cc76669c2a9109239ef40a47c}{val}})\ <\ FLT\_EPSILON;}
+\DoxyCodeLine{00136\ \}}
+\DoxyCodeLine{00137\ }
+\DoxyCodeLine{00138\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_mpr_penetration_8h_aff06217ad9901d3656d6322553698486}{btMprEq}}(\textcolor{keywordtype}{float}\ \_a,\ \textcolor{keywordtype}{float}\ \_b)}
+\DoxyCodeLine{00139\ \{}
+\DoxyCodeLine{00140\ \ \ \ \ \textcolor{keywordtype}{float}\ ab;}
+\DoxyCodeLine{00141\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}};}
+\DoxyCodeLine{00142\ }
+\DoxyCodeLine{00143\ \ \ \ \ ab\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a8638deeaeb87fe8111a24e1d4f36ed0b}{BT\_MPR\_FABS}}(\_a\ -\/\ \_b);}
+\DoxyCodeLine{00144\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_mpr_penetration_8h_a8638deeaeb87fe8111a24e1d4f36ed0b}{BT\_MPR\_FABS}}(ab)\ <\ FLT\_EPSILON)}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 1;}
+\DoxyCodeLine{00146\ }
+\DoxyCodeLine{00147\ \ \ \ \ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a8638deeaeb87fe8111a24e1d4f36ed0b}{BT\_MPR\_FABS}}(\_a);}
+\DoxyCodeLine{00148\ \ \ \ \ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a8638deeaeb87fe8111a24e1d4f36ed0b}{BT\_MPR\_FABS}}(\_b);}
+\DoxyCodeLine{00149\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}\ >\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}})}
+\DoxyCodeLine{00150\ \ \ \ \ \{}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ ab\ <\ FLT\_EPSILON\ *\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}};}
+\DoxyCodeLine{00152\ \ \ \ \ \}}
+\DoxyCodeLine{00153\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00154\ \ \ \ \ \{}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ ab\ <\ FLT\_EPSILON\ *\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}};}
+\DoxyCodeLine{00156\ \ \ \ \ \}}
+\DoxyCodeLine{00157\ \}}
+\DoxyCodeLine{00158\ }
+\DoxyCodeLine{00159\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_mpr_penetration_8h_af032744503f1097ab0e55799308e9ca0}{btMprVec3Eq}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}})}
+\DoxyCodeLine{00160\ \{}
+\DoxyCodeLine{00161\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_mpr_penetration_8h_aff06217ad9901d3656d6322553698486}{btMprEq}}((*a).x(),\ (*b).x())\ \&\&\ \mbox{\hyperlink{bt_mpr_penetration_8h_aff06217ad9901d3656d6322553698486}{btMprEq}}((*a).y(),\ (*b).y())\ \&\&\ \mbox{\hyperlink{bt_mpr_penetration_8h_aff06217ad9901d3656d6322553698486}{btMprEq}}((*a).z(),\ (*b).z());}
+\DoxyCodeLine{00162\ \}}
+\DoxyCodeLine{00163\ }
+\DoxyCodeLine{00164\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ btConvexTemplate>}
+\DoxyCodeLine{00165\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a2a8bc9f874f37a35c479c5d36c8e3502}{btFindOrigin}}(\textcolor{keyword}{const}\ btConvexTemplate\ \&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \textcolor{keyword}{const}\ btConvexTemplate\ \&\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_mpr_collision_description}{btMprCollisionDescription}}\ \&colDesc,\ \mbox{\hyperlink{bt_mpr_penetration_8h_a6cf7b0405b1c7a90cbeadc5a9018b2e9}{btMprSupport\_t}}\ *center)}
+\DoxyCodeLine{00166\ \{}
+\DoxyCodeLine{00167\ \ \ \ \ center-\/>\mbox{\hyperlink{struct__bt_mpr_support__t_a218f7af17e27c0e43fe0685390238a16}{v1}}\ =\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}.getObjectCenterInWorld();}
+\DoxyCodeLine{00168\ \ \ \ \ center-\/>\mbox{\hyperlink{struct__bt_mpr_support__t_a21324c5741d2419b4c1a384cdc3e8ef0}{v2}}\ =\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}.getObjectCenterInWorld();}
+\DoxyCodeLine{00169\ \ \ \ \ center-\/>\mbox{\hyperlink{struct__bt_mpr_support__t_acb1c4482f63f4e62041dd9e299ae7484}{v}}\ =\ center-\/>\mbox{\hyperlink{struct__bt_mpr_support__t_a218f7af17e27c0e43fe0685390238a16}{v1}}\ -\/\ center-\/>\mbox{\hyperlink{struct__bt_mpr_support__t_a21324c5741d2419b4c1a384cdc3e8ef0}{v2}};}
+\DoxyCodeLine{00170\ \}}
+\DoxyCodeLine{00171\ }
+\DoxyCodeLine{00172\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_mpr_penetration_8h_ad4d36bc48ef57302c6d6bde690346790}{btMprVec3Set}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}},\ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}})}
+\DoxyCodeLine{00173\ \{}
+\DoxyCodeLine{00174\ \ \ \ \ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}-\/>setValue(\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}},\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a66ddd433d2cacfe27f5906b7e86faeed}{y}},\ \mbox{\hyperlink{glad_8h_acb78bf1972d3eaf07da34ff2e0a2f133}{z}});}
+\DoxyCodeLine{00175\ \}}
+\DoxyCodeLine{00176\ }
+\DoxyCodeLine{00177\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a659a79e0fca2e8e173132f775f5b2a16}{btMprVec3Add}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}})}
+\DoxyCodeLine{00178\ \{}
+\DoxyCodeLine{00179\ \ \ \ \ *\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ +=\ *\mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}};}
+\DoxyCodeLine{00180\ \}}
+\DoxyCodeLine{00181\ }
+\DoxyCodeLine{00182\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}})}
+\DoxyCodeLine{00183\ \{}
+\DoxyCodeLine{00184\ \ \ \ \ *\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ =\ *\mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}};}
+\DoxyCodeLine{00185\ \}}
+\DoxyCodeLine{00186\ }
+\DoxyCodeLine{00187\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a134482ce8f92bdababef8c6d041fc450}{btMprVec3Scale}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *d,\ \textcolor{keywordtype}{float}\ k)}
+\DoxyCodeLine{00188\ \{}
+\DoxyCodeLine{00189\ \ \ \ \ *d\ *=\ k;}
+\DoxyCodeLine{00190\ \}}
+\DoxyCodeLine{00191\ }
+\DoxyCodeLine{00192\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}})}
+\DoxyCodeLine{00193\ \{}
+\DoxyCodeLine{00194\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}};}
+\DoxyCodeLine{00195\ }
+\DoxyCodeLine{00196\ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ =\ \mbox{\hyperlink{bt_vector3_8h_a550dc4505b1f10c03a685705f41f4011}{btDot}}(*\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ *\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}});}
+\DoxyCodeLine{00197\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}};}
+\DoxyCodeLine{00198\ \}}
+\DoxyCodeLine{00199\ }
+\DoxyCodeLine{00200\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a91f211247a7a1f972c6d8d58b9cceaca}{btMprVec3Len2}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}})}
+\DoxyCodeLine{00201\ \{}
+\DoxyCodeLine{00202\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00203\ \}}
+\DoxyCodeLine{00204\ }
+\DoxyCodeLine{00205\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a90620bb9f2698a68fa4f31b8da0183dc}{btMprVec3Normalize}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *d)}
+\DoxyCodeLine{00206\ \{}
+\DoxyCodeLine{00207\ \ \ \ \ \textcolor{keywordtype}{float}\ k\ =\ 1.f\ /\ \mbox{\hyperlink{bt_mpr_penetration_8h_aaad1f4ba78d5e302969b2f2c87f75fc8}{BT\_MPR\_SQRT}}(\mbox{\hyperlink{bt_mpr_penetration_8h_a91f211247a7a1f972c6d8d58b9cceaca}{btMprVec3Len2}}(d));}
+\DoxyCodeLine{00208\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a134482ce8f92bdababef8c6d041fc450}{btMprVec3Scale}}(d,\ k);}
+\DoxyCodeLine{00209\ \}}
+\DoxyCodeLine{00210\ }
+\DoxyCodeLine{00211\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_mpr_penetration_8h_afacad5550f3191401ebbd74d4bdbce57}{btMprVec3Cross}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *d,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}})}
+\DoxyCodeLine{00212\ \{}
+\DoxyCodeLine{00213\ \ \ \ \ *d\ =\ \mbox{\hyperlink{bt_vector3_8h_ad50f4077e814fac34e7d7d5d461278de}{btCross}}(*\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ *\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}});}
+\DoxyCodeLine{00214\ \}}
+\DoxyCodeLine{00215\ }
+\DoxyCodeLine{00216\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a892a5d974326481361e1a57d03cb68bf}{btMprVec3Sub2}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *d,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}})}
+\DoxyCodeLine{00217\ \{}
+\DoxyCodeLine{00218\ \ \ \ \ *d\ =\ *\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ -\/\ *\mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}};}
+\DoxyCodeLine{00219\ \}}
+\DoxyCodeLine{00220\ }
+\DoxyCodeLine{00221\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_mpr_penetration_8h_ac65c1293308b537a9f892040c41730f5}{btPortalDir}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *portal,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *dir)}
+\DoxyCodeLine{00222\ \{}
+\DoxyCodeLine{00223\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ v2v1,\ v3v1;}
+\DoxyCodeLine{00224\ }
+\DoxyCodeLine{00225\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a892a5d974326481361e1a57d03cb68bf}{btMprVec3Sub2}}(\&v2v1,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 2)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00227\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a892a5d974326481361e1a57d03cb68bf}{btMprVec3Sub2}}(\&v3v1,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 3)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00229\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_afacad5550f3191401ebbd74d4bdbce57}{btMprVec3Cross}}(dir,\ \&v2v1,\ \&v3v1);}
+\DoxyCodeLine{00230\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a90620bb9f2698a68fa4f31b8da0183dc}{btMprVec3Normalize}}(dir);}
+\DoxyCodeLine{00231\ \}}
+\DoxyCodeLine{00232\ }
+\DoxyCodeLine{00233\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a095fb8e87405d732f2a69a54df10afbf}{portalEncapsulesOrigin}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *portal,}
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *dir)}
+\DoxyCodeLine{00235\ \{}
+\DoxyCodeLine{00236\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}};}
+\DoxyCodeLine{00237\ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(dir,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00238\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}(\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}})\ ||\ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ >\ 0.f;}
+\DoxyCodeLine{00239\ \}}
+\DoxyCodeLine{00240\ }
+\DoxyCodeLine{00241\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a7b457ab03adc19549bf0e3b42bdba409}{portalReachTolerance}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *portal,}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a6cf7b0405b1c7a90cbeadc5a9018b2e9}{btMprSupport\_t}}\ *v4,}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *dir)}
+\DoxyCodeLine{00244\ \{}
+\DoxyCodeLine{00245\ \ \ \ \ \textcolor{keywordtype}{float}\ dv1,\ dv2,\ dv3,\ dv4;}
+\DoxyCodeLine{00246\ \ \ \ \ \textcolor{keywordtype}{float}\ dot1,\ dot2,\ \mbox{\hyperlink{b3_vector3_8h_a618ee2a1edb79ba2343b7ea293ecba54}{dot3}};}
+\DoxyCodeLine{00247\ }
+\DoxyCodeLine{00248\ \ \ \ \ \textcolor{comment}{//\ find\ the\ smallest\ dot\ product\ of\ dir\ and\ \{v1-\/v4,\ v2-\/v4,\ v3-\/v4\}}}
+\DoxyCodeLine{00249\ }
+\DoxyCodeLine{00250\ \ \ \ \ dv1\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ dir);}
+\DoxyCodeLine{00251\ \ \ \ \ dv2\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 2)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ dir);}
+\DoxyCodeLine{00252\ \ \ \ \ dv3\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 3)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ dir);}
+\DoxyCodeLine{00253\ \ \ \ \ dv4\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&v4-\/>\mbox{\hyperlink{struct__bt_mpr_support__t_acb1c4482f63f4e62041dd9e299ae7484}{v}},\ dir);}
+\DoxyCodeLine{00254\ }
+\DoxyCodeLine{00255\ \ \ \ \ dot1\ =\ dv4\ -\/\ dv1;}
+\DoxyCodeLine{00256\ \ \ \ \ dot2\ =\ dv4\ -\/\ dv2;}
+\DoxyCodeLine{00257\ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a618ee2a1edb79ba2343b7ea293ecba54}{dot3}}\ =\ dv4\ -\/\ dv3;}
+\DoxyCodeLine{00258\ }
+\DoxyCodeLine{00259\ \ \ \ \ dot1\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a5111751a87fa5a01146393103c54501e}{BT\_MPR\_FMIN}}(dot1,\ dot2);}
+\DoxyCodeLine{00260\ \ \ \ \ dot1\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a5111751a87fa5a01146393103c54501e}{BT\_MPR\_FMIN}}(dot1,\ \mbox{\hyperlink{b3_vector3_8h_a618ee2a1edb79ba2343b7ea293ecba54}{dot3}});}
+\DoxyCodeLine{00261\ }
+\DoxyCodeLine{00262\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_mpr_penetration_8h_aff06217ad9901d3656d6322553698486}{btMprEq}}(dot1,\ \mbox{\hyperlink{bt_mpr_penetration_8h_add03d9fb5ec0af8653996c4111354cec}{BT\_MPR\_TOLERANCE}})\ ||\ dot1\ <\ \mbox{\hyperlink{bt_mpr_penetration_8h_add03d9fb5ec0af8653996c4111354cec}{BT\_MPR\_TOLERANCE}};}
+\DoxyCodeLine{00263\ \}}
+\DoxyCodeLine{00264\ }
+\DoxyCodeLine{00265\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a7e74c943ee47130a6c4cc16275729f50}{portalCanEncapsuleOrigin}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *portal,}
+\DoxyCodeLine{00266\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a6cf7b0405b1c7a90cbeadc5a9018b2e9}{btMprSupport\_t}}\ *v4,}
+\DoxyCodeLine{00267\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *dir)}
+\DoxyCodeLine{00268\ \{}
+\DoxyCodeLine{00269\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}};}
+\DoxyCodeLine{00270\ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&v4-\/>\mbox{\hyperlink{struct__bt_mpr_support__t_acb1c4482f63f4e62041dd9e299ae7484}{v}},\ dir);}
+\DoxyCodeLine{00271\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}(\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}})\ ||\ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ >\ 0.f;}
+\DoxyCodeLine{00272\ \}}
+\DoxyCodeLine{00273\ }
+\DoxyCodeLine{00274\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_mpr_penetration_8h_af5ffd996da3817fa1a1add16c806bc5c}{btExpandPortal}}(\mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *portal,}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a6cf7b0405b1c7a90cbeadc5a9018b2e9}{btMprSupport\_t}}\ *v4)}
+\DoxyCodeLine{00276\ \{}
+\DoxyCodeLine{00277\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}};}
+\DoxyCodeLine{00278\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ v4v0;}
+\DoxyCodeLine{00279\ }
+\DoxyCodeLine{00280\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_afacad5550f3191401ebbd74d4bdbce57}{btMprVec3Cross}}(\&v4v0,\ \&v4-\/>\mbox{\hyperlink{struct__bt_mpr_support__t_acb1c4482f63f4e62041dd9e299ae7484}{v}},\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 0)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00281\ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \&v4v0);}
+\DoxyCodeLine{00282\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ >\ 0.f)}
+\DoxyCodeLine{00283\ \ \ \ \ \{}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 2)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \&v4v0);}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ >\ 0.f)}
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a88eee2cbfec2d087b3108cb6e777aa85}{btMprSimplexSet}}(portal,\ 1,\ v4);}
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a88eee2cbfec2d087b3108cb6e777aa85}{btMprSimplexSet}}(portal,\ 3,\ v4);}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00293\ \ \ \ \ \}}
+\DoxyCodeLine{00294\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00295\ \ \ \ \ \{}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 3)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \&v4v0);}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ >\ 0.f)}
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00299\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a88eee2cbfec2d087b3108cb6e777aa85}{btMprSimplexSet}}(portal,\ 2,\ v4);}
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00301\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00302\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00303\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a88eee2cbfec2d087b3108cb6e777aa85}{btMprSimplexSet}}(portal,\ 1,\ v4);}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00305\ \ \ \ \ \}}
+\DoxyCodeLine{00306\ \}}
+\DoxyCodeLine{00307\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ btConvexTemplate>}
+\DoxyCodeLine{00308\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a0670a912f6a2cdf01346c5d18fb178b7}{btMprSupport}}(\textcolor{keyword}{const}\ btConvexTemplate\ \&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \textcolor{keyword}{const}\ btConvexTemplate\ \&\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},}
+\DoxyCodeLine{00309\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_mpr_collision_description}{btMprCollisionDescription}}\ \&colDesc,}
+\DoxyCodeLine{00310\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \&dir,\ \mbox{\hyperlink{bt_mpr_penetration_8h_a6cf7b0405b1c7a90cbeadc5a9018b2e9}{btMprSupport\_t}}\ *supp)}
+\DoxyCodeLine{00311\ \{}
+\DoxyCodeLine{00312\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ separatingAxisInA\ =\ dir\ *\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}.getWorldTransform().getBasis();}
+\DoxyCodeLine{00313\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ separatingAxisInB\ =\ -\/dir\ *\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}.getWorldTransform().getBasis();}
+\DoxyCodeLine{00314\ }
+\DoxyCodeLine{00315\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ pInA\ =\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}.getLocalSupportWithMargin(separatingAxisInA);}
+\DoxyCodeLine{00316\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ qInB\ =\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}.getLocalSupportWithMargin(separatingAxisInB);}
+\DoxyCodeLine{00317\ }
+\DoxyCodeLine{00318\ \ \ \ \ supp-\/>\mbox{\hyperlink{struct__bt_mpr_support__t_a218f7af17e27c0e43fe0685390238a16}{v1}}\ =\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}.getWorldTransform()(pInA);}
+\DoxyCodeLine{00319\ \ \ \ \ supp-\/>\mbox{\hyperlink{struct__bt_mpr_support__t_a21324c5741d2419b4c1a384cdc3e8ef0}{v2}}\ =\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}.getWorldTransform()(qInB);}
+\DoxyCodeLine{00320\ \ \ \ \ supp-\/>\mbox{\hyperlink{struct__bt_mpr_support__t_acb1c4482f63f4e62041dd9e299ae7484}{v}}\ =\ supp-\/>\mbox{\hyperlink{struct__bt_mpr_support__t_a218f7af17e27c0e43fe0685390238a16}{v1}}\ -\/\ supp-\/>\mbox{\hyperlink{struct__bt_mpr_support__t_a21324c5741d2419b4c1a384cdc3e8ef0}{v2}};}
+\DoxyCodeLine{00321\ \}}
+\DoxyCodeLine{00322\ }
+\DoxyCodeLine{00323\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ btConvexTemplate>}
+\DoxyCodeLine{00324\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{int}\ btDiscoverPortal(\textcolor{keyword}{const}\ btConvexTemplate\ \&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \textcolor{keyword}{const}\ btConvexTemplate\ \&\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},}
+\DoxyCodeLine{00325\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_mpr_collision_description}{btMprCollisionDescription}}\ \&colDesc,}
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *portal)}
+\DoxyCodeLine{00327\ \{}
+\DoxyCodeLine{00328\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ dir,\ va,\ vb;}
+\DoxyCodeLine{00329\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}};}
+\DoxyCodeLine{00330\ \ \ \ \ \textcolor{keywordtype}{int}\ cont;}
+\DoxyCodeLine{00331\ }
+\DoxyCodeLine{00332\ \ \ \ \ \textcolor{comment}{//\ vertex\ 0\ is\ center\ of\ portal}}
+\DoxyCodeLine{00333\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a2a8bc9f874f37a35c479c5d36c8e3502}{btFindOrigin}}(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ colDesc,\ \mbox{\hyperlink{bt_mpr_penetration_8h_a9478f98597f24bbbc586f31996ce3002}{btMprSimplexPointW}}(portal,\ 0));}
+\DoxyCodeLine{00334\ }
+\DoxyCodeLine{00335\ \ \ \ \ \textcolor{comment}{//\ vertex\ 0\ is\ center\ of\ portal}}
+\DoxyCodeLine{00336\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a50e796368af227a424278becd3a3dac4}{btMprSimplexSetSize}}(portal,\ 1);}
+\DoxyCodeLine{00337\ }
+\DoxyCodeLine{00338\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{group__gtc__constants_ga788f5a421fc0f40a1296ebc094cbaa8a}{zero}}\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0,\ 0,\ 0);}
+\DoxyCodeLine{00339\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *org\ =\ \&\mbox{\hyperlink{group__gtc__constants_ga788f5a421fc0f40a1296ebc094cbaa8a}{zero}};}
+\DoxyCodeLine{00340\ }
+\DoxyCodeLine{00341\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_mpr_penetration_8h_af032744503f1097ab0e55799308e9ca0}{btMprVec3Eq}}(\&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 0)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ org))}
+\DoxyCodeLine{00342\ \ \ \ \ \{}
+\DoxyCodeLine{00343\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Portal's\ center\ lies\ on\ origin\ (0,0,0)\ =>\ we\ know\ that\ objects}}
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ intersect\ but\ we\ would\ need\ to\ know\ penetration\ info.}}
+\DoxyCodeLine{00345\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ So\ move\ center\ little\ bit...}}
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_ad4d36bc48ef57302c6d6bde690346790}{btMprVec3Set}}(\&va,\ FLT\_EPSILON\ *\ 10.f,\ 0.f,\ 0.f);}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a659a79e0fca2e8e173132f775f5b2a16}{btMprVec3Add}}(\&\mbox{\hyperlink{bt_mpr_penetration_8h_a9478f98597f24bbbc586f31996ce3002}{btMprSimplexPointW}}(portal,\ 0)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \&va);}
+\DoxyCodeLine{00348\ \ \ \ \ \}}
+\DoxyCodeLine{00349\ }
+\DoxyCodeLine{00350\ \ \ \ \ \textcolor{comment}{//\ vertex\ 1\ =\ support\ in\ direction\ of\ origin}}
+\DoxyCodeLine{00351\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(\&dir,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 0)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00352\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a134482ce8f92bdababef8c6d041fc450}{btMprVec3Scale}}(\&dir,\ -\/1.f);}
+\DoxyCodeLine{00353\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a90620bb9f2698a68fa4f31b8da0183dc}{btMprVec3Normalize}}(\&dir);}
+\DoxyCodeLine{00354\ }
+\DoxyCodeLine{00355\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a0670a912f6a2cdf01346c5d18fb178b7}{btMprSupport}}(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ colDesc,\ dir,\ \mbox{\hyperlink{bt_mpr_penetration_8h_a9478f98597f24bbbc586f31996ce3002}{btMprSimplexPointW}}(portal,\ 1));}
+\DoxyCodeLine{00356\ }
+\DoxyCodeLine{00357\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a50e796368af227a424278becd3a3dac4}{btMprSimplexSetSize}}(portal,\ 2);}
+\DoxyCodeLine{00358\ }
+\DoxyCodeLine{00359\ \ \ \ \ \textcolor{comment}{//\ test\ if\ origin\ isn't\ outside\ of\ v1}}
+\DoxyCodeLine{00360\ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \&dir);}
+\DoxyCodeLine{00361\ }
+\DoxyCodeLine{00362\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}(\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}})\ ||\ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ <\ 0.f)}
+\DoxyCodeLine{00363\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ -\/1;}
+\DoxyCodeLine{00364\ }
+\DoxyCodeLine{00365\ \ \ \ \ \textcolor{comment}{//\ vertex\ 2}}
+\DoxyCodeLine{00366\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_afacad5550f3191401ebbd74d4bdbce57}{btMprVec3Cross}}(\&dir,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 0)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00367\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00368\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}(\mbox{\hyperlink{bt_mpr_penetration_8h_a91f211247a7a1f972c6d8d58b9cceaca}{btMprVec3Len2}}(\&dir)))}
+\DoxyCodeLine{00369\ \ \ \ \ \{}
+\DoxyCodeLine{00370\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_mpr_penetration_8h_af032744503f1097ab0e55799308e9ca0}{btMprVec3Eq}}(\&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ org))}
+\DoxyCodeLine{00371\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ origin\ lies\ on\ v1}}
+\DoxyCodeLine{00373\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 1;}
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00375\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00376\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ origin\ lies\ on\ v0-\/v1\ segment}}
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 2;}
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00380\ \ \ \ \ \}}
+\DoxyCodeLine{00381\ }
+\DoxyCodeLine{00382\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a90620bb9f2698a68fa4f31b8da0183dc}{btMprVec3Normalize}}(\&dir);}
+\DoxyCodeLine{00383\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a0670a912f6a2cdf01346c5d18fb178b7}{btMprSupport}}(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ colDesc,\ dir,\ \mbox{\hyperlink{bt_mpr_penetration_8h_a9478f98597f24bbbc586f31996ce3002}{btMprSimplexPointW}}(portal,\ 2));}
+\DoxyCodeLine{00384\ }
+\DoxyCodeLine{00385\ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 2)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \&dir);}
+\DoxyCodeLine{00386\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}(\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}})\ ||\ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ <\ 0.f)}
+\DoxyCodeLine{00387\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ -\/1;}
+\DoxyCodeLine{00388\ }
+\DoxyCodeLine{00389\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a50e796368af227a424278becd3a3dac4}{btMprSimplexSetSize}}(portal,\ 3);}
+\DoxyCodeLine{00390\ }
+\DoxyCodeLine{00391\ \ \ \ \ \textcolor{comment}{//\ vertex\ 3\ direction}}
+\DoxyCodeLine{00392\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a892a5d974326481361e1a57d03cb68bf}{btMprVec3Sub2}}(\&va,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00393\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 0)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00394\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a892a5d974326481361e1a57d03cb68bf}{btMprVec3Sub2}}(\&vb,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 2)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 0)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00396\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_afacad5550f3191401ebbd74d4bdbce57}{btMprVec3Cross}}(\&dir,\ \&va,\ \&vb);}
+\DoxyCodeLine{00397\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a90620bb9f2698a68fa4f31b8da0183dc}{btMprVec3Normalize}}(\&dir);}
+\DoxyCodeLine{00398\ }
+\DoxyCodeLine{00399\ \ \ \ \ \textcolor{comment}{//\ it\ is\ better\ to\ form\ portal\ faces\ to\ be\ oriented\ "{}outside"{}\ origin}}
+\DoxyCodeLine{00400\ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&dir,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 0)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00401\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ >\ 0.f)}
+\DoxyCodeLine{00402\ \ \ \ \ \{}
+\DoxyCodeLine{00403\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a71c5cbc98a508ef6d542d68457444c9c}{btMprSimplexSwap}}(portal,\ 1,\ 2);}
+\DoxyCodeLine{00404\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a134482ce8f92bdababef8c6d041fc450}{btMprVec3Scale}}(\&dir,\ -\/1.f);}
+\DoxyCodeLine{00405\ \ \ \ \ \}}
+\DoxyCodeLine{00406\ }
+\DoxyCodeLine{00407\ \ \ \ \ \textcolor{keywordflow}{while}\ (\mbox{\hyperlink{bt_mpr_penetration_8h_ae9991312729620e30e7435ef7ba0a098}{btMprSimplexSize}}(portal)\ <\ 4)}
+\DoxyCodeLine{00408\ \ \ \ \ \{}
+\DoxyCodeLine{00409\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a0670a912f6a2cdf01346c5d18fb178b7}{btMprSupport}}(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ colDesc,\ dir,\ \mbox{\hyperlink{bt_mpr_penetration_8h_a9478f98597f24bbbc586f31996ce3002}{btMprSimplexPointW}}(portal,\ 3));}
+\DoxyCodeLine{00410\ }
+\DoxyCodeLine{00411\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 3)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \&dir);}
+\DoxyCodeLine{00412\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}(\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}})\ ||\ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ <\ 0.f)}
+\DoxyCodeLine{00413\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ -\/1;}
+\DoxyCodeLine{00414\ }
+\DoxyCodeLine{00415\ \ \ \ \ \ \ \ \ cont\ =\ 0;}
+\DoxyCodeLine{00416\ }
+\DoxyCodeLine{00417\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ test\ if\ origin\ is\ outside\ (v1,\ v0,\ v3)\ -\/\ set\ v2\ as\ v3\ and}}
+\DoxyCodeLine{00418\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ continue}}
+\DoxyCodeLine{00419\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_afacad5550f3191401ebbd74d4bdbce57}{btMprVec3Cross}}(\&va,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00420\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 3)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00421\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&va,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 0)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00422\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ <\ 0.f\ \&\&\ !\mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}(\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}))}
+\DoxyCodeLine{00423\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00424\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a88eee2cbfec2d087b3108cb6e777aa85}{btMprSimplexSet}}(portal,\ 2,\ \mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 3));}
+\DoxyCodeLine{00425\ \ \ \ \ \ \ \ \ \ \ \ \ cont\ =\ 1;}
+\DoxyCodeLine{00426\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00427\ }
+\DoxyCodeLine{00428\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!cont)}
+\DoxyCodeLine{00429\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00430\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ test\ if\ origin\ is\ outside\ (v3,\ v0,\ v2)\ -\/\ set\ v1\ as\ v3\ and}}
+\DoxyCodeLine{00431\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ continue}}
+\DoxyCodeLine{00432\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_afacad5550f3191401ebbd74d4bdbce57}{btMprVec3Cross}}(\&va,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 3)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00433\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 2)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00434\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&va,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 0)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00435\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}\ <\ 0.f\ \&\&\ !\mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}(\mbox{\hyperlink{b3_vector3_8h_a59d40471ae3301c94c4cb0b93ce19797}{dot}}))}
+\DoxyCodeLine{00436\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00437\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a88eee2cbfec2d087b3108cb6e777aa85}{btMprSimplexSet}}(portal,\ 1,\ \mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 3));}
+\DoxyCodeLine{00438\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ cont\ =\ 1;}
+\DoxyCodeLine{00439\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00440\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00441\ }
+\DoxyCodeLine{00442\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (cont)}
+\DoxyCodeLine{00443\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00444\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a892a5d974326481361e1a57d03cb68bf}{btMprVec3Sub2}}(\&va,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00445\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 0)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00446\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a892a5d974326481361e1a57d03cb68bf}{btMprVec3Sub2}}(\&vb,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 2)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00447\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 0)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00448\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_afacad5550f3191401ebbd74d4bdbce57}{btMprVec3Cross}}(\&dir,\ \&va,\ \&vb);}
+\DoxyCodeLine{00449\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a90620bb9f2698a68fa4f31b8da0183dc}{btMprVec3Normalize}}(\&dir);}
+\DoxyCodeLine{00450\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00451\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00452\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00453\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a50e796368af227a424278becd3a3dac4}{btMprSimplexSetSize}}(portal,\ 4);}
+\DoxyCodeLine{00454\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00455\ \ \ \ \ \}}
+\DoxyCodeLine{00456\ }
+\DoxyCodeLine{00457\ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00458\ \}}
+\DoxyCodeLine{00459\ }
+\DoxyCodeLine{00460\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ btConvexTemplate>}
+\DoxyCodeLine{00461\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{int}\ btRefinePortal(\textcolor{keyword}{const}\ btConvexTemplate\ \&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \textcolor{keyword}{const}\ btConvexTemplate\ \&\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_mpr_collision_description}{btMprCollisionDescription}}\ \&colDesc,}
+\DoxyCodeLine{00462\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *portal)}
+\DoxyCodeLine{00463\ \{}
+\DoxyCodeLine{00464\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ dir;}
+\DoxyCodeLine{00465\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a6cf7b0405b1c7a90cbeadc5a9018b2e9}{btMprSupport\_t}}\ v4;}
+\DoxyCodeLine{00466\ }
+\DoxyCodeLine{00467\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_mpr_penetration_8h_afc58cfe48b3928532160f0a7b95a6b3f}{BT\_MPR\_MAX\_ITERATIONS}};\ i++)}
+\DoxyCodeLine{00468\ \ \ \ \ \textcolor{comment}{//while\ (1)}}
+\DoxyCodeLine{00469\ \ \ \ \ \{}
+\DoxyCodeLine{00470\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ compute\ direction\ outside\ the\ portal\ (from\ v0\ through\ v1,v2,v3}}
+\DoxyCodeLine{00471\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ face)}}
+\DoxyCodeLine{00472\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_ac65c1293308b537a9f892040c41730f5}{btPortalDir}}(portal,\ \&dir);}
+\DoxyCodeLine{00473\ }
+\DoxyCodeLine{00474\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ test\ if\ origin\ is\ inside\ the\ portal}}
+\DoxyCodeLine{00475\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_mpr_penetration_8h_a095fb8e87405d732f2a69a54df10afbf}{portalEncapsulesOrigin}}(portal,\ \&dir))}
+\DoxyCodeLine{00476\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00477\ }
+\DoxyCodeLine{00478\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ get\ next\ support\ point}}
+\DoxyCodeLine{00479\ }
+\DoxyCodeLine{00480\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a0670a912f6a2cdf01346c5d18fb178b7}{btMprSupport}}(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ colDesc,\ dir,\ \&v4);}
+\DoxyCodeLine{00481\ }
+\DoxyCodeLine{00482\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ test\ if\ v4\ can\ expand\ portal\ to\ contain\ origin\ and\ if\ portal}}
+\DoxyCodeLine{00483\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ expanding\ doesn't\ reach\ given\ tolerance}}
+\DoxyCodeLine{00484\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!\mbox{\hyperlink{bt_mpr_penetration_8h_a7e74c943ee47130a6c4cc16275729f50}{portalCanEncapsuleOrigin}}(portal,\ \&v4,\ \&dir)\ ||\ \mbox{\hyperlink{bt_mpr_penetration_8h_a7b457ab03adc19549bf0e3b42bdba409}{portalReachTolerance}}(portal,\ \&v4,\ \&dir))}
+\DoxyCodeLine{00485\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00486\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ -\/1;}
+\DoxyCodeLine{00487\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00488\ }
+\DoxyCodeLine{00489\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ v1-\/v2-\/v3\ triangle\ must\ be\ rearranged\ to\ face\ outside\ Minkowski}}
+\DoxyCodeLine{00490\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ difference\ (direction\ from\ v0).}}
+\DoxyCodeLine{00491\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_af5ffd996da3817fa1a1add16c806bc5c}{btExpandPortal}}(portal,\ \&v4);}
+\DoxyCodeLine{00492\ \ \ \ \ \}}
+\DoxyCodeLine{00493\ }
+\DoxyCodeLine{00494\ \ \ \ \ \textcolor{keywordflow}{return}\ -\/1;}
+\DoxyCodeLine{00495\ \}}
+\DoxyCodeLine{00496\ }
+\DoxyCodeLine{00497\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ btFindPos(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *portal,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *pos)}
+\DoxyCodeLine{00498\ \{}
+\DoxyCodeLine{00499\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{group__gtc__constants_ga788f5a421fc0f40a1296ebc094cbaa8a}{zero}}\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0,\ 0,\ 0);}
+\DoxyCodeLine{00500\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *origin\ =\ \&\mbox{\hyperlink{group__gtc__constants_ga788f5a421fc0f40a1296ebc094cbaa8a}{zero}};}
+\DoxyCodeLine{00501\ }
+\DoxyCodeLine{00502\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ dir;}
+\DoxyCodeLine{00503\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ i;}
+\DoxyCodeLine{00504\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[4],\ sum,\ inv;}
+\DoxyCodeLine{00505\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vec,\ p1,\ p2;}
+\DoxyCodeLine{00506\ }
+\DoxyCodeLine{00507\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_ac65c1293308b537a9f892040c41730f5}{btPortalDir}}(portal,\ \&dir);}
+\DoxyCodeLine{00508\ }
+\DoxyCodeLine{00509\ \ \ \ \ \textcolor{comment}{//\ use\ barycentric\ coordinates\ of\ tetrahedron\ to\ find\ origin}}
+\DoxyCodeLine{00510\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_afacad5550f3191401ebbd74d4bdbce57}{btMprVec3Cross}}(\&vec,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00511\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 2)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00512\ \ \ \ \ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[0]\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&vec,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 3)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00513\ }
+\DoxyCodeLine{00514\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_afacad5550f3191401ebbd74d4bdbce57}{btMprVec3Cross}}(\&vec,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 3)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00515\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 2)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00516\ \ \ \ \ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[1]\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&vec,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 0)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00517\ }
+\DoxyCodeLine{00518\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_afacad5550f3191401ebbd74d4bdbce57}{btMprVec3Cross}}(\&vec,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 0)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00519\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00520\ \ \ \ \ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[2]\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&vec,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 3)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00521\ }
+\DoxyCodeLine{00522\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_afacad5550f3191401ebbd74d4bdbce57}{btMprVec3Cross}}(\&vec,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 2)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00523\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00524\ \ \ \ \ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[3]\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&vec,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 0)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00525\ }
+\DoxyCodeLine{00526\ \ \ \ \ sum\ =\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[0]\ +\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[1]\ +\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[2]\ +\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[3];}
+\DoxyCodeLine{00527\ }
+\DoxyCodeLine{00528\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}(sum)\ ||\ sum\ <\ 0.f)}
+\DoxyCodeLine{00529\ \ \ \ \ \{}
+\DoxyCodeLine{00530\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[0]\ =\ 0.f;}
+\DoxyCodeLine{00531\ }
+\DoxyCodeLine{00532\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_afacad5550f3191401ebbd74d4bdbce57}{btMprVec3Cross}}(\&vec,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 2)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00533\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 3)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00534\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[1]\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&vec,\ \&dir);}
+\DoxyCodeLine{00535\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_afacad5550f3191401ebbd74d4bdbce57}{btMprVec3Cross}}(\&vec,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 3)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00536\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00537\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[2]\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&vec,\ \&dir);}
+\DoxyCodeLine{00538\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_afacad5550f3191401ebbd74d4bdbce57}{btMprVec3Cross}}(\&vec,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},}
+\DoxyCodeLine{00539\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 2)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00540\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[3]\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&vec,\ \&dir);}
+\DoxyCodeLine{00541\ }
+\DoxyCodeLine{00542\ \ \ \ \ \ \ \ \ sum\ =\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[1]\ +\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[2]\ +\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[3];}
+\DoxyCodeLine{00543\ \ \ \ \ \}}
+\DoxyCodeLine{00544\ }
+\DoxyCodeLine{00545\ \ \ \ \ inv\ =\ 1.f\ /\ sum;}
+\DoxyCodeLine{00546\ }
+\DoxyCodeLine{00547\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(\&p1,\ origin);}
+\DoxyCodeLine{00548\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(\&p2,\ origin);}
+\DoxyCodeLine{00549\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 4;\ i++)}
+\DoxyCodeLine{00550\ \ \ \ \ \{}
+\DoxyCodeLine{00551\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(\&vec,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ i)-\/>\mbox{\hyperlink{glad_8h_a0779c3b73f9aa3a0ac5b0139b5d291d9}{v1}});}
+\DoxyCodeLine{00552\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a134482ce8f92bdababef8c6d041fc450}{btMprVec3Scale}}(\&vec,\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[i]);}
+\DoxyCodeLine{00553\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a659a79e0fca2e8e173132f775f5b2a16}{btMprVec3Add}}(\&p1,\ \&vec);}
+\DoxyCodeLine{00554\ }
+\DoxyCodeLine{00555\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(\&vec,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ i)-\/>\mbox{\hyperlink{glad_8h_a9a09a1837922b2b806f4589096a52049}{v2}});}
+\DoxyCodeLine{00556\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a134482ce8f92bdababef8c6d041fc450}{btMprVec3Scale}}(\&vec,\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}[i]);}
+\DoxyCodeLine{00557\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a659a79e0fca2e8e173132f775f5b2a16}{btMprVec3Add}}(\&p2,\ \&vec);}
+\DoxyCodeLine{00558\ \ \ \ \ \}}
+\DoxyCodeLine{00559\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a134482ce8f92bdababef8c6d041fc450}{btMprVec3Scale}}(\&p1,\ inv);}
+\DoxyCodeLine{00560\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a134482ce8f92bdababef8c6d041fc450}{btMprVec3Scale}}(\&p2,\ inv);}
+\DoxyCodeLine{00561\ \textcolor{preprocessor}{\#ifdef\ MPR\_AVERAGE\_CONTACT\_POSITIONS}}
+\DoxyCodeLine{00562\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(pos,\ \&p1);}
+\DoxyCodeLine{00563\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a659a79e0fca2e8e173132f775f5b2a16}{btMprVec3Add}}(pos,\ \&p2);}
+\DoxyCodeLine{00564\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a134482ce8f92bdababef8c6d041fc450}{btMprVec3Scale}}(pos,\ 0.5);}
+\DoxyCodeLine{00565\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00566\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(pos,\ \&p2);}
+\DoxyCodeLine{00567\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//MPR\_AVERAGE\_CONTACT\_POSITIONS}}
+\DoxyCodeLine{00568\ \}}
+\DoxyCodeLine{00569\ }
+\DoxyCodeLine{00570\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a792d622fbb51a7308b04b8b7f6c34c23}{btMprVec3Dist2}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}})}
+\DoxyCodeLine{00571\ \{}
+\DoxyCodeLine{00572\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ ab;}
+\DoxyCodeLine{00573\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a892a5d974326481361e1a57d03cb68bf}{btMprVec3Sub2}}(\&ab,\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}});}
+\DoxyCodeLine{00574\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a91f211247a7a1f972c6d8d58b9cceaca}{btMprVec3Len2}}(\&ab);}
+\DoxyCodeLine{00575\ \}}
+\DoxyCodeLine{00576\ }
+\DoxyCodeLine{00577\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a07233034abd684cb643e70df4e6d00eb}{\_btMprVec3PointSegmentDist2}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a44c29edb103a2872f519ad0c9a0fdaaa}{P}},}
+\DoxyCodeLine{00578\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *x0,}
+\DoxyCodeLine{00579\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},}
+\DoxyCodeLine{00580\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *witness)}
+\DoxyCodeLine{00581\ \{}
+\DoxyCodeLine{00582\ \ \ \ \ \textcolor{comment}{//\ The\ computation\ comes\ from\ solving\ equation\ of\ segment:}}
+\DoxyCodeLine{00583\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ S(t)\ =\ x0\ +\ t.d}}
+\DoxyCodeLine{00584\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ where\ -\/\ x0\ is\ initial\ point\ of\ segment}}
+\DoxyCodeLine{00585\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ -\/\ d\ is\ direction\ of\ segment\ from\ x0\ (|d|\ >\ 0)}}
+\DoxyCodeLine{00586\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ -\/\ t\ belongs\ to\ <0,\ 1>\ interval}}
+\DoxyCodeLine{00587\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00588\ \ \ \ \ \textcolor{comment}{//\ Than,\ distance\ from\ a\ segment\ to\ some\ point\ P\ can\ be\ expressed:}}
+\DoxyCodeLine{00589\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ D(t)\ =\ |x0\ +\ t.d\ -\/\ P|\string^2}}
+\DoxyCodeLine{00590\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ which\ is\ distance\ from\ any\ point\ on\ segment.\ Minimization}}
+\DoxyCodeLine{00591\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ of\ this\ function\ brings\ distance\ from\ P\ to\ segment.}}
+\DoxyCodeLine{00592\ \ \ \ \ \textcolor{comment}{//\ Minimization\ of\ D(t)\ leads\ to\ simple\ quadratic\ equation\ that's}}
+\DoxyCodeLine{00593\ \ \ \ \ \textcolor{comment}{//\ solving\ is\ straightforward.}}
+\DoxyCodeLine{00594\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00595\ \ \ \ \ \textcolor{comment}{//\ Bonus\ of\ this\ method\ is\ witness\ point\ for\ free.}}
+\DoxyCodeLine{00596\ }
+\DoxyCodeLine{00597\ \ \ \ \ \textcolor{keywordtype}{float}\ dist,\ t;}
+\DoxyCodeLine{00598\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ d,\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}};}
+\DoxyCodeLine{00599\ }
+\DoxyCodeLine{00600\ \ \ \ \ \textcolor{comment}{//\ direction\ of\ segment}}
+\DoxyCodeLine{00601\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a892a5d974326481361e1a57d03cb68bf}{btMprVec3Sub2}}(\&d,\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ x0);}
+\DoxyCodeLine{00602\ }
+\DoxyCodeLine{00603\ \ \ \ \ \textcolor{comment}{//\ precompute\ vector\ from\ P\ to\ x0}}
+\DoxyCodeLine{00604\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a892a5d974326481361e1a57d03cb68bf}{btMprVec3Sub2}}(\&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ x0,\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a44c29edb103a2872f519ad0c9a0fdaaa}{P}});}
+\DoxyCodeLine{00605\ }
+\DoxyCodeLine{00606\ \ \ \ \ t\ =\ -\/1.f\ *\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \&d);}
+\DoxyCodeLine{00607\ \ \ \ \ t\ /=\ \mbox{\hyperlink{bt_mpr_penetration_8h_a91f211247a7a1f972c6d8d58b9cceaca}{btMprVec3Len2}}(\&d);}
+\DoxyCodeLine{00608\ }
+\DoxyCodeLine{00609\ \ \ \ \ \textcolor{keywordflow}{if}\ (t\ <\ 0.f\ ||\ \mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}(t))}
+\DoxyCodeLine{00610\ \ \ \ \ \{}
+\DoxyCodeLine{00611\ \ \ \ \ \ \ \ \ dist\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a792d622fbb51a7308b04b8b7f6c34c23}{btMprVec3Dist2}}(x0,\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a44c29edb103a2872f519ad0c9a0fdaaa}{P}});}
+\DoxyCodeLine{00612\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (witness)}
+\DoxyCodeLine{00613\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(witness,\ x0);}
+\DoxyCodeLine{00614\ \ \ \ \ \}}
+\DoxyCodeLine{00615\ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (t\ >\ 1.f\ ||\ \mbox{\hyperlink{bt_mpr_penetration_8h_aff06217ad9901d3656d6322553698486}{btMprEq}}(t,\ 1.f))}
+\DoxyCodeLine{00616\ \ \ \ \ \{}
+\DoxyCodeLine{00617\ \ \ \ \ \ \ \ \ dist\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a792d622fbb51a7308b04b8b7f6c34c23}{btMprVec3Dist2}}(\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a44c29edb103a2872f519ad0c9a0fdaaa}{P}});}
+\DoxyCodeLine{00618\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (witness)}
+\DoxyCodeLine{00619\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(witness,\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}});}
+\DoxyCodeLine{00620\ \ \ \ \ \}}
+\DoxyCodeLine{00621\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00622\ \ \ \ \ \{}
+\DoxyCodeLine{00623\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (witness)}
+\DoxyCodeLine{00624\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00625\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(witness,\ \&d);}
+\DoxyCodeLine{00626\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a134482ce8f92bdababef8c6d041fc450}{btMprVec3Scale}}(witness,\ t);}
+\DoxyCodeLine{00627\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a659a79e0fca2e8e173132f775f5b2a16}{btMprVec3Add}}(witness,\ x0);}
+\DoxyCodeLine{00628\ \ \ \ \ \ \ \ \ \ \ \ \ dist\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a792d622fbb51a7308b04b8b7f6c34c23}{btMprVec3Dist2}}(witness,\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a44c29edb103a2872f519ad0c9a0fdaaa}{P}});}
+\DoxyCodeLine{00629\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00630\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00631\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00632\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ recycling\ variables}}
+\DoxyCodeLine{00633\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a134482ce8f92bdababef8c6d041fc450}{btMprVec3Scale}}(\&d,\ t);}
+\DoxyCodeLine{00634\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a659a79e0fca2e8e173132f775f5b2a16}{btMprVec3Add}}(\&d,\ \&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}});}
+\DoxyCodeLine{00635\ \ \ \ \ \ \ \ \ \ \ \ \ dist\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a91f211247a7a1f972c6d8d58b9cceaca}{btMprVec3Len2}}(\&d);}
+\DoxyCodeLine{00636\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00637\ \ \ \ \ \}}
+\DoxyCodeLine{00638\ }
+\DoxyCodeLine{00639\ \ \ \ \ \textcolor{keywordflow}{return}\ dist;}
+\DoxyCodeLine{00640\ \}}
+\DoxyCodeLine{00641\ }
+\DoxyCodeLine{00642\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a18e4699e3b54be8caf8a4f65fe0072df}{btMprVec3PointTriDist2}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a44c29edb103a2872f519ad0c9a0fdaaa}{P}},}
+\DoxyCodeLine{00643\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *x0,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a9d5ed678fe57bcca610140957afab571}{B}},}
+\DoxyCodeLine{00644\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a0d61f8370cad1d412f80b84d143e1257}{C}},}
+\DoxyCodeLine{00645\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *witness)}
+\DoxyCodeLine{00646\ \{}
+\DoxyCodeLine{00647\ \ \ \ \ \textcolor{comment}{//\ Computation\ comes\ from\ analytic\ expression\ for\ triangle\ (x0,\ B,\ C)}}
+\DoxyCodeLine{00648\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ T(s,\ t)\ =\ x0\ +\ s.d1\ +\ t.d2,\ where\ d1\ =\ B\ -\/\ x0\ and\ d2\ =\ C\ -\/\ x0\ and}}
+\DoxyCodeLine{00649\ \ \ \ \ \textcolor{comment}{//\ Then\ equation\ for\ distance\ is:}}
+\DoxyCodeLine{00650\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ D(s,\ t)\ =\ |\ T(s,\ t)\ -\/\ P\ |\string^2}}
+\DoxyCodeLine{00651\ \ \ \ \ \textcolor{comment}{//\ This\ leads\ to\ minimization\ of\ quadratic\ function\ of\ two\ variables.}}
+\DoxyCodeLine{00652\ \ \ \ \ \textcolor{comment}{//\ The\ solution\ from\ is\ taken\ only\ if\ s\ is\ between\ 0\ and\ 1,\ t\ is}}
+\DoxyCodeLine{00653\ \ \ \ \ \textcolor{comment}{//\ between\ 0\ and\ 1\ and\ t\ +\ s\ <\ 1,\ otherwise\ distance\ from\ segment\ is}}
+\DoxyCodeLine{00654\ \ \ \ \ \textcolor{comment}{//\ computed.}}
+\DoxyCodeLine{00655\ }
+\DoxyCodeLine{00656\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ d1,\ d2,\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}};}
+\DoxyCodeLine{00657\ \ \ \ \ \textcolor{keywordtype}{float}\ u,\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}},\ p,\ q,\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}};}
+\DoxyCodeLine{00658\ \ \ \ \ \textcolor{keywordtype}{float}\ s,\ t,\ dist,\ dist2;}
+\DoxyCodeLine{00659\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ witness2;}
+\DoxyCodeLine{00660\ }
+\DoxyCodeLine{00661\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a892a5d974326481361e1a57d03cb68bf}{btMprVec3Sub2}}(\&d1,\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a9d5ed678fe57bcca610140957afab571}{B}},\ x0);}
+\DoxyCodeLine{00662\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a892a5d974326481361e1a57d03cb68bf}{btMprVec3Sub2}}(\&d2,\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a0d61f8370cad1d412f80b84d143e1257}{C}},\ x0);}
+\DoxyCodeLine{00663\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a892a5d974326481361e1a57d03cb68bf}{btMprVec3Sub2}}(\&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ x0,\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a44c29edb103a2872f519ad0c9a0fdaaa}{P}});}
+\DoxyCodeLine{00664\ }
+\DoxyCodeLine{00665\ \ \ \ \ u\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}});}
+\DoxyCodeLine{00666\ \ \ \ \ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&d1,\ \&d1);}
+\DoxyCodeLine{00667\ \ \ \ \ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&d2,\ \&d2);}
+\DoxyCodeLine{00668\ \ \ \ \ p\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \&d1);}
+\DoxyCodeLine{00669\ \ \ \ \ q\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \&d2);}
+\DoxyCodeLine{00670\ \ \ \ \ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a940027316e3385946d6957fe61febb98}{btMprVec3Dot}}(\&d1,\ \&d2);}
+\DoxyCodeLine{00671\ }
+\DoxyCodeLine{00672\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ div\ =\ (\mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}\ *\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ -\/\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}\ *\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}});}
+\DoxyCodeLine{00673\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}(div))}
+\DoxyCodeLine{00674\ \ \ \ \ \{}
+\DoxyCodeLine{00675\ \ \ \ \ \ \ \ \ s\ =\ -\/1;}
+\DoxyCodeLine{00676\ \ \ \ \ \}}
+\DoxyCodeLine{00677\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00678\ \ \ \ \ \{}
+\DoxyCodeLine{00679\ \ \ \ \ \ \ \ \ s\ =\ (q\ *\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}\ -\/\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}}\ *\ p)\ /\ div;}
+\DoxyCodeLine{00680\ \ \ \ \ \ \ \ \ t\ =\ (-\/s\ *\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}}\ -\/\ q)\ /\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}};}
+\DoxyCodeLine{00681\ \ \ \ \ \}}
+\DoxyCodeLine{00682\ }
+\DoxyCodeLine{00683\ \ \ \ \ \textcolor{keywordflow}{if}\ ((\mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}(s)\ ||\ s\ >\ 0.f)\ \&\&\ (\mbox{\hyperlink{bt_mpr_penetration_8h_aff06217ad9901d3656d6322553698486}{btMprEq}}(s,\ 1.f)\ ||\ s\ <\ 1.f)\ \&\&\ (\mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}(t)\ ||\ t\ >\ 0.f)\ \&\&\ (\mbox{\hyperlink{bt_mpr_penetration_8h_aff06217ad9901d3656d6322553698486}{btMprEq}}(t,\ 1.f)\ ||\ t\ <\ 1.f)\ \&\&\ (\mbox{\hyperlink{bt_mpr_penetration_8h_aff06217ad9901d3656d6322553698486}{btMprEq}}(t\ +\ s,\ 1.f)\ ||\ t\ +\ s\ <\ 1.f))}
+\DoxyCodeLine{00684\ \ \ \ \ \{}
+\DoxyCodeLine{00685\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (witness)}
+\DoxyCodeLine{00686\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00687\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a134482ce8f92bdababef8c6d041fc450}{btMprVec3Scale}}(\&d1,\ s);}
+\DoxyCodeLine{00688\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a134482ce8f92bdababef8c6d041fc450}{btMprVec3Scale}}(\&d2,\ t);}
+\DoxyCodeLine{00689\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(witness,\ x0);}
+\DoxyCodeLine{00690\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a659a79e0fca2e8e173132f775f5b2a16}{btMprVec3Add}}(witness,\ \&d1);}
+\DoxyCodeLine{00691\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a659a79e0fca2e8e173132f775f5b2a16}{btMprVec3Add}}(witness,\ \&d2);}
+\DoxyCodeLine{00692\ }
+\DoxyCodeLine{00693\ \ \ \ \ \ \ \ \ \ \ \ \ dist\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a792d622fbb51a7308b04b8b7f6c34c23}{btMprVec3Dist2}}(witness,\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a44c29edb103a2872f519ad0c9a0fdaaa}{P}});}
+\DoxyCodeLine{00694\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00695\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00696\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00697\ \ \ \ \ \ \ \ \ \ \ \ \ dist\ =\ s\ *\ s\ *\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}};}
+\DoxyCodeLine{00698\ \ \ \ \ \ \ \ \ \ \ \ \ dist\ +=\ t\ *\ t\ *\ \mbox{\hyperlink{glad_8h_a1d0296e9e835f2e1ee17634af95fc1ec}{w}};}
+\DoxyCodeLine{00699\ \ \ \ \ \ \ \ \ \ \ \ \ dist\ +=\ 2.f\ *\ s\ *\ t\ *\ \mbox{\hyperlink{glad_8h_abe08814c2f72843fde4d8df41440d5a0}{r}};}
+\DoxyCodeLine{00700\ \ \ \ \ \ \ \ \ \ \ \ \ dist\ +=\ 2.f\ *\ s\ *\ p;}
+\DoxyCodeLine{00701\ \ \ \ \ \ \ \ \ \ \ \ \ dist\ +=\ 2.f\ *\ t\ *\ q;}
+\DoxyCodeLine{00702\ \ \ \ \ \ \ \ \ \ \ \ \ dist\ +=\ u;}
+\DoxyCodeLine{00703\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00704\ \ \ \ \ \}}
+\DoxyCodeLine{00705\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00706\ \ \ \ \ \{}
+\DoxyCodeLine{00707\ \ \ \ \ \ \ \ \ dist\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a07233034abd684cb643e70df4e6d00eb}{\_btMprVec3PointSegmentDist2}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a44c29edb103a2872f519ad0c9a0fdaaa}{P}},\ x0,\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a9d5ed678fe57bcca610140957afab571}{B}},\ witness);}
+\DoxyCodeLine{00708\ }
+\DoxyCodeLine{00709\ \ \ \ \ \ \ \ \ dist2\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a07233034abd684cb643e70df4e6d00eb}{\_btMprVec3PointSegmentDist2}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a44c29edb103a2872f519ad0c9a0fdaaa}{P}},\ x0,\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a0d61f8370cad1d412f80b84d143e1257}{C}},\ \&witness2);}
+\DoxyCodeLine{00710\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (dist2\ <\ dist)}
+\DoxyCodeLine{00711\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00712\ \ \ \ \ \ \ \ \ \ \ \ \ dist\ =\ dist2;}
+\DoxyCodeLine{00713\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (witness)}
+\DoxyCodeLine{00714\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(witness,\ \&witness2);}
+\DoxyCodeLine{00715\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00716\ }
+\DoxyCodeLine{00717\ \ \ \ \ \ \ \ \ dist2\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a07233034abd684cb643e70df4e6d00eb}{\_btMprVec3PointSegmentDist2}}(\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a44c29edb103a2872f519ad0c9a0fdaaa}{P}},\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a9d5ed678fe57bcca610140957afab571}{B}},\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a0d61f8370cad1d412f80b84d143e1257}{C}},\ \&witness2);}
+\DoxyCodeLine{00718\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (dist2\ <\ dist)}
+\DoxyCodeLine{00719\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00720\ \ \ \ \ \ \ \ \ \ \ \ \ dist\ =\ dist2;}
+\DoxyCodeLine{00721\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (witness)}
+\DoxyCodeLine{00722\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(witness,\ \&witness2);}
+\DoxyCodeLine{00723\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00724\ \ \ \ \ \}}
+\DoxyCodeLine{00725\ }
+\DoxyCodeLine{00726\ \ \ \ \ \textcolor{keywordflow}{return}\ dist;}
+\DoxyCodeLine{00727\ \}}
+\DoxyCodeLine{00728\ }
+\DoxyCodeLine{00729\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ btConvexTemplate>}
+\DoxyCodeLine{00730\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ btFindPenetr(\textcolor{keyword}{const}\ btConvexTemplate\ \&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \textcolor{keyword}{const}\ btConvexTemplate\ \&\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},}
+\DoxyCodeLine{00731\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_mpr_collision_description}{btMprCollisionDescription}}\ \&colDesc,}
+\DoxyCodeLine{00732\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *portal,}
+\DoxyCodeLine{00733\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ *\mbox{\hyperlink{glad_8h_a2aa5ce5567a58e4da543ce468fb1711a}{depth}},\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *pdir,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *pos)}
+\DoxyCodeLine{00734\ \{}
+\DoxyCodeLine{00735\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ dir;}
+\DoxyCodeLine{00736\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a6cf7b0405b1c7a90cbeadc5a9018b2e9}{btMprSupport\_t}}\ v4;}
+\DoxyCodeLine{00737\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ iterations;}
+\DoxyCodeLine{00738\ }
+\DoxyCodeLine{00739\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{group__gtc__constants_ga788f5a421fc0f40a1296ebc094cbaa8a}{zero}}\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0,\ 0,\ 0);}
+\DoxyCodeLine{00740\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *origin\ =\ \&\mbox{\hyperlink{group__gtc__constants_ga788f5a421fc0f40a1296ebc094cbaa8a}{zero}};}
+\DoxyCodeLine{00741\ }
+\DoxyCodeLine{00742\ \ \ \ \ iterations\ =\ 1UL;}
+\DoxyCodeLine{00743\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_mpr_penetration_8h_afc58cfe48b3928532160f0a7b95a6b3f}{BT\_MPR\_MAX\_ITERATIONS}};\ i++)}
+\DoxyCodeLine{00744\ \ \ \ \ \textcolor{comment}{//while\ (1)}}
+\DoxyCodeLine{00745\ \ \ \ \ \{}
+\DoxyCodeLine{00746\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ compute\ portal\ direction\ and\ obtain\ next\ support\ point}}
+\DoxyCodeLine{00747\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_ac65c1293308b537a9f892040c41730f5}{btPortalDir}}(portal,\ \&dir);}
+\DoxyCodeLine{00748\ }
+\DoxyCodeLine{00749\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a0670a912f6a2cdf01346c5d18fb178b7}{btMprSupport}}(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ colDesc,\ dir,\ \&v4);}
+\DoxyCodeLine{00750\ }
+\DoxyCodeLine{00751\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ reached\ tolerance\ -\/>\ find\ penetration\ info}}
+\DoxyCodeLine{00752\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_mpr_penetration_8h_a7b457ab03adc19549bf0e3b42bdba409}{portalReachTolerance}}(portal,\ \&v4,\ \&dir)\ ||\ iterations\ ==\ \mbox{\hyperlink{bt_mpr_penetration_8h_afc58cfe48b3928532160f0a7b95a6b3f}{BT\_MPR\_MAX\_ITERATIONS}})}
+\DoxyCodeLine{00753\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00754\ \ \ \ \ \ \ \ \ \ \ \ \ *\mbox{\hyperlink{glad_8h_a2aa5ce5567a58e4da543ce468fb1711a}{depth}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a18e4699e3b54be8caf8a4f65fe0072df}{btMprVec3PointTriDist2}}(origin,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 2)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 3)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}},\ pdir);}
+\DoxyCodeLine{00755\ \ \ \ \ \ \ \ \ \ \ \ \ *\mbox{\hyperlink{glad_8h_a2aa5ce5567a58e4da543ce468fb1711a}{depth}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_aaad1f4ba78d5e302969b2f2c87f75fc8}{BT\_MPR\_SQRT}}(*\mbox{\hyperlink{glad_8h_a2aa5ce5567a58e4da543ce468fb1711a}{depth}});}
+\DoxyCodeLine{00756\ }
+\DoxyCodeLine{00757\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}((*pdir).x())\ \&\&\ \mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}((*pdir).y())\ \&\&\ \mbox{\hyperlink{bt_mpr_penetration_8h_a32682fc9dde2128cb0e0971d1f4e7c6f}{btMprIsZero}}((*pdir).z()))}
+\DoxyCodeLine{00758\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00759\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *pdir\ =\ dir;}
+\DoxyCodeLine{00760\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00761\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a90620bb9f2698a68fa4f31b8da0183dc}{btMprVec3Normalize}}(pdir);}
+\DoxyCodeLine{00762\ }
+\DoxyCodeLine{00763\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ barycentric\ coordinates:}}
+\DoxyCodeLine{00764\ \ \ \ \ \ \ \ \ \ \ \ \ btFindPos(portal,\ pos);}
+\DoxyCodeLine{00765\ }
+\DoxyCodeLine{00766\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00767\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00768\ }
+\DoxyCodeLine{00769\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_af5ffd996da3817fa1a1add16c806bc5c}{btExpandPortal}}(portal,\ \&v4);}
+\DoxyCodeLine{00770\ }
+\DoxyCodeLine{00771\ \ \ \ \ \ \ \ \ iterations++;}
+\DoxyCodeLine{00772\ \ \ \ \ \}}
+\DoxyCodeLine{00773\ \}}
+\DoxyCodeLine{00774\ }
+\DoxyCodeLine{00775\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ btFindPenetrTouch(\mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *portal,\ \textcolor{keywordtype}{float}\ *\mbox{\hyperlink{glad_8h_a2aa5ce5567a58e4da543ce468fb1711a}{depth}},\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *dir,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *pos)}
+\DoxyCodeLine{00776\ \{}
+\DoxyCodeLine{00777\ \ \ \ \ \textcolor{comment}{//\ Touching\ contact\ on\ portal's\ v1\ -\/\ so\ depth\ is\ zero\ and\ direction}}
+\DoxyCodeLine{00778\ \ \ \ \ \textcolor{comment}{//\ is\ unimportant\ and\ pos\ can\ be\ guessed}}
+\DoxyCodeLine{00779\ \ \ \ \ *\mbox{\hyperlink{glad_8h_a2aa5ce5567a58e4da543ce468fb1711a}{depth}}\ =\ 0.f;}
+\DoxyCodeLine{00780\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{group__gtc__constants_ga788f5a421fc0f40a1296ebc094cbaa8a}{zero}}\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0,\ 0,\ 0);}
+\DoxyCodeLine{00781\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *origin\ =\ \&\mbox{\hyperlink{group__gtc__constants_ga788f5a421fc0f40a1296ebc094cbaa8a}{zero}};}
+\DoxyCodeLine{00782\ }
+\DoxyCodeLine{00783\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(dir,\ origin);}
+\DoxyCodeLine{00784\ \textcolor{preprocessor}{\#ifdef\ MPR\_AVERAGE\_CONTACT\_POSITIONS}}
+\DoxyCodeLine{00785\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(pos,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a0779c3b73f9aa3a0ac5b0139b5d291d9}{v1}});}
+\DoxyCodeLine{00786\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a659a79e0fca2e8e173132f775f5b2a16}{btMprVec3Add}}(pos,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a9a09a1837922b2b806f4589096a52049}{v2}});}
+\DoxyCodeLine{00787\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a134482ce8f92bdababef8c6d041fc450}{btMprVec3Scale}}(pos,\ 0.5);}
+\DoxyCodeLine{00788\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00789\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(pos,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a9a09a1837922b2b806f4589096a52049}{v2}});}
+\DoxyCodeLine{00790\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00791\ \}}
+\DoxyCodeLine{00792\ }
+\DoxyCodeLine{00793\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ btFindPenetrSegment(\mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ *portal,}
+\DoxyCodeLine{00794\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ *\mbox{\hyperlink{glad_8h_a2aa5ce5567a58e4da543ce468fb1711a}{depth}},\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *dir,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *pos)}
+\DoxyCodeLine{00795\ \{}
+\DoxyCodeLine{00796\ \ \ \ \ \textcolor{comment}{//\ Origin\ lies\ on\ v0-\/v1\ segment.}}
+\DoxyCodeLine{00797\ \ \ \ \ \textcolor{comment}{//\ Depth\ is\ distance\ to\ v1,\ direction\ also\ and\ position\ must\ be}}
+\DoxyCodeLine{00798\ \ \ \ \ \textcolor{comment}{//\ computed}}
+\DoxyCodeLine{00799\ \textcolor{preprocessor}{\#ifdef\ MPR\_AVERAGE\_CONTACT\_POSITIONS}}
+\DoxyCodeLine{00800\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(pos,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a0779c3b73f9aa3a0ac5b0139b5d291d9}{v1}});}
+\DoxyCodeLine{00801\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a659a79e0fca2e8e173132f775f5b2a16}{btMprVec3Add}}(pos,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a9a09a1837922b2b806f4589096a52049}{v2}});}
+\DoxyCodeLine{00802\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a134482ce8f92bdababef8c6d041fc450}{btMprVec3Scale}}(pos,\ 0.5f);}
+\DoxyCodeLine{00803\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00804\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(pos,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a9a09a1837922b2b806f4589096a52049}{v2}});}
+\DoxyCodeLine{00805\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//MPR\_AVERAGE\_CONTACT\_POSITIONS}}
+\DoxyCodeLine{00806\ }
+\DoxyCodeLine{00807\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_aee3195b1627fbd56cff0a04481e5eccf}{btMprVec3Copy}}(dir,\ \&\mbox{\hyperlink{bt_mpr_penetration_8h_a51ec697260a2d721c485c45af1fbe19a}{btMprSimplexPoint}}(portal,\ 1)-\/>\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}});}
+\DoxyCodeLine{00808\ \ \ \ \ *\mbox{\hyperlink{glad_8h_a2aa5ce5567a58e4da543ce468fb1711a}{depth}}\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_aaad1f4ba78d5e302969b2f2c87f75fc8}{BT\_MPR\_SQRT}}(\mbox{\hyperlink{bt_mpr_penetration_8h_a91f211247a7a1f972c6d8d58b9cceaca}{btMprVec3Len2}}(dir));}
+\DoxyCodeLine{00809\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a90620bb9f2698a68fa4f31b8da0183dc}{btMprVec3Normalize}}(dir);}
+\DoxyCodeLine{00810\ \}}
+\DoxyCodeLine{00811\ }
+\DoxyCodeLine{00812\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ btConvexTemplate>}
+\DoxyCodeLine{00813\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a62c55ddba09733005bb35f84c3d7a63c}{btMprPenetration}}(\textcolor{keyword}{const}\ btConvexTemplate\ \&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \textcolor{keyword}{const}\ btConvexTemplate\ \&\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},}
+\DoxyCodeLine{00814\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_mpr_collision_description}{btMprCollisionDescription}}\ \&colDesc,}
+\DoxyCodeLine{00815\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ *depthOut,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *dirOut,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ *posOut)}
+\DoxyCodeLine{00816\ \{}
+\DoxyCodeLine{00817\ \ \ \ \ \mbox{\hyperlink{bt_mpr_penetration_8h_a7cba5462a08bb7f44c5bd262867c9df7}{btMprSimplex\_t}}\ portal;}
+\DoxyCodeLine{00818\ }
+\DoxyCodeLine{00819\ \ \ \ \ \textcolor{comment}{//\ Phase\ 1:\ Portal\ discovery}}
+\DoxyCodeLine{00820\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}\ =\ btDiscoverPortal(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ colDesc,\ \&portal);}
+\DoxyCodeLine{00821\ }
+\DoxyCodeLine{00822\ \ \ \ \ \textcolor{comment}{//sepAxis[pairIndex]\ =\ *pdir;//or\ -\/dir?}}
+\DoxyCodeLine{00823\ }
+\DoxyCodeLine{00824\ \ \ \ \ \textcolor{keywordflow}{switch}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}})}
+\DoxyCodeLine{00825\ \ \ \ \ \{}
+\DoxyCodeLine{00826\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 0:}
+\DoxyCodeLine{00827\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00828\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Phase\ 2:\ Portal\ refinement}}
+\DoxyCodeLine{00829\ }
+\DoxyCodeLine{00830\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}\ =\ btRefinePortal(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ colDesc,\ \&portal);}
+\DoxyCodeLine{00831\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}\ <\ 0)}
+\DoxyCodeLine{00832\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ -\/1;}
+\DoxyCodeLine{00833\ }
+\DoxyCodeLine{00834\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Phase\ 3.\ Penetration\ info}}
+\DoxyCodeLine{00835\ \ \ \ \ \ \ \ \ \ \ \ \ btFindPenetr(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ colDesc,\ \&portal,\ depthOut,\ dirOut,\ posOut);}
+\DoxyCodeLine{00836\ }
+\DoxyCodeLine{00837\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00838\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00839\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 1:}
+\DoxyCodeLine{00840\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00841\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Touching\ contact\ on\ portal's\ v1.}}
+\DoxyCodeLine{00842\ \ \ \ \ \ \ \ \ \ \ \ \ btFindPenetrTouch(\&portal,\ depthOut,\ dirOut,\ posOut);}
+\DoxyCodeLine{00843\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}\ =\ 0;}
+\DoxyCodeLine{00844\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00845\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00846\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 2:}
+\DoxyCodeLine{00847\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00848\ \ \ \ \ \ \ \ \ \ \ \ \ btFindPenetrSegment(\&portal,\ depthOut,\ dirOut,\ posOut);}
+\DoxyCodeLine{00849\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}\ =\ 0;}
+\DoxyCodeLine{00850\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00851\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00852\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00853\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00854\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//if\ (res\ <\ 0)}}
+\DoxyCodeLine{00855\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\{}}
+\DoxyCodeLine{00856\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Origin\ isn't\ inside\ portal\ -\/\ no\ collision.}}
+\DoxyCodeLine{00857\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}\ =\ -\/1;}
+\DoxyCodeLine{00858\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\}}}
+\DoxyCodeLine{00859\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00860\ \ \ \ \ \};}
+\DoxyCodeLine{00861\ }
+\DoxyCodeLine{00862\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}};}
+\DoxyCodeLine{00863\ \};}
+\DoxyCodeLine{00864\ }
+\DoxyCodeLine{00865\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ btConvexTemplate,\ \textcolor{keyword}{typename}\ btMprDistanceTemplate>}
+\DoxyCodeLine{00866\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_mpr_penetration_8h_a587a8fbda6d43e4e7be163fdb82011bd}{btComputeMprPenetration}}(\textcolor{keyword}{const}\ btConvexTemplate\ \&\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \textcolor{keyword}{const}\ btConvexTemplate\ \&\mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_mpr_collision_description}{btMprCollisionDescription}}\ \&colDesc,\ btMprDistanceTemplate\ *distInfo)}
+\DoxyCodeLine{00867\ \{}
+\DoxyCodeLine{00868\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ dir,\ pos;}
+\DoxyCodeLine{00869\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{glad_8h_a2aa5ce5567a58e4da543ce468fb1711a}{depth}};}
+\DoxyCodeLine{00870\ }
+\DoxyCodeLine{00871\ \ \ \ \ \textcolor{keywordtype}{int}\ res\ =\ \mbox{\hyperlink{bt_mpr_penetration_8h_a62c55ddba09733005bb35f84c3d7a63c}{btMprPenetration}}(\mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}},\ colDesc,\ \&\mbox{\hyperlink{glad_8h_a2aa5ce5567a58e4da543ce468fb1711a}{depth}},\ \&dir,\ \&pos);}
+\DoxyCodeLine{00872\ \ \ \ \ \textcolor{keywordflow}{if}\ (res\ ==\ 0)}
+\DoxyCodeLine{00873\ \ \ \ \ \{}
+\DoxyCodeLine{00874\ \ \ \ \ \ \ \ \ distInfo-\/>m\_distance\ =\ -\/\mbox{\hyperlink{glad_8h_a2aa5ce5567a58e4da543ce468fb1711a}{depth}};}
+\DoxyCodeLine{00875\ \ \ \ \ \ \ \ \ distInfo-\/>m\_pointOnB\ =\ pos;}
+\DoxyCodeLine{00876\ \ \ \ \ \ \ \ \ distInfo-\/>m\_normalBtoA\ =\ -\/dir;}
+\DoxyCodeLine{00877\ \ \ \ \ \ \ \ \ distInfo-\/>m\_pointOnA\ =\ pos\ -\/\ distInfo-\/>m\_distance\ *\ dir;}
+\DoxyCodeLine{00878\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00879\ \ \ \ \ \}}
+\DoxyCodeLine{00880\ }
+\DoxyCodeLine{00881\ \ \ \ \ \textcolor{keywordflow}{return}\ -\/1;}
+\DoxyCodeLine{00882\ \}}
+\DoxyCodeLine{00883\ }
+\DoxyCodeLine{00884\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_MPR\_PENETRATION\_H}}
+
+\end{DoxyCode}

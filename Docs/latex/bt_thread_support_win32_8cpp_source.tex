@@ -1,0 +1,458 @@
+\doxysection{bt\+Thread\+Support\+Win32.\+cpp}
+\hypertarget{bt_thread_support_win32_8cpp_source}{}\label{bt_thread_support_win32_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/LinearMath/TaskScheduler/btThreadSupportWin32.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/LinearMath/TaskScheduler/btThreadSupportWin32.cpp}}
+\mbox{\hyperlink{bt_thread_support_win32_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2018\ Erwin\ Coumans\ \ http://bulletphysics.com}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,}}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,}}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#if\ defined(\_WIN32)\ \&\&\ BT\_THREADSAFE}}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_scalar_8h}{LinearMath/btScalar.h}}"{}}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_min_max_8h}{LinearMath/btMinMax.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_aligned_object_array_8h}{LinearMath/btAlignedObjectArray.h}}"{}}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_threads_8h}{LinearMath/btThreads.h}}"{}}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_thread_support_interface_8h}{btThreadSupportInterface.h}}"{}}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ <windows.h>}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \textcolor{keyword}{struct\ }btProcessorInfo}
+\DoxyCodeLine{00027\ \{}
+\DoxyCodeLine{00028\ \ \ \ \ \textcolor{keywordtype}{int}\ numLogicalProcessors;}
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{keywordtype}{int}\ numCores;}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keywordtype}{int}\ numNumaNodes;}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keywordtype}{int}\ numL1Cache;}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordtype}{int}\ numL2Cache;}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keywordtype}{int}\ numL3Cache;}
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keywordtype}{int}\ numPhysicalPackages;}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ maxNumTeamMasks\ =\ 32;}
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{keywordtype}{int}\ numTeamMasks;}
+\DoxyCodeLine{00037\ \ \ \ \ \mbox{\hyperlink{_free_image_8h_a95df6cdb32afc350ff070f2fe8a54a67}{UINT64}}\ processorTeamMasks[maxNumTeamMasks];}
+\DoxyCodeLine{00038\ \};}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00040\ \mbox{\hyperlink{_free_image_8h_a95df6cdb32afc350ff070f2fe8a54a67}{UINT64}}\ getProcessorTeamMask(\textcolor{keyword}{const}\ btProcessorInfo\&\ procInfo,\ \textcolor{keywordtype}{int}\ procId)}
+\DoxyCodeLine{00041\ \{}
+\DoxyCodeLine{00042\ \ \ \ \ \mbox{\hyperlink{_free_image_8h_a95df6cdb32afc350ff070f2fe8a54a67}{UINT64}}\ procMask\ =\ \mbox{\hyperlink{_free_image_8h_a95df6cdb32afc350ff070f2fe8a54a67}{UINT64}}(1)\ <<\ procId;}
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ procInfo.numTeamMasks;\ ++i)}
+\DoxyCodeLine{00044\ \ \ \ \ \{}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (procMask\ \&\ procInfo.processorTeamMasks[i])}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ procInfo.processorTeamMasks[i];}
+\DoxyCodeLine{00048\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00049\ \ \ \ \ \}}
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00051\ \}}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00053\ \textcolor{keywordtype}{int}\ getProcessorTeamIndex(\textcolor{keyword}{const}\ btProcessorInfo\&\ procInfo,\ \textcolor{keywordtype}{int}\ procId)}
+\DoxyCodeLine{00054\ \{}
+\DoxyCodeLine{00055\ \ \ \ \ \mbox{\hyperlink{_free_image_8h_a95df6cdb32afc350ff070f2fe8a54a67}{UINT64}}\ procMask\ =\ \mbox{\hyperlink{_free_image_8h_a95df6cdb32afc350ff070f2fe8a54a67}{UINT64}}(1)\ <<\ procId;}
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ procInfo.numTeamMasks;\ ++i)}
+\DoxyCodeLine{00057\ \ \ \ \ \{}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (procMask\ \&\ procInfo.processorTeamMasks[i])}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ i;}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00062\ \ \ \ \ \}}
+\DoxyCodeLine{00063\ \ \ \ \ \textcolor{keywordflow}{return}\ -\/1;}
+\DoxyCodeLine{00064\ \}}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \textcolor{keywordtype}{int}\ countSetBits(ULONG64\ bits)}
+\DoxyCodeLine{00067\ \{}
+\DoxyCodeLine{00068\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a4e867eee5910f6b2df6123b47ab70dae}{count}}\ =\ 0;}
+\DoxyCodeLine{00069\ \ \ \ \ \textcolor{keywordflow}{while}\ (bits)}
+\DoxyCodeLine{00070\ \ \ \ \ \{}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (bits\ \&\ 1)}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a4e867eee5910f6b2df6123b47ab70dae}{count}}++;}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ bits\ >>=\ 1;}
+\DoxyCodeLine{00076\ \ \ \ \ \}}
+\DoxyCodeLine{00077\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a4e867eee5910f6b2df6123b47ab70dae}{count}};}
+\DoxyCodeLine{00078\ \}}
+\DoxyCodeLine{00079\ }
+\DoxyCodeLine{00080\ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{_free_image_8h_a975dbe9e4396bf9e0064ce01827fa372}{BOOL}}(WINAPI*\ Pfn\_GetLogicalProcessorInformation)(PSYSTEM\_LOGICAL\_PROCESSOR\_INFORMATION,\ PDWORD);}
+\DoxyCodeLine{00081\ }
+\DoxyCodeLine{00082\ \textcolor{keywordtype}{void}\ getProcessorInformation(btProcessorInfo*\ procInfo)}
+\DoxyCodeLine{00083\ \{}
+\DoxyCodeLine{00084\ \ \ \ \ memset(procInfo,\ 0,\ \textcolor{keyword}{sizeof}(*procInfo));}
+\DoxyCodeLine{00085\ \textcolor{preprocessor}{\#if\ WINAPI\_FAMILY\_PARTITION(WINAPI\_PARTITION\_APP)\ \&\&\ !WINAPI\_FAMILY\_PARTITION(WINAPI\_PARTITION\_DESKTOP)}}
+\DoxyCodeLine{00086\ \ \ \ \ \textcolor{comment}{//\ Can't\ dlopen\ libraries\ on\ UWP.}}
+\DoxyCodeLine{00087\ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00088\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00089\ \ \ \ \ Pfn\_GetLogicalProcessorInformation\ getLogicalProcInfo\ =}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ (Pfn\_GetLogicalProcessorInformation)GetProcAddress(GetModuleHandle(TEXT(\textcolor{stringliteral}{"{}kernel32"{}})),\ \textcolor{stringliteral}{"{}GetLogicalProcessorInformation"{}});}
+\DoxyCodeLine{00091\ \ \ \ \ \textcolor{keywordflow}{if}\ (getLogicalProcInfo\ ==\ \mbox{\hyperlink{module___n_u_l_l}{NULL}})}
+\DoxyCodeLine{00092\ \ \ \ \ \{}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ no\ info}}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00095\ \ \ \ \ \}}
+\DoxyCodeLine{00096\ \ \ \ \ PSYSTEM\_LOGICAL\_PROCESSOR\_INFORMATION\ buf\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00097\ \ \ \ \ \mbox{\hyperlink{_free_image_8h_af483253b2143078cede883fc3c111ad2}{DWORD}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a09918d77dec487a91825343c8cfb2b2d}{bufSize}}\ =\ 0;}
+\DoxyCodeLine{00098\ \ \ \ \ \textcolor{keywordflow}{while}\ (\textcolor{keyword}{true})}
+\DoxyCodeLine{00099\ \ \ \ \ \{}
+\DoxyCodeLine{00100\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (getLogicalProcInfo(buf,\ \&\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a09918d77dec487a91825343c8cfb2b2d}{bufSize}}))}
+\DoxyCodeLine{00101\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00102\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00103\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00105\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00106\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (GetLastError()\ ==\ ERROR\_INSUFFICIENT\_BUFFER)}
+\DoxyCodeLine{00107\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00108\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (buf)}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ free(buf);}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ buf\ =\ (PSYSTEM\_LOGICAL\_PROCESSOR\_INFORMATION)malloc(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a09918d77dec487a91825343c8cfb2b2d}{bufSize}});}
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00115\ \ \ \ \ \}}
+\DoxyCodeLine{00116\ }
+\DoxyCodeLine{00117\ \ \ \ \ \textcolor{keywordtype}{int}\ len\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a09918d77dec487a91825343c8cfb2b2d}{bufSize}}\ /\ \textcolor{keyword}{sizeof}(*buf);}
+\DoxyCodeLine{00118\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ len;\ ++i)}
+\DoxyCodeLine{00119\ \ \ \ \ \{}
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \ \ PSYSTEM\_LOGICAL\_PROCESSOR\_INFORMATION\ info\ =\ buf\ +\ i;}
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (info-\/>Relationship)}
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ RelationNumaNode:}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ procInfo-\/>numNumaNodes++;}
+\DoxyCodeLine{00125\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00126\ }
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ RelationProcessorCore:}
+\DoxyCodeLine{00128\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ procInfo-\/>numCores++;}
+\DoxyCodeLine{00129\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ procInfo-\/>numLogicalProcessors\ +=\ countSetBits(info-\/>ProcessorMask);}
+\DoxyCodeLine{00130\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00131\ }
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ RelationCache:}
+\DoxyCodeLine{00133\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (info-\/>Cache.Level\ ==\ 1)}
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ procInfo-\/>numL1Cache++;}
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (info-\/>Cache.Level\ ==\ 2)}
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00139\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ procInfo-\/>numL2Cache++;}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (info-\/>Cache.Level\ ==\ 3)}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ procInfo-\/>numL3Cache++;}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ processors\ that\ share\ L3\ cache\ are\ considered\ to\ be\ on\ the\ same\ team}}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ because\ they\ can\ more\ easily\ work\ together\ on\ the\ same\ data.}}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ Large\ performance\ penalties\ will\ occur\ if\ 2\ or\ more\ threads\ from\ different}}
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ teams\ attempt\ to\ frequently\ read\ and\ modify\ the\ same\ cache\ lines.}}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ On\ the\ AMD\ Ryzen\ 7\ CPU\ for\ example,\ the\ 8\ cores\ on\ the\ CPU\ are\ split\ into}}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ 2\ CCX\ units\ of\ 4\ cores\ each.\ Each\ CCX\ has\ a\ separate\ L3\ cache,\ so\ if\ both}}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ CCXs\ are\ operating\ on\ the\ same\ data,\ many\ cycles\ will\ be\ spent\ keeping\ the}}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ two\ caches\ coherent.}}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (procInfo-\/>numTeamMasks\ <\ btProcessorInfo::maxNumTeamMasks)}
+\DoxyCodeLine{00154\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ procInfo-\/>processorTeamMasks[procInfo-\/>numTeamMasks]\ =\ info-\/>ProcessorMask;}
+\DoxyCodeLine{00156\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ procInfo-\/>numTeamMasks++;}
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00160\ }
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ RelationProcessorPackage:}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ procInfo-\/>numPhysicalPackages++;}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00165\ \ \ \ \ \}}
+\DoxyCodeLine{00166\ \ \ \ \ free(buf);}
+\DoxyCodeLine{00167\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00168\ \}}
+\DoxyCodeLine{00169\ }
+\DoxyCodeLine{00171\ \textcolor{keyword}{class\ }btThreadSupportWin32\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{classbt_thread_support_interface}{btThreadSupportInterface}}}
+\DoxyCodeLine{00172\ \{}
+\DoxyCodeLine{00173\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00174\ \ \ \ \ \textcolor{keyword}{struct\ }btThreadStatus}
+\DoxyCodeLine{00175\ \ \ \ \ \{}
+\DoxyCodeLine{00176\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ m\_taskId;}
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ m\_commandId;}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ m\_status;}
+\DoxyCodeLine{00179\ }
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ ThreadFunc\ m\_userThreadFunc;}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}*\ m\_userPtr;\ \ \textcolor{comment}{//for\ taskDesc\ etc}}
+\DoxyCodeLine{00182\ }
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}*\ m\_threadHandle;\ \ \textcolor{comment}{//this\ one\ is\ calling\ 'Win32ThreadFunc'}}
+\DoxyCodeLine{00184\ }
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}*\ m\_eventStartHandle;}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{char}\ m\_eventStartHandleName[32];}
+\DoxyCodeLine{00187\ }
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}*\ m\_eventCompleteHandle;}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{char}\ m\_eventCompleteHandleName[32];}
+\DoxyCodeLine{00190\ \ \ \ \ \};}
+\DoxyCodeLine{00191\ }
+\DoxyCodeLine{00192\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00193\ \ \ \ \ btAlignedObjectArray<btThreadStatus>\ m\_activeThreadStatus;}
+\DoxyCodeLine{00194\ \ \ \ \ btAlignedObjectArray<void*>\ m\_completeHandles;}
+\DoxyCodeLine{00195\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_numThreads;}
+\DoxyCodeLine{00196\ \ \ \ \ DWORD\_PTR\ m\_startedThreadMask;}
+\DoxyCodeLine{00197\ \ \ \ \ btProcessorInfo\ m\_processorInfo;}
+\DoxyCodeLine{00198\ }
+\DoxyCodeLine{00199\ \ \ \ \ \textcolor{keywordtype}{void}\ startThreads(\textcolor{keyword}{const}\ ConstructionInfo\&\ threadInfo);}
+\DoxyCodeLine{00200\ \ \ \ \ \textcolor{keywordtype}{void}\ stopThreads();}
+\DoxyCodeLine{00201\ \ \ \ \ \textcolor{keywordtype}{int}\ waitForResponse();}
+\DoxyCodeLine{00202\ }
+\DoxyCodeLine{00203\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00204\ \ \ \ \ btThreadSupportWin32(\textcolor{keyword}{const}\ ConstructionInfo\&\ threadConstructionInfo);}
+\DoxyCodeLine{00205\ \ \ \ \ \textcolor{keyword}{virtual}\ \string~btThreadSupportWin32();}
+\DoxyCodeLine{00206\ }
+\DoxyCodeLine{00207\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_thread_support_interface_a92ea68bbbd51aba166f0b31d750507ab}{getNumWorkerThreads}}()\ const\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}\ \{\ \textcolor{keywordflow}{return}\ m\_numThreads;\ \}}
+\DoxyCodeLine{00208\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_thread_support_interface_a09ee3d08d6a87bce4f59c85b615f8442}{getCacheFriendlyNumThreads}}()\ const\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}\ \{\ \textcolor{keywordflow}{return}\ countSetBits(m\_processorInfo.processorTeamMasks[0]);\ \}}
+\DoxyCodeLine{00209\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_thread_support_interface_a0cba95f72f530a01f38de02308068376}{getLogicalToPhysicalCoreRatio}}()\ const\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}\ \{\ \textcolor{keywordflow}{return}\ m\_processorInfo.numLogicalProcessors\ /\ m\_processorInfo.numCores;\ \}}
+\DoxyCodeLine{00210\ }
+\DoxyCodeLine{00211\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_thread_support_interface_a4c2659fd76b60adba85ba702bd96aba0}{runTask}}(\textcolor{keywordtype}{int}\ threadIndex,\ \textcolor{keywordtype}{void}*\ userData)\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}};}
+\DoxyCodeLine{00212\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_thread_support_interface_a0cbb3a131f1cef397ec100f83743e102}{waitForAllTasks}}()\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}};}
+\DoxyCodeLine{00213\ }
+\DoxyCodeLine{00214\ \ \ \ \ virtual\ btCriticalSection*\ createCriticalSection()\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}};}
+\DoxyCodeLine{00215\ \ \ \ \ virtual\ \textcolor{keywordtype}{void}\ deleteCriticalSection(btCriticalSection*\ criticalSection)\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}};}
+\DoxyCodeLine{00216\ \};}
+\DoxyCodeLine{00217\ }
+\DoxyCodeLine{00218\ btThreadSupportWin32::btThreadSupportWin32(const\ ConstructionInfo\&\ threadConstructionInfo)}
+\DoxyCodeLine{00219\ \{}
+\DoxyCodeLine{00220\ \ \ \ \ startThreads(threadConstructionInfo);}
+\DoxyCodeLine{00221\ \}}
+\DoxyCodeLine{00222\ }
+\DoxyCodeLine{00223\ btThreadSupportWin32::\string~btThreadSupportWin32()}
+\DoxyCodeLine{00224\ \{}
+\DoxyCodeLine{00225\ \ \ \ \ stopThreads();}
+\DoxyCodeLine{00226\ \}}
+\DoxyCodeLine{00227\ }
+\DoxyCodeLine{00228\ \mbox{\hyperlink{_free_image_8h_af483253b2143078cede883fc3c111ad2}{DWORD}}\ WINAPI\ win32threadStartFunc(LPVOID\ lpParam)}
+\DoxyCodeLine{00229\ \{}
+\DoxyCodeLine{00230\ \ \ \ \ btThreadSupportWin32::btThreadStatus*\ status\ =\ (btThreadSupportWin32::btThreadStatus*)lpParam;}
+\DoxyCodeLine{00231\ }
+\DoxyCodeLine{00232\ \ \ \ \ \textcolor{keywordflow}{while}\ (1)}
+\DoxyCodeLine{00233\ \ \ \ \ \{}
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \ \ WaitForSingleObject(status-\/>m\_eventStartHandle,\ INFINITE);}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}*\ userPtr\ =\ status-\/>m\_userPtr;}
+\DoxyCodeLine{00236\ }
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (userPtr)}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(status-\/>m\_status);}
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ \ \ \ \ status-\/>m\_userThreadFunc(userPtr);}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ \ \ \ \ status-\/>m\_status\ =\ 2;}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ \ \ \ \ SetEvent(status-\/>m\_eventCompleteHandle);}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00246\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//exit\ Thread}}
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ \ \ \ \ status-\/>m\_status\ =\ 3;}
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}Thread\ with\ taskId\ \%i\ with\ handle\ \%p\ exiting\(\backslash\)n"{}},\ status-\/>m\_taskId,\ status-\/>m\_threadHandle);}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ \ \ \ \ SetEvent(status-\/>m\_eventCompleteHandle);}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00252\ \ \ \ \ \}}
+\DoxyCodeLine{00253\ \ \ \ \ printf(\textcolor{stringliteral}{"{}Thread\ TERMINATED\(\backslash\)n"{}});}
+\DoxyCodeLine{00254\ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00255\ \}}
+\DoxyCodeLine{00256\ }
+\DoxyCodeLine{00257\ \textcolor{keywordtype}{void}\ btThreadSupportWin32::runTask(\textcolor{keywordtype}{int}\ threadIndex,\ \textcolor{keywordtype}{void}*\ userData)}
+\DoxyCodeLine{00258\ \{}
+\DoxyCodeLine{00259\ \ \ \ \ btThreadStatus\&\ threadStatus\ =\ m\_activeThreadStatus[threadIndex];}
+\DoxyCodeLine{00260\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(threadIndex\ >=\ 0);}
+\DoxyCodeLine{00261\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\textcolor{keywordtype}{int}(threadIndex)\ <\ m\_activeThreadStatus.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00262\ }
+\DoxyCodeLine{00263\ \ \ \ \ threadStatus.m\_commandId\ =\ 1;}
+\DoxyCodeLine{00264\ \ \ \ \ threadStatus.m\_status\ =\ 1;}
+\DoxyCodeLine{00265\ \ \ \ \ threadStatus.m\_userPtr\ =\ userData;}
+\DoxyCodeLine{00266\ \ \ \ \ m\_startedThreadMask\ |=\ DWORD\_PTR(1)\ <<\ threadIndex;}
+\DoxyCodeLine{00267\ }
+\DoxyCodeLine{00269\ \ \ \ \ SetEvent(threadStatus.m\_eventStartHandle);}
+\DoxyCodeLine{00270\ \}}
+\DoxyCodeLine{00271\ }
+\DoxyCodeLine{00272\ \textcolor{keywordtype}{int}\ btThreadSupportWin32::waitForResponse()}
+\DoxyCodeLine{00273\ \{}
+\DoxyCodeLine{00274\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(m\_activeThreadStatus.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00275\ }
+\DoxyCodeLine{00276\ \ \ \ \ \textcolor{keywordtype}{int}\ last\ =\ -\/1;}
+\DoxyCodeLine{00277\ \ \ \ \ \mbox{\hyperlink{_free_image_8h_af483253b2143078cede883fc3c111ad2}{DWORD}}\ res\ =\ WaitForMultipleObjects(m\_completeHandles.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}(),\ \&m\_completeHandles[0],\ \mbox{\hyperlink{_free_image_8h_aa93f0eb578d23995850d61f7d61c55c1}{FALSE}},\ INFINITE);}
+\DoxyCodeLine{00278\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(res\ !=\ WAIT\_FAILED);}
+\DoxyCodeLine{00279\ \ \ \ \ last\ =\ res\ -\/\ WAIT\_OBJECT\_0;}
+\DoxyCodeLine{00280\ }
+\DoxyCodeLine{00281\ \ \ \ \ btThreadStatus\&\ threadStatus\ =\ m\_activeThreadStatus[last];}
+\DoxyCodeLine{00282\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(threadStatus.m\_threadHandle);}
+\DoxyCodeLine{00283\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(threadStatus.m\_eventCompleteHandle);}
+\DoxyCodeLine{00284\ }
+\DoxyCodeLine{00285\ \ \ \ \ \textcolor{comment}{//WaitForSingleObject(threadStatus.m\_eventCompleteHandle,\ INFINITE);}}
+\DoxyCodeLine{00286\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(threadStatus.m\_status\ >\ 1);}
+\DoxyCodeLine{00287\ \ \ \ \ threadStatus.m\_status\ =\ 0;}
+\DoxyCodeLine{00288\ }
+\DoxyCodeLine{00290\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(last\ >=\ 0);}
+\DoxyCodeLine{00291\ \ \ \ \ m\_startedThreadMask\ \&=\ \string~(DWORD\_PTR(1)\ <<\ last);}
+\DoxyCodeLine{00292\ }
+\DoxyCodeLine{00293\ \ \ \ \ \textcolor{keywordflow}{return}\ last;}
+\DoxyCodeLine{00294\ \}}
+\DoxyCodeLine{00295\ }
+\DoxyCodeLine{00296\ \textcolor{keywordtype}{void}\ btThreadSupportWin32::waitForAllTasks()}
+\DoxyCodeLine{00297\ \{}
+\DoxyCodeLine{00298\ \ \ \ \ \textcolor{keywordflow}{while}\ (m\_startedThreadMask)}
+\DoxyCodeLine{00299\ \ \ \ \ \{}
+\DoxyCodeLine{00300\ \ \ \ \ \ \ \ \ waitForResponse();}
+\DoxyCodeLine{00301\ \ \ \ \ \}}
+\DoxyCodeLine{00302\ \}}
+\DoxyCodeLine{00303\ }
+\DoxyCodeLine{00304\ \textcolor{keywordtype}{void}\ btThreadSupportWin32::startThreads(\textcolor{keyword}{const}\ ConstructionInfo\&\ threadConstructionInfo)}
+\DoxyCodeLine{00305\ \{}
+\DoxyCodeLine{00306\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{int}\ uniqueId\ =\ 0;}
+\DoxyCodeLine{00307\ \ \ \ \ uniqueId++;}
+\DoxyCodeLine{00308\ \ \ \ \ btProcessorInfo\&\ procInfo\ =\ m\_processorInfo;}
+\DoxyCodeLine{00309\ \ \ \ \ getProcessorInformation(\&procInfo);}
+\DoxyCodeLine{00310\ \ \ \ \ DWORD\_PTR\ dwProcessAffinityMask\ =\ 0;}
+\DoxyCodeLine{00311\ \ \ \ \ DWORD\_PTR\ dwSystemAffinityMask\ =\ 0;}
+\DoxyCodeLine{00312\ \ \ \ \ \textcolor{keywordflow}{if}\ (!GetProcessAffinityMask(GetCurrentProcess(),\ \&dwProcessAffinityMask,\ \&dwSystemAffinityMask))}
+\DoxyCodeLine{00313\ \ \ \ \ \{}
+\DoxyCodeLine{00314\ \ \ \ \ \ \ \ \ dwProcessAffinityMask\ =\ 0;}
+\DoxyCodeLine{00315\ \ \ \ \ \}}
+\DoxyCodeLine{00317\ \ \ \ \ m\_numThreads\ =\ \mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin}}(procInfo.numLogicalProcessors,\ \textcolor{keywordtype}{int}(\mbox{\hyperlink{bt_threads_8h_af4a20042975cd43aa629b3bc4591db6e}{BT\_MAX\_THREAD\_COUNT}}))\ -\/\ 1;\ \ \textcolor{comment}{//\ cap\ to\ max\ thread\ count\ (-\/1\ because\ main\ thread\ already\ exists)}}
+\DoxyCodeLine{00318\ }
+\DoxyCodeLine{00319\ \ \ \ \ m\_activeThreadStatus.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(m\_numThreads);}
+\DoxyCodeLine{00320\ \ \ \ \ m\_completeHandles.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(m\_numThreads);}
+\DoxyCodeLine{00321\ \ \ \ \ m\_startedThreadMask\ =\ 0;}
+\DoxyCodeLine{00322\ }
+\DoxyCodeLine{00323\ \ \ \ \ \textcolor{comment}{//\ set\ main\ thread\ affinity}}
+\DoxyCodeLine{00324\ \ \ \ \ \textcolor{keywordflow}{if}\ (DWORD\_PTR\ \mbox{\hyperlink{glad_8h_abb269dedb7ad104274cc9f5c0c7285bc}{mask}}\ =\ dwProcessAffinityMask\ \&\ getProcessorTeamMask(procInfo,\ 0))}
+\DoxyCodeLine{00325\ \ \ \ \ \{}
+\DoxyCodeLine{00326\ \ \ \ \ \ \ \ \ SetThreadAffinityMask(GetCurrentThread(),\ \mbox{\hyperlink{glad_8h_abb269dedb7ad104274cc9f5c0c7285bc}{mask}});}
+\DoxyCodeLine{00327\ \ \ \ \ \ \ \ \ SetThreadIdealProcessor(GetCurrentThread(),\ 0);}
+\DoxyCodeLine{00328\ \ \ \ \ \}}
+\DoxyCodeLine{00329\ }
+\DoxyCodeLine{00330\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ m\_numThreads;\ i++)}
+\DoxyCodeLine{00331\ \ \ \ \ \{}
+\DoxyCodeLine{00332\ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}starting\ thread\ \%d\(\backslash\)n"{}},\ i);}
+\DoxyCodeLine{00333\ }
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ btThreadStatus\&\ threadStatus\ =\ m\_activeThreadStatus[i];}
+\DoxyCodeLine{00335\ }
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ LPSECURITY\_ATTRIBUTES\ lpThreadAttributes\ =\ \mbox{\hyperlink{_free_image_8h_a070d2ce7b6bb7e5c05602aa8c308d0c4}{NULL}};}
+\DoxyCodeLine{00337\ \ \ \ \ \ \ \ \ SIZE\_T\ dwStackSize\ =\ threadConstructionInfo.m\_threadStackSize;}
+\DoxyCodeLine{00338\ \ \ \ \ \ \ \ \ LPTHREAD\_START\_ROUTINE\ lpStartAddress\ =\ \&win32threadStartFunc;}
+\DoxyCodeLine{00339\ \ \ \ \ \ \ \ \ LPVOID\ lpParameter\ =\ \&threadStatus;}
+\DoxyCodeLine{00340\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{_free_image_8h_af483253b2143078cede883fc3c111ad2}{DWORD}}\ dwCreationFlags\ =\ 0;}
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \ \ LPDWORD\ lpThreadId\ =\ 0;}
+\DoxyCodeLine{00342\ }
+\DoxyCodeLine{00343\ \ \ \ \ \ \ \ \ threadStatus.m\_userPtr\ =\ 0;}
+\DoxyCodeLine{00344\ }
+\DoxyCodeLine{00345\ \ \ \ \ \ \ \ \ sprintf(threadStatus.m\_eventStartHandleName,\ \textcolor{stringliteral}{"{}es\%.8s\%d\%d"{}},\ threadConstructionInfo.m\_uniqueName,\ uniqueId,\ i);}
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \ \ threadStatus.m\_eventStartHandle\ =\ CreateEventA(0,\ \textcolor{keyword}{false},\ \textcolor{keyword}{false},\ threadStatus.m\_eventStartHandleName);}
+\DoxyCodeLine{00347\ }
+\DoxyCodeLine{00348\ \ \ \ \ \ \ \ \ sprintf(threadStatus.m\_eventCompleteHandleName,\ \textcolor{stringliteral}{"{}ec\%.8s\%d\%d"{}},\ threadConstructionInfo.m\_uniqueName,\ uniqueId,\ i);}
+\DoxyCodeLine{00349\ \ \ \ \ \ \ \ \ threadStatus.m\_eventCompleteHandle\ =\ CreateEventA(0,\ \textcolor{keyword}{false},\ \textcolor{keyword}{false},\ threadStatus.m\_eventCompleteHandleName);}
+\DoxyCodeLine{00350\ }
+\DoxyCodeLine{00351\ \ \ \ \ \ \ \ \ m\_completeHandles[i]\ =\ threadStatus.m\_eventCompleteHandle;}
+\DoxyCodeLine{00352\ }
+\DoxyCodeLine{00353\ \ \ \ \ \ \ \ \ HANDLE\ handle\ =\ CreateThread(lpThreadAttributes,\ dwStackSize,\ lpStartAddress,\ lpParameter,\ dwCreationFlags,\ lpThreadId);}
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ \textcolor{comment}{//SetThreadPriority(\ handle,\ THREAD\_PRIORITY\_HIGHEST\ );}}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ highest\ priority\ -\/-\/\ can\ cause\ erratic\ performance\ when\ numThreads\ >\ numCores}}
+\DoxyCodeLine{00356\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ we\ don't\ want\ worker\ threads\ to\ be\ higher\ priority\ than\ the\ main\ thread\ or\ the\ main\ thread\ could\ get}}
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ totally\ shut\ out\ and\ unable\ to\ tell\ the\ workers\ to\ stop}}
+\DoxyCodeLine{00358\ \ \ \ \ \ \ \ \ \textcolor{comment}{//SetThreadPriority(\ handle,\ THREAD\_PRIORITY\_BELOW\_NORMAL\ );}}
+\DoxyCodeLine{00359\ }
+\DoxyCodeLine{00360\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00361\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ processorId\ =\ i\ +\ 1;\ \ \textcolor{comment}{//\ leave\ processor\ 0\ for\ main\ thread}}
+\DoxyCodeLine{00362\ \ \ \ \ \ \ \ \ \ \ \ \ DWORD\_PTR\ teamMask\ =\ getProcessorTeamMask(procInfo,\ processorId);}
+\DoxyCodeLine{00363\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (teamMask)}
+\DoxyCodeLine{00364\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00365\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ bind\ each\ thread\ to\ only\ execute\ on\ processors\ of\ it's\ assigned\ team}}
+\DoxyCodeLine{00366\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ -\/\ for\ single-\/socket\ Intel\ x86\ CPUs\ this\ has\ no\ effect\ (only\ a\ single,\ shared\ L3\ cache\ so\ there\ is\ only\ 1\ team)}}
+\DoxyCodeLine{00367\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ -\/\ for\ multi-\/socket\ Intel\ this\ will\ keep\ threads\ from\ migrating\ from\ one\ socket\ to\ another}}
+\DoxyCodeLine{00368\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ -\/\ for\ AMD\ Ryzen\ this\ will\ keep\ threads\ from\ migrating\ from\ one\ CCX\ to\ another}}
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ DWORD\_PTR\ \mbox{\hyperlink{glad_8h_abb269dedb7ad104274cc9f5c0c7285bc}{mask}}\ =\ teamMask\ \&\ dwProcessAffinityMask;}
+\DoxyCodeLine{00370\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{glad_8h_abb269dedb7ad104274cc9f5c0c7285bc}{mask}})}
+\DoxyCodeLine{00371\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ SetThreadAffinityMask(handle,\ \mbox{\hyperlink{glad_8h_abb269dedb7ad104274cc9f5c0c7285bc}{mask}});}
+\DoxyCodeLine{00373\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00375\ \ \ \ \ \ \ \ \ \ \ \ \ SetThreadIdealProcessor(handle,\ processorId);}
+\DoxyCodeLine{00376\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00377\ }
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ threadStatus.m\_taskId\ =\ i;}
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ threadStatus.m\_commandId\ =\ 0;}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ \ \ threadStatus.m\_status\ =\ 0;}
+\DoxyCodeLine{00381\ \ \ \ \ \ \ \ \ threadStatus.m\_threadHandle\ =\ handle;}
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ threadStatus.m\_userThreadFunc\ =\ threadConstructionInfo.m\_userThreadFunc;}
+\DoxyCodeLine{00383\ }
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}started\ \%s\ thread\ \%d\ with\ threadHandle\ \%p\(\backslash\)n"{}},\ threadConstructionInfo.m\_uniqueName,\ i,\ handle);}
+\DoxyCodeLine{00385\ \ \ \ \ \}}
+\DoxyCodeLine{00386\ \}}
+\DoxyCodeLine{00387\ }
+\DoxyCodeLine{00389\ \textcolor{keywordtype}{void}\ btThreadSupportWin32::stopThreads()}
+\DoxyCodeLine{00390\ \{}
+\DoxyCodeLine{00391\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ m\_activeThreadStatus.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ i++)}
+\DoxyCodeLine{00392\ \ \ \ \ \{}
+\DoxyCodeLine{00393\ \ \ \ \ \ \ \ \ btThreadStatus\&\ threadStatus\ =\ m\_activeThreadStatus[i];}
+\DoxyCodeLine{00394\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (threadStatus.m\_status\ >\ 0)}
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ \ \ \ \ WaitForSingleObject(threadStatus.m\_eventCompleteHandle,\ INFINITE);}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00398\ }
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ threadStatus.m\_userPtr\ =\ \mbox{\hyperlink{_free_image_8h_a070d2ce7b6bb7e5c05602aa8c308d0c4}{NULL}};}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ SetEvent(threadStatus.m\_eventStartHandle);}
+\DoxyCodeLine{00401\ \ \ \ \ \ \ \ \ WaitForSingleObject(threadStatus.m\_eventCompleteHandle,\ INFINITE);}
+\DoxyCodeLine{00402\ }
+\DoxyCodeLine{00403\ \ \ \ \ \ \ \ \ CloseHandle(threadStatus.m\_eventCompleteHandle);}
+\DoxyCodeLine{00404\ \ \ \ \ \ \ \ \ CloseHandle(threadStatus.m\_eventStartHandle);}
+\DoxyCodeLine{00405\ \ \ \ \ \ \ \ \ CloseHandle(threadStatus.m\_threadHandle);}
+\DoxyCodeLine{00406\ \ \ \ \ \}}
+\DoxyCodeLine{00407\ }
+\DoxyCodeLine{00408\ \ \ \ \ m\_activeThreadStatus.\mbox{\hyperlink{classbt_aligned_object_array_a12123db01dda7758f0df5e3bba10cc0a}{clear}}();}
+\DoxyCodeLine{00409\ \ \ \ \ m\_completeHandles.\mbox{\hyperlink{classbt_aligned_object_array_a12123db01dda7758f0df5e3bba10cc0a}{clear}}();}
+\DoxyCodeLine{00410\ \}}
+\DoxyCodeLine{00411\ }
+\DoxyCodeLine{00412\ \textcolor{keyword}{class\ }btWin32CriticalSection\ :\ \textcolor{keyword}{public}\ btCriticalSection}
+\DoxyCodeLine{00413\ \{}
+\DoxyCodeLine{00414\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00415\ \ \ \ \ CRITICAL\_SECTION\ mCriticalSection;}
+\DoxyCodeLine{00416\ }
+\DoxyCodeLine{00417\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00418\ \ \ \ \ btWin32CriticalSection()}
+\DoxyCodeLine{00419\ \ \ \ \ \{}
+\DoxyCodeLine{00420\ \ \ \ \ \ \ \ \ InitializeCriticalSection(\&mCriticalSection);}
+\DoxyCodeLine{00421\ \ \ \ \ \}}
+\DoxyCodeLine{00422\ }
+\DoxyCodeLine{00423\ \ \ \ \ \string~btWin32CriticalSection()}
+\DoxyCodeLine{00424\ \ \ \ \ \{}
+\DoxyCodeLine{00425\ \ \ \ \ \ \ \ \ DeleteCriticalSection(\&mCriticalSection);}
+\DoxyCodeLine{00426\ \ \ \ \ \}}
+\DoxyCodeLine{00427\ }
+\DoxyCodeLine{00428\ \ \ \ \ \textcolor{keywordtype}{void}\ lock()}
+\DoxyCodeLine{00429\ \ \ \ \ \{}
+\DoxyCodeLine{00430\ \ \ \ \ \ \ \ \ EnterCriticalSection(\&mCriticalSection);}
+\DoxyCodeLine{00431\ \ \ \ \ \}}
+\DoxyCodeLine{00432\ }
+\DoxyCodeLine{00433\ \ \ \ \ \textcolor{keywordtype}{void}\ unlock()}
+\DoxyCodeLine{00434\ \ \ \ \ \{}
+\DoxyCodeLine{00435\ \ \ \ \ \ \ \ \ LeaveCriticalSection(\&mCriticalSection);}
+\DoxyCodeLine{00436\ \ \ \ \ \}}
+\DoxyCodeLine{00437\ \};}
+\DoxyCodeLine{00438\ }
+\DoxyCodeLine{00439\ btCriticalSection*\ btThreadSupportWin32::createCriticalSection()}
+\DoxyCodeLine{00440\ \{}
+\DoxyCodeLine{00441\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*\ mem\ =\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{char}*)\mbox{\hyperlink{bt_aligned_allocator_8h_a5798ef3418d84a1761ef917ef6720db7}{btAlignedAlloc}}(\textcolor{keyword}{sizeof}(btWin32CriticalSection),\ 16);}
+\DoxyCodeLine{00442\ \ \ \ \ btWin32CriticalSection*\ cs\ =\ \textcolor{keyword}{new}\ (mem)\ btWin32CriticalSection();}
+\DoxyCodeLine{00443\ \ \ \ \ \textcolor{keywordflow}{return}\ cs;}
+\DoxyCodeLine{00444\ \}}
+\DoxyCodeLine{00445\ }
+\DoxyCodeLine{00446\ \textcolor{keywordtype}{void}\ btThreadSupportWin32::deleteCriticalSection(btCriticalSection*\ criticalSection)}
+\DoxyCodeLine{00447\ \{}
+\DoxyCodeLine{00448\ \ \ \ \ criticalSection-\/>\mbox{\hyperlink{classbt_critical_section_a24bcd6fa779d69a1f526342b42bb3db9}{\string~btCriticalSection}}();}
+\DoxyCodeLine{00449\ \ \ \ \ \mbox{\hyperlink{bt_aligned_allocator_8h_a053f25687d0cd7a29571c8669cf9bcd4}{btAlignedFree}}(criticalSection);}
+\DoxyCodeLine{00450\ \}}
+\DoxyCodeLine{00451\ }
+\DoxyCodeLine{00452\ btThreadSupportInterface*\ \mbox{\hyperlink{classbt_thread_support_interface_a371ad443ef21e4ccf0278b2326961898}{btThreadSupportInterface::create}}(\textcolor{keyword}{const}\ ConstructionInfo\&\ info)}
+\DoxyCodeLine{00453\ \{}
+\DoxyCodeLine{00454\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{new}\ btThreadSupportWin32(info);}
+\DoxyCodeLine{00455\ \}}
+\DoxyCodeLine{00456\ }
+\DoxyCodeLine{00457\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//defined(\_WIN32)\ \&\&\ BT\_THREADSAFE}}
+
+\end{DoxyCode}

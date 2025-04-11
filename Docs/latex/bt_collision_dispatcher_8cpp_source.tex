@@ -1,0 +1,293 @@
+\doxysection{bt\+Collision\+Dispatcher.\+cpp}
+\hypertarget{bt_collision_dispatcher_8cpp_source}{}\label{bt_collision_dispatcher_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/CollisionDispatch/btCollisionDispatcher.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/CollisionDispatch/btCollisionDispatcher.cpp}}
+\mbox{\hyperlink{bt_collision_dispatcher_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2006\ Erwin\ Coumans\ \ https://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_dispatcher_8h}{btCollisionDispatcher.h}}"{}}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_quickprof_8h}{LinearMath/btQuickprof.h}}"{}}}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_algorithm_8h}{BulletCollision/BroadphaseCollision/btCollisionAlgorithm.h}}"{}}}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_shape_8h}{BulletCollision/CollisionShapes/btCollisionShape.h}}"{}}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_object_8h}{BulletCollision/CollisionDispatch/btCollisionObject.h}}"{}}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_overlapping_pair_cache_8h}{BulletCollision/BroadphaseCollision/btOverlappingPairCache.h}}"{}}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_pool_allocator_8h}{LinearMath/btPoolAllocator.h}}"{}}}
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_configuration_8h}{BulletCollision/CollisionDispatch/btCollisionConfiguration.h}}"{}}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_object_wrapper_8h}{BulletCollision/CollisionDispatch/btCollisionObjectWrapper.h}}"{}}}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG}}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \mbox{\hyperlink{classbt_collision_dispatcher_a4d71913fba02e45b4cfcba7178930d25}{btCollisionDispatcher::btCollisionDispatcher}}(\mbox{\hyperlink{classbt_collision_configuration}{btCollisionConfiguration}}*\ collisionConfiguration)\ :\ \mbox{\hyperlink{classbt_collision_dispatcher_a114a4b35cf3ee6a07cae74af4f801055}{m\_dispatcherFlags}}(\mbox{\hyperlink{classbt_collision_dispatcher_a4d71913fba02e45b4cfcba7178930d25}{btCollisionDispatcher}}::\mbox{\hyperlink{classbt_collision_dispatcher_a9aa413a2145825d052e73ae1d22aee93a710b108860cd70d0380185d83da84a9d}{CD\_USE\_RELATIVE\_CONTACT\_BREAKING\_THRESHOLD}}),}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_a2185ce7f17cbed62f6157ce09114fc46}{m\_collisionConfiguration}}(collisionConfiguration)}
+\DoxyCodeLine{00034\ \{}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_a53ec6fa98dde94222f4916bd980981e0}{setNearCallback}}(\mbox{\hyperlink{classbt_collision_dispatcher_a70f1edf7c1f94778d350e6d19b66fa94}{defaultNearCallback}});}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00039\ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_a852e09f7ff0be8c0a86e3659877b5985}{m\_collisionAlgorithmPoolAllocator}}\ =\ collisionConfiguration-\/>\mbox{\hyperlink{classbt_collision_configuration_a78580713b218cb263c455651048d39f5}{getCollisionAlgorithmPool}}();}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_abe281cf4ea5a5509d2b95be42ff8b04e}{m\_persistentManifoldPoolAllocator}}\ =\ collisionConfiguration-\/>\mbox{\hyperlink{classbt_collision_configuration_a2ccccbcb638a8b10e62e5eef6618d777}{getPersistentManifoldPool}}();}
+\DoxyCodeLine{00042\ }
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5eae8a5718ff917caa54f8c6ce8914c4a55}{MAX\_BROADPHASE\_COLLISION\_TYPES}};\ i++)}
+\DoxyCodeLine{00044\ \ \ \ \ \{}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ j\ =\ 0;\ j\ <\ \mbox{\hyperlink{bt_broadphase_proxy_8h_a629e290d766e52966199b687a537ba5eae8a5718ff917caa54f8c6ce8914c4a55}{MAX\_BROADPHASE\_COLLISION\_TYPES}};\ j++)}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_a6db033fa5ca8d2373fc686c46580aae0}{m\_doubleDispatchContactPoints}}[i][j]\ =\ \mbox{\hyperlink{classbt_collision_dispatcher_a2185ce7f17cbed62f6157ce09114fc46}{m\_collisionConfiguration}}-\/>getCollisionAlgorithmCreateFunc(i,\ j);}
+\DoxyCodeLine{00048\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{classbt_collision_dispatcher_a6db033fa5ca8d2373fc686c46580aae0}{m\_doubleDispatchContactPoints}}[i][j]);}
+\DoxyCodeLine{00049\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_a01e0409e6fb02fc2605a4dc754bf37b9}{m\_doubleDispatchClosestPoints}}[i][j]\ =\ \mbox{\hyperlink{classbt_collision_dispatcher_a2185ce7f17cbed62f6157ce09114fc46}{m\_collisionConfiguration}}-\/>getClosestPointsAlgorithmCreateFunc(i,\ j);}
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00051\ \ \ \ \ \}}
+\DoxyCodeLine{00052\ \}}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00054\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_collision_dispatcher_ac754ecadc2116cdf75d63c207937aeac}{btCollisionDispatcher::registerCollisionCreateFunc}}(\textcolor{keywordtype}{int}\ proxyType0,\ \textcolor{keywordtype}{int}\ proxyType1,\ \mbox{\hyperlink{structbt_collision_algorithm_create_func}{btCollisionAlgorithmCreateFunc}}*\ createFunc)}
+\DoxyCodeLine{00055\ \{}
+\DoxyCodeLine{00056\ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_a6db033fa5ca8d2373fc686c46580aae0}{m\_doubleDispatchContactPoints}}[proxyType0][proxyType1]\ =\ createFunc;}
+\DoxyCodeLine{00057\ \}}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_collision_dispatcher_a1c9b66099aa8a2747053f9c8dff9e2f8}{btCollisionDispatcher::registerClosestPointsCreateFunc}}(\textcolor{keywordtype}{int}\ proxyType0,\ \textcolor{keywordtype}{int}\ proxyType1,\ \mbox{\hyperlink{structbt_collision_algorithm_create_func}{btCollisionAlgorithmCreateFunc}}*\ createFunc)}
+\DoxyCodeLine{00060\ \{}
+\DoxyCodeLine{00061\ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_a01e0409e6fb02fc2605a4dc754bf37b9}{m\_doubleDispatchClosestPoints}}[proxyType0][proxyType1]\ =\ createFunc;}
+\DoxyCodeLine{00062\ \}}
+\DoxyCodeLine{00063\ }
+\DoxyCodeLine{00064\ \mbox{\hyperlink{classbt_collision_dispatcher_a63c0289e24aa6bf9e8f11f65aa7f8f2d}{btCollisionDispatcher::\string~btCollisionDispatcher}}()}
+\DoxyCodeLine{00065\ \{}
+\DoxyCodeLine{00066\ \}}
+\DoxyCodeLine{00067\ }
+\DoxyCodeLine{00068\ \mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}*\ \mbox{\hyperlink{classbt_collision_dispatcher_a6072f704bd135be21afb3750033b9325}{btCollisionDispatcher::getNewManifold}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ body0,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ body1)}
+\DoxyCodeLine{00069\ \{}
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{comment}{//btAssert(gNumManifold\ <\ 65535);}}
+\DoxyCodeLine{00071\ }
+\DoxyCodeLine{00072\ \ \ \ \ \textcolor{comment}{//optional\ relative\ contact\ breaking\ threshold,\ turned\ on\ by\ default\ (use\ setDispatcherFlags\ to\ switch\ off\ feature\ for\ improved\ performance)}}
+\DoxyCodeLine{00073\ }
+\DoxyCodeLine{00074\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ contactBreakingThreshold\ =\ (\mbox{\hyperlink{classbt_collision_dispatcher_a114a4b35cf3ee6a07cae74af4f801055}{m\_dispatcherFlags}}\ \&\ \mbox{\hyperlink{classbt_collision_dispatcher_a9aa413a2145825d052e73ae1d22aee93a710b108860cd70d0380185d83da84a9d}{btCollisionDispatcher::CD\_USE\_RELATIVE\_CONTACT\_BREAKING\_THRESHOLD}})\ ?\ \mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin}}(body0-\/>getCollisionShape()-\/>getContactBreakingThreshold(\mbox{\hyperlink{b3_contact_cache_8h_a84eb28b9c3e6328f796088fe1f59bb9a}{gContactBreakingThreshold}}),\ body1-\/>getCollisionShape()-\/>getContactBreakingThreshold(\mbox{\hyperlink{b3_contact_cache_8h_a84eb28b9c3e6328f796088fe1f59bb9a}{gContactBreakingThreshold}}))}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ :\ \mbox{\hyperlink{b3_contact_cache_8h_a84eb28b9c3e6328f796088fe1f59bb9a}{gContactBreakingThreshold}};}
+\DoxyCodeLine{00076\ }
+\DoxyCodeLine{00077\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ contactProcessingThreshold\ =\ \mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin}}(body0-\/>getContactProcessingThreshold(),\ body1-\/>getContactProcessingThreshold());}
+\DoxyCodeLine{00078\ }
+\DoxyCodeLine{00079\ \ \ \ \ \textcolor{keywordtype}{void}*\ mem\ =\ \mbox{\hyperlink{classbt_collision_dispatcher_abe281cf4ea5a5509d2b95be42ff8b04e}{m\_persistentManifoldPoolAllocator}}-\/>allocate(\textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}));}
+\DoxyCodeLine{00080\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{module___n_u_l_l}{NULL}}\ ==\ mem)}
+\DoxyCodeLine{00081\ \ \ \ \ \{}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \ \ \textcolor{comment}{//we\ got\ a\ pool\ memory\ overflow,\ by\ default\ we\ fallback\ to\ dynamically\ allocate\ memory.\ If\ we\ require\ a\ contiguous\ contact\ pool\ then\ assert.}}
+\DoxyCodeLine{00083\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((\mbox{\hyperlink{classbt_collision_dispatcher_a114a4b35cf3ee6a07cae74af4f801055}{m\_dispatcherFlags}}\ \&\ \mbox{\hyperlink{classbt_collision_dispatcher_a9aa413a2145825d052e73ae1d22aee93a736c4b2c8d84f90605a4ded3650e041d}{CD\_DISABLE\_CONTACTPOOL\_DYNAMIC\_ALLOCATION}})\ ==\ 0)}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ \ \ \ \ mem\ =\ \mbox{\hyperlink{bt_aligned_allocator_8h_a5798ef3418d84a1761ef917ef6720db7}{btAlignedAlloc}}(\textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}),\ 16);}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(0);}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//make\ sure\ to\ increase\ the\ m\_defaultMaxPersistentManifoldPoolSize\ in\ the\ btDefaultCollisionConstructionInfo/btDefaultCollisionConfiguration}}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00093\ \ \ \ \ \}}
+\DoxyCodeLine{00094\ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}*\ manifold\ =\ \textcolor{keyword}{new}\ (mem)\ \mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}(body0,\ body1,\ 0,\ contactBreakingThreshold,\ contactProcessingThreshold);}
+\DoxyCodeLine{00095\ \ \ \ \ manifold-\/>m\_index1a\ =\ \mbox{\hyperlink{classbt_collision_dispatcher_ab852dc0e25750f72b2a9a5d812ae6789}{m\_manifoldsPtr}}.size();}
+\DoxyCodeLine{00096\ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_ab852dc0e25750f72b2a9a5d812ae6789}{m\_manifoldsPtr}}.push\_back(manifold);}
+\DoxyCodeLine{00097\ }
+\DoxyCodeLine{00098\ \ \ \ \ \textcolor{keywordflow}{return}\ manifold;}
+\DoxyCodeLine{00099\ \}}
+\DoxyCodeLine{00100\ }
+\DoxyCodeLine{00101\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_collision_dispatcher_a8b8823eec6581403c1ba8de0bae2615a}{btCollisionDispatcher::clearManifold}}(\mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}*\ manifold)}
+\DoxyCodeLine{00102\ \{}
+\DoxyCodeLine{00103\ \ \ \ \ manifold-\/>clearManifold();}
+\DoxyCodeLine{00104\ \}}
+\DoxyCodeLine{00105\ }
+\DoxyCodeLine{00106\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_collision_dispatcher_a1b5d70402440fe3f765cac14adad6b22}{btCollisionDispatcher::releaseManifold}}(\mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}*\ manifold)}
+\DoxyCodeLine{00107\ \{}
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{comment}{//printf("{}releaseManifold:\ gNumManifold\ \%d\(\backslash\)n"{},gNumManifold);}}
+\DoxyCodeLine{00109\ \ \ \ \ \mbox{\hyperlink{bt_persistent_manifold_8h_a94295ddfbf3db1d20b854a6d93b6ff38}{clearManifold}}(manifold);}
+\DoxyCodeLine{00110\ }
+\DoxyCodeLine{00111\ \ \ \ \ \textcolor{keywordtype}{int}\ findIndex\ =\ manifold-\/>m\_index1a;}
+\DoxyCodeLine{00112\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(findIndex\ <\ \mbox{\hyperlink{classbt_collision_dispatcher_ab852dc0e25750f72b2a9a5d812ae6789}{m\_manifoldsPtr}}.size());}
+\DoxyCodeLine{00113\ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_ab852dc0e25750f72b2a9a5d812ae6789}{m\_manifoldsPtr}}.swap(findIndex,\ \mbox{\hyperlink{classbt_collision_dispatcher_ab852dc0e25750f72b2a9a5d812ae6789}{m\_manifoldsPtr}}.size()\ -\/\ 1);}
+\DoxyCodeLine{00114\ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_ab852dc0e25750f72b2a9a5d812ae6789}{m\_manifoldsPtr}}[findIndex]-\/>m\_index1a\ =\ findIndex;}
+\DoxyCodeLine{00115\ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_ab852dc0e25750f72b2a9a5d812ae6789}{m\_manifoldsPtr}}.pop\_back();}
+\DoxyCodeLine{00116\ }
+\DoxyCodeLine{00117\ \ \ \ \ manifold-\/>\string~btPersistentManifold();}
+\DoxyCodeLine{00118\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_collision_dispatcher_abe281cf4ea5a5509d2b95be42ff8b04e}{m\_persistentManifoldPoolAllocator}}-\/>validPtr(manifold))}
+\DoxyCodeLine{00119\ \ \ \ \ \{}
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_abe281cf4ea5a5509d2b95be42ff8b04e}{m\_persistentManifoldPoolAllocator}}-\/>freeMemory(manifold);}
+\DoxyCodeLine{00121\ \ \ \ \ \}}
+\DoxyCodeLine{00122\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00123\ \ \ \ \ \{}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_aligned_allocator_8h_a053f25687d0cd7a29571c8669cf9bcd4}{btAlignedFree}}(manifold);}
+\DoxyCodeLine{00125\ \ \ \ \ \}}
+\DoxyCodeLine{00126\ \}}
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00128\ \mbox{\hyperlink{classbt_collision_algorithm}{btCollisionAlgorithm}}*\ \mbox{\hyperlink{classbt_collision_dispatcher_a9a088008ee265797fae447c455bc4142}{btCollisionDispatcher::findAlgorithm}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ body0Wrap,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ body1Wrap,\ \mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}*\ sharedManifold,\ \mbox{\hyperlink{bt_dispatcher_8h_acff5e64df985d7b84e571b389529fa21}{ebtDispatcherQueryType}}\ algoType)}
+\DoxyCodeLine{00129\ \{}
+\DoxyCodeLine{00130\ \ \ \ \ \mbox{\hyperlink{structbt_collision_algorithm_construction_info}{btCollisionAlgorithmConstructionInfo}}\ ci;}
+\DoxyCodeLine{00131\ }
+\DoxyCodeLine{00132\ \ \ \ \ ci.\mbox{\hyperlink{structbt_collision_algorithm_construction_info_a5fa87b86f35c7d0eb047a93f8edaf8a1}{m\_dispatcher1}}\ =\ \textcolor{keyword}{this};}
+\DoxyCodeLine{00133\ \ \ \ \ ci.\mbox{\hyperlink{structbt_collision_algorithm_construction_info_a5069a22af9c06d350a660211321b1475}{m\_manifold}}\ =\ sharedManifold;}
+\DoxyCodeLine{00134\ \ \ \ \ \mbox{\hyperlink{classbt_collision_algorithm}{btCollisionAlgorithm}}*\ algo\ =\ 0;}
+\DoxyCodeLine{00135\ \ \ \ \ \textcolor{keywordflow}{if}\ (algoType\ ==\ \mbox{\hyperlink{bt_dispatcher_8h_acff5e64df985d7b84e571b389529fa21a1ac9bad157fdd24eb4d122aa219741ef}{BT\_CONTACT\_POINT\_ALGORITHMS}})}
+\DoxyCodeLine{00136\ \ \ \ \ \{}
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \ \ algo\ =\ \mbox{\hyperlink{classbt_collision_dispatcher_a6db033fa5ca8d2373fc686c46580aae0}{m\_doubleDispatchContactPoints}}[body0Wrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a4d0eab4572788c8627d8badff7312a67}{getCollisionShape}}()-\/>getShapeType()][body1Wrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a4d0eab4572788c8627d8badff7312a67}{getCollisionShape}}()-\/>getShapeType()]-\/>CreateCollisionAlgorithm(ci,\ body0Wrap,\ body1Wrap);}
+\DoxyCodeLine{00138\ \ \ \ \ \}}
+\DoxyCodeLine{00139\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00140\ \ \ \ \ \{}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ algo\ =\ \mbox{\hyperlink{classbt_collision_dispatcher_a01e0409e6fb02fc2605a4dc754bf37b9}{m\_doubleDispatchClosestPoints}}[body0Wrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a4d0eab4572788c8627d8badff7312a67}{getCollisionShape}}()-\/>getShapeType()][body1Wrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a4d0eab4572788c8627d8badff7312a67}{getCollisionShape}}()-\/>getShapeType()]-\/>CreateCollisionAlgorithm(ci,\ body0Wrap,\ body1Wrap);}
+\DoxyCodeLine{00142\ \ \ \ \ \}}
+\DoxyCodeLine{00143\ }
+\DoxyCodeLine{00144\ \ \ \ \ \textcolor{keywordflow}{return}\ algo;}
+\DoxyCodeLine{00145\ \}}
+\DoxyCodeLine{00146\ }
+\DoxyCodeLine{00147\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_collision_dispatcher_a99cc46cf534f493e6f91b2a1e2aeb0bb}{btCollisionDispatcher::needsResponse}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ body0,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ body1)}
+\DoxyCodeLine{00148\ \{}
+\DoxyCodeLine{00149\ \ \ \ \ \textcolor{comment}{//here\ you\ can\ do\ filtering}}
+\DoxyCodeLine{00150\ \ \ \ \ \textcolor{keywordtype}{bool}\ hasResponse\ =}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ (body0-\/>hasContactResponse()\ \&\&\ body1-\/>hasContactResponse());}
+\DoxyCodeLine{00152\ \ \ \ \ \textcolor{comment}{//no\ response\ between\ two\ static/kinematic\ bodies:}}
+\DoxyCodeLine{00153\ \ \ \ \ hasResponse\ =\ hasResponse\ \&\&}
+\DoxyCodeLine{00154\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ((!body0-\/>isStaticOrKinematicObject())\ ||\ (!body1-\/>isStaticOrKinematicObject()));}
+\DoxyCodeLine{00155\ \ \ \ \ \textcolor{keywordflow}{return}\ hasResponse;}
+\DoxyCodeLine{00156\ \}}
+\DoxyCodeLine{00157\ }
+\DoxyCodeLine{00158\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_collision_dispatcher_a3287aa0446d7fbf56623fa53c87fd586}{btCollisionDispatcher::needsCollision}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ body0,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ body1)}
+\DoxyCodeLine{00159\ \{}
+\DoxyCodeLine{00160\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(body0);}
+\DoxyCodeLine{00161\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(body1);}
+\DoxyCodeLine{00162\ }
+\DoxyCodeLine{00163\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_collision_dispatcher_a3287aa0446d7fbf56623fa53c87fd586}{needsCollision}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00164\ }
+\DoxyCodeLine{00165\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG}}
+\DoxyCodeLine{00166\ \ \ \ \ \textcolor{keywordflow}{if}\ (!(\mbox{\hyperlink{classbt_collision_dispatcher_a114a4b35cf3ee6a07cae74af4f801055}{m\_dispatcherFlags}}\ \&\ \mbox{\hyperlink{classbt_collision_dispatcher_a9aa413a2145825d052e73ae1d22aee93a20ef5d5c1f72338777fa41be7acef49f}{btCollisionDispatcher::CD\_STATIC\_STATIC\_REPORTED}}))}
+\DoxyCodeLine{00167\ \ \ \ \ \{}
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ \textcolor{comment}{//broadphase\ filtering\ already\ deals\ with\ this}}
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (body0-\/>isStaticOrKinematicObject()\ \&\&\ body1-\/>isStaticOrKinematicObject())}
+\DoxyCodeLine{00170\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00171\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_a114a4b35cf3ee6a07cae74af4f801055}{m\_dispatcherFlags}}\ |=\ \mbox{\hyperlink{classbt_collision_dispatcher_a9aa413a2145825d052e73ae1d22aee93a20ef5d5c1f72338777fa41be7acef49f}{btCollisionDispatcher::CD\_STATIC\_STATIC\_REPORTED}};}
+\DoxyCodeLine{00172\ \ \ \ \ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}warning\ btCollisionDispatcher::needsCollision:\ static-\/static\ collision!\(\backslash\)n"{}});}
+\DoxyCodeLine{00173\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00174\ \ \ \ \ \}}
+\DoxyCodeLine{00175\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_DEBUG}}
+\DoxyCodeLine{00176\ }
+\DoxyCodeLine{00177\ \ \ \ \ \textcolor{keywordflow}{if}\ ((!body0-\/>isActive())\ \&\&\ (!body1-\/>isActive()))}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_a3287aa0446d7fbf56623fa53c87fd586}{needsCollision}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00179\ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ ((!body0-\/>checkCollideWith(body1))\ ||\ (!body1-\/>checkCollideWith(body0)))}
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_a3287aa0446d7fbf56623fa53c87fd586}{needsCollision}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00181\ }
+\DoxyCodeLine{00182\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{classbt_collision_dispatcher_a3287aa0446d7fbf56623fa53c87fd586}{needsCollision}};}
+\DoxyCodeLine{00183\ \}}
+\DoxyCodeLine{00184\ }
+\DoxyCodeLine{00187\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_collision_pair_callback_ac7ffa05c87dac7a222237382814a737f}{btCollisionPairCallback}}\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{structbt_overlap_callback}{btOverlapCallback}}}
+\DoxyCodeLine{00188\ \{}
+\DoxyCodeLine{00189\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_dispatcher_info}{btDispatcherInfo}}\&\ m\_dispatchInfo;}
+\DoxyCodeLine{00190\ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher}{btCollisionDispatcher}}*\ m\_dispatcher;}
+\DoxyCodeLine{00191\ }
+\DoxyCodeLine{00192\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00193\ \ \ \ \ \mbox{\hyperlink{classbt_collision_pair_callback_ac7ffa05c87dac7a222237382814a737f}{btCollisionPairCallback}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_dispatcher_info}{btDispatcherInfo}}\&\ dispatchInfo,\ \mbox{\hyperlink{classbt_collision_dispatcher}{btCollisionDispatcher}}*\ dispatcher)}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ :\ m\_dispatchInfo(dispatchInfo),}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ \ \ m\_dispatcher(dispatcher)}
+\DoxyCodeLine{00196\ \ \ \ \ \{}
+\DoxyCodeLine{00197\ \ \ \ \ \}}
+\DoxyCodeLine{00198\ }
+\DoxyCodeLine{00199\ \ \ \ \ \textcolor{comment}{/*btCollisionPairCallback\&\ operator=(btCollisionPairCallback\&\ other)}}
+\DoxyCodeLine{00200\ \textcolor{comment}{\ \ \ \ \{}}
+\DoxyCodeLine{00201\ \textcolor{comment}{\ \ \ \ \ \ \ \ m\_dispatchInfo\ =\ other.m\_dispatchInfo;}}
+\DoxyCodeLine{00202\ \textcolor{comment}{\ \ \ \ \ \ \ \ m\_dispatcher\ =\ other.m\_dispatcher;}}
+\DoxyCodeLine{00203\ \textcolor{comment}{\ \ \ \ \ \ \ \ return\ *this;}}
+\DoxyCodeLine{00204\ \textcolor{comment}{\ \ \ \ \}}}
+\DoxyCodeLine{00205\ \textcolor{comment}{\ \ \ \ */}}
+\DoxyCodeLine{00206\ }
+\DoxyCodeLine{00207\ \ \ \ \ \textcolor{keyword}{virtual}\ \mbox{\hyperlink{classbt_collision_pair_callback_aabf1b565b1bc295eac05e2c8b1cd5030}{\string~btCollisionPairCallback}}()\ \{\}}
+\DoxyCodeLine{00208\ }
+\DoxyCodeLine{00209\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_collision_pair_callback_a6a38dbec8b50c4587a8c8be41b705048}{processOverlap}}(\mbox{\hyperlink{bt_broadphase_proxy_8h_a684535efcadf12b3a0e259f663132484}{btBroadphasePair}}\&\ pair)}
+\DoxyCodeLine{00210\ \ \ \ \ \{}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ (*m\_dispatcher-\/>getNearCallback())(pair,\ *m\_dispatcher,\ m\_dispatchInfo);}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00213\ \ \ \ \ \}}
+\DoxyCodeLine{00214\ \};}
+\DoxyCodeLine{00215\ }
+\DoxyCodeLine{00216\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_collision_dispatcher_a7757447fd7c1a79c03adebffb8f1e38d}{btCollisionDispatcher::dispatchAllCollisionPairs}}(\mbox{\hyperlink{classbt_overlapping_pair_cache}{btOverlappingPairCache}}*\ pairCache,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_dispatcher_info}{btDispatcherInfo}}\&\ dispatchInfo,\ \mbox{\hyperlink{classbt_dispatcher}{btDispatcher}}*\ dispatcher)}
+\DoxyCodeLine{00217\ \{}
+\DoxyCodeLine{00218\ \ \ \ \ \textcolor{comment}{//m\_blockedForChanges\ =\ true;}}
+\DoxyCodeLine{00219\ }
+\DoxyCodeLine{00220\ \ \ \ \ \mbox{\hyperlink{classbt_collision_pair_callback}{btCollisionPairCallback}}\ collisionCallback(dispatchInfo,\ \textcolor{keyword}{this});}
+\DoxyCodeLine{00221\ }
+\DoxyCodeLine{00222\ \ \ \ \ \{}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}processAllOverlappingPairs"{}});}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ pairCache-\/>\mbox{\hyperlink{classbt_overlapping_pair_cache_a64d66749a8f8f1bd3bc877d4ac1371f3}{processAllOverlappingPairs}}(\&collisionCallback,\ dispatcher,\ dispatchInfo);}
+\DoxyCodeLine{00225\ \ \ \ \ \}}
+\DoxyCodeLine{00226\ }
+\DoxyCodeLine{00227\ \ \ \ \ \textcolor{comment}{//m\_blockedForChanges\ =\ false;}}
+\DoxyCodeLine{00228\ \}}
+\DoxyCodeLine{00229\ }
+\DoxyCodeLine{00230\ \textcolor{comment}{//by\ default,\ Bullet\ will\ use\ this\ near\ callback}}
+\DoxyCodeLine{00231\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_collision_dispatcher_a70f1edf7c1f94778d350e6d19b66fa94}{btCollisionDispatcher::defaultNearCallback}}(\mbox{\hyperlink{bt_broadphase_proxy_8h_a684535efcadf12b3a0e259f663132484}{btBroadphasePair}}\&\ collisionPair,\ \mbox{\hyperlink{classbt_collision_dispatcher_a4d71913fba02e45b4cfcba7178930d25}{btCollisionDispatcher}}\&\ dispatcher,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_dispatcher_info}{btDispatcherInfo}}\&\ dispatchInfo)}
+\DoxyCodeLine{00232\ \{}
+\DoxyCodeLine{00233\ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ colObj0\ =\ (\mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*)collisionPair.m\_pProxy0-\/>m\_clientObject;}
+\DoxyCodeLine{00234\ \ \ \ \ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ colObj1\ =\ (\mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*)collisionPair.m\_pProxy1-\/>m\_clientObject;}
+\DoxyCodeLine{00235\ }
+\DoxyCodeLine{00236\ \ \ \ \ \textcolor{keywordflow}{if}\ (dispatcher.\mbox{\hyperlink{classbt_collision_dispatcher_a3287aa0446d7fbf56623fa53c87fd586}{needsCollision}}(colObj0,\ colObj1))}
+\DoxyCodeLine{00237\ \ \ \ \ \{}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}\ obj0Wrap(0,\ colObj0-\/>getCollisionShape(),\ colObj0,\ colObj0-\/>getWorldTransform(),\ -\/1,\ -\/1);}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}\ obj1Wrap(0,\ colObj1-\/>getCollisionShape(),\ colObj1,\ colObj1-\/>getWorldTransform(),\ -\/1,\ -\/1);}
+\DoxyCodeLine{00240\ }
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ \textcolor{comment}{//dispatcher\ will\ keep\ algorithms\ persistent\ in\ the\ collision\ pair}}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!collisionPair.m\_algorithm)}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ \ \ \ \ collisionPair.m\_algorithm\ =\ dispatcher.\mbox{\hyperlink{classbt_collision_dispatcher_a9a088008ee265797fae447c455bc4142}{findAlgorithm}}(\&obj0Wrap,\ \&obj1Wrap,\ 0,\ \mbox{\hyperlink{bt_dispatcher_8h_acff5e64df985d7b84e571b389529fa21a1ac9bad157fdd24eb4d122aa219741ef}{BT\_CONTACT\_POINT\_ALGORITHMS}});}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00246\ }
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (collisionPair.m\_algorithm)}
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_manifold_result}{btManifoldResult}}\ contactPointResult(\&obj0Wrap,\ \&obj1Wrap);}
+\DoxyCodeLine{00250\ }
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (dispatchInfo.\mbox{\hyperlink{structbt_dispatcher_info_a01a2979ceca5903291152e12cffd73e1}{m\_dispatchFunc}}\ ==\ \mbox{\hyperlink{structbt_dispatcher_info_a04d1f989a83ef1bb12cf7f4837de8ceaaf9be639183288fa2caf466eb61ebcd96}{btDispatcherInfo::DISPATCH\_DISCRETE}})}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//discrete\ collision\ detection\ query}}
+\DoxyCodeLine{00254\ }
+\DoxyCodeLine{00255\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ collisionPair.m\_algorithm-\/>processCollision(\&obj0Wrap,\ \&obj1Wrap,\ dispatchInfo,\ \&contactPointResult);}
+\DoxyCodeLine{00256\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00258\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00259\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//continuous\ collision\ detection\ query,\ time\ of\ impact\ (toi)}}
+\DoxyCodeLine{00260\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ toi\ =\ collisionPair.m\_algorithm-\/>calculateTimeOfImpact(colObj0,\ colObj1,\ dispatchInfo,\ \&contactPointResult);}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (dispatchInfo.\mbox{\hyperlink{structbt_dispatcher_info_aa4501ea55098cdfd46ed79a59bb5cc0a}{m\_timeOfImpact}}\ >\ toi)}
+\DoxyCodeLine{00262\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ dispatchInfo.\mbox{\hyperlink{structbt_dispatcher_info_aa4501ea55098cdfd46ed79a59bb5cc0a}{m\_timeOfImpact}}\ =\ toi;}
+\DoxyCodeLine{00263\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00264\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00265\ \ \ \ \ \}}
+\DoxyCodeLine{00266\ \}}
+\DoxyCodeLine{00267\ }
+\DoxyCodeLine{00268\ \textcolor{keywordtype}{void}*\ \mbox{\hyperlink{classbt_collision_dispatcher_a9cf562ead8073a0be062fa562e8b9afe}{btCollisionDispatcher::allocateCollisionAlgorithm}}(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}})}
+\DoxyCodeLine{00269\ \{}
+\DoxyCodeLine{00270\ \ \ \ \ \textcolor{keywordtype}{void}*\ mem\ =\ \mbox{\hyperlink{classbt_collision_dispatcher_a852e09f7ff0be8c0a86e3659877b5985}{m\_collisionAlgorithmPoolAllocator}}-\/>allocate(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}});}
+\DoxyCodeLine{00271\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{module___n_u_l_l}{NULL}}\ ==\ mem)}
+\DoxyCodeLine{00272\ \ \ \ \ \{}
+\DoxyCodeLine{00273\ \ \ \ \ \ \ \ \ \textcolor{comment}{//warn\ user\ for\ overflow?}}
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_aligned_allocator_8h_a5798ef3418d84a1761ef917ef6720db7}{btAlignedAlloc}}(\textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{size\_t}\textcolor{keyword}{>}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}),\ 16);}
+\DoxyCodeLine{00275\ \ \ \ \ \}}
+\DoxyCodeLine{00276\ \ \ \ \ \textcolor{keywordflow}{return}\ mem;}
+\DoxyCodeLine{00277\ \}}
+\DoxyCodeLine{00278\ }
+\DoxyCodeLine{00279\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_collision_dispatcher_a61ee555a8eefe668be04f8f4084f8474}{btCollisionDispatcher::freeCollisionAlgorithm}}(\textcolor{keywordtype}{void}*\ ptr)}
+\DoxyCodeLine{00280\ \{}
+\DoxyCodeLine{00281\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_collision_dispatcher_a852e09f7ff0be8c0a86e3659877b5985}{m\_collisionAlgorithmPoolAllocator}}-\/>validPtr(ptr))}
+\DoxyCodeLine{00282\ \ \ \ \ \{}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_dispatcher_a852e09f7ff0be8c0a86e3659877b5985}{m\_collisionAlgorithmPoolAllocator}}-\/>freeMemory(ptr);}
+\DoxyCodeLine{00284\ \ \ \ \ \}}
+\DoxyCodeLine{00285\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00286\ \ \ \ \ \{}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_aligned_allocator_8h_a053f25687d0cd7a29571c8669cf9bcd4}{btAlignedFree}}(ptr);}
+\DoxyCodeLine{00288\ \ \ \ \ \}}
+\DoxyCodeLine{00289\ \}}
+
+\end{DoxyCode}

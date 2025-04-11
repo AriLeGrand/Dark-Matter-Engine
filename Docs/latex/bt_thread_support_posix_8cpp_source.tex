@@ -1,0 +1,345 @@
+\doxysection{bt\+Thread\+Support\+Posix.\+cpp}
+\hypertarget{bt_thread_support_posix_8cpp_source}{}\label{bt_thread_support_posix_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/LinearMath/TaskScheduler/btThreadSupportPosix.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/LinearMath/TaskScheduler/btThreadSupportPosix.cpp}}
+\mbox{\hyperlink{bt_thread_support_posix_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ }
+\DoxyCodeLine{00002\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00004\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2018\ Erwin\ Coumans\ \ http://bulletphysics.com}}
+\DoxyCodeLine{00005\ \textcolor{comment}{}}
+\DoxyCodeLine{00006\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00008\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,}}
+\DoxyCodeLine{00009\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,}}
+\DoxyCodeLine{00010\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00011\ \textcolor{comment}{}}
+\DoxyCodeLine{00012\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00015\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#if\ BT\_THREADSAFE\ \&\&\ !defined(\_WIN32)}}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_scalar_8h}{LinearMath/btScalar.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_aligned_object_array_8h}{LinearMath/btAlignedObjectArray.h}}"{}}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_threads_8h}{LinearMath/btThreads.h}}"{}}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_min_max_8h}{LinearMath/btMinMax.h}}"{}}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_thread_support_interface_8h}{btThreadSupportInterface.h}}"{}}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#include\ <errno.h>}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#include\ <unistd.h>}}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#ifndef\ \_XOPEN\_SOURCE}}
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#define\ \_XOPEN\_SOURCE\ 600\ \ }\textcolor{comment}{//for\ definition\ of\ pthread\_barrier\_t,\ see\ http://pages.cs.wisc.edu/\string~travitch/pthreads\_primer.html}}
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#endif\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }\textcolor{comment}{//\_XOPEN\_SOURCE}}
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#include\ <pthread.h>}}
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#include\ <semaphore.h>}}
+\DoxyCodeLine{00034\ \textcolor{preprocessor}{\#include\ <unistd.h>}\ \ \textcolor{comment}{//for\ sysconf}}
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00042\ \textcolor{preprocessor}{\#if\ \_\_cplusplus\ >=\ 201103L}}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00044\ \textcolor{preprocessor}{\#include\ <thread>}}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00046\ \textcolor{keywordtype}{int}\ btGetNumHardwareThreads()}
+\DoxyCodeLine{00047\ \{}
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(1u,\ \mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin}}(\mbox{\hyperlink{bt_threads_8h_af4a20042975cd43aa629b3bc4591db6e}{BT\_MAX\_THREAD\_COUNT}},\ std::thread::hardware\_concurrency()));}
+\DoxyCodeLine{00049\ \}}
+\DoxyCodeLine{00050\ }
+\DoxyCodeLine{00051\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00053\ \textcolor{keywordtype}{int}\ btGetNumHardwareThreads()}
+\DoxyCodeLine{00054\ \{}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(1,\ \mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin<int>}}(\mbox{\hyperlink{bt_threads_8h_af4a20042975cd43aa629b3bc4591db6e}{BT\_MAX\_THREAD\_COUNT}},\ sysconf(\_SC\_NPROCESSORS\_ONLN)));}
+\DoxyCodeLine{00056\ \}}
+\DoxyCodeLine{00057\ }
+\DoxyCodeLine{00058\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00059\ }
+\DoxyCodeLine{00060\ \textcolor{comment}{//\ btThreadSupportPosix\ helps\ to\ initialize/shutdown\ libspe2,\ start/stop\ SPU\ tasks\ and\ communication}}
+\DoxyCodeLine{00061\ \textcolor{keyword}{class\ }btThreadSupportPosix\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{classbt_thread_support_interface}{btThreadSupportInterface}}}
+\DoxyCodeLine{00062\ \{}
+\DoxyCodeLine{00063\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00064\ \ \ \ \ \textcolor{keyword}{struct\ }btThreadStatus}
+\DoxyCodeLine{00065\ \ \ \ \ \{}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ m\_taskId;}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ m\_commandId;}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ m\_status;}
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ ThreadFunc\ m\_userThreadFunc;}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}*\ m\_userPtr;\ \ \textcolor{comment}{//for\ taskDesc\ etc}}
+\DoxyCodeLine{00072\ }
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ pthread\_t\ thread;}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \textcolor{comment}{//each\ tread\ will\ wait\ until\ this\ signal\ to\ start\ its\ work}}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ sem\_t*\ startSemaphore;}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ btCriticalSection*\ m\_cs;}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ this\ is\ a\ copy\ of\ m\_mainSemaphore,}}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ \textcolor{comment}{//each\ tread\ will\ signal\ once\ it\ is\ finished\ with\ its\ work}}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ sem\_t*\ m\_mainSemaphore;}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ threadUsed;}
+\DoxyCodeLine{00081\ \ \ \ \ \};}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00083\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00084\ \ \ \ \ \textcolor{keyword}{typedef}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{long}\ \mbox{\hyperlink{_free_image_8h_a95df6cdb32afc350ff070f2fe8a54a67}{UINT64}};}
+\DoxyCodeLine{00085\ }
+\DoxyCodeLine{00086\ \ \ \ \ btAlignedObjectArray<btThreadStatus>\ m\_activeThreadStatus;}
+\DoxyCodeLine{00087\ \ \ \ \ \textcolor{comment}{//\ m\_mainSemaphoresemaphore\ will\ signal,\ if\ and\ how\ many\ threads\ are\ finished\ with\ their\ work}}
+\DoxyCodeLine{00088\ \ \ \ \ sem\_t*\ m\_mainSemaphore;}
+\DoxyCodeLine{00089\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_numThreads;}
+\DoxyCodeLine{00090\ \ \ \ \ \mbox{\hyperlink{_free_image_8h_a95df6cdb32afc350ff070f2fe8a54a67}{UINT64}}\ m\_startedThreadsMask;}
+\DoxyCodeLine{00091\ \ \ \ \ \textcolor{keywordtype}{void}\ startThreads(\textcolor{keyword}{const}\ ConstructionInfo\&\ threadInfo);}
+\DoxyCodeLine{00092\ \ \ \ \ \textcolor{keywordtype}{void}\ stopThreads();}
+\DoxyCodeLine{00093\ \ \ \ \ \textcolor{keywordtype}{int}\ waitForResponse();}
+\DoxyCodeLine{00094\ \ \ \ \ btCriticalSection*\ m\_cs;}
+\DoxyCodeLine{00095\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00096\ \ \ \ \ btThreadSupportPosix(\textcolor{keyword}{const}\ ConstructionInfo\&\ threadConstructionInfo);}
+\DoxyCodeLine{00097\ \ \ \ \ \textcolor{keyword}{virtual}\ \string~btThreadSupportPosix();}
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_thread_support_interface_a92ea68bbbd51aba166f0b31d750507ab}{getNumWorkerThreads}}()\ const\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}\ \{\ \textcolor{keywordflow}{return}\ m\_numThreads;\ \}}
+\DoxyCodeLine{00100\ \ \ \ \ \textcolor{comment}{//\ TODO:\ return\ the\ number\ of\ logical\ processors\ sharing\ the\ first\ L3\ cache}}
+\DoxyCodeLine{00101\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_thread_support_interface_a09ee3d08d6a87bce4f59c85b615f8442}{getCacheFriendlyNumThreads}}()\ const\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}\ \{\ \textcolor{keywordflow}{return}\ m\_numThreads\ +\ 1;\ \}}
+\DoxyCodeLine{00102\ \ \ \ \ \textcolor{comment}{//\ TODO:\ detect\ if\ CPU\ has\ hyperthreading\ enabled}}
+\DoxyCodeLine{00103\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_thread_support_interface_a0cba95f72f530a01f38de02308068376}{getLogicalToPhysicalCoreRatio}}()\ const\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}\ \{\ \textcolor{keywordflow}{return}\ 1;\ \}}
+\DoxyCodeLine{00104\ }
+\DoxyCodeLine{00105\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_thread_support_interface_a4c2659fd76b60adba85ba702bd96aba0}{runTask}}(\textcolor{keywordtype}{int}\ threadIndex,\ \textcolor{keywordtype}{void}*\ userData)\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}};}
+\DoxyCodeLine{00106\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_thread_support_interface_a0cbb3a131f1cef397ec100f83743e102}{waitForAllTasks}}()\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}};}
+\DoxyCodeLine{00107\ }
+\DoxyCodeLine{00108\ \ \ \ \ virtual\ btCriticalSection*\ createCriticalSection()\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}};}
+\DoxyCodeLine{00109\ \ \ \ \ virtual\ \textcolor{keywordtype}{void}\ deleteCriticalSection(btCriticalSection*\ criticalSection)\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}};}
+\DoxyCodeLine{00110\ \};}
+\DoxyCodeLine{00111\ }
+\DoxyCodeLine{00112\ \textcolor{preprocessor}{\#define\ checkPThreadFunction(returnValue)\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \(\backslash\)}}
+\DoxyCodeLine{00113\ \textcolor{preprocessor}{\ \ \ \ if\ (0\ !=\ returnValue)\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \(\backslash\)}}
+\DoxyCodeLine{00114\ \textcolor{preprocessor}{\ \ \ \ \{\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \(\backslash\)}}
+\DoxyCodeLine{00115\ \textcolor{preprocessor}{\ \ \ \ \ \ \ \ printf("{}PThread\ problem\ at\ line\ \%i\ in\ file\ \%s:\ \%i\ \%d\(\backslash\)n"{},\ \_\_LINE\_\_,\ \_\_FILE\_\_,\ returnValue,\ errno);\ \(\backslash\)}}
+\DoxyCodeLine{00116\ \textcolor{preprocessor}{\ \ \ \ \}}}
+\DoxyCodeLine{00117\ }
+\DoxyCodeLine{00118\ \textcolor{comment}{//\ The\ number\ of\ threads\ should\ be\ equal\ to\ the\ number\ of\ available\ cores}}
+\DoxyCodeLine{00119\ \textcolor{comment}{//\ Todo:\ each\ worker\ should\ be\ linked\ to\ a\ single\ core,\ using\ SetThreadIdealProcessor.}}
+\DoxyCodeLine{00120\ }
+\DoxyCodeLine{00121\ btThreadSupportPosix::btThreadSupportPosix(\textcolor{keyword}{const}\ ConstructionInfo\&\ threadConstructionInfo)}
+\DoxyCodeLine{00122\ \{}
+\DoxyCodeLine{00123\ \ \ \ \ m\_cs\ =\ \mbox{\hyperlink{classbt_thread_support_interface_aea5380cb540b61ce0ad2da50fa9e63da}{createCriticalSection}}();}
+\DoxyCodeLine{00124\ \ \ \ \ startThreads(threadConstructionInfo);}
+\DoxyCodeLine{00125\ \}}
+\DoxyCodeLine{00126\ }
+\DoxyCodeLine{00127\ \textcolor{comment}{//\ cleanup/shutdown\ Libspe2}}
+\DoxyCodeLine{00128\ btThreadSupportPosix::\string~btThreadSupportPosix()}
+\DoxyCodeLine{00129\ \{}
+\DoxyCodeLine{00130\ \ \ \ \ stopThreads();}
+\DoxyCodeLine{00131\ \ \ \ \ \mbox{\hyperlink{classbt_thread_support_interface_abfacf16e211a97d4f52a14330133e780}{deleteCriticalSection}}(m\_cs);}
+\DoxyCodeLine{00132\ \ \ \ \ m\_cs=0;}
+\DoxyCodeLine{00133\ \}}
+\DoxyCodeLine{00134\ }
+\DoxyCodeLine{00135\ \textcolor{preprocessor}{\#if\ (defined(\_\_APPLE\_\_))}}
+\DoxyCodeLine{00136\ \textcolor{preprocessor}{\#define\ NAMED\_SEMAPHORES}}
+\DoxyCodeLine{00137\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00138\ }
+\DoxyCodeLine{00139\ \textcolor{keyword}{static}\ sem\_t*\ createSem(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ baseName)}
+\DoxyCodeLine{00140\ \{}
+\DoxyCodeLine{00141\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{int}\ semCount\ =\ 0;}
+\DoxyCodeLine{00142\ \textcolor{preprocessor}{\#ifdef\ NAMED\_SEMAPHORES}}
+\DoxyCodeLine{00144\ \ \ \ \ \textcolor{keywordtype}{char}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}}[32];}
+\DoxyCodeLine{00145\ \ \ \ \ snprintf(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}},\ 32,\ \textcolor{stringliteral}{"{}/\%8.s-\/\%4.d-\/\%4.4d"{}},\ baseName,\ getpid(),\ semCount++);}
+\DoxyCodeLine{00146\ \ \ \ \ sem\_t*\ tempSem\ =\ sem\_open(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}},\ O\_CREAT,\ 0600,\ 0);}
+\DoxyCodeLine{00147\ }
+\DoxyCodeLine{00148\ \ \ \ \ \textcolor{keywordflow}{if}\ (tempSem\ !=\ \textcolor{keyword}{reinterpret\_cast<}sem\_t*\textcolor{keyword}{>}(SEM\_FAILED))}
+\DoxyCodeLine{00149\ \ \ \ \ \{}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ printf("{}Created\ \(\backslash\)"{}\%s\(\backslash\)"{}\ Semaphore\ \%p\(\backslash\)n"{},\ name,\ tempSem);}}
+\DoxyCodeLine{00151\ \ \ \ \ \}}
+\DoxyCodeLine{00152\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00153\ \ \ \ \ \{}
+\DoxyCodeLine{00154\ \ \ \ \ \ \ \ \ \textcolor{comment}{//printf("{}Error\ creating\ Semaphore\ \%d\(\backslash\)n"{},\ errno);}}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ exit(-\/1);}
+\DoxyCodeLine{00156\ \ \ \ \ \}}
+\DoxyCodeLine{00158\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00159\ \ \ \ \ sem\_t*\ tempSem\ =\ \textcolor{keyword}{new}\ sem\_t;}
+\DoxyCodeLine{00160\ \ \ \ \ checkPThreadFunction(sem\_init(tempSem,\ 0,\ 0));}
+\DoxyCodeLine{00161\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00162\ \ \ \ \ \textcolor{keywordflow}{return}\ tempSem;}
+\DoxyCodeLine{00163\ \}}
+\DoxyCodeLine{00164\ }
+\DoxyCodeLine{00165\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ destroySem(sem\_t*\ semaphore)}
+\DoxyCodeLine{00166\ \{}
+\DoxyCodeLine{00167\ \textcolor{preprocessor}{\#ifdef\ NAMED\_SEMAPHORES}}
+\DoxyCodeLine{00168\ \ \ \ \ checkPThreadFunction(sem\_close(semaphore));}
+\DoxyCodeLine{00169\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00170\ \ \ \ \ checkPThreadFunction(sem\_destroy(semaphore));}
+\DoxyCodeLine{00171\ \ \ \ \ \textcolor{keyword}{delete}\ semaphore;}
+\DoxyCodeLine{00172\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00173\ \}}
+\DoxyCodeLine{00174\ }
+\DoxyCodeLine{00175\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}*\ threadFunction(\textcolor{keywordtype}{void}*\ argument)}
+\DoxyCodeLine{00176\ \{}
+\DoxyCodeLine{00177\ \ \ \ \ btThreadSupportPosix::btThreadStatus*\ status\ =\ (btThreadSupportPosix::btThreadStatus*)argument;}
+\DoxyCodeLine{00178\ }
+\DoxyCodeLine{00179\ \ \ \ \ \textcolor{keywordflow}{while}\ (1)}
+\DoxyCodeLine{00180\ \ \ \ \ \{}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ checkPThreadFunction(sem\_wait(status-\/>startSemaphore));}
+\DoxyCodeLine{00182\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}*\ userPtr\ =\ status-\/>m\_userPtr;}
+\DoxyCodeLine{00183\ }
+\DoxyCodeLine{00184\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (userPtr)}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(status-\/>m\_status);}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \ \ \ \ status-\/>m\_userThreadFunc(userPtr);}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \ \ \ \ status-\/>m\_cs-\/>lock();}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \ \ \ \ status-\/>m\_status\ =\ 2;}
+\DoxyCodeLine{00190\ \ \ \ \ \ \ \ \ \ \ \ \ status-\/>m\_cs-\/>unlock();}
+\DoxyCodeLine{00191\ \ \ \ \ \ \ \ \ \ \ \ \ checkPThreadFunction(sem\_post(status-\/>m\_mainSemaphore));}
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \ \ \ \ \ \ status-\/>threadUsed++;}
+\DoxyCodeLine{00193\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//exit\ Thread}}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \ \ \ \ status-\/>m\_cs-\/>lock();}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ \ \ \ \ status-\/>m\_status\ =\ 3;}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ \ \ \ \ status-\/>m\_cs-\/>unlock();}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ \ \ \ \ checkPThreadFunction(sem\_post(status-\/>m\_mainSemaphore));}
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00203\ \ \ \ \ \}}
+\DoxyCodeLine{00204\ }
+\DoxyCodeLine{00205\ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00206\ \}}
+\DoxyCodeLine{00207\ }
+\DoxyCodeLine{00209\ \textcolor{keywordtype}{void}\ btThreadSupportPosix::runTask(\textcolor{keywordtype}{int}\ threadIndex,\ \textcolor{keywordtype}{void}*\ userData)}
+\DoxyCodeLine{00210\ \{}
+\DoxyCodeLine{00212\ \ \ \ \ btThreadStatus\&\ threadStatus\ =\ m\_activeThreadStatus[threadIndex];}
+\DoxyCodeLine{00213\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(threadIndex\ >=\ 0);}
+\DoxyCodeLine{00214\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(threadIndex\ <\ m\_activeThreadStatus.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00215\ \ \ \ \ threadStatus.m\_cs\ =\ m\_cs;}
+\DoxyCodeLine{00216\ \ \ \ \ threadStatus.m\_commandId\ =\ 1;}
+\DoxyCodeLine{00217\ \ \ \ \ threadStatus.m\_status\ =\ 1;}
+\DoxyCodeLine{00218\ \ \ \ \ threadStatus.m\_userPtr\ =\ userData;}
+\DoxyCodeLine{00219\ \ \ \ \ m\_startedThreadsMask\ |=\ \mbox{\hyperlink{_free_image_8h_a95df6cdb32afc350ff070f2fe8a54a67}{UINT64}}(1)\ <<\ threadIndex;}
+\DoxyCodeLine{00220\ }
+\DoxyCodeLine{00221\ \ \ \ \ \textcolor{comment}{//\ fire\ event\ to\ start\ new\ task}}
+\DoxyCodeLine{00222\ \ \ \ \ checkPThreadFunction(sem\_post(threadStatus.startSemaphore));}
+\DoxyCodeLine{00223\ \}}
+\DoxyCodeLine{00224\ }
+\DoxyCodeLine{00226\ \textcolor{keywordtype}{int}\ btThreadSupportPosix::waitForResponse()}
+\DoxyCodeLine{00227\ \{}
+\DoxyCodeLine{00230\ }
+\DoxyCodeLine{00231\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(m\_activeThreadStatus.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00232\ }
+\DoxyCodeLine{00233\ \ \ \ \ \textcolor{comment}{//\ wait\ for\ any\ of\ the\ threads\ to\ finish}}
+\DoxyCodeLine{00234\ \ \ \ \ checkPThreadFunction(sem\_wait(m\_mainSemaphore));}
+\DoxyCodeLine{00235\ \ \ \ \ \textcolor{comment}{//\ get\ at\ least\ one\ thread\ which\ has\ finished}}
+\DoxyCodeLine{00236\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ last\ =\ -\/1;}
+\DoxyCodeLine{00237\ }
+\DoxyCodeLine{00238\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ t\ =\ 0;\ t\ <\ size\_t(m\_activeThreadStatus.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());\ ++t)}
+\DoxyCodeLine{00239\ \ \ \ \ \{}
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ m\_cs-\/>\mbox{\hyperlink{classbt_critical_section_a272e306b93f74fe288da28b019446b03}{lock}}();}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ hasFinished\ =\ (2\ ==\ m\_activeThreadStatus[t].m\_status);}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ m\_cs-\/>\mbox{\hyperlink{classbt_critical_section_acdfd8149ad4e36ce7ac7d13b2b220f44}{unlock}}();\ }
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (hasFinished)}
+\DoxyCodeLine{00244\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00245\ \ \ \ \ \ \ \ \ \ \ \ \ last\ =\ t;}
+\DoxyCodeLine{00246\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00248\ \ \ \ \ \}}
+\DoxyCodeLine{00249\ }
+\DoxyCodeLine{00250\ \ \ \ \ btThreadStatus\&\ threadStatus\ =\ m\_activeThreadStatus[last];}
+\DoxyCodeLine{00251\ }
+\DoxyCodeLine{00252\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(threadStatus.m\_status\ >\ 1);}
+\DoxyCodeLine{00253\ \ \ \ \ threadStatus.m\_status\ =\ 0;}
+\DoxyCodeLine{00254\ }
+\DoxyCodeLine{00255\ \ \ \ \ \textcolor{comment}{//\ need\ to\ find\ an\ active\ spu}}
+\DoxyCodeLine{00256\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(last\ >=\ 0);}
+\DoxyCodeLine{00257\ \ \ \ \ m\_startedThreadsMask\ \&=\ \string~(\mbox{\hyperlink{_free_image_8h_a95df6cdb32afc350ff070f2fe8a54a67}{UINT64}}(1)\ <<\ last);}
+\DoxyCodeLine{00258\ }
+\DoxyCodeLine{00259\ \ \ \ \ \textcolor{keywordflow}{return}\ last;}
+\DoxyCodeLine{00260\ \}}
+\DoxyCodeLine{00261\ }
+\DoxyCodeLine{00262\ \textcolor{keywordtype}{void}\ btThreadSupportPosix::waitForAllTasks()}
+\DoxyCodeLine{00263\ \{}
+\DoxyCodeLine{00264\ \ \ \ \ \textcolor{keywordflow}{while}\ (m\_startedThreadsMask)}
+\DoxyCodeLine{00265\ \ \ \ \ \{}
+\DoxyCodeLine{00266\ \ \ \ \ \ \ \ \ waitForResponse();}
+\DoxyCodeLine{00267\ \ \ \ \ \}}
+\DoxyCodeLine{00268\ \}}
+\DoxyCodeLine{00269\ }
+\DoxyCodeLine{00270\ \textcolor{keywordtype}{void}\ btThreadSupportPosix::startThreads(\textcolor{keyword}{const}\ ConstructionInfo\&\ threadConstructionInfo)}
+\DoxyCodeLine{00271\ \{}
+\DoxyCodeLine{00272\ \ \ \ \ m\_numThreads\ =\ btGetNumHardwareThreads()\ -\/\ 1;\ \ \textcolor{comment}{//\ main\ thread\ exists\ already}}
+\DoxyCodeLine{00273\ \ \ \ \ m\_activeThreadStatus.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(m\_numThreads);}
+\DoxyCodeLine{00274\ \ \ \ \ m\_startedThreadsMask\ =\ 0;}
+\DoxyCodeLine{00275\ }
+\DoxyCodeLine{00276\ \ \ \ \ m\_mainSemaphore\ =\ createSem(\textcolor{stringliteral}{"{}main"{}});}
+\DoxyCodeLine{00277\ \ \ \ \ \textcolor{comment}{//checkPThreadFunction(sem\_wait(mainSemaphore));}}
+\DoxyCodeLine{00278\ }
+\DoxyCodeLine{00279\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ m\_numThreads;\ i++)}
+\DoxyCodeLine{00280\ \ \ \ \ \{}
+\DoxyCodeLine{00281\ \ \ \ \ \ \ \ \ btThreadStatus\&\ threadStatus\ =\ m\_activeThreadStatus[i];}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ threadStatus.startSemaphore\ =\ createSem(\textcolor{stringliteral}{"{}threadLocal"{}});}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ threadStatus.m\_userPtr\ =\ 0;}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ threadStatus.m\_cs\ =\ m\_cs;}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ threadStatus.m\_taskId\ =\ i;}
+\DoxyCodeLine{00286\ \ \ \ \ \ \ \ \ threadStatus.m\_commandId\ =\ 0;}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ threadStatus.m\_status\ =\ 0;}
+\DoxyCodeLine{00288\ \ \ \ \ \ \ \ \ threadStatus.m\_mainSemaphore\ =\ m\_mainSemaphore;}
+\DoxyCodeLine{00289\ \ \ \ \ \ \ \ \ threadStatus.m\_userThreadFunc\ =\ threadConstructionInfo.m\_userThreadFunc;}
+\DoxyCodeLine{00290\ \ \ \ \ \ \ \ \ threadStatus.threadUsed\ =\ 0;}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ checkPThreadFunction(pthread\_create(\&threadStatus.thread,\ NULL,\ \&threadFunction,\ (\textcolor{keywordtype}{void}*)\&threadStatus));}
+\DoxyCodeLine{00292\ }
+\DoxyCodeLine{00293\ \ \ \ \ \}}
+\DoxyCodeLine{00294\ \}}
+\DoxyCodeLine{00295\ }
+\DoxyCodeLine{00297\ \textcolor{keywordtype}{void}\ btThreadSupportPosix::stopThreads()}
+\DoxyCodeLine{00298\ \{}
+\DoxyCodeLine{00299\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{size\_t}\ t\ =\ 0;\ t\ <\ size\_t(m\_activeThreadStatus.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());\ ++t)}
+\DoxyCodeLine{00300\ \ \ \ \ \{}
+\DoxyCodeLine{00301\ \ \ \ \ \ \ \ \ btThreadStatus\&\ threadStatus\ =\ m\_activeThreadStatus[t];}
+\DoxyCodeLine{00302\ }
+\DoxyCodeLine{00303\ \ \ \ \ \ \ \ \ threadStatus.m\_userPtr\ =\ 0;}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ checkPThreadFunction(sem\_post(threadStatus.startSemaphore));}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ checkPThreadFunction(sem\_wait(m\_mainSemaphore));}
+\DoxyCodeLine{00306\ }
+\DoxyCodeLine{00307\ \ \ \ \ \ \ \ \ checkPThreadFunction(pthread\_join(threadStatus.thread,\ 0));}
+\DoxyCodeLine{00308\ \ \ \ \ \ \ \ \ destroySem(threadStatus.startSemaphore);}
+\DoxyCodeLine{00309\ \ \ \ \ \}}
+\DoxyCodeLine{00310\ \ \ \ \ destroySem(m\_mainSemaphore);}
+\DoxyCodeLine{00311\ \ \ \ \ m\_activeThreadStatus.\mbox{\hyperlink{classbt_aligned_object_array_a12123db01dda7758f0df5e3bba10cc0a}{clear}}();}
+\DoxyCodeLine{00312\ \}}
+\DoxyCodeLine{00313\ }
+\DoxyCodeLine{00314\ \textcolor{keyword}{class\ }btCriticalSectionPosix\ :\ \textcolor{keyword}{public}\ btCriticalSection}
+\DoxyCodeLine{00315\ \{}
+\DoxyCodeLine{00316\ \ \ \ \ pthread\_mutex\_t\ m\_mutex;}
+\DoxyCodeLine{00317\ }
+\DoxyCodeLine{00318\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00319\ \ \ \ \ btCriticalSectionPosix()}
+\DoxyCodeLine{00320\ \ \ \ \ \{}
+\DoxyCodeLine{00321\ \ \ \ \ \ \ \ \ pthread\_mutex\_init(\&m\_mutex,\ NULL);}
+\DoxyCodeLine{00322\ \ \ \ \ \}}
+\DoxyCodeLine{00323\ \ \ \ \ \textcolor{keyword}{virtual}\ \string~btCriticalSectionPosix()}
+\DoxyCodeLine{00324\ \ \ \ \ \{}
+\DoxyCodeLine{00325\ \ \ \ \ \ \ \ \ pthread\_mutex\_destroy(\&m\_mutex);}
+\DoxyCodeLine{00326\ \ \ \ \ \}}
+\DoxyCodeLine{00327\ }
+\DoxyCodeLine{00328\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ lock()}
+\DoxyCodeLine{00329\ \ \ \ \ \{}
+\DoxyCodeLine{00330\ \ \ \ \ \ \ \ \ pthread\_mutex\_lock(\&m\_mutex);}
+\DoxyCodeLine{00331\ \ \ \ \ \}}
+\DoxyCodeLine{00332\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ unlock()}
+\DoxyCodeLine{00333\ \ \ \ \ \{}
+\DoxyCodeLine{00334\ \ \ \ \ \ \ \ \ pthread\_mutex\_unlock(\&m\_mutex);}
+\DoxyCodeLine{00335\ \ \ \ \ \}}
+\DoxyCodeLine{00336\ \};}
+\DoxyCodeLine{00337\ }
+\DoxyCodeLine{00338\ btCriticalSection*\ btThreadSupportPosix::createCriticalSection()}
+\DoxyCodeLine{00339\ \{}
+\DoxyCodeLine{00340\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{new}\ btCriticalSectionPosix();}
+\DoxyCodeLine{00341\ \}}
+\DoxyCodeLine{00342\ }
+\DoxyCodeLine{00343\ \textcolor{keywordtype}{void}\ btThreadSupportPosix::deleteCriticalSection(btCriticalSection*\ cs)}
+\DoxyCodeLine{00344\ \{}
+\DoxyCodeLine{00345\ \ \ \ \ \textcolor{keyword}{delete}\ cs;}
+\DoxyCodeLine{00346\ \}}
+\DoxyCodeLine{00347\ }
+\DoxyCodeLine{00348\ btThreadSupportInterface*\ \mbox{\hyperlink{classbt_thread_support_interface_a371ad443ef21e4ccf0278b2326961898}{btThreadSupportInterface::create}}(\textcolor{keyword}{const}\ ConstructionInfo\&\ info)}
+\DoxyCodeLine{00349\ \{}
+\DoxyCodeLine{00350\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{new}\ btThreadSupportPosix(info);}
+\DoxyCodeLine{00351\ \}}
+\DoxyCodeLine{00352\ }
+\DoxyCodeLine{00353\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\ BT\_THREADSAFE\ \&\&\ !defined(\ \_WIN32\ )}}
+
+\end{DoxyCode}

@@ -1,0 +1,1090 @@
+\doxysection{bt\+Batched\+Constraints.\+cpp}
+\hypertarget{bt_batched_constraints_8cpp_source}{}\label{bt_batched_constraints_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/ConstraintSolver/btBatchedConstraints.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/ConstraintSolver/btBatchedConstraints.cpp}}
+\mbox{\hyperlink{bt_batched_constraints_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2006\ Erwin\ Coumans\ \ https://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,}}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,}}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_batched_constraints_8h}{btBatchedConstraints.h}}"{}}}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_i_debug_draw_8h}{LinearMath/btIDebugDraw.h}}"{}}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_min_max_8h}{LinearMath/btMinMax.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_stack_alloc_8h}{LinearMath/btStackAlloc.h}}"{}}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_quickprof_8h}{LinearMath/btQuickprof.h}}"{}}}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ <string.h>}\ \ \textcolor{comment}{//for\ memset}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#include\ <cmath>}}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_batched_constraints_8cpp_ad48ea1f723baa1657adeb3370486339e}{kNoMerge}}\ =\ -\/1;}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{structbt_batched_constraints_a4682d9e967500d2d7db8105ed3487e50}{btBatchedConstraints::s\_debugDrawBatches}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00030\ }
+\DoxyCodeLine{00031\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}}
+\DoxyCodeLine{00032\ \{}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{structbt_batched_constraint_info_ac31ef7af81b94cbd0e52b8e721b0da73}{constraintIndex}};}
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{structbt_batched_constraint_info_a8d9d3cc3b01ba06ecb455db19f31b3af}{numConstraintRows}};}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[2];}
+\DoxyCodeLine{00036\ \};}
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structbt_batch_info_a5ea79125a640780b88935f0f5aca9c20}{btBatchInfo}}}
+\DoxyCodeLine{00039\ \{}
+\DoxyCodeLine{00040\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{structbt_batch_info_a57389841a9cdb4ea3e44066fb2cb9e63}{numConstraints}};}
+\DoxyCodeLine{00041\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{structbt_batch_info_a9d709eab1172990a4ef781466799fcbc}{mergeIndex}};}
+\DoxyCodeLine{00042\ }
+\DoxyCodeLine{00043\ \ \ \ \ \mbox{\hyperlink{structbt_batch_info_a5ea79125a640780b88935f0f5aca9c20}{btBatchInfo}}()\ :\ \mbox{\hyperlink{structbt_batch_info_a57389841a9cdb4ea3e44066fb2cb9e63}{numConstraints}}(0),\ \mbox{\hyperlink{structbt_batch_info_a9d709eab1172990a4ef781466799fcbc}{mergeIndex}}(\mbox{\hyperlink{bt_batched_constraints_8cpp_ad48ea1f723baa1657adeb3370486339e}{kNoMerge}})\ \{\}}
+\DoxyCodeLine{00044\ \};}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00046\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{structbt_batched_constraints_a3845443ac736c7ea033592c567ec2b4f}{btBatchedConstraints::validate}}(\mbox{\hyperlink{bt_solver_constraint_8h_ad6c289dc378cc1e94cbd4297e81da76e}{btConstraintArray}}*\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btSolverBody>}}\&\ bodies)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00047\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00049\ \ \ \ \ \textcolor{comment}{//\ validate:\ for\ debugging\ only.\ Verify\ coloring\ of\ bodies,\ that\ no\ body\ is\ touched\ by\ more\ than\ one\ batch\ in\ any\ given\ phase}}
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00051\ \ \ \ \ \textcolor{keywordtype}{int}\ errors\ =\ 0;}
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ kUnassignedBatch\ =\ -\/1;}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00054\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<int>}}\ bodyBatchId;}
+\DoxyCodeLine{00055\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iPhase\ =\ 0;\ iPhase\ <\ \mbox{\hyperlink{structbt_batched_constraints_a91a35321ac3f5e14cb324e9fe5a503a7}{m\_phases}}.size();\ ++iPhase)}
+\DoxyCodeLine{00056\ \ \ \ \ \{}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ bodyBatchId.\mbox{\hyperlink{classbt_aligned_object_array_a2cc58c74534181a7a10e5c6ab8b21227}{resizeNoInitialize}}(0);}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ bodyBatchId.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(bodies.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}(),\ kUnassignedBatch);}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraints_1_1_range}{Range}}\&\ phase\ =\ \mbox{\hyperlink{structbt_batched_constraints_a91a35321ac3f5e14cb324e9fe5a503a7}{m\_phases}}[iPhase];}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iBatch\ =\ phase.\mbox{\hyperlink{structbt_batched_constraints_1_1_range_a2ab4514cb720ab46c2bc855050a8566e}{begin}};\ iBatch\ <\ phase.\mbox{\hyperlink{structbt_batched_constraints_1_1_range_a415a69476649ae58c5d5551cdda98cca}{end}};\ ++iBatch)}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraints_1_1_range}{Range}}\&\ batch\ =\ \mbox{\hyperlink{structbt_batched_constraints_a57a933584f135b4f88a54adfa3e707c4}{m\_batches}}[iBatch];}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iiCons\ =\ batch.\mbox{\hyperlink{structbt_batched_constraints_1_1_range_a2ab4514cb720ab46c2bc855050a8566e}{begin}};\ iiCons\ <\ batch.\mbox{\hyperlink{structbt_batched_constraints_1_1_range_a415a69476649ae58c5d5551cdda98cca}{end}};\ ++iiCons)}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iCons\ =\ \mbox{\hyperlink{structbt_batched_constraints_a74bd7458316214acb0c2e81329b3417f}{m\_constraintIndices}}[iiCons];}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_solver_constraint_8h_abc9a30790ffc49b49c0f846963def7b7}{btSolverConstraint}}\&\ cons\ =\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}}-\/>at(iCons);}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_solver_body_8h_a029df9344a303d369eb63b1c7f3e60d5}{btSolverBody}}\&\ bodyA\ =\ bodies[cons.m\_solverBodyIdA];}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_solver_body_8h_a029df9344a303d369eb63b1c7f3e60d5}{btSolverBody}}\&\ bodyB\ =\ bodies[cons.m\_solverBodyIdB];}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!bodyA.internalGetInvMass().isZero())}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ thisBodyBatchId\ =\ bodyBatchId[cons.m\_solverBodyIdA];}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (thisBodyBatchId\ ==\ kUnassignedBatch)}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bodyBatchId[cons.m\_solverBodyIdA]\ =\ iBatch;}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (thisBodyBatchId\ !=\ iBatch)}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(!\textcolor{stringliteral}{"{}dynamic\ body\ is\ used\ in\ 2\ different\ batches\ in\ the\ same\ phase"{}});}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ errors++;}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00081\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!bodyB.internalGetInvMass().isZero())}
+\DoxyCodeLine{00083\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ thisBodyBatchId\ =\ bodyBatchId[cons.m\_solverBodyIdB];}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (thisBodyBatchId\ ==\ kUnassignedBatch)}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bodyBatchId[cons.m\_solverBodyIdB]\ =\ iBatch;}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (thisBodyBatchId\ !=\ iBatch)}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(!\textcolor{stringliteral}{"{}dynamic\ body\ is\ used\ in\ 2\ different\ batches\ in\ the\ same\ phase"{}});}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ errors++;}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00097\ \ \ \ \ \}}
+\DoxyCodeLine{00098\ \ \ \ \ \textcolor{keywordflow}{return}\ errors\ ==\ 0;}
+\DoxyCodeLine{00099\ \}}
+\DoxyCodeLine{00100\ }
+\DoxyCodeLine{00101\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ debugDrawSingleBatch(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraints}{btBatchedConstraints}}*\ bc,}
+\DoxyCodeLine{00102\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_solver_constraint_8h_ad6c289dc378cc1e94cbd4297e81da76e}{btConstraintArray}}*\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},}
+\DoxyCodeLine{00103\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btSolverBody>}}\&\ bodies,}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBatch,}
+\DoxyCodeLine{00105\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ \mbox{\hyperlink{glad_8h_a69995a929d818b8b467d4593c24d98bc}{color}},}
+\DoxyCodeLine{00106\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}})}
+\DoxyCodeLine{00107\ \{}
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{keywordflow}{if}\ (bc\ \&\&\ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a98367a92e61a775dcdd8a06e60cca514}{m\_debugDrawer}}\ \&\&\ iBatch\ <\ bc-\/>m\_batches.size())}
+\DoxyCodeLine{00109\ \ \ \ \ \{}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraints_1_1_range}{btBatchedConstraints::Range}}\&\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}\ =\ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a57a933584f135b4f88a54adfa3e707c4}{m\_batches}}[iBatch];}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iiCon\ =\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}.begin;\ iiCon\ <\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}.end;\ ++iiCon)}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iCon\ =\ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a74bd7458316214acb0c2e81329b3417f}{m\_constraintIndices}}[iiCon];}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_solver_constraint_8h_abc9a30790ffc49b49c0f846963def7b7}{btSolverConstraint}}\&\ con\ =\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}}-\/>at(iCon);}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBody0\ =\ con.m\_solverBodyIdA;}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBody1\ =\ con.m\_solverBodyIdB;}
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ pos0\ =\ bodies[iBody0].getWorldTransform().getOrigin()\ +\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}};}
+\DoxyCodeLine{00118\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ pos1\ =\ bodies[iBody1].getWorldTransform().getOrigin()\ +\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}};}
+\DoxyCodeLine{00119\ \ \ \ \ \ \ \ \ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a98367a92e61a775dcdd8a06e60cca514}{m\_debugDrawer}}-\/>\mbox{\hyperlink{classbt_i_debug_draw_a07b08e255ab4607ab5aeb24399332aff}{drawLine}}(pos0,\ pos1,\ \mbox{\hyperlink{glad_8h_a69995a929d818b8b467d4593c24d98bc}{color}});}
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00121\ \ \ \ \ \}}
+\DoxyCodeLine{00122\ \}}
+\DoxyCodeLine{00123\ }
+\DoxyCodeLine{00124\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ debugDrawPhase(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraints}{btBatchedConstraints}}*\ bc,}
+\DoxyCodeLine{00125\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_solver_constraint_8h_ad6c289dc378cc1e94cbd4297e81da76e}{btConstraintArray}}*\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btSolverBody>}}\&\ bodies,}
+\DoxyCodeLine{00127\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iPhase,}
+\DoxyCodeLine{00128\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ color0,}
+\DoxyCodeLine{00129\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ color1,}
+\DoxyCodeLine{00130\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}})}
+\DoxyCodeLine{00131\ \{}
+\DoxyCodeLine{00132\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}debugDrawPhase"{}});}
+\DoxyCodeLine{00133\ \ \ \ \ \textcolor{keywordflow}{if}\ (bc\ \&\&\ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a98367a92e61a775dcdd8a06e60cca514}{m\_debugDrawer}}\ \&\&\ iPhase\ <\ bc-\/>m\_phases.size())}
+\DoxyCodeLine{00134\ \ \ \ \ \{}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraints_1_1_range}{btBatchedConstraints::Range}}\&\ phase\ =\ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a91a35321ac3f5e14cb324e9fe5a503a7}{m\_phases}}[iPhase];}
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iBatch\ =\ phase.\mbox{\hyperlink{structbt_batched_constraints_1_1_range_a2ab4514cb720ab46c2bc855050a8566e}{begin}};\ iBatch\ <\ phase.\mbox{\hyperlink{structbt_batched_constraints_1_1_range_a415a69476649ae58c5d5551cdda98cca}{end}};\ ++iBatch)}
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00138\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ tt\ =\ float(iBatch\ -\/\ phase.\mbox{\hyperlink{structbt_batched_constraints_1_1_range_a2ab4514cb720ab46c2bc855050a8566e}{begin}})\ /\ float(\mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(1,\ phase.\mbox{\hyperlink{structbt_batched_constraints_1_1_range_a415a69476649ae58c5d5551cdda98cca}{end}}\ -\/\ phase.\mbox{\hyperlink{structbt_batched_constraints_1_1_range_a2ab4514cb720ab46c2bc855050a8566e}{begin}}\ -\/\ 1));}
+\DoxyCodeLine{00139\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ col\ =\ \mbox{\hyperlink{b3_vector3_8h_ac6301d1ce0bee83a8e64064f5839466c}{lerp}}(color0,\ color1,\ tt);}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ \ \ \ \ debugDrawSingleBatch(bc,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},\ bodies,\ iBatch,\ col,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}});}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00142\ \ \ \ \ \}}
+\DoxyCodeLine{00143\ \}}
+\DoxyCodeLine{00144\ }
+\DoxyCodeLine{00145\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ debugDrawAllBatches(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraints}{btBatchedConstraints}}*\ bc,}
+\DoxyCodeLine{00146\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_solver_constraint_8h_ad6c289dc378cc1e94cbd4297e81da76e}{btConstraintArray}}*\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},}
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btSolverBody>}}\&\ bodies)}
+\DoxyCodeLine{00148\ \{}
+\DoxyCodeLine{00149\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}debugDrawAllBatches"{}});}
+\DoxyCodeLine{00150\ \ \ \ \ \textcolor{keywordflow}{if}\ (bc\ \&\&\ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a98367a92e61a775dcdd8a06e60cca514}{m\_debugDrawer}}\ \&\&\ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a91a35321ac3f5e14cb324e9fe5a503a7}{m\_phases}}.size()\ >\ 0)}
+\DoxyCodeLine{00151\ \ \ \ \ \{}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ bboxMin(\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}},\ \mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}},\ \mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}});}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ bboxMax\ =\ -\/bboxMin;}
+\DoxyCodeLine{00154\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iBody\ =\ 0;\ iBody\ <\ bodies.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++iBody)}
+\DoxyCodeLine{00155\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00156\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ pos\ =\ bodies[iBody].getWorldTransform().getOrigin();}
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ \ \ \ \ bboxMin.setMin(pos);}
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \ \ \ \ \ \ bboxMax.setMax(pos);}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00160\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ bboxExtent\ =\ bboxMax\ -\/\ bboxMin;}
+\DoxyCodeLine{00161\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ offsetBase\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0,\ bboxExtent.y()\ *\ 1.1f,\ 0);}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ offsetStep\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0,\ 0,\ bboxExtent.z()\ *\ 1.1f);}
+\DoxyCodeLine{00163\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numPhases\ =\ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a91a35321ac3f5e14cb324e9fe5a503a7}{m\_phases}}.size();}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iPhase\ =\ 0;\ iPhase\ <\ numPhases;\ ++iPhase)}
+\DoxyCodeLine{00165\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}\ =\ float(iPhase)\ /\ float(numPhases\ -\/\ 1);}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ color0\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(1,\ 0,\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}});}
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ color1\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(0,\ 1,\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}});}
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}}\ =\ offsetBase\ +\ offsetStep\ *\ (float(iPhase)\ -\/\ float(numPhases\ -\/\ 1)\ *\ 0.5);}
+\DoxyCodeLine{00170\ \ \ \ \ \ \ \ \ \ \ \ \ debugDrawPhase(bc,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},\ bodies,\ iPhase,\ color0,\ color1,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ae1b92ae085ddef4b1cdca7d749339fb0}{offset}});}
+\DoxyCodeLine{00171\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00172\ \ \ \ \ \}}
+\DoxyCodeLine{00173\ \}}
+\DoxyCodeLine{00174\ }
+\DoxyCodeLine{00175\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ initBatchedBodyDynamicFlags(\mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<bool>}}*\ outBodyDynamicFlags,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btSolverBody>}}\&\ bodies)}
+\DoxyCodeLine{00176\ \{}
+\DoxyCodeLine{00177\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}initBatchedBodyDynamicFlags"{}});}
+\DoxyCodeLine{00178\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<bool>}}\&\ bodyDynamicFlags\ =\ *outBodyDynamicFlags;}
+\DoxyCodeLine{00179\ \ \ \ \ bodyDynamicFlags.\mbox{\hyperlink{classbt_aligned_object_array_a2cc58c74534181a7a10e5c6ab8b21227}{resizeNoInitialize}}(bodies.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00180\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ bodies.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00181\ \ \ \ \ \{}
+\DoxyCodeLine{00182\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_solver_body_8h_a029df9344a303d369eb63b1c7f3e60d5}{btSolverBody}}\&\ body\ =\ bodies[i];}
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ bodyDynamicFlags[i]\ =\ (body.internalGetInvMass().\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}()\ >\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0));}
+\DoxyCodeLine{00184\ \ \ \ \ \}}
+\DoxyCodeLine{00185\ \}}
+\DoxyCodeLine{00186\ }
+\DoxyCodeLine{00187\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{int}\ runLengthEncodeConstraintInfo(\mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}*\ outConInfos,\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}})}
+\DoxyCodeLine{00188\ \{}
+\DoxyCodeLine{00189\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}runLengthEncodeConstraintInfo"{}});}
+\DoxyCodeLine{00190\ \ \ \ \ \textcolor{comment}{//\ detect\ and\ run-\/length\ encode\ constraint\ rows\ that\ repeat\ the\ same\ bodies}}
+\DoxyCodeLine{00191\ \ \ \ \ \textcolor{keywordtype}{int}\ iDest\ =\ 0;}
+\DoxyCodeLine{00192\ \ \ \ \ \textcolor{keywordtype}{int}\ iSrc\ =\ 0;}
+\DoxyCodeLine{00193\ \ \ \ \ \textcolor{keywordflow}{while}\ (iSrc\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}})}
+\DoxyCodeLine{00194\ \ \ \ \ \{}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}\&\ srcConInfo\ =\ outConInfos[iSrc];}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}\&\ conInfo\ =\ outConInfos[iDest];}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_ac31ef7af81b94cbd0e52b8e721b0da73}{constraintIndex}}\ =\ iSrc;}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[0]\ =\ srcConInfo.\mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[0];}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[1]\ =\ srcConInfo.\mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[1];}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (iSrc\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}}\ \&\&\ outConInfos[iSrc].bodyIds[0]\ ==\ srcConInfo.\mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[0]\ \&\&\ outConInfos[iSrc].bodyIds[1]\ ==\ srcConInfo.\mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[1])}
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ \ \ \ \ ++iSrc;}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_a8d9d3cc3b01ba06ecb455db19f31b3af}{numConstraintRows}}\ =\ iSrc\ -\/\ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_ac31ef7af81b94cbd0e52b8e721b0da73}{constraintIndex}};}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ ++iDest;}
+\DoxyCodeLine{00206\ \ \ \ \ \}}
+\DoxyCodeLine{00207\ \ \ \ \ \textcolor{keywordflow}{return}\ iDest;}
+\DoxyCodeLine{00208\ \}}
+\DoxyCodeLine{00209\ }
+\DoxyCodeLine{00210\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{struct_read_solver_constraints_loop_a7a08411914221e37d6b588969f1a3564}{ReadSolverConstraintsLoop}}\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{classbt_i_parallel_for_body}{btIParallelForBody}}}
+\DoxyCodeLine{00211\ \{}
+\DoxyCodeLine{00212\ \ \ \ \ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}*\ \mbox{\hyperlink{struct_read_solver_constraints_loop_a6602fd6022f03eeb909f74f51d381fd8}{m\_outConInfos}};}
+\DoxyCodeLine{00213\ \ \ \ \ \mbox{\hyperlink{bt_solver_constraint_8h_ad6c289dc378cc1e94cbd4297e81da76e}{btConstraintArray}}*\ \mbox{\hyperlink{struct_read_solver_constraints_loop_aa019b18673e769be80479fb8e92f1e0e}{m\_constraints}};}
+\DoxyCodeLine{00214\ }
+\DoxyCodeLine{00215\ \ \ \ \ \mbox{\hyperlink{struct_read_solver_constraints_loop_a7a08411914221e37d6b588969f1a3564}{ReadSolverConstraintsLoop}}(\mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}*\ outConInfos,\ \mbox{\hyperlink{bt_solver_constraint_8h_ad6c289dc378cc1e94cbd4297e81da76e}{btConstraintArray}}*\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}})}
+\DoxyCodeLine{00216\ \ \ \ \ \{}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_read_solver_constraints_loop_a6602fd6022f03eeb909f74f51d381fd8}{m\_outConInfos}}\ =\ outConInfos;}
+\DoxyCodeLine{00218\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_read_solver_constraints_loop_aa019b18673e769be80479fb8e92f1e0e}{m\_constraints}}\ =\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}};}
+\DoxyCodeLine{00219\ \ \ \ \ \}}
+\DoxyCodeLine{00220\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{struct_read_solver_constraints_loop_ac8a144fff7154f0099af56d91da07679}{forLoop}}(\textcolor{keywordtype}{int}\ iBegin,\ \textcolor{keywordtype}{int}\ iEnd)\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}}
+\DoxyCodeLine{00221\ \ \ \ \ \{}
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ iBegin;\ i\ <\ iEnd;\ ++i)}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}\&\ conInfo\ =\ \mbox{\hyperlink{struct_read_solver_constraints_loop_a6602fd6022f03eeb909f74f51d381fd8}{m\_outConInfos}}[i];}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_solver_constraint_8h_abc9a30790ffc49b49c0f846963def7b7}{btSolverConstraint}}\&\ con\ =\ \mbox{\hyperlink{struct_read_solver_constraints_loop_aa019b18673e769be80479fb8e92f1e0e}{m\_constraints}}-\/>at(i);}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \ \ \ \ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[0]\ =\ con.m\_solverBodyIdA;}
+\DoxyCodeLine{00227\ \ \ \ \ \ \ \ \ \ \ \ \ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[1]\ =\ con.m\_solverBodyIdB;}
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ \ \ \ \ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_ac31ef7af81b94cbd0e52b8e721b0da73}{constraintIndex}}\ =\ i;}
+\DoxyCodeLine{00229\ \ \ \ \ \ \ \ \ \ \ \ \ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_a8d9d3cc3b01ba06ecb455db19f31b3af}{numConstraintRows}}\ =\ 1;}
+\DoxyCodeLine{00230\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00231\ \ \ \ \ \}}
+\DoxyCodeLine{00232\ \};}
+\DoxyCodeLine{00233\ }
+\DoxyCodeLine{00234\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{int}\ initBatchedConstraintInfo(\mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}*\ outConInfos,\ \mbox{\hyperlink{bt_solver_constraint_8h_ad6c289dc378cc1e94cbd4297e81da76e}{btConstraintArray}}*\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}})}
+\DoxyCodeLine{00235\ \{}
+\DoxyCodeLine{00236\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}initBatchedConstraintInfo"{}});}
+\DoxyCodeLine{00237\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}}\ =\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}}-\/>size();}
+\DoxyCodeLine{00238\ \ \ \ \ \textcolor{keywordtype}{bool}\ inParallel\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00239\ \ \ \ \ \textcolor{keywordflow}{if}\ (inParallel)}
+\DoxyCodeLine{00240\ \ \ \ \ \{}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_read_solver_constraints_loop}{ReadSolverConstraintsLoop}}\ loop(outConInfos,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}});}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ grainSize\ =\ 1200;}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_threads_8cpp_afca0fc71d5b9916c985bbec9e244d919}{btParallelFor}}(0,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ grainSize,\ loop);}
+\DoxyCodeLine{00244\ \ \ \ \ \}}
+\DoxyCodeLine{00245\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00246\ \ \ \ \ \{}
+\DoxyCodeLine{00247\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}};\ ++i)}
+\DoxyCodeLine{00248\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}\&\ conInfo\ =\ outConInfos[i];}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_solver_constraint_8h_abc9a30790ffc49b49c0f846963def7b7}{btSolverConstraint}}\&\ con\ =\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}}-\/>at(i);}
+\DoxyCodeLine{00251\ \ \ \ \ \ \ \ \ \ \ \ \ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[0]\ =\ con.m\_solverBodyIdA;}
+\DoxyCodeLine{00252\ \ \ \ \ \ \ \ \ \ \ \ \ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[1]\ =\ con.m\_solverBodyIdB;}
+\DoxyCodeLine{00253\ \ \ \ \ \ \ \ \ \ \ \ \ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_ac31ef7af81b94cbd0e52b8e721b0da73}{constraintIndex}}\ =\ i;}
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \ \ \ \ \ \ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_a8d9d3cc3b01ba06ecb455db19f31b3af}{numConstraintRows}}\ =\ 1;}
+\DoxyCodeLine{00255\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00256\ \ \ \ \ \}}
+\DoxyCodeLine{00257\ \ \ \ \ \textcolor{keywordtype}{bool}\ useRunLengthEncoding\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00258\ \ \ \ \ \textcolor{keywordflow}{if}\ (useRunLengthEncoding)}
+\DoxyCodeLine{00259\ \ \ \ \ \{}
+\DoxyCodeLine{00260\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}}\ =\ runLengthEncodeConstraintInfo(outConInfos,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}});}
+\DoxyCodeLine{00261\ \ \ \ \ \}}
+\DoxyCodeLine{00262\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}};}
+\DoxyCodeLine{00263\ \}}
+\DoxyCodeLine{00264\ }
+\DoxyCodeLine{00265\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ expandConstraintRowsInPlace(\textcolor{keywordtype}{int}*\ constraintBatchIds,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}*\ conInfos,\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ \textcolor{keywordtype}{int}\ numConstraintRows)}
+\DoxyCodeLine{00266\ \{}
+\DoxyCodeLine{00267\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}expandConstraintRowsInPlace"{}});}
+\DoxyCodeLine{00268\ \ \ \ \ \textcolor{keywordflow}{if}\ (numConstraintRows\ >\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}})}
+\DoxyCodeLine{00269\ \ \ \ \ \{}
+\DoxyCodeLine{00270\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ we\ walk\ the\ array\ in\ reverse\ to\ avoid\ overwriteing}}
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iCon\ =\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}}\ -\/\ 1;\ iCon\ >=\ 0;\ -\/-\/iCon)}
+\DoxyCodeLine{00272\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00273\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}\&\ conInfo\ =\ conInfos[iCon];}
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBatch\ =\ constraintBatchIds[iCon];}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_a8d9d3cc3b01ba06ecb455db19f31b3af}{numConstraintRows}}\ -\/\ 1;\ i\ >=\ 0;\ -\/-\/i)}
+\DoxyCodeLine{00276\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00277\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iDest\ =\ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_ac31ef7af81b94cbd0e52b8e721b0da73}{constraintIndex}}\ +\ i;}
+\DoxyCodeLine{00278\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(iDest\ >=\ iCon);}
+\DoxyCodeLine{00279\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(iDest\ >=\ 0\ \&\&\ iDest\ <\ numConstraintRows);}
+\DoxyCodeLine{00280\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ constraintBatchIds[iDest]\ =\ iBatch;}
+\DoxyCodeLine{00281\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00283\ \ \ \ \ \}}
+\DoxyCodeLine{00284\ \}}
+\DoxyCodeLine{00285\ }
+\DoxyCodeLine{00286\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ expandConstraintRows(\textcolor{keywordtype}{int}*\ destConstraintBatchIds,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}*\ srcConstraintBatchIds,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}*\ conInfos,\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ \textcolor{keywordtype}{int}\ numConstraintRows)}
+\DoxyCodeLine{00287\ \{}
+\DoxyCodeLine{00288\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}expandConstraintRows"{}});}
+\DoxyCodeLine{00289\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iCon\ =\ 0;\ iCon\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}};\ ++iCon)}
+\DoxyCodeLine{00290\ \ \ \ \ \{}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}\&\ conInfo\ =\ conInfos[iCon];}
+\DoxyCodeLine{00292\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBatch\ =\ srcConstraintBatchIds[iCon];}
+\DoxyCodeLine{00293\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_a8d9d3cc3b01ba06ecb455db19f31b3af}{numConstraintRows}};\ ++i)}
+\DoxyCodeLine{00294\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00295\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iDest\ =\ conInfo.\mbox{\hyperlink{structbt_batched_constraint_info_ac31ef7af81b94cbd0e52b8e721b0da73}{constraintIndex}}\ +\ i;}
+\DoxyCodeLine{00296\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(iDest\ >=\ iCon);}
+\DoxyCodeLine{00297\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(iDest\ >=\ 0\ \&\&\ iDest\ <\ numConstraintRows);}
+\DoxyCodeLine{00298\ \ \ \ \ \ \ \ \ \ \ \ \ destConstraintBatchIds[iDest]\ =\ iBatch;}
+\DoxyCodeLine{00299\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00300\ \ \ \ \ \}}
+\DoxyCodeLine{00301\ \}}
+\DoxyCodeLine{00302\ }
+\DoxyCodeLine{00303\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{struct_expand_constraint_rows_loop_a3fab37ff31558f449cffb2ac5c2b5d14}{ExpandConstraintRowsLoop}}\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{classbt_i_parallel_for_body}{btIParallelForBody}}}
+\DoxyCodeLine{00304\ \{}
+\DoxyCodeLine{00305\ \ \ \ \ \textcolor{keywordtype}{int}*\ \mbox{\hyperlink{struct_expand_constraint_rows_loop_a08ca2e1306b01ecd0182c8bb38cded4c}{m\_destConstraintBatchIds}};}
+\DoxyCodeLine{00306\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}*\ \mbox{\hyperlink{struct_expand_constraint_rows_loop_a251b7fd6f1af31fb7dfe7e52e29d2035}{m\_srcConstraintBatchIds}};}
+\DoxyCodeLine{00307\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}*\ \mbox{\hyperlink{struct_expand_constraint_rows_loop_a0461b7fae89763892af16e11b6bb1a27}{m\_conInfos}};}
+\DoxyCodeLine{00308\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct_expand_constraint_rows_loop_a3b6fb1a8cc1010142c2c12aa1171b016}{m\_numConstraintRows}};}
+\DoxyCodeLine{00309\ }
+\DoxyCodeLine{00310\ \ \ \ \ \mbox{\hyperlink{struct_expand_constraint_rows_loop_a3fab37ff31558f449cffb2ac5c2b5d14}{ExpandConstraintRowsLoop}}(\textcolor{keywordtype}{int}*\ destConstraintBatchIds,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}*\ srcConstraintBatchIds,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}*\ conInfos,\ \textcolor{keywordtype}{int}\ numConstraintRows)}
+\DoxyCodeLine{00311\ \ \ \ \ \{}
+\DoxyCodeLine{00312\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_expand_constraint_rows_loop_a08ca2e1306b01ecd0182c8bb38cded4c}{m\_destConstraintBatchIds}}\ =\ destConstraintBatchIds;}
+\DoxyCodeLine{00313\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_expand_constraint_rows_loop_a251b7fd6f1af31fb7dfe7e52e29d2035}{m\_srcConstraintBatchIds}}\ =\ srcConstraintBatchIds;}
+\DoxyCodeLine{00314\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_expand_constraint_rows_loop_a0461b7fae89763892af16e11b6bb1a27}{m\_conInfos}}\ =\ conInfos;}
+\DoxyCodeLine{00315\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_expand_constraint_rows_loop_a3b6fb1a8cc1010142c2c12aa1171b016}{m\_numConstraintRows}}\ =\ numConstraintRows;}
+\DoxyCodeLine{00316\ \ \ \ \ \}}
+\DoxyCodeLine{00317\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{struct_expand_constraint_rows_loop_a8fdf1483ec9a0537fe21c5a9734b22c4}{forLoop}}(\textcolor{keywordtype}{int}\ iBegin,\ \textcolor{keywordtype}{int}\ iEnd)\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}}
+\DoxyCodeLine{00318\ \ \ \ \ \{}
+\DoxyCodeLine{00319\ \ \ \ \ \ \ \ \ expandConstraintRows(\mbox{\hyperlink{struct_expand_constraint_rows_loop_a08ca2e1306b01ecd0182c8bb38cded4c}{m\_destConstraintBatchIds}},\ \mbox{\hyperlink{struct_expand_constraint_rows_loop_a251b7fd6f1af31fb7dfe7e52e29d2035}{m\_srcConstraintBatchIds}}\ +\ iBegin,\ \mbox{\hyperlink{struct_expand_constraint_rows_loop_a0461b7fae89763892af16e11b6bb1a27}{m\_conInfos}}\ +\ iBegin,\ iEnd\ -\/\ iBegin,\ \mbox{\hyperlink{struct_expand_constraint_rows_loop_a3b6fb1a8cc1010142c2c12aa1171b016}{m\_numConstraintRows}});}
+\DoxyCodeLine{00320\ \ \ \ \ \}}
+\DoxyCodeLine{00321\ \};}
+\DoxyCodeLine{00322\ }
+\DoxyCodeLine{00323\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ expandConstraintRowsMt(\textcolor{keywordtype}{int}*\ destConstraintBatchIds,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}*\ srcConstraintBatchIds,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}*\ conInfos,\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ \textcolor{keywordtype}{int}\ numConstraintRows)}
+\DoxyCodeLine{00324\ \{}
+\DoxyCodeLine{00325\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}expandConstraintRowsMt"{}});}
+\DoxyCodeLine{00326\ \ \ \ \ \mbox{\hyperlink{struct_expand_constraint_rows_loop}{ExpandConstraintRowsLoop}}\ loop(destConstraintBatchIds,\ srcConstraintBatchIds,\ conInfos,\ numConstraintRows);}
+\DoxyCodeLine{00327\ \ \ \ \ \textcolor{keywordtype}{int}\ grainSize\ =\ 600;}
+\DoxyCodeLine{00328\ \ \ \ \ \mbox{\hyperlink{bt_threads_8cpp_afca0fc71d5b9916c985bbec9e244d919}{btParallelFor}}(0,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ grainSize,\ loop);}
+\DoxyCodeLine{00329\ \}}
+\DoxyCodeLine{00330\ }
+\DoxyCodeLine{00331\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ initBatchedConstraintInfoArray(\mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btBatchedConstraintInfo>}}*\ outConInfos,\ \mbox{\hyperlink{bt_solver_constraint_8h_ad6c289dc378cc1e94cbd4297e81da76e}{btConstraintArray}}*\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}})}
+\DoxyCodeLine{00332\ \{}
+\DoxyCodeLine{00333\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}initBatchedConstraintInfoArray"{}});}
+\DoxyCodeLine{00334\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btBatchedConstraintInfo>}}\&\ conInfos\ =\ *outConInfos;}
+\DoxyCodeLine{00335\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}}\ =\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}}-\/>size();}
+\DoxyCodeLine{00336\ \ \ \ \ conInfos.\mbox{\hyperlink{classbt_aligned_object_array_a2cc58c74534181a7a10e5c6ab8b21227}{resizeNoInitialize}}(\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}});}
+\DoxyCodeLine{00337\ }
+\DoxyCodeLine{00338\ \ \ \ \ \textcolor{keywordtype}{int}\ newSize\ =\ initBatchedConstraintInfo(\&outConInfos-\/>\mbox{\hyperlink{classbt_aligned_object_array_ad11050a980c54793173c2bfb4c3ed1b0}{at}}(0),\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}});}
+\DoxyCodeLine{00339\ \ \ \ \ conInfos.\mbox{\hyperlink{classbt_aligned_object_array_a2cc58c74534181a7a10e5c6ab8b21227}{resizeNoInitialize}}(newSize);}
+\DoxyCodeLine{00340\ \}}
+\DoxyCodeLine{00341\ }
+\DoxyCodeLine{00342\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ mergeSmallBatches(\mbox{\hyperlink{structbt_batch_info}{btBatchInfo}}*\ batches,\ \textcolor{keywordtype}{int}\ iBeginBatch,\ \textcolor{keywordtype}{int}\ iEndBatch,\ \textcolor{keywordtype}{int}\ minBatchSize,\ \textcolor{keywordtype}{int}\ maxBatchSize)}
+\DoxyCodeLine{00343\ \{}
+\DoxyCodeLine{00344\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}mergeSmallBatches"{}});}
+\DoxyCodeLine{00345\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iBatch\ =\ iEndBatch\ -\/\ 1;\ iBatch\ >=\ iBeginBatch;\ -\/-\/iBatch)}
+\DoxyCodeLine{00346\ \ \ \ \ \{}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_batch_info}{btBatchInfo}}\&\ batch\ =\ batches[iBatch];}
+\DoxyCodeLine{00348\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (batch.\mbox{\hyperlink{structbt_batch_info_a9d709eab1172990a4ef781466799fcbc}{mergeIndex}}\ ==\ \mbox{\hyperlink{bt_batched_constraints_8cpp_ad48ea1f723baa1657adeb3370486339e}{kNoMerge}}\ \&\&\ batch.\mbox{\hyperlink{structbt_batch_info_a57389841a9cdb4ea3e44066fb2cb9e63}{numConstraints}}\ >\ 0\ \&\&\ batch.\mbox{\hyperlink{structbt_batch_info_a57389841a9cdb4ea3e44066fb2cb9e63}{numConstraints}}\ <\ minBatchSize)}
+\DoxyCodeLine{00349\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00350\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iDestBatch\ =\ iBatch\ -\/\ 1;\ iDestBatch\ >=\ iBeginBatch;\ -\/-\/iDestBatch)}
+\DoxyCodeLine{00351\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00352\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_batch_info}{btBatchInfo}}\&\ destBatch\ =\ batches[iDestBatch];}
+\DoxyCodeLine{00353\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (destBatch.\mbox{\hyperlink{structbt_batch_info_a9d709eab1172990a4ef781466799fcbc}{mergeIndex}}\ ==\ \mbox{\hyperlink{bt_batched_constraints_8cpp_ad48ea1f723baa1657adeb3370486339e}{kNoMerge}}\ \&\&\ (destBatch.\mbox{\hyperlink{structbt_batch_info_a57389841a9cdb4ea3e44066fb2cb9e63}{numConstraints}}\ +\ batch.\mbox{\hyperlink{structbt_batch_info_a57389841a9cdb4ea3e44066fb2cb9e63}{numConstraints}})\ <\ maxBatchSize)}
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ destBatch.\mbox{\hyperlink{structbt_batch_info_a57389841a9cdb4ea3e44066fb2cb9e63}{numConstraints}}\ +=\ batch.\mbox{\hyperlink{structbt_batch_info_a57389841a9cdb4ea3e44066fb2cb9e63}{numConstraints}};}
+\DoxyCodeLine{00356\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ batch.\mbox{\hyperlink{structbt_batch_info_a57389841a9cdb4ea3e44066fb2cb9e63}{numConstraints}}\ =\ 0;}
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ batch.\mbox{\hyperlink{structbt_batch_info_a9d709eab1172990a4ef781466799fcbc}{mergeIndex}}\ =\ iDestBatch;}
+\DoxyCodeLine{00358\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00359\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00360\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00361\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00362\ \ \ \ \ \}}
+\DoxyCodeLine{00363\ \ \ \ \ \textcolor{comment}{//\ flatten\ mergeIndexes}}
+\DoxyCodeLine{00364\ \ \ \ \ \textcolor{comment}{//\ e.g.\ in\ case\ where\ A\ was\ merged\ into\ B\ and\ then\ B\ was\ merged\ into\ C,\ we\ need\ A\ to\ point\ to\ C\ instead\ of\ B}}
+\DoxyCodeLine{00365\ \ \ \ \ \textcolor{comment}{//\ Note:\ loop\ goes\ forward\ through\ batches\ because\ batches\ always\ merge\ from\ higher\ indexes\ to\ lower,}}
+\DoxyCodeLine{00366\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ so\ by\ going\ from\ low\ to\ high\ it\ reduces\ the\ amount\ of\ trail-\/following}}
+\DoxyCodeLine{00367\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iBatch\ =\ iBeginBatch;\ iBatch\ <\ iEndBatch;\ ++iBatch)}
+\DoxyCodeLine{00368\ \ \ \ \ \{}
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_batch_info}{btBatchInfo}}\&\ batch\ =\ batches[iBatch];}
+\DoxyCodeLine{00370\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (batch.\mbox{\hyperlink{structbt_batch_info_a9d709eab1172990a4ef781466799fcbc}{mergeIndex}}\ !=\ \mbox{\hyperlink{bt_batched_constraints_8cpp_ad48ea1f723baa1657adeb3370486339e}{kNoMerge}})}
+\DoxyCodeLine{00371\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iMergeDest\ =\ batches[batch.\mbox{\hyperlink{structbt_batch_info_a9d709eab1172990a4ef781466799fcbc}{mergeIndex}}].\mbox{\hyperlink{structbt_batch_info_a9d709eab1172990a4ef781466799fcbc}{mergeIndex}};}
+\DoxyCodeLine{00373\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ follow\ trail\ of\ merges\ to\ the\ end}}
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (iMergeDest\ !=\ \mbox{\hyperlink{bt_batched_constraints_8cpp_ad48ea1f723baa1657adeb3370486339e}{kNoMerge}})}
+\DoxyCodeLine{00375\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00376\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iNext\ =\ batches[iMergeDest].\mbox{\hyperlink{structbt_batch_info_a9d709eab1172990a4ef781466799fcbc}{mergeIndex}};}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (iNext\ ==\ \mbox{\hyperlink{bt_batched_constraints_8cpp_ad48ea1f723baa1657adeb3370486339e}{kNoMerge}})}
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ batch.\mbox{\hyperlink{structbt_batch_info_a9d709eab1172990a4ef781466799fcbc}{mergeIndex}}\ =\ iMergeDest;}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00381\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ iMergeDest\ =\ iNext;}
+\DoxyCodeLine{00383\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00385\ \ \ \ \ \}}
+\DoxyCodeLine{00386\ \}}
+\DoxyCodeLine{00387\ }
+\DoxyCodeLine{00388\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ updateConstraintBatchIdsForMerges(\textcolor{keywordtype}{int}*\ constraintBatchIds,\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batch_info}{btBatchInfo}}*\ batches,\ \textcolor{keywordtype}{int}\ numBatches)}
+\DoxyCodeLine{00389\ \{}
+\DoxyCodeLine{00390\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}updateConstraintBatchIdsForMerges"{}});}
+\DoxyCodeLine{00391\ \ \ \ \ \textcolor{comment}{//\ update\ batchIds\ to\ account\ for\ merges}}
+\DoxyCodeLine{00392\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}};\ ++i)}
+\DoxyCodeLine{00393\ \ \ \ \ \{}
+\DoxyCodeLine{00394\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBatch\ =\ constraintBatchIds[i];}
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(iBatch\ <\ numBatches);}
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ this\ constraint\ references\ a\ batch\ that\ was\ merged\ into\ another\ batch}}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (batches[iBatch].mergeIndex\ !=\ \mbox{\hyperlink{bt_batched_constraints_8cpp_ad48ea1f723baa1657adeb3370486339e}{kNoMerge}})}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ update\ batchId}}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ \ \ \ \ constraintBatchIds[i]\ =\ batches[iBatch].\mbox{\hyperlink{structbt_batch_info_a9d709eab1172990a4ef781466799fcbc}{mergeIndex}};}
+\DoxyCodeLine{00401\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00402\ \ \ \ \ \}}
+\DoxyCodeLine{00403\ \}}
+\DoxyCodeLine{00404\ }
+\DoxyCodeLine{00405\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{struct_update_constraint_batch_ids_for_merges_loop_ab04b0a3f65488f4dba58079a7c1516c9}{UpdateConstraintBatchIdsForMergesLoop}}\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{classbt_i_parallel_for_body}{btIParallelForBody}}}
+\DoxyCodeLine{00406\ \{}
+\DoxyCodeLine{00407\ \ \ \ \ \textcolor{keywordtype}{int}*\ \mbox{\hyperlink{struct_update_constraint_batch_ids_for_merges_loop_afa7b0b4b954bb4131c3dfff30013d062}{m\_constraintBatchIds}};}
+\DoxyCodeLine{00408\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batch_info}{btBatchInfo}}*\ \mbox{\hyperlink{struct_update_constraint_batch_ids_for_merges_loop_a4965653198e5519112ca03101ba5e7af}{m\_batches}};}
+\DoxyCodeLine{00409\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct_update_constraint_batch_ids_for_merges_loop_a41a886c14605b79440c6b295f0cb2325}{m\_numBatches}};}
+\DoxyCodeLine{00410\ }
+\DoxyCodeLine{00411\ \ \ \ \ \mbox{\hyperlink{struct_update_constraint_batch_ids_for_merges_loop_ab04b0a3f65488f4dba58079a7c1516c9}{UpdateConstraintBatchIdsForMergesLoop}}(\textcolor{keywordtype}{int}*\ constraintBatchIds,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batch_info}{btBatchInfo}}*\ batches,\ \textcolor{keywordtype}{int}\ numBatches)}
+\DoxyCodeLine{00412\ \ \ \ \ \{}
+\DoxyCodeLine{00413\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_update_constraint_batch_ids_for_merges_loop_afa7b0b4b954bb4131c3dfff30013d062}{m\_constraintBatchIds}}\ =\ constraintBatchIds;}
+\DoxyCodeLine{00414\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_update_constraint_batch_ids_for_merges_loop_a4965653198e5519112ca03101ba5e7af}{m\_batches}}\ =\ batches;}
+\DoxyCodeLine{00415\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_update_constraint_batch_ids_for_merges_loop_a41a886c14605b79440c6b295f0cb2325}{m\_numBatches}}\ =\ numBatches;}
+\DoxyCodeLine{00416\ \ \ \ \ \}}
+\DoxyCodeLine{00417\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{struct_update_constraint_batch_ids_for_merges_loop_adf039d1588aeacfc922e3258cac0713e}{forLoop}}(\textcolor{keywordtype}{int}\ iBegin,\ \textcolor{keywordtype}{int}\ iEnd)\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}}
+\DoxyCodeLine{00418\ \ \ \ \ \{}
+\DoxyCodeLine{00419\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}UpdateConstraintBatchIdsForMergesLoop"{}});}
+\DoxyCodeLine{00420\ \ \ \ \ \ \ \ \ updateConstraintBatchIdsForMerges(\mbox{\hyperlink{struct_update_constraint_batch_ids_for_merges_loop_afa7b0b4b954bb4131c3dfff30013d062}{m\_constraintBatchIds}}\ +\ iBegin,\ iEnd\ -\/\ iBegin,\ \mbox{\hyperlink{struct_update_constraint_batch_ids_for_merges_loop_a4965653198e5519112ca03101ba5e7af}{m\_batches}},\ \mbox{\hyperlink{struct_update_constraint_batch_ids_for_merges_loop_a41a886c14605b79440c6b295f0cb2325}{m\_numBatches}});}
+\DoxyCodeLine{00421\ \ \ \ \ \}}
+\DoxyCodeLine{00422\ \};}
+\DoxyCodeLine{00423\ }
+\DoxyCodeLine{00424\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ updateConstraintBatchIdsForMergesMt(\textcolor{keywordtype}{int}*\ constraintBatchIds,\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batch_info}{btBatchInfo}}*\ batches,\ \textcolor{keywordtype}{int}\ numBatches)}
+\DoxyCodeLine{00425\ \{}
+\DoxyCodeLine{00426\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}updateConstraintBatchIdsForMergesMt"{}});}
+\DoxyCodeLine{00427\ \ \ \ \ \mbox{\hyperlink{struct_update_constraint_batch_ids_for_merges_loop}{UpdateConstraintBatchIdsForMergesLoop}}\ loop(constraintBatchIds,\ batches,\ numBatches);}
+\DoxyCodeLine{00428\ \ \ \ \ \textcolor{keywordtype}{int}\ grainSize\ =\ 800;}
+\DoxyCodeLine{00429\ \ \ \ \ \mbox{\hyperlink{bt_threads_8cpp_afca0fc71d5b9916c985bbec9e244d919}{btParallelFor}}(0,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ grainSize,\ loop);}
+\DoxyCodeLine{00430\ \}}
+\DoxyCodeLine{00431\ }
+\DoxyCodeLine{00432\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_batched_constraints_8cpp_a813d0e894acc5b70e3ed7954d16f12d2}{BatchCompare}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraints_1_1_range}{btBatchedConstraints::Range}}\&\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraints_1_1_range}{btBatchedConstraints::Range}}\&\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}})}
+\DoxyCodeLine{00433\ \{}
+\DoxyCodeLine{00434\ \ \ \ \ \textcolor{keywordtype}{int}\ lenA\ =\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}.end\ -\/\ \mbox{\hyperlink{glad_8h_ac8729153468b5dcf13f971b21d84d4e5}{a}}.begin;}
+\DoxyCodeLine{00435\ \ \ \ \ \textcolor{keywordtype}{int}\ lenB\ =\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}.end\ -\/\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}}.begin;}
+\DoxyCodeLine{00436\ \ \ \ \ \textcolor{keywordflow}{return}\ lenA\ >\ lenB;}
+\DoxyCodeLine{00437\ \}}
+\DoxyCodeLine{00438\ }
+\DoxyCodeLine{00439\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ writeOutConstraintIndicesForRangeOfBatches(\mbox{\hyperlink{structbt_batched_constraints}{btBatchedConstraints}}*\ bc,}
+\DoxyCodeLine{00440\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}*\ constraintBatchIds,}
+\DoxyCodeLine{00441\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},}
+\DoxyCodeLine{00442\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}*\ constraintIdPerBatch,}
+\DoxyCodeLine{00443\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ batchBegin,}
+\DoxyCodeLine{00444\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ batchEnd)}
+\DoxyCodeLine{00445\ \{}
+\DoxyCodeLine{00446\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}writeOutConstraintIndicesForRangeOfBatches"{}});}
+\DoxyCodeLine{00447\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iCon\ =\ 0;\ iCon\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}};\ ++iCon)}
+\DoxyCodeLine{00448\ \ \ \ \ \{}
+\DoxyCodeLine{00449\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBatch\ =\ constraintBatchIds[iCon];}
+\DoxyCodeLine{00450\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (iBatch\ >=\ batchBegin\ \&\&\ iBatch\ <\ batchEnd)}
+\DoxyCodeLine{00451\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00452\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iDestCon\ =\ constraintIdPerBatch[iBatch];}
+\DoxyCodeLine{00453\ \ \ \ \ \ \ \ \ \ \ \ \ constraintIdPerBatch[iBatch]\ =\ iDestCon\ +\ 1;}
+\DoxyCodeLine{00454\ \ \ \ \ \ \ \ \ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a74bd7458316214acb0c2e81329b3417f}{m\_constraintIndices}}[iDestCon]\ =\ iCon;}
+\DoxyCodeLine{00455\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00456\ \ \ \ \ \}}
+\DoxyCodeLine{00457\ \}}
+\DoxyCodeLine{00458\ }
+\DoxyCodeLine{00459\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{struct_write_out_constraint_indices_loop_a55a4f654687eb5b1c03c84d12e26c4e8}{WriteOutConstraintIndicesLoop}}\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{classbt_i_parallel_for_body}{btIParallelForBody}}}
+\DoxyCodeLine{00460\ \{}
+\DoxyCodeLine{00461\ \ \ \ \ \mbox{\hyperlink{structbt_batched_constraints}{btBatchedConstraints}}*\ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_a6f41ee0fb00d3b98478162f5a5a3d38b}{m\_batchedConstraints}};}
+\DoxyCodeLine{00462\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}*\ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_ae687da00e82eaed988fbb94ed345378f}{m\_constraintBatchIds}};}
+\DoxyCodeLine{00463\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_a0e1facbd850e1bf109aa4eb68152f317}{m\_numConstraints}};}
+\DoxyCodeLine{00464\ \ \ \ \ \textcolor{keywordtype}{int}*\ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_a97874ab49e129cc44ced8aa4bcb44b3a}{m\_constraintIdPerBatch}};}
+\DoxyCodeLine{00465\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_a08283570b9feeecb479e4c4d4d64e9c0}{m\_maxNumBatchesPerPhase}};}
+\DoxyCodeLine{00466\ }
+\DoxyCodeLine{00467\ \ \ \ \ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_a55a4f654687eb5b1c03c84d12e26c4e8}{WriteOutConstraintIndicesLoop}}(\mbox{\hyperlink{structbt_batched_constraints}{btBatchedConstraints}}*\ bc,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}*\ constraintBatchIds,\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ \textcolor{keywordtype}{int}*\ constraintIdPerBatch,\ \textcolor{keywordtype}{int}\ maxNumBatchesPerPhase)}
+\DoxyCodeLine{00468\ \ \ \ \ \{}
+\DoxyCodeLine{00469\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_a6f41ee0fb00d3b98478162f5a5a3d38b}{m\_batchedConstraints}}\ =\ bc;}
+\DoxyCodeLine{00470\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_ae687da00e82eaed988fbb94ed345378f}{m\_constraintBatchIds}}\ =\ constraintBatchIds;}
+\DoxyCodeLine{00471\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_a0e1facbd850e1bf109aa4eb68152f317}{m\_numConstraints}}\ =\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}};}
+\DoxyCodeLine{00472\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_a97874ab49e129cc44ced8aa4bcb44b3a}{m\_constraintIdPerBatch}}\ =\ constraintIdPerBatch;}
+\DoxyCodeLine{00473\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_a08283570b9feeecb479e4c4d4d64e9c0}{m\_maxNumBatchesPerPhase}}\ =\ maxNumBatchesPerPhase;}
+\DoxyCodeLine{00474\ \ \ \ \ \}}
+\DoxyCodeLine{00475\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_a73af91197cb271ca19aca75b4af1c450}{forLoop}}(\textcolor{keywordtype}{int}\ iBegin,\ \textcolor{keywordtype}{int}\ iEnd)\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}}
+\DoxyCodeLine{00476\ \ \ \ \ \{}
+\DoxyCodeLine{00477\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}WriteOutConstraintIndicesLoop"{}});}
+\DoxyCodeLine{00478\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ batchBegin\ =\ iBegin\ *\ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_a08283570b9feeecb479e4c4d4d64e9c0}{m\_maxNumBatchesPerPhase}};}
+\DoxyCodeLine{00479\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ batchEnd\ =\ iEnd\ *\ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_a08283570b9feeecb479e4c4d4d64e9c0}{m\_maxNumBatchesPerPhase}};}
+\DoxyCodeLine{00480\ \ \ \ \ \ \ \ \ writeOutConstraintIndicesForRangeOfBatches(\mbox{\hyperlink{struct_write_out_constraint_indices_loop_a6f41ee0fb00d3b98478162f5a5a3d38b}{m\_batchedConstraints}},}
+\DoxyCodeLine{00481\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_ae687da00e82eaed988fbb94ed345378f}{m\_constraintBatchIds}},}
+\DoxyCodeLine{00482\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_a0e1facbd850e1bf109aa4eb68152f317}{m\_numConstraints}},}
+\DoxyCodeLine{00483\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_write_out_constraint_indices_loop_a97874ab49e129cc44ced8aa4bcb44b3a}{m\_constraintIdPerBatch}},}
+\DoxyCodeLine{00484\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ batchBegin,}
+\DoxyCodeLine{00485\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ batchEnd);}
+\DoxyCodeLine{00486\ \ \ \ \ \}}
+\DoxyCodeLine{00487\ \};}
+\DoxyCodeLine{00488\ }
+\DoxyCodeLine{00489\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ writeOutConstraintIndicesMt(\mbox{\hyperlink{structbt_batched_constraints}{btBatchedConstraints}}*\ bc,}
+\DoxyCodeLine{00490\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}*\ constraintBatchIds,}
+\DoxyCodeLine{00491\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},}
+\DoxyCodeLine{00492\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}*\ constraintIdPerBatch,}
+\DoxyCodeLine{00493\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ maxNumBatchesPerPhase,}
+\DoxyCodeLine{00494\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numPhases)}
+\DoxyCodeLine{00495\ \{}
+\DoxyCodeLine{00496\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}writeOutConstraintIndicesMt"{}});}
+\DoxyCodeLine{00497\ \ \ \ \ \textcolor{keywordtype}{bool}\ inParallel\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00498\ \ \ \ \ \textcolor{keywordflow}{if}\ (inParallel)}
+\DoxyCodeLine{00499\ \ \ \ \ \{}
+\DoxyCodeLine{00500\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_write_out_constraint_indices_loop}{WriteOutConstraintIndicesLoop}}\ loop(bc,\ constraintBatchIds,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ constraintIdPerBatch,\ maxNumBatchesPerPhase);}
+\DoxyCodeLine{00501\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_threads_8cpp_afca0fc71d5b9916c985bbec9e244d919}{btParallelFor}}(0,\ numPhases,\ 1,\ loop);}
+\DoxyCodeLine{00502\ \ \ \ \ \}}
+\DoxyCodeLine{00503\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00504\ \ \ \ \ \{}
+\DoxyCodeLine{00505\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iCon\ =\ 0;\ iCon\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}};\ ++iCon)}
+\DoxyCodeLine{00506\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00507\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBatch\ =\ constraintBatchIds[iCon];}
+\DoxyCodeLine{00508\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iDestCon\ =\ constraintIdPerBatch[iBatch];}
+\DoxyCodeLine{00509\ \ \ \ \ \ \ \ \ \ \ \ \ constraintIdPerBatch[iBatch]\ =\ iDestCon\ +\ 1;}
+\DoxyCodeLine{00510\ \ \ \ \ \ \ \ \ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a74bd7458316214acb0c2e81329b3417f}{m\_constraintIndices}}[iDestCon]\ =\ iCon;}
+\DoxyCodeLine{00511\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00512\ \ \ \ \ \}}
+\DoxyCodeLine{00513\ \}}
+\DoxyCodeLine{00514\ }
+\DoxyCodeLine{00515\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ writeGrainSizes(\mbox{\hyperlink{structbt_batched_constraints}{btBatchedConstraints}}*\ bc)}
+\DoxyCodeLine{00516\ \{}
+\DoxyCodeLine{00517\ \ \ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{structbt_batched_constraints_1_1_range}{btBatchedConstraints::Range}}\ Range;}
+\DoxyCodeLine{00518\ \ \ \ \ \textcolor{keywordtype}{int}\ numPhases\ =\ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a91a35321ac3f5e14cb324e9fe5a503a7}{m\_phases}}.size();}
+\DoxyCodeLine{00519\ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a85d5999b05f7349361eb85e0306c1c8b}{m\_phaseGrainSize}}.\mbox{\hyperlink{classbt_aligned_object_array_a2cc58c74534181a7a10e5c6ab8b21227}{resizeNoInitialize}}(numPhases);}
+\DoxyCodeLine{00520\ \ \ \ \ \textcolor{keywordtype}{int}\ numThreads\ =\ \mbox{\hyperlink{bt_threads_8cpp_ac1f9bade547f6e50c3095f280c54ea1d}{btGetTaskScheduler}}()-\/>\mbox{\hyperlink{classbt_i_task_scheduler_a3e94628c386b198f939707b5308d2c70}{getNumThreads}}();}
+\DoxyCodeLine{00521\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iPhase\ =\ 0;\ iPhase\ <\ numPhases;\ ++iPhase)}
+\DoxyCodeLine{00522\ \ \ \ \ \{}
+\DoxyCodeLine{00523\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ Range\&\ phase\ =\ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a91a35321ac3f5e14cb324e9fe5a503a7}{m\_phases}}[iPhase];}
+\DoxyCodeLine{00524\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numBatches\ =\ phase.end\ -\/\ phase.begin;}
+\DoxyCodeLine{00525\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ grainSize\ =\ std::floor((0.25f\ *\ numBatches\ /\ \textcolor{keywordtype}{float}(numThreads))\ +\ 0.0f);}
+\DoxyCodeLine{00526\ \ \ \ \ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a85d5999b05f7349361eb85e0306c1c8b}{m\_phaseGrainSize}}[iPhase]\ =\ \mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(1,\ \textcolor{keywordtype}{int}(grainSize));}
+\DoxyCodeLine{00527\ \ \ \ \ \}}
+\DoxyCodeLine{00528\ \}}
+\DoxyCodeLine{00529\ }
+\DoxyCodeLine{00530\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ writeOutBatches(\mbox{\hyperlink{structbt_batched_constraints}{btBatchedConstraints}}*\ bc,}
+\DoxyCodeLine{00531\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}*\ constraintBatchIds,}
+\DoxyCodeLine{00532\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},}
+\DoxyCodeLine{00533\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batch_info}{btBatchInfo}}*\ batches,}
+\DoxyCodeLine{00534\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}*\ batchWork,}
+\DoxyCodeLine{00535\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ maxNumBatchesPerPhase,}
+\DoxyCodeLine{00536\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ numPhases)}
+\DoxyCodeLine{00537\ \{}
+\DoxyCodeLine{00538\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}writeOutBatches"{}});}
+\DoxyCodeLine{00539\ \ \ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{structbt_batched_constraints_1_1_range}{btBatchedConstraints::Range}}\ Range;}
+\DoxyCodeLine{00540\ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a74bd7458316214acb0c2e81329b3417f}{m\_constraintIndices}}.\mbox{\hyperlink{classbt_aligned_object_array_a0bcdc850355c6742c66d50b16b102d9d}{reserve}}(\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}});}
+\DoxyCodeLine{00541\ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a57a933584f135b4f88a54adfa3e707c4}{m\_batches}}.resizeNoInitialize(0);}
+\DoxyCodeLine{00542\ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a91a35321ac3f5e14cb324e9fe5a503a7}{m\_phases}}.resizeNoInitialize(0);}
+\DoxyCodeLine{00543\ }
+\DoxyCodeLine{00544\ \ \ \ \ \textcolor{comment}{//int\ maxNumBatches\ =\ numPhases\ *\ maxNumBatchesPerPhase;}}
+\DoxyCodeLine{00545\ \ \ \ \ \{}
+\DoxyCodeLine{00546\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}*\ constraintIdPerBatch\ =\ batchWork;\ \ \textcolor{comment}{//\ for\ each\ batch,\ keep\ an\ index\ into\ the\ next\ available\ slot\ in\ the\ m\_constraintIndices\ array}}
+\DoxyCodeLine{00547\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iConstraint\ =\ 0;}
+\DoxyCodeLine{00548\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iPhase\ =\ 0;\ iPhase\ <\ numPhases;\ ++iPhase)}
+\DoxyCodeLine{00549\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00550\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ curPhaseBegin\ =\ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a57a933584f135b4f88a54adfa3e707c4}{m\_batches}}.size();}
+\DoxyCodeLine{00551\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBegin\ =\ iPhase\ *\ maxNumBatchesPerPhase;}
+\DoxyCodeLine{00552\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iEnd\ =\ iBegin\ +\ maxNumBatchesPerPhase;}
+\DoxyCodeLine{00553\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ iBegin;\ i\ <\ iEnd;\ ++i)}
+\DoxyCodeLine{00554\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00555\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batch_info}{btBatchInfo}}\&\ batch\ =\ batches[i];}
+\DoxyCodeLine{00556\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ curBatchBegin\ =\ iConstraint;}
+\DoxyCodeLine{00557\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ constraintIdPerBatch[i]\ =\ curBatchBegin;\ \ \textcolor{comment}{//\ record\ the\ start\ of\ each\ batch\ in\ m\_constraintIndices\ array}}
+\DoxyCodeLine{00558\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}}\ =\ batch.\mbox{\hyperlink{structbt_batch_info_a57389841a9cdb4ea3e44066fb2cb9e63}{numConstraints}};}
+\DoxyCodeLine{00559\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ iConstraint\ +=\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}};}
+\DoxyCodeLine{00560\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}}\ >\ 0)}
+\DoxyCodeLine{00561\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00562\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a57a933584f135b4f88a54adfa3e707c4}{m\_batches}}.push\_back(Range(curBatchBegin,\ iConstraint));}
+\DoxyCodeLine{00563\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00564\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00565\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ any\ batches\ were\ emitted\ this\ phase,}}
+\DoxyCodeLine{00566\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a57a933584f135b4f88a54adfa3e707c4}{m\_batches}}.size()\ >\ curPhaseBegin)}
+\DoxyCodeLine{00567\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00568\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ output\ phase}}
+\DoxyCodeLine{00569\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a91a35321ac3f5e14cb324e9fe5a503a7}{m\_phases}}.push\_back(Range(curPhaseBegin,\ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a57a933584f135b4f88a54adfa3e707c4}{m\_batches}}.size()));}
+\DoxyCodeLine{00570\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00571\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00572\ }
+\DoxyCodeLine{00573\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(iConstraint\ ==\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}});}
+\DoxyCodeLine{00574\ \ \ \ \ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a74bd7458316214acb0c2e81329b3417f}{m\_constraintIndices}}.\mbox{\hyperlink{classbt_aligned_object_array_a2cc58c74534181a7a10e5c6ab8b21227}{resizeNoInitialize}}(\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}});}
+\DoxyCodeLine{00575\ \ \ \ \ \ \ \ \ writeOutConstraintIndicesMt(bc,\ constraintBatchIds,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ constraintIdPerBatch,\ maxNumBatchesPerPhase,\ numPhases);}
+\DoxyCodeLine{00576\ \ \ \ \ \}}
+\DoxyCodeLine{00577\ \ \ \ \ \textcolor{comment}{//\ for\ each\ phase}}
+\DoxyCodeLine{00578\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iPhase\ =\ 0;\ iPhase\ <\ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a91a35321ac3f5e14cb324e9fe5a503a7}{m\_phases}}.size();\ ++iPhase)}
+\DoxyCodeLine{00579\ \ \ \ \ \{}
+\DoxyCodeLine{00580\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ sort\ the\ batches\ from\ largest\ to\ smallest\ (can\ be\ helpful\ to\ some\ task\ schedulers)}}
+\DoxyCodeLine{00581\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ Range\&\ curBatches\ =\ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a91a35321ac3f5e14cb324e9fe5a503a7}{m\_phases}}[iPhase];}
+\DoxyCodeLine{00582\ \ \ \ \ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a57a933584f135b4f88a54adfa3e707c4}{m\_batches}}.quickSortInternal(\mbox{\hyperlink{bt_batched_constraints_8cpp_a813d0e894acc5b70e3ed7954d16f12d2}{BatchCompare}},\ curBatches.begin,\ curBatches.end\ -\/\ 1);}
+\DoxyCodeLine{00583\ \ \ \ \ \}}
+\DoxyCodeLine{00584\ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a8b3ed105cd1b07da5981603ee73a8868}{m\_phaseOrder}}.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a91a35321ac3f5e14cb324e9fe5a503a7}{m\_phases}}.size());}
+\DoxyCodeLine{00585\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a91a35321ac3f5e14cb324e9fe5a503a7}{m\_phases}}.size();\ ++i)}
+\DoxyCodeLine{00586\ \ \ \ \ \{}
+\DoxyCodeLine{00587\ \ \ \ \ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a8b3ed105cd1b07da5981603ee73a8868}{m\_phaseOrder}}[i]\ =\ i;}
+\DoxyCodeLine{00588\ \ \ \ \ \}}
+\DoxyCodeLine{00589\ \ \ \ \ writeGrainSizes(bc);}
+\DoxyCodeLine{00590\ \}}
+\DoxyCodeLine{00591\ }
+\DoxyCodeLine{00592\ \textcolor{comment}{//}}
+\DoxyCodeLine{00593\ \textcolor{comment}{//\ PreallocatedMemoryHelper\ -\/-\/\ helper\ object\ for\ allocating\ a\ number\ of\ chunks\ of\ memory\ in\ a\ single\ contiguous\ block.}}
+\DoxyCodeLine{00594\ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ It\ is\ generally\ more\ efficient\ to\ do\ a\ single\ larger\ allocation\ than\ many\ smaller\ allocations.}}
+\DoxyCodeLine{00595\ \textcolor{comment}{//}}
+\DoxyCodeLine{00596\ \textcolor{comment}{//\ Example\ Usage:}}
+\DoxyCodeLine{00597\ \textcolor{comment}{//}}
+\DoxyCodeLine{00598\ \textcolor{comment}{//\ \ btVector3*\ bodyPositions\ =\ NULL;}}
+\DoxyCodeLine{00599\ \textcolor{comment}{//\ \ btBatchedConstraintInfo*\ conInfos\ =\ NULL;}}
+\DoxyCodeLine{00600\ \textcolor{comment}{//\ \ \{}}
+\DoxyCodeLine{00601\ \textcolor{comment}{//\ \ \ \ PreallocatedMemoryHelper<8>\ memHelper;}}
+\DoxyCodeLine{00602\ \textcolor{comment}{//\ \ \ \ memHelper.addChunk(\ (void**)\ \&bodyPositions,\ sizeof(\ btVector3\ )\ *\ bodies.size()\ );}}
+\DoxyCodeLine{00603\ \textcolor{comment}{//\ \ \ \ memHelper.addChunk(\ (void**)\ \&conInfos,\ sizeof(\ btBatchedConstraintInfo\ )\ *\ numConstraints\ );}}
+\DoxyCodeLine{00604\ \textcolor{comment}{//\ \ \ \ void*\ memPtr\ =\ malloc(\ memHelper.getSizeToAllocate()\ );\ \ //\ allocate\ the\ memory}}
+\DoxyCodeLine{00605\ \textcolor{comment}{//\ \ \ \ memHelper.setChunkPointers(\ memPtr\ );\ \ //\ update\ pointers\ to\ chunks}}
+\DoxyCodeLine{00606\ \textcolor{comment}{//\ \ \}}}
+\DoxyCodeLine{00607\ \textcolor{keyword}{template}\ <\textcolor{keywordtype}{int}\ N>}
+\DoxyCodeLine{00608\ \textcolor{keyword}{class\ }\mbox{\hyperlink{class_preallocated_memory_helper_af0eece94fd83cf95b319096af75cd139}{PreallocatedMemoryHelper}}}
+\DoxyCodeLine{00609\ \{}
+\DoxyCodeLine{00610\ \ \ \ \ \textcolor{keyword}{struct\ }Chunk}
+\DoxyCodeLine{00611\ \ \ \ \ \{}
+\DoxyCodeLine{00612\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}**\ ptr;}
+\DoxyCodeLine{00613\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}};}
+\DoxyCodeLine{00614\ \ \ \ \ \};}
+\DoxyCodeLine{00615\ \ \ \ \ Chunk\ m\_chunks[\mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a8d9c307cb7f3c4a32822a51922d1ceaa}{N}}];}
+\DoxyCodeLine{00616\ \ \ \ \ \textcolor{keywordtype}{int}\ m\_numChunks;}
+\DoxyCodeLine{00617\ }
+\DoxyCodeLine{00618\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00619\ \ \ \ \ \mbox{\hyperlink{class_preallocated_memory_helper_af0eece94fd83cf95b319096af75cd139}{PreallocatedMemoryHelper}}()\ \{\ m\_numChunks\ =\ 0;\ \}}
+\DoxyCodeLine{00620\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_preallocated_memory_helper_a2e85307af00301d7b7f239cd662dba47}{addChunk}}(\textcolor{keywordtype}{void}**\ ptr,\ \textcolor{keywordtype}{size\_t}\ sz)}
+\DoxyCodeLine{00621\ \ \ \ \ \{}
+\DoxyCodeLine{00622\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(m\_numChunks\ <\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a8d9c307cb7f3c4a32822a51922d1ceaa}{N}});}
+\DoxyCodeLine{00623\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_numChunks\ <\ \mbox{\hyperlink{_input_manager_8h_acf6120e5498fcaa4a807f587242c3385a8d9c307cb7f3c4a32822a51922d1ceaa}{N}})}
+\DoxyCodeLine{00624\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00625\ \ \ \ \ \ \ \ \ \ \ \ \ Chunk\&\ chunk\ =\ m\_chunks[m\_numChunks];}
+\DoxyCodeLine{00626\ \ \ \ \ \ \ \ \ \ \ \ \ chunk.ptr\ =\ ptr;}
+\DoxyCodeLine{00627\ \ \ \ \ \ \ \ \ \ \ \ \ chunk.size\ =\ sz;}
+\DoxyCodeLine{00628\ \ \ \ \ \ \ \ \ \ \ \ \ m\_numChunks++;}
+\DoxyCodeLine{00629\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00630\ \ \ \ \ \}}
+\DoxyCodeLine{00631\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ \mbox{\hyperlink{class_preallocated_memory_helper_a75ffef13c2efb8a682724f35d3015ae7}{getSizeToAllocate}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00632\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00633\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ totalSize\ =\ 0;}
+\DoxyCodeLine{00634\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ m\_numChunks;\ ++i)}
+\DoxyCodeLine{00635\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00636\ \ \ \ \ \ \ \ \ \ \ \ \ totalSize\ +=\ m\_chunks[i].size;}
+\DoxyCodeLine{00637\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00638\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ totalSize;}
+\DoxyCodeLine{00639\ \ \ \ \ \}}
+\DoxyCodeLine{00640\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_preallocated_memory_helper_aa2b1f7ba969a8a65217f449aa8789887}{setChunkPointers}}(\textcolor{keywordtype}{void}*\ mem)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00641\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00642\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ totalSize\ =\ 0;}
+\DoxyCodeLine{00643\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ m\_numChunks;\ ++i)}
+\DoxyCodeLine{00644\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00645\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ Chunk\&\ chunk\ =\ m\_chunks[i];}
+\DoxyCodeLine{00646\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{char}*\ chunkPtr\ =\ \textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{char}*\textcolor{keyword}{>}(mem)\ +\ totalSize;}
+\DoxyCodeLine{00647\ \ \ \ \ \ \ \ \ \ \ \ \ *chunk.ptr\ =\ chunkPtr;}
+\DoxyCodeLine{00648\ \ \ \ \ \ \ \ \ \ \ \ \ totalSize\ +=\ chunk.size;}
+\DoxyCodeLine{00649\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00650\ \ \ \ \ \}}
+\DoxyCodeLine{00651\ \};}
+\DoxyCodeLine{00652\ }
+\DoxyCodeLine{00653\ \textcolor{keyword}{static}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ findMaxDynamicConstraintExtent(}
+\DoxyCodeLine{00654\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}*\ bodyPositions,}
+\DoxyCodeLine{00655\ \ \ \ \ \textcolor{keywordtype}{bool}*\ bodyDynamicFlags,}
+\DoxyCodeLine{00656\ \ \ \ \ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}*\ conInfos,}
+\DoxyCodeLine{00657\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},}
+\DoxyCodeLine{00658\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}})}
+\DoxyCodeLine{00659\ \{}
+\DoxyCodeLine{00660\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}findMaxDynamicConstraintExtent"{}});}
+\DoxyCodeLine{00661\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ consExtent\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(1,\ 1,\ 1)\ *\ 0.001;}
+\DoxyCodeLine{00662\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iCon\ =\ 0;\ iCon\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}};\ ++iCon)}
+\DoxyCodeLine{00663\ \ \ \ \ \{}
+\DoxyCodeLine{00664\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}\&\ con\ =\ conInfos[iCon];}
+\DoxyCodeLine{00665\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBody0\ =\ con.\mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[0];}
+\DoxyCodeLine{00666\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBody1\ =\ con.\mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[1];}
+\DoxyCodeLine{00667\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(iBody0\ >=\ 0\ \&\&\ iBody0\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}});}
+\DoxyCodeLine{00668\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(iBody1\ >=\ 0\ \&\&\ iBody1\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_aa64d0d62d6a53f7a63b3f93fd1aff6d4}{numBodies}});}
+\DoxyCodeLine{00669\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ is\ it\ a\ dynamic\ constraint?}}
+\DoxyCodeLine{00670\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (bodyDynamicFlags[iBody0]\ \&\&\ bodyDynamicFlags[iBody1])}
+\DoxyCodeLine{00671\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00672\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ delta\ =\ bodyPositions[iBody1]\ -\/\ bodyPositions[iBody0];}
+\DoxyCodeLine{00673\ \ \ \ \ \ \ \ \ \ \ \ \ consExtent.setMax(delta.absolute());}
+\DoxyCodeLine{00674\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00675\ \ \ \ \ \}}
+\DoxyCodeLine{00676\ \ \ \ \ \textcolor{keywordflow}{return}\ consExtent;}
+\DoxyCodeLine{00677\ \}}
+\DoxyCodeLine{00678\ }
+\DoxyCodeLine{00679\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structbt_int_vec3}{btIntVec3}}}
+\DoxyCodeLine{00680\ \{}
+\DoxyCodeLine{00681\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{structbt_int_vec3_aad3f6b1fab820bf9a0928bb73460990b}{m\_ints}}[3];}
+\DoxyCodeLine{00682\ }
+\DoxyCodeLine{00683\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\&\ \mbox{\hyperlink{structbt_int_vec3_add62b89c6ac40edf8b791b09ce26e17b}{operator[]}}(\textcolor{keywordtype}{int}\ i)\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{structbt_int_vec3_aad3f6b1fab820bf9a0928bb73460990b}{m\_ints}}[i];\ \}}
+\DoxyCodeLine{00684\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{int}\&\ \mbox{\hyperlink{structbt_int_vec3_a9c0138ae9282c37db18cea7d8ef81b05}{operator[]}}(\textcolor{keywordtype}{int}\ i)\ \{\ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{structbt_int_vec3_aad3f6b1fab820bf9a0928bb73460990b}{m\_ints}}[i];\ \}}
+\DoxyCodeLine{00685\ \};}
+\DoxyCodeLine{00686\ }
+\DoxyCodeLine{00687\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{struct_assign_constraints_to_grid_batches_params_a7bef10720aea392dc587c90ac02f8698}{AssignConstraintsToGridBatchesParams}}}
+\DoxyCodeLine{00688\ \{}
+\DoxyCodeLine{00689\ \ \ \ \ \textcolor{keywordtype}{bool}*\ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_params_ad4c9d3f65f10de7a4f8f63786e00138c}{bodyDynamicFlags}};}
+\DoxyCodeLine{00690\ \ \ \ \ \mbox{\hyperlink{structbt_int_vec3}{btIntVec3}}*\ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_params_a7091425e8d1286761d733d49021946ff}{bodyGridCoords}};}
+\DoxyCodeLine{00691\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_params_a3da53658325589ed4af003dc5bb5e0fa}{numBodies}};}
+\DoxyCodeLine{00692\ \ \ \ \ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}*\ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_params_a2d23326889a4a18c6c821533c855772e}{conInfos}};}
+\DoxyCodeLine{00693\ \ \ \ \ \textcolor{keywordtype}{int}*\ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_params_aac1ac5a0410562b99ee4c67160e52ac7}{constraintBatchIds}};}
+\DoxyCodeLine{00694\ \ \ \ \ \mbox{\hyperlink{structbt_int_vec3}{btIntVec3}}\ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_params_a72d9a0c1d98da73ab838b76c2d12d9ea}{gridChunkDim}};}
+\DoxyCodeLine{00695\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_params_aa38e60f1622ae96715fd46845c574b4d}{maxNumBatchesPerPhase}};}
+\DoxyCodeLine{00696\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_params_acbc9f37cc427216b34fb4d7f80ff9a2b}{numPhases}};}
+\DoxyCodeLine{00697\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_params_abfc8dd83cbdbd151c76206ae638c069a}{phaseMask}};}
+\DoxyCodeLine{00698\ }
+\DoxyCodeLine{00699\ \ \ \ \ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_params_a7bef10720aea392dc587c90ac02f8698}{AssignConstraintsToGridBatchesParams}}()}
+\DoxyCodeLine{00700\ \ \ \ \ \{}
+\DoxyCodeLine{00701\ \ \ \ \ \ \ \ \ memset(\textcolor{keyword}{this},\ 0,\ \textcolor{keyword}{sizeof}(*\textcolor{keyword}{this}));}
+\DoxyCodeLine{00702\ \ \ \ \ \}}
+\DoxyCodeLine{00703\ \};}
+\DoxyCodeLine{00704\ }
+\DoxyCodeLine{00705\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ assignConstraintsToGridBatches(\textcolor{keyword}{const}\ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_params}{AssignConstraintsToGridBatchesParams}}\&\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}},\ \textcolor{keywordtype}{int}\ iConBegin,\ \textcolor{keywordtype}{int}\ iConEnd)}
+\DoxyCodeLine{00706\ \{}
+\DoxyCodeLine{00707\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}assignConstraintsToGridBatches"{}});}
+\DoxyCodeLine{00708\ \ \ \ \ \textcolor{comment}{//\ (can\ be\ done\ in\ parallel)}}
+\DoxyCodeLine{00709\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iCon\ =\ iConBegin;\ iCon\ <\ iConEnd;\ ++iCon)}
+\DoxyCodeLine{00710\ \ \ \ \ \{}
+\DoxyCodeLine{00711\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}\&\ con\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.conInfos[iCon];}
+\DoxyCodeLine{00712\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBody0\ =\ con.\mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[0];}
+\DoxyCodeLine{00713\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBody1\ =\ con.\mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[1];}
+\DoxyCodeLine{00714\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iPhase\ =\ iCon;\ \ \textcolor{comment}{//iBody0;\ //\ pseudorandom\ choice\ to\ distribute\ evenly\ amongst\ phases}}
+\DoxyCodeLine{00715\ \ \ \ \ \ \ \ \ iPhase\ \&=\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.phaseMask;}
+\DoxyCodeLine{00716\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ gridCoord[3];}
+\DoxyCodeLine{00717\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ is\ it\ a\ dynamic\ constraint?}}
+\DoxyCodeLine{00718\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.bodyDynamicFlags[iBody0]\ \&\&\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.bodyDynamicFlags[iBody1])}
+\DoxyCodeLine{00719\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00720\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_int_vec3}{btIntVec3}}\&\ body0Coords\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.bodyGridCoords[iBody0];}
+\DoxyCodeLine{00721\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_int_vec3}{btIntVec3}}\&\ body1Coords\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.bodyGridCoords[iBody1];}
+\DoxyCodeLine{00722\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ for\ each\ dimension\ x,y,z,}}
+\DoxyCodeLine{00723\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 3;\ ++i)}
+\DoxyCodeLine{00724\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00725\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ coordMin\ =\ \mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin}}(body0Coords.\mbox{\hyperlink{structbt_int_vec3_aad3f6b1fab820bf9a0928bb73460990b}{m\_ints}}[i],\ body1Coords.\mbox{\hyperlink{structbt_int_vec3_aad3f6b1fab820bf9a0928bb73460990b}{m\_ints}}[i]);}
+\DoxyCodeLine{00726\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ coordMax\ =\ \mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(body0Coords.\mbox{\hyperlink{structbt_int_vec3_aad3f6b1fab820bf9a0928bb73460990b}{m\_ints}}[i],\ body1Coords.\mbox{\hyperlink{structbt_int_vec3_aad3f6b1fab820bf9a0928bb73460990b}{m\_ints}}[i]);}
+\DoxyCodeLine{00727\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (coordMin\ !=\ coordMax)}
+\DoxyCodeLine{00728\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00729\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(coordMax\ ==\ coordMin\ +\ 1);}
+\DoxyCodeLine{00730\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((coordMin\ \&\ 1)\ ==\ 0)}
+\DoxyCodeLine{00731\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00732\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ iPhase\ \&=\ \string~(1\ <<\ i);\ \ \textcolor{comment}{//\ force\ bit\ off}}
+\DoxyCodeLine{00733\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00734\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00735\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00736\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ iPhase\ |=\ (1\ <<\ i);\ \ \textcolor{comment}{//\ force\ bit\ on}}
+\DoxyCodeLine{00737\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ iPhase\ \&=\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.phaseMask;}
+\DoxyCodeLine{00738\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00739\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00740\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ gridCoord[i]\ =\ coordMin;}
+\DoxyCodeLine{00741\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00742\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00743\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00744\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00745\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.bodyDynamicFlags[iBody0])}
+\DoxyCodeLine{00746\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00747\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ iBody0\ =\ con.\mbox{\hyperlink{structbt_batched_constraint_info_aa9124a1b0dc771c7d78a6193ede8ace4}{bodyIds}}[1];}
+\DoxyCodeLine{00748\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00749\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.bodyDynamicFlags[iBody0]);}
+\DoxyCodeLine{00750\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_int_vec3}{btIntVec3}}\&\ body0Coords\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.bodyGridCoords[iBody0];}
+\DoxyCodeLine{00751\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ for\ each\ dimension\ x,y,z,}}
+\DoxyCodeLine{00752\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 3;\ ++i)}
+\DoxyCodeLine{00753\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00754\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ gridCoord[i]\ =\ body0Coords.\mbox{\hyperlink{structbt_int_vec3_aad3f6b1fab820bf9a0928bb73460990b}{m\_ints}}[i];}
+\DoxyCodeLine{00755\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00756\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00757\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ calculate\ chunk\ coordinates}}
+\DoxyCodeLine{00758\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ chunkCoord[3];}
+\DoxyCodeLine{00759\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_int_vec3}{btIntVec3}}\ gridChunkDim\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.gridChunkDim;}
+\DoxyCodeLine{00760\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ for\ each\ dimension\ x,y,z,}}
+\DoxyCodeLine{00761\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 3;\ ++i)}
+\DoxyCodeLine{00762\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00763\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ coordOffset\ =\ (iPhase\ >>\ i)\ \&\ 1;}
+\DoxyCodeLine{00764\ \ \ \ \ \ \ \ \ \ \ \ \ chunkCoord[i]\ =\ (gridCoord[i]\ -\/\ coordOffset)\ /\ 2;}
+\DoxyCodeLine{00765\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_min_max_8h_ad017b3c18206877681f7061fee56e1d1}{btClamp}}(chunkCoord[i],\ 0,\ gridChunkDim[i]\ -\/\ 1);}
+\DoxyCodeLine{00766\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(chunkCoord[i]\ <\ gridChunkDim[i]);}
+\DoxyCodeLine{00767\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00768\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBatch\ =\ iPhase\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.maxNumBatchesPerPhase\ +\ chunkCoord[0]\ +\ chunkCoord[1]\ *\ gridChunkDim[0]\ +\ chunkCoord[2]\ *\ gridChunkDim[0]\ *\ gridChunkDim[1];}
+\DoxyCodeLine{00769\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(iBatch\ >=\ 0\ \&\&\ iBatch\ <\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.maxNumBatchesPerPhase\ *\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.numPhases);}
+\DoxyCodeLine{00770\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.constraintBatchIds[iCon]\ =\ iBatch;}
+\DoxyCodeLine{00771\ \ \ \ \ \}}
+\DoxyCodeLine{00772\ \}}
+\DoxyCodeLine{00773\ }
+\DoxyCodeLine{00774\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{struct_assign_constraints_to_grid_batches_loop_a1a884c2ae39e05424ddb1728b2d32742}{AssignConstraintsToGridBatchesLoop}}\ :\ \textcolor{keyword}{public}\ \mbox{\hyperlink{classbt_i_parallel_for_body}{btIParallelForBody}}}
+\DoxyCodeLine{00775\ \{}
+\DoxyCodeLine{00776\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_params}{AssignConstraintsToGridBatchesParams}}*\ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_loop_ae20751cc0fcee5fc8afc7c21d29ee4c6}{m\_params}};}
+\DoxyCodeLine{00777\ }
+\DoxyCodeLine{00778\ \ \ \ \ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_loop_a1a884c2ae39e05424ddb1728b2d32742}{AssignConstraintsToGridBatchesLoop}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_params}{AssignConstraintsToGridBatchesParams}}\&\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}})}
+\DoxyCodeLine{00779\ \ \ \ \ \{}
+\DoxyCodeLine{00780\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_loop_ae20751cc0fcee5fc8afc7c21d29ee4c6}{m\_params}}\ =\ \&\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}};}
+\DoxyCodeLine{00781\ \ \ \ \ \}}
+\DoxyCodeLine{00782\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_loop_af0503cf3b68513bb3a7bf10f0d447f04}{forLoop}}(\textcolor{keywordtype}{int}\ iBegin,\ \textcolor{keywordtype}{int}\ iEnd)\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_threads_8h_a68372d98b848b29df1b7ada15e1e0cb6}{BT\_OVERRIDE}}}
+\DoxyCodeLine{00783\ \ \ \ \ \{}
+\DoxyCodeLine{00784\ \ \ \ \ \ \ \ \ assignConstraintsToGridBatches(*\mbox{\hyperlink{struct_assign_constraints_to_grid_batches_loop_ae20751cc0fcee5fc8afc7c21d29ee4c6}{m\_params}},\ iBegin,\ iEnd);}
+\DoxyCodeLine{00785\ \ \ \ \ \}}
+\DoxyCodeLine{00786\ \};}
+\DoxyCodeLine{00787\ }
+\DoxyCodeLine{00788\ \textcolor{comment}{//}}
+\DoxyCodeLine{00789\ \textcolor{comment}{//\ setupSpatialGridBatchesMt\ -\/-\/\ generate\ batches\ using\ a\ uniform\ 3D\ grid}}
+\DoxyCodeLine{00790\ \textcolor{comment}{//}}
+\DoxyCodeLine{00791\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00792\ \textcolor{comment}{}}
+\DoxyCodeLine{00793\ \textcolor{comment}{Bodies\ are\ treated\ as\ 3D\ points\ at\ their\ center\ of\ mass.\ We\ only\ consider\ dynamic\ bodies\ at\ this\ stage,}}
+\DoxyCodeLine{00794\ \textcolor{comment}{because\ only\ dynamic\ bodies\ are\ mutated\ when\ a\ constraint\ is\ solved,\ thus\ subject\ to\ race\ conditions.}}
+\DoxyCodeLine{00795\ \textcolor{comment}{}}
+\DoxyCodeLine{00796\ \textcolor{comment}{1.\ Compute\ a\ bounding\ box\ around\ all\ dynamic\ bodies}}
+\DoxyCodeLine{00797\ \textcolor{comment}{2.\ Compute\ the\ maximum\ extent\ of\ all\ dynamic\ constraints.\ Each\ dynamic\ constraint\ is\ treated\ as\ a\ line\ segment,\ and\ we\ need\ the\ size\ of}}
+\DoxyCodeLine{00798\ \textcolor{comment}{\ \ \ box\ that\ will\ fully\ enclose\ any\ single\ dynamic\ constraint}}
+\DoxyCodeLine{00799\ \textcolor{comment}{}}
+\DoxyCodeLine{00800\ \textcolor{comment}{3.\ Establish\ the\ cell\ size\ of\ our\ grid,\ the\ cell\ size\ in\ each\ dimension\ must\ be\ at\ least\ as\ large\ as\ the\ dynamic\ constraints\ max-\/extent,}}
+\DoxyCodeLine{00801\ \textcolor{comment}{\ \ \ so\ that\ no\ dynamic\ constraint\ can\ span\ more\ than\ 2\ cells\ of\ our\ grid\ on\ any\ axis\ of\ the\ grid.\ The\ cell\ size\ should\ be\ adjusted}}
+\DoxyCodeLine{00802\ \textcolor{comment}{\ \ \ larger\ in\ order\ to\ keep\ the\ total\ number\ of\ cells\ from\ being\ excessively\ high}}
+\DoxyCodeLine{00803\ \textcolor{comment}{}}
+\DoxyCodeLine{00804\ \textcolor{comment}{Key\ idea:\ Given\ that\ each\ constraint\ spans\ 1\ or\ 2\ grid\ cells\ in\ each\ dimension,\ we\ can\ handle\ all\ constraints\ by\ processing}}
+\DoxyCodeLine{00805\ \textcolor{comment}{\ \ \ \ \ \ \ \ \ \ in\ chunks\ of\ 2x2x2\ cells\ with\ 8\ different\ 1-\/cell\ offsets\ ((0,0,0),(0,0,1),(0,1,0),(0,1,1),(1,0,0)...).}}
+\DoxyCodeLine{00806\ \textcolor{comment}{\ \ \ \ \ \ \ \ \ \ For\ each\ of\ the\ 8\ offsets,\ we\ create\ a\ phase,\ and\ for\ each\ 2x2x2\ chunk\ with\ dynamic\ constraints\ becomes\ a\ batch\ in\ that\ phase.}}
+\DoxyCodeLine{00807\ \textcolor{comment}{}}
+\DoxyCodeLine{00808\ \textcolor{comment}{4.\ Once\ the\ grid\ is\ established,\ we\ can\ calculate\ for\ each\ constraint\ which\ phase\ and\ batch\ it\ belongs\ in.}}
+\DoxyCodeLine{00809\ \textcolor{comment}{}}
+\DoxyCodeLine{00810\ \textcolor{comment}{5.\ Do\ a\ merge\ small\ batches\ on\ the\ batches\ of\ each\ phase\ separately,\ to\ try\ to\ even\ out\ the\ sizes\ of\ batches}}
+\DoxyCodeLine{00811\ \textcolor{comment}{}}
+\DoxyCodeLine{00812\ \textcolor{comment}{Optionally,\ we\ can\ "{}collapse"{}\ one\ dimension\ of\ our\ 3D\ grid\ to\ turn\ it\ into\ a\ 2D\ grid,\ which\ reduces\ the\ number\ of\ phases}}
+\DoxyCodeLine{00813\ \textcolor{comment}{to\ 4.\ With\ fewer\ phases,\ there\ are\ more\ constraints\ per\ phase\ and\ this\ makes\ it\ easier\ to\ create\ batches\ of\ a\ useful\ size.}}
+\DoxyCodeLine{00814\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00815\ \textcolor{comment}{//}}
+\DoxyCodeLine{00816\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ setupSpatialGridBatchesMt(}
+\DoxyCodeLine{00817\ \ \ \ \ \mbox{\hyperlink{structbt_batched_constraints}{btBatchedConstraints}}*\ batchedConstraints,}
+\DoxyCodeLine{00818\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<char>}}*\ scratchMemory,}
+\DoxyCodeLine{00819\ \ \ \ \ \mbox{\hyperlink{bt_solver_constraint_8h_ad6c289dc378cc1e94cbd4297e81da76e}{btConstraintArray}}*\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},}
+\DoxyCodeLine{00820\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btSolverBody>}}\&\ bodies,}
+\DoxyCodeLine{00821\ \ \ \ \ \textcolor{keywordtype}{int}\ minBatchSize,}
+\DoxyCodeLine{00822\ \ \ \ \ \textcolor{keywordtype}{int}\ maxBatchSize,}
+\DoxyCodeLine{00823\ \ \ \ \ \textcolor{keywordtype}{bool}\ use2DGrid)}
+\DoxyCodeLine{00824\ \{}
+\DoxyCodeLine{00825\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}setupSpatialGridBatchesMt"{}});}
+\DoxyCodeLine{00826\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ numPhases\ =\ 8;}
+\DoxyCodeLine{00827\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}}\ =\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}}-\/>size();}
+\DoxyCodeLine{00828\ \ \ \ \ \textcolor{keywordtype}{int}\ numConstraintRows\ =\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}}-\/>size();}
+\DoxyCodeLine{00829\ }
+\DoxyCodeLine{00830\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{int}\ maxGridChunkCount\ =\ 128;}
+\DoxyCodeLine{00831\ \ \ \ \ \textcolor{keywordtype}{int}\ allocNumBatchesPerPhase\ =\ maxGridChunkCount;}
+\DoxyCodeLine{00832\ \ \ \ \ \textcolor{keywordtype}{int}\ minNumBatchesPerPhase\ =\ 16;}
+\DoxyCodeLine{00833\ \ \ \ \ \textcolor{keywordtype}{int}\ allocNumBatches\ =\ allocNumBatchesPerPhase\ *\ numPhases;}
+\DoxyCodeLine{00834\ }
+\DoxyCodeLine{00835\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}*\ bodyPositions\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00836\ \ \ \ \ \textcolor{keywordtype}{bool}*\ bodyDynamicFlags\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00837\ \ \ \ \ \mbox{\hyperlink{structbt_int_vec3}{btIntVec3}}*\ bodyGridCoords\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00838\ \ \ \ \ \mbox{\hyperlink{structbt_batch_info}{btBatchInfo}}*\ batches\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00839\ \ \ \ \ \textcolor{keywordtype}{int}*\ batchWork\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00840\ \ \ \ \ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}*\ conInfos\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00841\ \ \ \ \ \textcolor{keywordtype}{int}*\ constraintBatchIds\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00842\ \ \ \ \ \textcolor{keywordtype}{int}*\ constraintRowBatchIds\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00843\ \ \ \ \ \{}
+\DoxyCodeLine{00844\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{class_preallocated_memory_helper}{PreallocatedMemoryHelper<10>}}\ memHelper;}
+\DoxyCodeLine{00845\ \ \ \ \ \ \ \ \ memHelper.\mbox{\hyperlink{class_preallocated_memory_helper_a2e85307af00301d7b7f239cd662dba47}{addChunk}}((\textcolor{keywordtype}{void}**)\&bodyPositions,\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}})\ *\ bodies.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00846\ \ \ \ \ \ \ \ \ memHelper.\mbox{\hyperlink{class_preallocated_memory_helper_a2e85307af00301d7b7f239cd662dba47}{addChunk}}((\textcolor{keywordtype}{void}**)\&bodyDynamicFlags,\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{bool})\ *\ bodies.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00847\ \ \ \ \ \ \ \ \ memHelper.\mbox{\hyperlink{class_preallocated_memory_helper_a2e85307af00301d7b7f239cd662dba47}{addChunk}}((\textcolor{keywordtype}{void}**)\&bodyGridCoords,\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_int_vec3}{btIntVec3}})\ *\ bodies.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00848\ \ \ \ \ \ \ \ \ memHelper.\mbox{\hyperlink{class_preallocated_memory_helper_a2e85307af00301d7b7f239cd662dba47}{addChunk}}((\textcolor{keywordtype}{void}**)\&batches,\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_batch_info}{btBatchInfo}})\ *\ allocNumBatches);}
+\DoxyCodeLine{00849\ \ \ \ \ \ \ \ \ memHelper.\mbox{\hyperlink{class_preallocated_memory_helper_a2e85307af00301d7b7f239cd662dba47}{addChunk}}((\textcolor{keywordtype}{void}**)\&batchWork,\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{int})\ *\ allocNumBatches);}
+\DoxyCodeLine{00850\ \ \ \ \ \ \ \ \ memHelper.\mbox{\hyperlink{class_preallocated_memory_helper_a2e85307af00301d7b7f239cd662dba47}{addChunk}}((\textcolor{keywordtype}{void}**)\&conInfos,\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}})\ *\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}});}
+\DoxyCodeLine{00851\ \ \ \ \ \ \ \ \ memHelper.\mbox{\hyperlink{class_preallocated_memory_helper_a2e85307af00301d7b7f239cd662dba47}{addChunk}}((\textcolor{keywordtype}{void}**)\&constraintBatchIds,\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{int})\ *\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}});}
+\DoxyCodeLine{00852\ \ \ \ \ \ \ \ \ memHelper.\mbox{\hyperlink{class_preallocated_memory_helper_a2e85307af00301d7b7f239cd662dba47}{addChunk}}((\textcolor{keywordtype}{void}**)\&constraintRowBatchIds,\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{int})\ *\ numConstraintRows);}
+\DoxyCodeLine{00853\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ scratchSize\ =\ memHelper.\mbox{\hyperlink{class_preallocated_memory_helper_a75ffef13c2efb8a682724f35d3015ae7}{getSizeToAllocate}}();}
+\DoxyCodeLine{00854\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ we\ need\ to\ reallocate}}
+\DoxyCodeLine{00855\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\textcolor{keyword}{static\_cast<}\textcolor{keywordtype}{size\_t}\textcolor{keyword}{>}(scratchMemory-\/>\mbox{\hyperlink{classbt_aligned_object_array_a1baf76f9f52df3c2d742194ba33e8788}{capacity}}())\ <\ scratchSize)}
+\DoxyCodeLine{00856\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00857\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ allocate\ 6.25\%\ extra\ to\ avoid\ repeated\ reallocs}}
+\DoxyCodeLine{00858\ \ \ \ \ \ \ \ \ \ \ \ \ scratchMemory-\/>\mbox{\hyperlink{classbt_aligned_object_array_a0bcdc850355c6742c66d50b16b102d9d}{reserve}}(scratchSize\ +\ scratchSize\ /\ 16);}
+\DoxyCodeLine{00859\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00860\ \ \ \ \ \ \ \ \ scratchMemory-\/>\mbox{\hyperlink{classbt_aligned_object_array_a2cc58c74534181a7a10e5c6ab8b21227}{resizeNoInitialize}}(scratchSize);}
+\DoxyCodeLine{00861\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{char}*\ memPtr\ =\ \&scratchMemory-\/>\mbox{\hyperlink{classbt_aligned_object_array_ad11050a980c54793173c2bfb4c3ed1b0}{at}}(0);}
+\DoxyCodeLine{00862\ \ \ \ \ \ \ \ \ memHelper.\mbox{\hyperlink{class_preallocated_memory_helper_aa2b1f7ba969a8a65217f449aa8789887}{setChunkPointers}}(memPtr);}
+\DoxyCodeLine{00863\ \ \ \ \ \}}
+\DoxyCodeLine{00864\ }
+\DoxyCodeLine{00865\ \ \ \ \ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}}\ =\ initBatchedConstraintInfo(conInfos,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}});}
+\DoxyCodeLine{00866\ }
+\DoxyCodeLine{00867\ \ \ \ \ \textcolor{comment}{//\ compute\ bounding\ box\ around\ all\ dynamic\ bodies}}
+\DoxyCodeLine{00868\ \ \ \ \ \textcolor{comment}{//\ (could\ be\ done\ in\ parallel)}}
+\DoxyCodeLine{00869\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ bboxMin(\mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}},\ \mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}},\ \mbox{\hyperlink{bt_scalar_8h_a3a24ecdd029d38fef175bee5d965710a}{BT\_LARGE\_FLOAT}});}
+\DoxyCodeLine{00870\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ bboxMax\ =\ -\/bboxMin;}
+\DoxyCodeLine{00871\ \ \ \ \ \textcolor{comment}{//int\ dynamicBodyCount\ =\ 0;}}
+\DoxyCodeLine{00872\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ bodies.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++i)}
+\DoxyCodeLine{00873\ \ \ \ \ \{}
+\DoxyCodeLine{00874\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_solver_body_8h_a029df9344a303d369eb63b1c7f3e60d5}{btSolverBody}}\&\ body\ =\ bodies[i];}
+\DoxyCodeLine{00875\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ bodyPos\ =\ body.getWorldTransform().getOrigin();}
+\DoxyCodeLine{00876\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ isDynamic\ =\ (body.internalGetInvMass().\mbox{\hyperlink{glad_8h_a92d0386e5c19fb81ea88c9f99644ab1d}{x}}()\ >\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0));}
+\DoxyCodeLine{00877\ \ \ \ \ \ \ \ \ bodyPositions[i]\ =\ bodyPos;}
+\DoxyCodeLine{00878\ \ \ \ \ \ \ \ \ bodyDynamicFlags[i]\ =\ isDynamic;}
+\DoxyCodeLine{00879\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (isDynamic)}
+\DoxyCodeLine{00880\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00881\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//dynamicBodyCount++;}}
+\DoxyCodeLine{00882\ \ \ \ \ \ \ \ \ \ \ \ \ bboxMin.setMin(bodyPos);}
+\DoxyCodeLine{00883\ \ \ \ \ \ \ \ \ \ \ \ \ bboxMax.setMax(bodyPos);}
+\DoxyCodeLine{00884\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00885\ \ \ \ \ \}}
+\DoxyCodeLine{00886\ }
+\DoxyCodeLine{00887\ \ \ \ \ \textcolor{comment}{//\ find\ max\ extent\ of\ all\ dynamic\ constraints}}
+\DoxyCodeLine{00888\ \ \ \ \ \textcolor{comment}{//\ (could\ be\ done\ in\ parallel)}}
+\DoxyCodeLine{00889\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ consExtent\ =\ findMaxDynamicConstraintExtent(bodyPositions,\ bodyDynamicFlags,\ conInfos,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ bodies.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}());}
+\DoxyCodeLine{00890\ }
+\DoxyCodeLine{00891\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ gridExtent\ =\ bboxMax\ -\/\ bboxMin;}
+\DoxyCodeLine{00892\ }
+\DoxyCodeLine{00893\ \ \ \ \ gridExtent.setMax(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1)));}
+\DoxyCodeLine{00894\ }
+\DoxyCodeLine{00895\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ gridCellSize\ =\ consExtent;}
+\DoxyCodeLine{00896\ \ \ \ \ \textcolor{keywordtype}{int}\ gridDim[3];}
+\DoxyCodeLine{00897\ \ \ \ \ gridDim[0]\ =\ int(1.0\ +\ gridExtent.x()\ /\ gridCellSize.x());}
+\DoxyCodeLine{00898\ \ \ \ \ gridDim[1]\ =\ int(1.0\ +\ gridExtent.y()\ /\ gridCellSize.y());}
+\DoxyCodeLine{00899\ \ \ \ \ gridDim[2]\ =\ int(1.0\ +\ gridExtent.z()\ /\ gridCellSize.z());}
+\DoxyCodeLine{00900\ }
+\DoxyCodeLine{00901\ \ \ \ \ \textcolor{comment}{//\ if\ we\ can\ collapse\ an\ axis,\ it\ will\ cut\ our\ number\ of\ phases\ in\ half\ which\ could\ be\ more\ efficient}}
+\DoxyCodeLine{00902\ \ \ \ \ \textcolor{keywordtype}{int}\ phaseMask\ =\ 7;}
+\DoxyCodeLine{00903\ \ \ \ \ \textcolor{keywordtype}{bool}\ collapseAxis\ =\ use2DGrid;}
+\DoxyCodeLine{00904\ \ \ \ \ \textcolor{keywordflow}{if}\ (collapseAxis)}
+\DoxyCodeLine{00905\ \ \ \ \ \{}
+\DoxyCodeLine{00906\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ pick\ the\ smallest\ axis\ to\ collapse,\ leaving\ us\ with\ the\ greatest\ number\ of\ cells\ in\ our\ grid}}
+\DoxyCodeLine{00907\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iAxisToCollapse\ =\ 0;}
+\DoxyCodeLine{00908\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ axisDim\ =\ gridDim[iAxisToCollapse];}
+\DoxyCodeLine{00909\ \ \ \ \ \ \ \ \ \textcolor{comment}{//for\ each\ dimension}}
+\DoxyCodeLine{00910\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ 3;\ ++i)}
+\DoxyCodeLine{00911\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00912\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (gridDim[i]\ <\ axisDim)}
+\DoxyCodeLine{00913\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00914\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ iAxisToCollapse\ =\ i;}
+\DoxyCodeLine{00915\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ axisDim\ =\ gridDim[i];}
+\DoxyCodeLine{00916\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00917\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00918\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ collapse\ it}}
+\DoxyCodeLine{00919\ \ \ \ \ \ \ \ \ gridCellSize[iAxisToCollapse]\ =\ gridExtent[iAxisToCollapse]\ *\ 2.0f;}
+\DoxyCodeLine{00920\ \ \ \ \ \ \ \ \ phaseMask\ \&=\ \string~(1\ <<\ iAxisToCollapse);}
+\DoxyCodeLine{00921\ \ \ \ \ \}}
+\DoxyCodeLine{00922\ }
+\DoxyCodeLine{00923\ \ \ \ \ \textcolor{keywordtype}{int}\ numGridChunks\ =\ 0;}
+\DoxyCodeLine{00924\ \ \ \ \ \mbox{\hyperlink{structbt_int_vec3}{btIntVec3}}\ gridChunkDim;\ \ \textcolor{comment}{//\ each\ chunk\ is\ 2x2x2\ group\ of\ cells}}
+\DoxyCodeLine{00925\ \ \ \ \ \textcolor{keywordflow}{while}\ (\textcolor{keyword}{true})}
+\DoxyCodeLine{00926\ \ \ \ \ \{}
+\DoxyCodeLine{00927\ \ \ \ \ \ \ \ \ gridDim[0]\ =\ int(1.0\ +\ gridExtent.x()\ /\ gridCellSize.x());}
+\DoxyCodeLine{00928\ \ \ \ \ \ \ \ \ gridDim[1]\ =\ int(1.0\ +\ gridExtent.y()\ /\ gridCellSize.y());}
+\DoxyCodeLine{00929\ \ \ \ \ \ \ \ \ gridDim[2]\ =\ int(1.0\ +\ gridExtent.z()\ /\ gridCellSize.z());}
+\DoxyCodeLine{00930\ \ \ \ \ \ \ \ \ gridChunkDim[0]\ =\ \mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(1,\ (gridDim[0]\ +\ 0)\ /\ 2);}
+\DoxyCodeLine{00931\ \ \ \ \ \ \ \ \ gridChunkDim[1]\ =\ \mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(1,\ (gridDim[1]\ +\ 0)\ /\ 2);}
+\DoxyCodeLine{00932\ \ \ \ \ \ \ \ \ gridChunkDim[2]\ =\ \mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(1,\ (gridDim[2]\ +\ 0)\ /\ 2);}
+\DoxyCodeLine{00933\ \ \ \ \ \ \ \ \ numGridChunks\ =\ gridChunkDim[0]\ *\ gridChunkDim[1]\ *\ gridChunkDim[2];}
+\DoxyCodeLine{00934\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ nChunks\ =\ float(gridChunkDim[0])\ *\ float(gridChunkDim[1])\ *\ float(gridChunkDim[2]);\ \ \textcolor{comment}{//\ suceptible\ to\ integer\ overflow}}
+\DoxyCodeLine{00935\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numGridChunks\ <=\ maxGridChunkCount\ \&\&\ nChunks\ <=\ maxGridChunkCount)}
+\DoxyCodeLine{00936\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00937\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00938\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00939\ \ \ \ \ \ \ \ \ gridCellSize\ *=\ 1.25;\ \ \textcolor{comment}{//\ should\ roughly\ cut\ numCells\ in\ half}}
+\DoxyCodeLine{00940\ \ \ \ \ \}}
+\DoxyCodeLine{00941\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(numGridChunks\ <=\ maxGridChunkCount);}
+\DoxyCodeLine{00942\ \ \ \ \ \textcolor{keywordtype}{int}\ maxNumBatchesPerPhase\ =\ numGridChunks;}
+\DoxyCodeLine{00943\ }
+\DoxyCodeLine{00944\ \ \ \ \ \textcolor{comment}{//\ for\ each\ dynamic\ body,\ compute\ grid\ coords}}
+\DoxyCodeLine{00945\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ invGridCellSize\ =\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(1,\ 1,\ 1)\ /\ gridCellSize;}
+\DoxyCodeLine{00946\ \ \ \ \ \textcolor{comment}{//\ (can\ be\ done\ in\ parallel)}}
+\DoxyCodeLine{00947\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iBody\ =\ 0;\ iBody\ <\ bodies.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();\ ++iBody)}
+\DoxyCodeLine{00948\ \ \ \ \ \{}
+\DoxyCodeLine{00949\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_int_vec3}{btIntVec3}}\&\ \mbox{\hyperlink{glad_8h_acdbd39c05bd58b1a6ce737d0189ee608}{coords}}\ =\ bodyGridCoords[iBody];}
+\DoxyCodeLine{00950\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (bodyDynamicFlags[iBody])}
+\DoxyCodeLine{00951\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00952\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}\ =\ (bodyPositions[iBody]\ -\/\ bboxMin)\ *\ invGridCellSize;}
+\DoxyCodeLine{00953\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_acdbd39c05bd58b1a6ce737d0189ee608}{coords}}.m\_ints[0]\ =\ int(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}.x());}
+\DoxyCodeLine{00954\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_acdbd39c05bd58b1a6ce737d0189ee608}{coords}}.m\_ints[1]\ =\ int(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}.y());}
+\DoxyCodeLine{00955\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_acdbd39c05bd58b1a6ce737d0189ee608}{coords}}.m\_ints[2]\ =\ int(\mbox{\hyperlink{glad_8h_a14cfbe2fc2234f5504618905b69d1e06}{v}}.z());}
+\DoxyCodeLine{00956\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{glad_8h_acdbd39c05bd58b1a6ce737d0189ee608}{coords}}.m\_ints[0]\ >=\ 0\ \&\&\ \mbox{\hyperlink{glad_8h_acdbd39c05bd58b1a6ce737d0189ee608}{coords}}.m\_ints[0]\ <\ gridDim[0]);}
+\DoxyCodeLine{00957\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{glad_8h_acdbd39c05bd58b1a6ce737d0189ee608}{coords}}.m\_ints[1]\ >=\ 0\ \&\&\ \mbox{\hyperlink{glad_8h_acdbd39c05bd58b1a6ce737d0189ee608}{coords}}.m\_ints[1]\ <\ gridDim[1]);}
+\DoxyCodeLine{00958\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(\mbox{\hyperlink{glad_8h_acdbd39c05bd58b1a6ce737d0189ee608}{coords}}.m\_ints[2]\ >=\ 0\ \&\&\ \mbox{\hyperlink{glad_8h_acdbd39c05bd58b1a6ce737d0189ee608}{coords}}.m\_ints[2]\ <\ gridDim[2]);}
+\DoxyCodeLine{00959\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00960\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00961\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00962\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_acdbd39c05bd58b1a6ce737d0189ee608}{coords}}.m\_ints[0]\ =\ -\/1;}
+\DoxyCodeLine{00963\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_acdbd39c05bd58b1a6ce737d0189ee608}{coords}}.m\_ints[1]\ =\ -\/1;}
+\DoxyCodeLine{00964\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{glad_8h_acdbd39c05bd58b1a6ce737d0189ee608}{coords}}.m\_ints[2]\ =\ -\/1;}
+\DoxyCodeLine{00965\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00966\ \ \ \ \ \}}
+\DoxyCodeLine{00967\ }
+\DoxyCodeLine{00968\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iPhase\ =\ 0;\ iPhase\ <\ numPhases;\ ++iPhase)}
+\DoxyCodeLine{00969\ \ \ \ \ \{}
+\DoxyCodeLine{00970\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ batchBegin\ =\ iPhase\ *\ maxNumBatchesPerPhase;}
+\DoxyCodeLine{00971\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ batchEnd\ =\ batchBegin\ +\ maxNumBatchesPerPhase;}
+\DoxyCodeLine{00972\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iBatch\ =\ batchBegin;\ iBatch\ <\ batchEnd;\ ++iBatch)}
+\DoxyCodeLine{00973\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00974\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_batch_info}{btBatchInfo}}\&\ batch\ =\ batches[iBatch];}
+\DoxyCodeLine{00975\ \ \ \ \ \ \ \ \ \ \ \ \ batch\ =\ \mbox{\hyperlink{structbt_batch_info}{btBatchInfo}}();}
+\DoxyCodeLine{00976\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00977\ \ \ \ \ \}}
+\DoxyCodeLine{00978\ }
+\DoxyCodeLine{00979\ \ \ \ \ \{}
+\DoxyCodeLine{00980\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_params}{AssignConstraintsToGridBatchesParams}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}};}
+\DoxyCodeLine{00981\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.bodyDynamicFlags\ =\ bodyDynamicFlags;}
+\DoxyCodeLine{00982\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.bodyGridCoords\ =\ bodyGridCoords;}
+\DoxyCodeLine{00983\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.numBodies\ =\ bodies.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();}
+\DoxyCodeLine{00984\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.conInfos\ =\ conInfos;}
+\DoxyCodeLine{00985\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.constraintBatchIds\ =\ constraintBatchIds;}
+\DoxyCodeLine{00986\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.gridChunkDim\ =\ gridChunkDim;}
+\DoxyCodeLine{00987\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.maxNumBatchesPerPhase\ =\ maxNumBatchesPerPhase;}
+\DoxyCodeLine{00988\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.numPhases\ =\ numPhases;}
+\DoxyCodeLine{00989\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}}.phaseMask\ =\ phaseMask;}
+\DoxyCodeLine{00990\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ inParallel\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00991\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (inParallel)}
+\DoxyCodeLine{00992\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00993\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{struct_assign_constraints_to_grid_batches_loop}{AssignConstraintsToGridBatchesLoop}}\ loop(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}});}
+\DoxyCodeLine{00994\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ grainSize\ =\ 250;}
+\DoxyCodeLine{00995\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_threads_8cpp_afca0fc71d5b9916c985bbec9e244d919}{btParallelFor}}(0,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ grainSize,\ loop);}
+\DoxyCodeLine{00996\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00997\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00998\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00999\ \ \ \ \ \ \ \ \ \ \ \ \ assignConstraintsToGridBatches(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a04bebf9f1cf95222649f8f26b74c4d81}{params}},\ 0,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}});}
+\DoxyCodeLine{01000\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01001\ \ \ \ \ \}}
+\DoxyCodeLine{01002\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iCon\ =\ 0;\ iCon\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}};\ ++iCon)}
+\DoxyCodeLine{01003\ \ \ \ \ \{}
+\DoxyCodeLine{01004\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_batched_constraint_info}{btBatchedConstraintInfo}}\&\ con\ =\ conInfos[iCon];}
+\DoxyCodeLine{01005\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBatch\ =\ constraintBatchIds[iCon];}
+\DoxyCodeLine{01006\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_batch_info}{btBatchInfo}}\&\ batch\ =\ batches[iBatch];}
+\DoxyCodeLine{01007\ \ \ \ \ \ \ \ \ batch.\mbox{\hyperlink{structbt_batch_info_a57389841a9cdb4ea3e44066fb2cb9e63}{numConstraints}}\ +=\ con.\mbox{\hyperlink{structbt_batched_constraint_info_a8d9d3cc3b01ba06ecb455db19f31b3af}{numConstraintRows}};}
+\DoxyCodeLine{01008\ \ \ \ \ \}}
+\DoxyCodeLine{01009\ }
+\DoxyCodeLine{01010\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ iPhase\ =\ 0;\ iPhase\ <\ numPhases;\ ++iPhase)}
+\DoxyCodeLine{01011\ \ \ \ \ \{}
+\DoxyCodeLine{01012\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ if\ phase\ is\ legit,}}
+\DoxyCodeLine{01013\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (iPhase\ ==\ (iPhase\ \&\ phaseMask))}
+\DoxyCodeLine{01014\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01015\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iBeginBatch\ =\ iPhase\ *\ maxNumBatchesPerPhase;}
+\DoxyCodeLine{01016\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ iEndBatch\ =\ iBeginBatch\ +\ maxNumBatchesPerPhase;}
+\DoxyCodeLine{01017\ \ \ \ \ \ \ \ \ \ \ \ \ mergeSmallBatches(batches,\ iBeginBatch,\ iEndBatch,\ minBatchSize,\ maxBatchSize);}
+\DoxyCodeLine{01018\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01019\ \ \ \ \ \}}
+\DoxyCodeLine{01020\ \ \ \ \ \textcolor{comment}{//\ all\ constraints\ have\ been\ assigned\ a\ batchId}}
+\DoxyCodeLine{01021\ \ \ \ \ updateConstraintBatchIdsForMergesMt(constraintBatchIds,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ batches,\ maxNumBatchesPerPhase\ *\ numPhases);}
+\DoxyCodeLine{01022\ }
+\DoxyCodeLine{01023\ \ \ \ \ \textcolor{keywordflow}{if}\ (numConstraintRows\ >\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}})}
+\DoxyCodeLine{01024\ \ \ \ \ \{}
+\DoxyCodeLine{01025\ \ \ \ \ \ \ \ \ expandConstraintRowsMt(\&constraintRowBatchIds[0],\ \&constraintBatchIds[0],\ \&conInfos[0],\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}},\ numConstraintRows);}
+\DoxyCodeLine{01026\ \ \ \ \ \}}
+\DoxyCodeLine{01027\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{01028\ \ \ \ \ \{}
+\DoxyCodeLine{01029\ \ \ \ \ \ \ \ \ constraintRowBatchIds\ =\ constraintBatchIds;}
+\DoxyCodeLine{01030\ \ \ \ \ \}}
+\DoxyCodeLine{01031\ }
+\DoxyCodeLine{01032\ \ \ \ \ writeOutBatches(batchedConstraints,\ constraintRowBatchIds,\ numConstraintRows,\ batches,\ batchWork,\ maxNumBatchesPerPhase,\ numPhases);}
+\DoxyCodeLine{01033\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(batchedConstraints-\/>\mbox{\hyperlink{structbt_batched_constraints_a3845443ac736c7ea033592c567ec2b4f}{validate}}(\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},\ bodies));}
+\DoxyCodeLine{01034\ \}}
+\DoxyCodeLine{01035\ }
+\DoxyCodeLine{01036\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ setupSingleBatch(}
+\DoxyCodeLine{01037\ \ \ \ \ \mbox{\hyperlink{structbt_batched_constraints}{btBatchedConstraints}}*\ bc,}
+\DoxyCodeLine{01038\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}})}
+\DoxyCodeLine{01039\ \{}
+\DoxyCodeLine{01040\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8h_a313914a100622c10c4c094bbab420a37}{BT\_PROFILE}}(\textcolor{stringliteral}{"{}setupSingleBatch"{}});}
+\DoxyCodeLine{01041\ \ \ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{structbt_batched_constraints_1_1_range}{btBatchedConstraints::Range}}\ Range;}
+\DoxyCodeLine{01042\ }
+\DoxyCodeLine{01043\ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a74bd7458316214acb0c2e81329b3417f}{m\_constraintIndices}}.\mbox{\hyperlink{classbt_aligned_object_array_a6a48cd9cb91d0cfa50ee1c70ef485190}{resize}}(\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}});}
+\DoxyCodeLine{01044\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}};\ ++i)}
+\DoxyCodeLine{01045\ \ \ \ \ \{}
+\DoxyCodeLine{01046\ \ \ \ \ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a74bd7458316214acb0c2e81329b3417f}{m\_constraintIndices}}[i]\ =\ i;}
+\DoxyCodeLine{01047\ \ \ \ \ \}}
+\DoxyCodeLine{01048\ }
+\DoxyCodeLine{01049\ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a57a933584f135b4f88a54adfa3e707c4}{m\_batches}}.resizeNoInitialize(0);}
+\DoxyCodeLine{01050\ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a91a35321ac3f5e14cb324e9fe5a503a7}{m\_phases}}.resizeNoInitialize(0);}
+\DoxyCodeLine{01051\ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a8b3ed105cd1b07da5981603ee73a8868}{m\_phaseOrder}}.\mbox{\hyperlink{classbt_aligned_object_array_a2cc58c74534181a7a10e5c6ab8b21227}{resizeNoInitialize}}(0);}
+\DoxyCodeLine{01052\ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a85d5999b05f7349361eb85e0306c1c8b}{m\_phaseGrainSize}}.\mbox{\hyperlink{classbt_aligned_object_array_a2cc58c74534181a7a10e5c6ab8b21227}{resizeNoInitialize}}(0);}
+\DoxyCodeLine{01053\ }
+\DoxyCodeLine{01054\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}}\ >\ 0)}
+\DoxyCodeLine{01055\ \ \ \ \ \{}
+\DoxyCodeLine{01056\ \ \ \ \ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a57a933584f135b4f88a54adfa3e707c4}{m\_batches}}.push\_back(Range(0,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a879e9fe51308d8681080042376412929}{numConstraints}}));}
+\DoxyCodeLine{01057\ \ \ \ \ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a91a35321ac3f5e14cb324e9fe5a503a7}{m\_phases}}.push\_back(Range(0,\ 1));}
+\DoxyCodeLine{01058\ \ \ \ \ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a8b3ed105cd1b07da5981603ee73a8868}{m\_phaseOrder}}.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(0);}
+\DoxyCodeLine{01059\ \ \ \ \ \ \ \ \ bc-\/>\mbox{\hyperlink{structbt_batched_constraints_a85d5999b05f7349361eb85e0306c1c8b}{m\_phaseGrainSize}}.\mbox{\hyperlink{classbt_aligned_object_array_ad61e10166e2c00f487095d3482b9edd1}{push\_back}}(1);}
+\DoxyCodeLine{01060\ \ \ \ \ \}}
+\DoxyCodeLine{01061\ \}}
+\DoxyCodeLine{01062\ }
+\DoxyCodeLine{01063\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{structbt_batched_constraints_a75e91c2b9dd2474ece354a6e82688b39}{btBatchedConstraints::setup}}(}
+\DoxyCodeLine{01064\ \ \ \ \ \mbox{\hyperlink{bt_solver_constraint_8h_ad6c289dc378cc1e94cbd4297e81da76e}{btConstraintArray}}*\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},}
+\DoxyCodeLine{01065\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<btSolverBody>}}\&\ bodies,}
+\DoxyCodeLine{01066\ \ \ \ \ \mbox{\hyperlink{structbt_batched_constraints_ae3a066307569a30fb161f3156e962582}{BatchingMethod}}\ batchingMethod,}
+\DoxyCodeLine{01067\ \ \ \ \ \textcolor{keywordtype}{int}\ minBatchSize,}
+\DoxyCodeLine{01068\ \ \ \ \ \textcolor{keywordtype}{int}\ maxBatchSize,}
+\DoxyCodeLine{01069\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<char>}}*\ scratchMemory)}
+\DoxyCodeLine{01070\ \{}
+\DoxyCodeLine{01071\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}}-\/>size()\ >=\ minBatchSize\ *\ 4)}
+\DoxyCodeLine{01072\ \ \ \ \ \{}
+\DoxyCodeLine{01073\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ use2DGrid\ =\ batchingMethod\ ==\ \mbox{\hyperlink{structbt_batched_constraints_ae3a066307569a30fb161f3156e962582a6ba99a1110865d9083f81450b8af9e46}{BATCHING\_METHOD\_SPATIAL\_GRID\_2D}};}
+\DoxyCodeLine{01074\ \ \ \ \ \ \ \ \ setupSpatialGridBatchesMt(\textcolor{keyword}{this},\ scratchMemory,\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},\ bodies,\ minBatchSize,\ maxBatchSize,\ use2DGrid);}
+\DoxyCodeLine{01075\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{structbt_batched_constraints_a4682d9e967500d2d7db8105ed3487e50}{s\_debugDrawBatches}})}
+\DoxyCodeLine{01076\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{01077\ \ \ \ \ \ \ \ \ \ \ \ \ debugDrawAllBatches(\textcolor{keyword}{this},\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}},\ bodies);}
+\DoxyCodeLine{01078\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{01079\ \ \ \ \ \}}
+\DoxyCodeLine{01080\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{01081\ \ \ \ \ \{}
+\DoxyCodeLine{01082\ \ \ \ \ \ \ \ \ setupSingleBatch(\textcolor{keyword}{this},\ \mbox{\hyperlink{bt_sequential_impulse_constraint_solver_mt_8h_a59f8326e59592a57d8a02e36440c00b8}{constraints}}-\/>size());}
+\DoxyCodeLine{01083\ \ \ \ \ \}}
+\DoxyCodeLine{01084\ \}}
+
+\end{DoxyCode}

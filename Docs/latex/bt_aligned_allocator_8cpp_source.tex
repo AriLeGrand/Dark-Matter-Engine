@@ -1,0 +1,274 @@
+\doxysection{bt\+Aligned\+Allocator.\+cpp}
+\hypertarget{bt_aligned_allocator_8cpp_source}{}\label{bt_aligned_allocator_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/LinearMath/btAlignedAllocator.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/LinearMath/btAlignedAllocator.cpp}}
+\mbox{\hyperlink{bt_aligned_allocator_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2006\ Erwin\ Coumans\ \ https://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,}}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,}}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_aligned_allocator_8h}{btAlignedAllocator.h}}"{}}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ <string.h>}}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG\_MEMORY\_ALLOCATIONS}}
+\DoxyCodeLine{00020\ \textcolor{keywordtype}{int}\ gNumAlignedAllocs\ =\ 0;}
+\DoxyCodeLine{00021\ \textcolor{keywordtype}{int}\ gNumAlignedFree\ =\ 0;}
+\DoxyCodeLine{00022\ \textcolor{keywordtype}{int}\ gTotalBytesAlignedAllocs\ =\ 0;\ \ \textcolor{comment}{//detect\ memory\ leaks}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#endif\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }\textcolor{comment}{//BT\_DEBUG\_MEMORY\_ALLOCATIONST\_DEBUG\_ALLOCATIONS}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ *btAllocDefault(\textcolor{keywordtype}{size\_t}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}})}
+\DoxyCodeLine{00026\ \{}
+\DoxyCodeLine{00027\ \ \ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a0f78eecb0891cce3bdfc815b971866a1}{data}}\ =\ (\textcolor{keywordtype}{char}*)\ malloc(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}});}
+\DoxyCodeLine{00028\ \ \ memset(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a0f78eecb0891cce3bdfc815b971866a1}{data}},0,\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}});\textcolor{comment}{//keep\ msan\ happy}}
+\DoxyCodeLine{00029\ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a0f78eecb0891cce3bdfc815b971866a1}{data}};}
+\DoxyCodeLine{00030\ \}}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ btFreeDefault(\textcolor{keywordtype}{void}\ *ptr)}
+\DoxyCodeLine{00033\ \{}
+\DoxyCodeLine{00034\ \ \ \ \ free(ptr);}
+\DoxyCodeLine{00035\ \}}
+\DoxyCodeLine{00036\ }
+\DoxyCodeLine{00037\ \textcolor{keyword}{static}\ \mbox{\hyperlink{bt_aligned_allocator_8h_a8042541be99700b88e5d4e1a30934112}{btAllocFunc}}\ *sAllocFunc\ =\ btAllocDefault;}
+\DoxyCodeLine{00038\ \textcolor{keyword}{static}\ \mbox{\hyperlink{bt_aligned_allocator_8h_a9e7bc846ecefcdbdc818b5b190f91108}{btFreeFunc}}\ *sFreeFunc\ =\ btFreeDefault;}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00040\ \textcolor{preprocessor}{\#if\ defined(BT\_HAS\_ALIGNED\_ALLOCATOR)}}
+\DoxyCodeLine{00041\ \textcolor{preprocessor}{\#include\ <malloc.h>}}
+\DoxyCodeLine{00042\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ *btAlignedAllocDefault(\textcolor{keywordtype}{size\_t}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}},\ \textcolor{keywordtype}{int}\ alignment)}
+\DoxyCodeLine{00043\ \{}
+\DoxyCodeLine{00044\ \ \ \ \ \textcolor{keywordflow}{return}\ \_aligned\_malloc(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}},\ (\textcolor{keywordtype}{size\_t})alignment);}
+\DoxyCodeLine{00045\ \}}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{void}\ btAlignedFreeDefault(\textcolor{keywordtype}{void}\ *ptr)}
+\DoxyCodeLine{00048\ \{}
+\DoxyCodeLine{00049\ \ \ \ \ \_aligned\_free(ptr);}
+\DoxyCodeLine{00050\ \}}
+\DoxyCodeLine{00051\ \textcolor{preprocessor}{\#elif\ defined(\_\_CELLOS\_LV2\_\_)}}
+\DoxyCodeLine{00052\ \textcolor{preprocessor}{\#include\ <stdlib.h>}}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00054\ \textcolor{keyword}{static}\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ *btAlignedAllocDefault(\textcolor{keywordtype}{size\_t}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}},\ \textcolor{keywordtype}{int}\ alignment)}
+\DoxyCodeLine{00055\ \{}
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keywordflow}{return}\ memalign(alignment,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}});}
+\DoxyCodeLine{00057\ \}}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \textcolor{keyword}{static}\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ btAlignedFreeDefault(\textcolor{keywordtype}{void}\ *ptr)}
+\DoxyCodeLine{00060\ \{}
+\DoxyCodeLine{00061\ \ \ \ \ free(ptr);}
+\DoxyCodeLine{00062\ \}}
+\DoxyCodeLine{00063\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00064\ }
+\DoxyCodeLine{00065\ \textcolor{keyword}{static}\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ *btAlignedAllocDefault(\textcolor{keywordtype}{size\_t}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}},\ \textcolor{keywordtype}{int}\ alignment)}
+\DoxyCodeLine{00066\ \{}
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{keywordtype}{void}\ *ret;}
+\DoxyCodeLine{00068\ \ \ \ \ \textcolor{keywordtype}{char}\ *real;}
+\DoxyCodeLine{00069\ \ \ \ \ real\ =\ (\textcolor{keywordtype}{char}\ *)sAllocFunc(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}\ +\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{void}\ *)\ +\ (alignment\ -\/\ 1));}
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{keywordflow}{if}\ (real)}
+\DoxyCodeLine{00071\ \ \ \ \ \{}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ ret\ =\ \mbox{\hyperlink{bt_scalar_8h_aa65dc7344900fb2db82c5756994a176e}{btAlignPointer}}(real\ +\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{void}\ *),\ alignment);}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ *((\textcolor{keywordtype}{void}\ **)(ret)-\/1)\ =\ (\textcolor{keywordtype}{void}\ *)(real);}
+\DoxyCodeLine{00074\ \ \ \ \ \}}
+\DoxyCodeLine{00075\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00076\ \ \ \ \ \{}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ ret\ =\ (\textcolor{keywordtype}{void}\ *)(real);}
+\DoxyCodeLine{00078\ \ \ \ \ \}}
+\DoxyCodeLine{00079\ \ \ \textcolor{comment}{//keep\ msan\ happy}}
+\DoxyCodeLine{00080\ \ \ memset((\textcolor{keywordtype}{char}*)\ ret,\ 0,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}});}
+\DoxyCodeLine{00081\ \ \ \ \ \textcolor{keywordflow}{return}\ (ret);}
+\DoxyCodeLine{00082\ \}}
+\DoxyCodeLine{00083\ }
+\DoxyCodeLine{00084\ \textcolor{keyword}{static}\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ btAlignedFreeDefault(\textcolor{keywordtype}{void}\ *ptr)}
+\DoxyCodeLine{00085\ \{}
+\DoxyCodeLine{00086\ \ \ \ \ \textcolor{keywordtype}{void}\ *real;}
+\DoxyCodeLine{00087\ }
+\DoxyCodeLine{00088\ \ \ \ \ \textcolor{keywordflow}{if}\ (ptr)}
+\DoxyCodeLine{00089\ \ \ \ \ \{}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ real\ =\ *((\textcolor{keywordtype}{void}\ **)(ptr)-\/1);}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ sFreeFunc(real);}
+\DoxyCodeLine{00092\ \ \ \ \ \}}
+\DoxyCodeLine{00093\ \}}
+\DoxyCodeLine{00094\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00095\ }
+\DoxyCodeLine{00096\ \textcolor{keyword}{static}\ \mbox{\hyperlink{bt_aligned_allocator_8h_a11ea6a4e7dbdbe33d17b151a8982a7b3}{btAlignedAllocFunc}}\ *sAlignedAllocFunc\ =\ btAlignedAllocDefault;}
+\DoxyCodeLine{00097\ \textcolor{keyword}{static}\ \mbox{\hyperlink{bt_aligned_allocator_8h_a82d4d00c3532c05938412248b6773b2b}{btAlignedFreeFunc}}\ *sAlignedFreeFunc\ =\ btAlignedFreeDefault;}
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00099\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_aligned_allocator_8cpp_a7d5a4fe5c3391787ca69c33268486ff5}{btAlignedAllocSetCustomAligned}}(\mbox{\hyperlink{bt_aligned_allocator_8h_a11ea6a4e7dbdbe33d17b151a8982a7b3}{btAlignedAllocFunc}}\ *allocFunc,\ \mbox{\hyperlink{bt_aligned_allocator_8h_a82d4d00c3532c05938412248b6773b2b}{btAlignedFreeFunc}}\ *freeFunc)}
+\DoxyCodeLine{00100\ \{}
+\DoxyCodeLine{00101\ \ \ \ \ sAlignedAllocFunc\ =\ allocFunc\ ?\ allocFunc\ :\ btAlignedAllocDefault;}
+\DoxyCodeLine{00102\ \ \ \ \ sAlignedFreeFunc\ =\ freeFunc\ ?\ freeFunc\ :\ btAlignedFreeDefault;}
+\DoxyCodeLine{00103\ \}}
+\DoxyCodeLine{00104\ }
+\DoxyCodeLine{00105\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_aligned_allocator_8cpp_af50f59e1b711a0304f02b64ef1b72b8f}{btAlignedAllocSetCustom}}(\mbox{\hyperlink{bt_aligned_allocator_8h_a8042541be99700b88e5d4e1a30934112}{btAllocFunc}}\ *allocFunc,\ \mbox{\hyperlink{bt_aligned_allocator_8h_a9e7bc846ecefcdbdc818b5b190f91108}{btFreeFunc}}\ *freeFunc)}
+\DoxyCodeLine{00106\ \{}
+\DoxyCodeLine{00107\ \ \ \ \ sAllocFunc\ =\ allocFunc\ ?\ allocFunc\ :\ btAllocDefault;}
+\DoxyCodeLine{00108\ \ \ \ \ sFreeFunc\ =\ freeFunc\ ?\ freeFunc\ :\ btFreeDefault;}
+\DoxyCodeLine{00109\ \}}
+\DoxyCodeLine{00110\ }
+\DoxyCodeLine{00111\ \textcolor{preprocessor}{\#ifdef\ BT\_DEBUG\_MEMORY\_ALLOCATIONS}}
+\DoxyCodeLine{00112\ }
+\DoxyCodeLine{00113\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{int}\ allocations\_id[10241024];}
+\DoxyCodeLine{00114\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{int}\ allocations\_bytes[10241024];}
+\DoxyCodeLine{00115\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{int}\ mynumallocs\ =\ 0;}
+\DoxyCodeLine{00116\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00117\ }
+\DoxyCodeLine{00118\ \textcolor{keywordtype}{int}\ btDumpMemoryLeaks()}
+\DoxyCodeLine{00119\ \{}
+\DoxyCodeLine{00120\ \ \ \ \ \textcolor{keywordtype}{int}\ totalLeak\ =\ 0;}
+\DoxyCodeLine{00121\ }
+\DoxyCodeLine{00122\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ mynumallocs;\ i++)}
+\DoxyCodeLine{00123\ \ \ \ \ \{}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}Error:\ leaked\ memory\ of\ allocation\ \#\%d\ (\%d\ bytes)\(\backslash\)n"{}},\ allocations\_id[i],\ allocations\_bytes[i]);}
+\DoxyCodeLine{00125\ \ \ \ \ \ \ \ \ totalLeak\ +=\ allocations\_bytes[i];}
+\DoxyCodeLine{00126\ \ \ \ \ \}}
+\DoxyCodeLine{00127\ \ \ \ \ \textcolor{keywordflow}{if}\ (totalLeak)}
+\DoxyCodeLine{00128\ \ \ \ \ \{}
+\DoxyCodeLine{00129\ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}Error:\ memory\ leaks:\ \%d\ allocations\ were\ not\ freed\ and\ leaked\ together\ \%d\ bytes\(\backslash\)n"{}},\ mynumallocs,\ totalLeak);}
+\DoxyCodeLine{00130\ \ \ \ \ \}}
+\DoxyCodeLine{00131\ \ \ \ \ \textcolor{keywordflow}{return}\ totalLeak;}
+\DoxyCodeLine{00132\ \}}
+\DoxyCodeLine{00133\ \textcolor{comment}{//this\ generic\ allocator\ provides\ the\ total\ allocated\ number\ of\ bytes}}
+\DoxyCodeLine{00134\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00135\ }
+\DoxyCodeLine{00136\ \textcolor{keyword}{struct\ }btDebugPtrMagic}
+\DoxyCodeLine{00137\ \{}
+\DoxyCodeLine{00138\ \ \ \ \ \textcolor{keyword}{union\ }\{}
+\DoxyCodeLine{00139\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ **vptrptr;}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ *vptr;}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ *iptr;}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{char}\ *cptr;}
+\DoxyCodeLine{00143\ \ \ \ \ \};}
+\DoxyCodeLine{00144\ \};}
+\DoxyCodeLine{00145\ }
+\DoxyCodeLine{00146\ \textcolor{keywordtype}{void}\ *\mbox{\hyperlink{bt_aligned_allocator_8cpp_a683e108a39e749b81c0969a29855ae46}{btAlignedAllocInternal}}(\textcolor{keywordtype}{size\_t}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}},\ \textcolor{keywordtype}{int}\ alignment,\ \textcolor{keywordtype}{int}\ line,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *filename)}
+\DoxyCodeLine{00147\ \{}
+\DoxyCodeLine{00148\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}\ ==\ 0)}
+\DoxyCodeLine{00149\ \ \ \ \ \{}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}Whaat?\ size==0"{}});}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00152\ \ \ \ \ \}}
+\DoxyCodeLine{00153\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{int}\ allocId\ =\ 0;}
+\DoxyCodeLine{00154\ }
+\DoxyCodeLine{00155\ \ \ \ \ \textcolor{keywordtype}{void}\ *ret;}
+\DoxyCodeLine{00156\ \ \ \ \ \textcolor{keywordtype}{char}\ *real;}
+\DoxyCodeLine{00157\ }
+\DoxyCodeLine{00158\ \ \ \ \ \textcolor{comment}{//\ to\ find\ some\ particular\ memory\ leak,\ you\ could\ do\ something\ like\ this:}}
+\DoxyCodeLine{00159\ \ \ \ \ \textcolor{comment}{//\ \ if\ (allocId==172)}}
+\DoxyCodeLine{00160\ \ \ \ \ \textcolor{comment}{//\ \ \{}}
+\DoxyCodeLine{00161\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ printf("{}catch\ me!\(\backslash\)n"{});}}
+\DoxyCodeLine{00162\ \ \ \ \ \textcolor{comment}{//\ \ \}}}
+\DoxyCodeLine{00163\ \ \ \ \ \textcolor{comment}{//\ \ if\ (size>1024*1024)}}
+\DoxyCodeLine{00164\ \ \ \ \ \textcolor{comment}{//\ \ \{}}
+\DoxyCodeLine{00165\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ printf("{}big\ alloc!\%d\(\backslash\)n"{},\ size);}}
+\DoxyCodeLine{00166\ \ \ \ \ \textcolor{comment}{//\ \ \}}}
+\DoxyCodeLine{00167\ }
+\DoxyCodeLine{00168\ \ \ \ \ gTotalBytesAlignedAllocs\ +=\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}};}
+\DoxyCodeLine{00169\ \ \ \ \ gNumAlignedAllocs++;}
+\DoxyCodeLine{00170\ }
+\DoxyCodeLine{00171\ \ \ \ \ \textcolor{keywordtype}{int}\ sz4prt\ =\ 4\ *\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{void}\ *);}
+\DoxyCodeLine{00172\ }
+\DoxyCodeLine{00173\ \ \ \ \ real\ =\ (\textcolor{keywordtype}{char}\ *)sAllocFunc(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}\ +\ sz4prt\ +\ (alignment\ -\/\ 1));}
+\DoxyCodeLine{00174\ \ \ \ \ \textcolor{keywordflow}{if}\ (real)}
+\DoxyCodeLine{00175\ \ \ \ \ \{}
+\DoxyCodeLine{00176\ \ \ \ \ \ \ \ \ ret\ =\ (\textcolor{keywordtype}{void}\ *)\mbox{\hyperlink{bt_scalar_8h_aa65dc7344900fb2db82c5756994a176e}{btAlignPointer}}(real\ +\ sz4prt,\ alignment);}
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ btDebugPtrMagic\ p;}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ p.vptr\ =\ ret;}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ p.cptr\ -\/=\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{void}\ *);}
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ *p.vptrptr\ =\ (\textcolor{keywordtype}{void}\ *)real;}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ p.cptr\ -\/=\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{void}\ *);}
+\DoxyCodeLine{00182\ \ \ \ \ \ \ \ \ *p.iptr\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}};}
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ p.cptr\ -\/=\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{void}\ *);}
+\DoxyCodeLine{00184\ \ \ \ \ \ \ \ \ *p.iptr\ =\ allocId;}
+\DoxyCodeLine{00185\ }
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ allocations\_id[mynumallocs]\ =\ allocId;}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ allocations\_bytes[mynumallocs]\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}};}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ mynumallocs++;}
+\DoxyCodeLine{00189\ \ \ \ \ \}}
+\DoxyCodeLine{00190\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00191\ \ \ \ \ \{}
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \ \ ret\ =\ (\textcolor{keywordtype}{void}\ *)(real);\ \ \textcolor{comment}{//??}}
+\DoxyCodeLine{00193\ \ \ \ \ \}}
+\DoxyCodeLine{00194\ }
+\DoxyCodeLine{00195\ \ \ \ \ printf(\textcolor{stringliteral}{"{}allocation\ \%d\ at\ address\ \%x,\ from\ \%s,line\ \%d,\ size\ \%d\ (total\ allocated\ =\ \%d)\(\backslash\)n"{}},\ allocId,\ real,\ filename,\ line,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}},\ gTotalBytesAlignedAllocs);}
+\DoxyCodeLine{00196\ \ \ \ \ allocId++;}
+\DoxyCodeLine{00197\ }
+\DoxyCodeLine{00198\ \ \ \ \ \textcolor{keywordtype}{int}\ *ptr\ =\ (\textcolor{keywordtype}{int}\ *)ret;}
+\DoxyCodeLine{00199\ \ \ \ \ *ptr\ =\ 12;}
+\DoxyCodeLine{00200\ \ \ \ \ \textcolor{keywordflow}{return}\ (ret);}
+\DoxyCodeLine{00201\ \}}
+\DoxyCodeLine{00202\ }
+\DoxyCodeLine{00203\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_aligned_allocator_8cpp_ae81156ba7103afa1011e445b990041a6}{btAlignedFreeInternal}}(\textcolor{keywordtype}{void}\ *ptr,\ \textcolor{keywordtype}{int}\ line,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}\ *filename)}
+\DoxyCodeLine{00204\ \{}
+\DoxyCodeLine{00205\ \ \ \ \ \textcolor{keywordtype}{void}\ *real;}
+\DoxyCodeLine{00206\ }
+\DoxyCodeLine{00207\ \ \ \ \ \textcolor{keywordflow}{if}\ (ptr)}
+\DoxyCodeLine{00208\ \ \ \ \ \{}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ gNumAlignedFree++;}
+\DoxyCodeLine{00210\ }
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ btDebugPtrMagic\ p;}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ p.vptr\ =\ ptr;}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ p.cptr\ -\/=\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{void}\ *);}
+\DoxyCodeLine{00214\ \ \ \ \ \ \ \ \ real\ =\ *p.vptrptr;}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ p.cptr\ -\/=\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{void}\ *);}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}}\ =\ *p.iptr;}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ p.cptr\ -\/=\ \textcolor{keyword}{sizeof}(\textcolor{keywordtype}{void}\ *);}
+\DoxyCodeLine{00218\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ allocId\ =\ *p.iptr;}
+\DoxyCodeLine{00219\ }
+\DoxyCodeLine{00220\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ found\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00221\ }
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ mynumallocs;\ i++)}
+\DoxyCodeLine{00223\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00224\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (allocations\_id[i]\ ==\ allocId)}
+\DoxyCodeLine{00225\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00226\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ allocations\_id[i]\ =\ allocations\_id[mynumallocs\ -\/\ 1];}
+\DoxyCodeLine{00227\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ allocations\_bytes[i]\ =\ allocations\_bytes[mynumallocs\ -\/\ 1];}
+\DoxyCodeLine{00228\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ mynumallocs-\/-\/;}
+\DoxyCodeLine{00229\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ found\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00230\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00231\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00232\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00233\ }
+\DoxyCodeLine{00234\ \ \ \ \ \ \ \ \ gTotalBytesAlignedAllocs\ -\/=\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}};}
+\DoxyCodeLine{00235\ }
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ diff\ =\ gNumAlignedAllocs\ -\/\ gNumAlignedFree;}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}free\ \%d\ at\ address\ \%x,\ from\ \%s,line\ \%d,\ size\ \%d\ (total\ remain\ =\ \%d\ in\ \%d\ non-\/freed\ allocations)\(\backslash\)n"{}},\ allocId,\ real,\ filename,\ line,\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}},\ gTotalBytesAlignedAllocs,\ diff);}
+\DoxyCodeLine{00238\ }
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ sFreeFunc(real);}
+\DoxyCodeLine{00240\ \ \ \ \ \}}
+\DoxyCodeLine{00241\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00242\ \ \ \ \ \{}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ \textcolor{comment}{//printf("{}deleting\ a\ NULL\ ptr,\ no\ effect\(\backslash\)n"{});}}
+\DoxyCodeLine{00244\ \ \ \ \ \}}
+\DoxyCodeLine{00245\ \}}
+\DoxyCodeLine{00246\ }
+\DoxyCodeLine{00247\ \textcolor{preprocessor}{\#else\ \ }\textcolor{comment}{//BT\_DEBUG\_MEMORY\_ALLOCATIONS}}
+\DoxyCodeLine{00248\ }
+\DoxyCodeLine{00249\ \textcolor{keywordtype}{void}\ *\mbox{\hyperlink{bt_aligned_allocator_8cpp_a683e108a39e749b81c0969a29855ae46}{btAlignedAllocInternal}}(\textcolor{keywordtype}{size\_t}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}},\ \textcolor{keywordtype}{int}\ alignment)}
+\DoxyCodeLine{00250\ \{}
+\DoxyCodeLine{00251\ \ \ \ \ \textcolor{keywordtype}{void}\ *ptr;}
+\DoxyCodeLine{00252\ \ \ \ \ ptr\ =\ sAlignedAllocFunc(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a79ef9eb3e59c4bb34c4b9fbeb8d28ff7}{size}},\ alignment);}
+\DoxyCodeLine{00253\ \ \ \ \ \textcolor{comment}{//\ \ printf("{}btAlignedAllocInternal\ \%d,\ \%x\(\backslash\)n"{},size,ptr);}}
+\DoxyCodeLine{00254\ \ \ \ \ \textcolor{keywordflow}{return}\ ptr;}
+\DoxyCodeLine{00255\ \}}
+\DoxyCodeLine{00256\ }
+\DoxyCodeLine{00257\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_aligned_allocator_8cpp_ae81156ba7103afa1011e445b990041a6}{btAlignedFreeInternal}}(\textcolor{keywordtype}{void}\ *ptr)}
+\DoxyCodeLine{00258\ \{}
+\DoxyCodeLine{00259\ \ \ \ \ \textcolor{keywordflow}{if}\ (!ptr)}
+\DoxyCodeLine{00260\ \ \ \ \ \{}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00262\ \ \ \ \ \}}
+\DoxyCodeLine{00263\ }
+\DoxyCodeLine{00264\ \ \ \ \ \textcolor{comment}{//\ \ printf("{}btAlignedFreeInternal\ \%x\(\backslash\)n"{},ptr);}}
+\DoxyCodeLine{00265\ \ \ \ \ sAlignedFreeFunc(ptr);}
+\DoxyCodeLine{00266\ \}}
+\DoxyCodeLine{00267\ }
+\DoxyCodeLine{00268\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_DEBUG\_MEMORY\_ALLOCATIONS}}
+
+\end{DoxyCode}

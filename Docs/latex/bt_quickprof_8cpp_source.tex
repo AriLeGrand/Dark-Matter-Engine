@@ -1,0 +1,803 @@
+\doxysection{bt\+Quickprof.\+cpp}
+\hypertarget{bt_quickprof_8cpp_source}{}\label{bt_quickprof_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/LinearMath/btQuickprof.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/LinearMath/btQuickprof.cpp}}
+\mbox{\hyperlink{bt_quickprof_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{}}
+\DoxyCodeLine{00003\ \textcolor{comment}{***************************************************************************************************}}
+\DoxyCodeLine{00004\ \textcolor{comment}{**}}
+\DoxyCodeLine{00005\ \textcolor{comment}{**\ profile.cpp}}
+\DoxyCodeLine{00006\ \textcolor{comment}{**}}
+\DoxyCodeLine{00007\ \textcolor{comment}{**\ Real-\/Time\ Hierarchical\ Profiling\ for\ Game\ Programming\ Gems\ 3}}
+\DoxyCodeLine{00008\ \textcolor{comment}{**}}
+\DoxyCodeLine{00009\ \textcolor{comment}{**\ by\ Greg\ Hjelstrom\ \&\ Byon\ Garrabrant}}
+\DoxyCodeLine{00010\ \textcolor{comment}{**}}
+\DoxyCodeLine{00011\ \textcolor{comment}{***************************************************************************************************/}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{comment}{//\ Credits:\ The\ Clock\ class\ was\ inspired\ by\ the\ Timer\ classes\ in}}
+\DoxyCodeLine{00014\ \textcolor{comment}{//\ Ogre\ (www.ogre3d.org).}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_quickprof_8h}{btQuickprof.h}}"{}}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_threads_8h}{btThreads.h}}"{}}}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#ifdef\ \_\_CELLOS\_LV2\_\_}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ <sys/sys\_time.h>}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ <sys/time\_util.h>}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{preprocessor}{\#if\ defined(SUNOS)\ ||\ defined(\_\_SUNOS\_\_)}}
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00027\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00028\ \textcolor{preprocessor}{\#ifdef\ \_\_APPLE\_\_}}
+\DoxyCodeLine{00029\ \textcolor{preprocessor}{\#include\ <mach/mach\_time.h>}}
+\DoxyCodeLine{00030\ \textcolor{preprocessor}{\#include\ <TargetConditionals.h>}}
+\DoxyCodeLine{00031\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#if\ defined(WIN32)\ ||\ defined(\_WIN32)}}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#define\ BT\_USE\_WINDOWS\_TIMERS}}
+\DoxyCodeLine{00036\ \textcolor{preprocessor}{\#define\ WIN32\_LEAN\_AND\_MEAN}}
+\DoxyCodeLine{00037\ \textcolor{preprocessor}{\#define\ NOWINRES}}
+\DoxyCodeLine{00038\ \textcolor{preprocessor}{\#define\ NOMCX}}
+\DoxyCodeLine{00039\ \textcolor{preprocessor}{\#define\ NOIME}}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \textcolor{preprocessor}{\#ifdef\ \_XBOX}}
+\DoxyCodeLine{00042\ \textcolor{preprocessor}{\#include\ <Xtl.h>}}
+\DoxyCodeLine{00043\ \textcolor{preprocessor}{\#else\ \ }\textcolor{comment}{//\_XBOX}}
+\DoxyCodeLine{00044\ \textcolor{preprocessor}{\#include\ <windows.h>}}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00046\ \textcolor{preprocessor}{\#if\ WINVER\ <\ 0x0602}}
+\DoxyCodeLine{00047\ \textcolor{preprocessor}{\#define\ GetTickCount64\ GetTickCount}}
+\DoxyCodeLine{00048\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\_XBOX}}
+\DoxyCodeLine{00051\ }
+\DoxyCodeLine{00052\ \textcolor{preprocessor}{\#include\ <time.h>}}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00054\ \textcolor{preprocessor}{\#else\ \ }\textcolor{comment}{//\_WIN32}}
+\DoxyCodeLine{00055\ \textcolor{preprocessor}{\#include\ <sys/time.h>}}
+\DoxyCodeLine{00056\ }
+\DoxyCodeLine{00057\ \textcolor{preprocessor}{\#ifdef\ BT\_LINUX\_REALTIME}}
+\DoxyCodeLine{00058\ \textcolor{comment}{//required\ linking\ against\ rt\ (librt)}}
+\DoxyCodeLine{00059\ \textcolor{preprocessor}{\#include\ <time.h>}}
+\DoxyCodeLine{00060\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_LINUX\_REALTIME}}
+\DoxyCodeLine{00061\ }
+\DoxyCodeLine{00062\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\_WIN32}}
+\DoxyCodeLine{00063\ }
+\DoxyCodeLine{00064\ \textcolor{preprocessor}{\#define\ mymin(a,\ b)\ (a\ >\ b\ ?\ a\ :\ b)}}
+\DoxyCodeLine{00065\ }
+\DoxyCodeLine{00066\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structbt_clock_data}{btClockData}}}
+\DoxyCodeLine{00067\ \{}
+\DoxyCodeLine{00068\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_WINDOWS\_TIMERS}}
+\DoxyCodeLine{00069\ \ \ \ \ LARGE\_INTEGER\ mClockFrequency;}
+\DoxyCodeLine{00070\ \ \ \ \ LONGLONG\ mStartTick;}
+\DoxyCodeLine{00071\ \ \ \ \ LARGE\_INTEGER\ \mbox{\hyperlink{structbt_clock_data_a1fec47321c4890e5ea9f48743c7007e0}{mStartTime}};}
+\DoxyCodeLine{00072\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00073\ \textcolor{preprocessor}{\#ifdef\ \_\_CELLOS\_LV2\_\_}}
+\DoxyCodeLine{00074\ \ \ \ \ \mbox{\hyperlink{bt_convex_hull_computer_8cpp_ad27ed092432b64ff558d2254c278720f}{uint64\_t}}\ \mbox{\hyperlink{structbt_clock_data_a1fec47321c4890e5ea9f48743c7007e0}{mStartTime}};}
+\DoxyCodeLine{00075\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00076\ \textcolor{preprocessor}{\#ifdef\ \_\_APPLE\_\_}}
+\DoxyCodeLine{00077\ \ \ \ \ \mbox{\hyperlink{bt_convex_hull_computer_8cpp_ad27ed092432b64ff558d2254c278720f}{uint64\_t}}\ mStartTimeNano;}
+\DoxyCodeLine{00078\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00079\ \ \ \ \ \textcolor{keyword}{struct\ }timeval\ \mbox{\hyperlink{structbt_clock_data_a1fec47321c4890e5ea9f48743c7007e0}{mStartTime}};}
+\DoxyCodeLine{00080\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00081\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\_\_CELLOS\_LV2\_\_}}
+\DoxyCodeLine{00082\ \};}
+\DoxyCodeLine{00083\ }
+\DoxyCodeLine{00085\ \mbox{\hyperlink{classbt_clock_ac169d73599151d07b6449505d7c66738}{btClock::btClock}}()}
+\DoxyCodeLine{00086\ \{}
+\DoxyCodeLine{00087\ \ \ \ \ m\_data\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{structbt_clock_data}{btClockData}};}
+\DoxyCodeLine{00088\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_WINDOWS\_TIMERS}}
+\DoxyCodeLine{00089\ \ \ \ \ QueryPerformanceFrequency(\&m\_data-\/>mClockFrequency);}
+\DoxyCodeLine{00090\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00091\ \ \ \ \ \mbox{\hyperlink{classbt_clock_a592eb764c2e7b645c9619ab7e483166c}{reset}}();}
+\DoxyCodeLine{00092\ \}}
+\DoxyCodeLine{00093\ }
+\DoxyCodeLine{00094\ \mbox{\hyperlink{classbt_clock_a843ef85325debbfd9617fff6ebddb118}{btClock::\string~btClock}}()}
+\DoxyCodeLine{00095\ \{}
+\DoxyCodeLine{00096\ \ \ \ \ \textcolor{keyword}{delete}\ m\_data;}
+\DoxyCodeLine{00097\ \}}
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00099\ \mbox{\hyperlink{classbt_clock_ac169d73599151d07b6449505d7c66738}{btClock::btClock}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_clock_ac169d73599151d07b6449505d7c66738}{btClock}}\&\ other)}
+\DoxyCodeLine{00100\ \{}
+\DoxyCodeLine{00101\ \ \ \ \ m\_data\ =\ \textcolor{keyword}{new}\ \mbox{\hyperlink{structbt_clock_data}{btClockData}};}
+\DoxyCodeLine{00102\ \ \ \ \ *m\_data\ =\ *other.m\_data;}
+\DoxyCodeLine{00103\ \}}
+\DoxyCodeLine{00104\ }
+\DoxyCodeLine{00105\ \mbox{\hyperlink{classbt_clock_ac169d73599151d07b6449505d7c66738}{btClock}}\&\ \mbox{\hyperlink{classbt_clock_ac3f55e1187c51b9ad6827b53243db170}{btClock::operator=}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_clock_ac169d73599151d07b6449505d7c66738}{btClock}}\&\ other)}
+\DoxyCodeLine{00106\ \{}
+\DoxyCodeLine{00107\ \ \ \ \ *m\_data\ =\ *other.m\_data;}
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{keywordflow}{return}\ *\textcolor{keyword}{this};}
+\DoxyCodeLine{00109\ \}}
+\DoxyCodeLine{00110\ }
+\DoxyCodeLine{00112\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_clock_a592eb764c2e7b645c9619ab7e483166c}{btClock::reset}}()}
+\DoxyCodeLine{00113\ \{}
+\DoxyCodeLine{00114\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_WINDOWS\_TIMERS}}
+\DoxyCodeLine{00115\ \ \ \ \ QueryPerformanceCounter(\&m\_data-\/>mStartTime);}
+\DoxyCodeLine{00116\ \ \ \ \ m\_data-\/>mStartTick\ =\ GetTickCount64();}
+\DoxyCodeLine{00117\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00118\ \textcolor{preprocessor}{\#ifdef\ \_\_CELLOS\_LV2\_\_}}
+\DoxyCodeLine{00119\ }
+\DoxyCodeLine{00120\ \ \ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{bt_convex_hull_computer_8cpp_ad27ed092432b64ff558d2254c278720f}{uint64\_t}}\ ClockSize;}
+\DoxyCodeLine{00121\ \ \ \ \ ClockSize\ newTime;}
+\DoxyCodeLine{00122\ \ \ \ \ \textcolor{comment}{//\_\_asm\ \_\_volatile\_\_(\ "{}mftb\ \%0"{}\ :\ "{}=r"{}\ (newTime)\ :\ :\ "{}memory"{});}}
+\DoxyCodeLine{00123\ \ \ \ \ SYS\_TIMEBASE\_GET(newTime);}
+\DoxyCodeLine{00124\ \ \ \ \ m\_data-\/>mStartTime\ =\ newTime;}
+\DoxyCodeLine{00125\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00126\ \textcolor{preprocessor}{\#ifdef\ \_\_APPLE\_\_}}
+\DoxyCodeLine{00127\ \ \ \ \ m\_data-\/>mStartTimeNano\ =\ mach\_absolute\_time();}
+\DoxyCodeLine{00128\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00129\ \ \ \ \ gettimeofday(\&m\_data-\/>mStartTime,\ 0);}
+\DoxyCodeLine{00130\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00131\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00132\ \}}
+\DoxyCodeLine{00133\ }
+\DoxyCodeLine{00136\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_clock_a989e96af94f4ec3ae28635f5f843c066}{btClock::getTimeMilliseconds}}()}
+\DoxyCodeLine{00137\ \{}
+\DoxyCodeLine{00138\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_WINDOWS\_TIMERS}}
+\DoxyCodeLine{00139\ \ \ \ \ LARGE\_INTEGER\ currentTime;}
+\DoxyCodeLine{00140\ \ \ \ \ QueryPerformanceCounter(\&currentTime);}
+\DoxyCodeLine{00141\ \ \ \ \ LONGLONG\ elapsedTime\ =\ currentTime.QuadPart\ -\/}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_data-\/>mStartTime.QuadPart;}
+\DoxyCodeLine{00143\ \ \ \ \ \textcolor{comment}{//\ Compute\ the\ number\ of\ millisecond\ ticks\ elapsed.}}
+\DoxyCodeLine{00144\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ msecTicks\ =\ (\textcolor{keywordtype}{unsigned}\ long)(1000\ *\ elapsedTime\ /}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_data-\/>mClockFrequency.QuadPart);}
+\DoxyCodeLine{00146\ }
+\DoxyCodeLine{00147\ \ \ \ \ \textcolor{keywordflow}{return}\ msecTicks;}
+\DoxyCodeLine{00148\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00149\ }
+\DoxyCodeLine{00150\ \textcolor{preprocessor}{\#ifdef\ \_\_CELLOS\_LV2\_\_}}
+\DoxyCodeLine{00151\ \ \ \ \ \mbox{\hyperlink{bt_convex_hull_computer_8cpp_ad27ed092432b64ff558d2254c278720f}{uint64\_t}}\ freq\ =\ sys\_time\_get\_timebase\_frequency();}
+\DoxyCodeLine{00152\ \ \ \ \ \textcolor{keywordtype}{double}\ dFreq\ =\ ((double)freq)\ /\ 1000.0;}
+\DoxyCodeLine{00153\ \ \ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{bt_convex_hull_computer_8cpp_ad27ed092432b64ff558d2254c278720f}{uint64\_t}}\ ClockSize;}
+\DoxyCodeLine{00154\ \ \ \ \ ClockSize\ newTime;}
+\DoxyCodeLine{00155\ \ \ \ \ SYS\_TIMEBASE\_GET(newTime);}
+\DoxyCodeLine{00156\ \ \ \ \ \textcolor{comment}{//\_\_asm\ \_\_volatile\_\_(\ "{}mftb\ \%0"{}\ :\ "{}=r"{}\ (newTime)\ :\ :\ "{}memory"{});}}
+\DoxyCodeLine{00157\ }
+\DoxyCodeLine{00158\ \ \ \ \ \textcolor{keywordflow}{return}\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{int})((double(newTime\ -\/\ m\_data-\/>mStartTime))\ /\ dFreq);}
+\DoxyCodeLine{00159\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00160\ }
+\DoxyCodeLine{00161\ \ \ \ \ \textcolor{keyword}{struct\ }timeval\ currentTime;}
+\DoxyCodeLine{00162\ \ \ \ \ gettimeofday(\&currentTime,\ 0);}
+\DoxyCodeLine{00163\ \ \ \ \ \textcolor{keywordflow}{return}\ (currentTime.tv\_sec\ -\/\ m\_data-\/>mStartTime.tv\_sec)\ *\ 1000\ +}
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \ \ \ (currentTime.tv\_usec\ -\/\ m\_data-\/>mStartTime.tv\_usec)\ /\ 1000;}
+\DoxyCodeLine{00165\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\_\_CELLOS\_LV2\_\_}}
+\DoxyCodeLine{00166\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00167\ \}}
+\DoxyCodeLine{00168\ }
+\DoxyCodeLine{00171\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_clock_aa58b76bfde0b0f3f33d0cb91ec6b6938}{btClock::getTimeMicroseconds}}()}
+\DoxyCodeLine{00172\ \{}
+\DoxyCodeLine{00173\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_WINDOWS\_TIMERS}}
+\DoxyCodeLine{00174\ \ \ \ \ \textcolor{comment}{//see\ https://msdn.microsoft.com/en-\/us/library/windows/desktop/dn553408(v=vs.85).aspx}}
+\DoxyCodeLine{00175\ \ \ \ \ LARGE\_INTEGER\ currentTime,\ elapsedTime;}
+\DoxyCodeLine{00176\ }
+\DoxyCodeLine{00177\ \ \ \ \ QueryPerformanceCounter(\&currentTime);}
+\DoxyCodeLine{00178\ \ \ \ \ elapsedTime.QuadPart\ =\ currentTime.QuadPart\ -\/}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_data-\/>mStartTime.QuadPart;}
+\DoxyCodeLine{00180\ \ \ \ \ elapsedTime.QuadPart\ *=\ 1000000;}
+\DoxyCodeLine{00181\ \ \ \ \ elapsedTime.QuadPart\ /=\ m\_data-\/>mClockFrequency.QuadPart;}
+\DoxyCodeLine{00182\ }
+\DoxyCodeLine{00183\ \ \ \ \ \textcolor{keywordflow}{return}\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{long})elapsedTime.QuadPart;}
+\DoxyCodeLine{00184\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00185\ }
+\DoxyCodeLine{00186\ \textcolor{preprocessor}{\#ifdef\ \_\_CELLOS\_LV2\_\_}}
+\DoxyCodeLine{00187\ \ \ \ \ \mbox{\hyperlink{bt_convex_hull_computer_8cpp_ad27ed092432b64ff558d2254c278720f}{uint64\_t}}\ freq\ =\ sys\_time\_get\_timebase\_frequency();}
+\DoxyCodeLine{00188\ \ \ \ \ \textcolor{keywordtype}{double}\ dFreq\ =\ ((double)freq)\ /\ 1000000.0;}
+\DoxyCodeLine{00189\ \ \ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{bt_convex_hull_computer_8cpp_ad27ed092432b64ff558d2254c278720f}{uint64\_t}}\ ClockSize;}
+\DoxyCodeLine{00190\ \ \ \ \ ClockSize\ newTime;}
+\DoxyCodeLine{00191\ \ \ \ \ \textcolor{comment}{//\_\_asm\ \_\_volatile\_\_(\ "{}mftb\ \%0"{}\ :\ "{}=r"{}\ (newTime)\ :\ :\ "{}memory"{});}}
+\DoxyCodeLine{00192\ \ \ \ \ SYS\_TIMEBASE\_GET(newTime);}
+\DoxyCodeLine{00193\ }
+\DoxyCodeLine{00194\ \ \ \ \ \textcolor{keywordflow}{return}\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{int})((double(newTime\ -\/\ m\_data-\/>mStartTime))\ /\ dFreq);}
+\DoxyCodeLine{00195\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00196\ }
+\DoxyCodeLine{00197\ \ \ \ \ \textcolor{keyword}{struct\ }timeval\ currentTime;}
+\DoxyCodeLine{00198\ \ \ \ \ gettimeofday(\&currentTime,\ 0);}
+\DoxyCodeLine{00199\ \ \ \ \ \textcolor{keywordflow}{return}\ (currentTime.tv\_sec\ -\/\ m\_data-\/>mStartTime.tv\_sec)\ *\ 1000000\ +}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ \ \ \ (currentTime.tv\_usec\ -\/\ m\_data-\/>mStartTime.tv\_usec);}
+\DoxyCodeLine{00201\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\_\_CELLOS\_LV2\_\_}}
+\DoxyCodeLine{00202\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00203\ \}}
+\DoxyCodeLine{00204\ }
+\DoxyCodeLine{00205\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classbt_clock_a54c8ef216fa7653d512472a8554ad5bf}{btClock::getTimeNanoseconds}}()}
+\DoxyCodeLine{00206\ \{}
+\DoxyCodeLine{00207\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_WINDOWS\_TIMERS}}
+\DoxyCodeLine{00208\ \ \ \ \ \textcolor{comment}{//see\ https://msdn.microsoft.com/en-\/us/library/windows/desktop/dn553408(v=vs.85).aspx}}
+\DoxyCodeLine{00209\ \ \ \ \ LARGE\_INTEGER\ currentTime,\ elapsedTime;}
+\DoxyCodeLine{00210\ }
+\DoxyCodeLine{00211\ \ \ \ \ QueryPerformanceCounter(\&currentTime);}
+\DoxyCodeLine{00212\ \ \ \ \ elapsedTime.QuadPart\ =\ currentTime.QuadPart\ -\/}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_data-\/>mStartTime.QuadPart;}
+\DoxyCodeLine{00214\ \ \ \ \ elapsedTime.QuadPart\ *=\ 1000000000;}
+\DoxyCodeLine{00215\ \ \ \ \ elapsedTime.QuadPart\ /=\ m\_data-\/>mClockFrequency.QuadPart;}
+\DoxyCodeLine{00216\ }
+\DoxyCodeLine{00217\ \ \ \ \ \textcolor{keywordflow}{return}\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{long})elapsedTime.QuadPart;}
+\DoxyCodeLine{00218\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00219\ }
+\DoxyCodeLine{00220\ \textcolor{preprocessor}{\#ifdef\ \_\_CELLOS\_LV2\_\_}}
+\DoxyCodeLine{00221\ \ \ \ \ \mbox{\hyperlink{bt_convex_hull_computer_8cpp_ad27ed092432b64ff558d2254c278720f}{uint64\_t}}\ freq\ =\ sys\_time\_get\_timebase\_frequency();}
+\DoxyCodeLine{00222\ \ \ \ \ \textcolor{keywordtype}{double}\ dFreq\ =\ ((double)freq)\ /\ 1e9;}
+\DoxyCodeLine{00223\ \ \ \ \ \textcolor{keyword}{typedef}\ \mbox{\hyperlink{bt_convex_hull_computer_8cpp_ad27ed092432b64ff558d2254c278720f}{uint64\_t}}\ ClockSize;}
+\DoxyCodeLine{00224\ \ \ \ \ ClockSize\ newTime;}
+\DoxyCodeLine{00225\ \ \ \ \ \textcolor{comment}{//\_\_asm\ \_\_volatile\_\_(\ "{}mftb\ \%0"{}\ :\ "{}=r"{}\ (newTime)\ :\ :\ "{}memory"{});}}
+\DoxyCodeLine{00226\ \ \ \ \ SYS\_TIMEBASE\_GET(newTime);}
+\DoxyCodeLine{00227\ }
+\DoxyCodeLine{00228\ \ \ \ \ \textcolor{keywordflow}{return}\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{int})((double(newTime\ -\/\ m\_data-\/>mStartTime))\ /\ dFreq);}
+\DoxyCodeLine{00229\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00230\ \textcolor{preprocessor}{\#ifdef\ \_\_APPLE\_\_}}
+\DoxyCodeLine{00231\ \ \ \ \ \mbox{\hyperlink{bt_convex_hull_computer_8cpp_ad27ed092432b64ff558d2254c278720f}{uint64\_t}}\ ticks\ =\ mach\_absolute\_time()\ -\/\ m\_data-\/>mStartTimeNano;}
+\DoxyCodeLine{00232\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{double}\ conversion\ =\ 0.0L;}
+\DoxyCodeLine{00233\ \ \ \ \ \textcolor{keywordflow}{if}\ (0.0L\ ==\ conversion)}
+\DoxyCodeLine{00234\ \ \ \ \ \{}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ attempt\ to\ get\ conversion\ to\ nanoseconds}}
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \ \ mach\_timebase\_info\_data\_t\ info;}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ err\ =\ mach\_timebase\_info(\&info);}
+\DoxyCodeLine{00238\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (err)}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(0);}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ \ \ \ \ conversion\ =\ 1.;}
+\DoxyCodeLine{00242\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00243\ \ \ \ \ \ \ \ \ conversion\ =\ info.numer\ /\ info.denom;}
+\DoxyCodeLine{00244\ \ \ \ \ \}}
+\DoxyCodeLine{00245\ \ \ \ \ \textcolor{keywordflow}{return}\ (ticks\ *\ conversion);}
+\DoxyCodeLine{00246\ }
+\DoxyCodeLine{00247\ \textcolor{preprocessor}{\#else\ \ }\textcolor{comment}{//\_\_APPLE\_\_}}
+\DoxyCodeLine{00248\ }
+\DoxyCodeLine{00249\ \textcolor{preprocessor}{\#ifdef\ BT\_LINUX\_REALTIME}}
+\DoxyCodeLine{00250\ \ \ \ \ timespec\ ts;}
+\DoxyCodeLine{00251\ \ \ \ \ clock\_gettime(CLOCK\_REALTIME,\ \&ts);}
+\DoxyCodeLine{00252\ \ \ \ \ \textcolor{keywordflow}{return}\ 1000000000\ *\ ts.tv\_sec\ +\ ts.tv\_nsec;}
+\DoxyCodeLine{00253\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00254\ \ \ \ \ \textcolor{keyword}{struct\ }timeval\ currentTime;}
+\DoxyCodeLine{00255\ \ \ \ \ gettimeofday(\&currentTime,\ 0);}
+\DoxyCodeLine{00256\ \ \ \ \ \textcolor{keywordflow}{return}\ (currentTime.tv\_sec\ -\/\ m\_data-\/>mStartTime.tv\_sec)\ *\ 1e9\ +}
+\DoxyCodeLine{00257\ \ \ \ \ \ \ \ \ \ \ \ (currentTime.tv\_usec\ -\/\ m\_data-\/>mStartTime.tv\_usec)\ *\ 1000;}
+\DoxyCodeLine{00258\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_LINUX\_REALTIME}}
+\DoxyCodeLine{00259\ }
+\DoxyCodeLine{00260\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\_\_APPLE\_\_}}
+\DoxyCodeLine{00261\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\_\_CELLOS\_LV2\_\_}}
+\DoxyCodeLine{00262\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00263\ \}}
+\DoxyCodeLine{00264\ }
+\DoxyCodeLine{00267\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_clock_a3fd3c27b67fa12ff3a56a57679667936}{btClock::getTimeSeconds}}()}
+\DoxyCodeLine{00268\ \{}
+\DoxyCodeLine{00269\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ microseconds\_to\_seconds\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.000001);}
+\DoxyCodeLine{00270\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(\mbox{\hyperlink{classbt_clock_aa58b76bfde0b0f3f33d0cb91ec6b6938}{getTimeMicroseconds}}())\ *\ microseconds\_to\_seconds;}
+\DoxyCodeLine{00271\ \}}
+\DoxyCodeLine{00272\ }
+\DoxyCodeLine{00273\ \textcolor{preprocessor}{\#ifndef\ BT\_NO\_PROFILE}}
+\DoxyCodeLine{00274\ }
+\DoxyCodeLine{00275\ \textcolor{keyword}{static}\ \mbox{\hyperlink{classbt_clock}{btClock}}\ gProfileClock;}
+\DoxyCodeLine{00276\ }
+\DoxyCodeLine{00277\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{void}\ Profile\_Get\_Ticks(\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{int}*\ ticks)}
+\DoxyCodeLine{00278\ \{}
+\DoxyCodeLine{00279\ \ \ \ \ *ticks\ =\ (\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ int)gProfileClock.\mbox{\hyperlink{classbt_clock_aa58b76bfde0b0f3f33d0cb91ec6b6938}{getTimeMicroseconds}}();}
+\DoxyCodeLine{00280\ \}}
+\DoxyCodeLine{00281\ }
+\DoxyCodeLine{00282\ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{float}\ Profile\_Get\_Tick\_Rate(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00283\ \{}
+\DoxyCodeLine{00284\ \ \ \ \ \textcolor{comment}{//\ \ return\ 1000000.f;}}
+\DoxyCodeLine{00285\ \ \ \ \ \textcolor{keywordflow}{return}\ 1000.f;}
+\DoxyCodeLine{00286\ \}}
+\DoxyCodeLine{00287\ }
+\DoxyCodeLine{00288\ \textcolor{comment}{/***************************************************************************************************}}
+\DoxyCodeLine{00289\ \textcolor{comment}{**}}
+\DoxyCodeLine{00290\ \textcolor{comment}{**\ CProfileNode}}
+\DoxyCodeLine{00291\ \textcolor{comment}{**}}
+\DoxyCodeLine{00292\ \textcolor{comment}{***************************************************************************************************/}}
+\DoxyCodeLine{00293\ }
+\DoxyCodeLine{00294\ \textcolor{comment}{/***********************************************************************************************}}
+\DoxyCodeLine{00295\ \textcolor{comment}{\ *\ INPUT:\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00296\ \textcolor{comment}{\ *\ name\ -\/\ pointer\ to\ a\ static\ string\ which\ is\ the\ name\ of\ this\ profile\ node\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00297\ \textcolor{comment}{\ *\ parent\ -\/\ parent\ pointer\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00298\ \textcolor{comment}{\ *\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00299\ \textcolor{comment}{\ *\ WARNINGS:\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00300\ \textcolor{comment}{\ *\ The\ name\ is\ assumed\ to\ be\ a\ static\ pointer,\ only\ the\ pointer\ is\ stored\ and\ compared\ for\ \ \ \ \ *}}
+\DoxyCodeLine{00301\ \textcolor{comment}{\ *\ efficiency\ reasons.\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00302\ \textcolor{comment}{\ *=============================================================================================*/}}
+\DoxyCodeLine{00303\ CProfileNode::CProfileNode(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}},\ CProfileNode*\ parent)\ :\ Name(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}}),}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ TotalCalls(0),}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ TotalTime(0),}
+\DoxyCodeLine{00306\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ StartTime(0),}
+\DoxyCodeLine{00307\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ RecursionCounter(0),}
+\DoxyCodeLine{00308\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Parent(parent),}
+\DoxyCodeLine{00309\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Child(\mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00310\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ Sibling(\mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00311\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ m\_userPtr(0)}
+\DoxyCodeLine{00312\ \{}
+\DoxyCodeLine{00313\ \ \ \ \ Reset();}
+\DoxyCodeLine{00314\ \}}
+\DoxyCodeLine{00315\ }
+\DoxyCodeLine{00316\ \textcolor{keywordtype}{void}\ CProfileNode::CleanupMemory()}
+\DoxyCodeLine{00317\ \{}
+\DoxyCodeLine{00318\ \ \ \ \ \textcolor{keyword}{delete}\ (Child);}
+\DoxyCodeLine{00319\ \ \ \ \ Child\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00320\ \ \ \ \ \textcolor{keyword}{delete}\ (Sibling);}
+\DoxyCodeLine{00321\ \ \ \ \ Sibling\ =\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00322\ \}}
+\DoxyCodeLine{00323\ }
+\DoxyCodeLine{00324\ CProfileNode::\string~CProfileNode(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00325\ \{}
+\DoxyCodeLine{00326\ \ \ \ \ CleanupMemory();}
+\DoxyCodeLine{00327\ \}}
+\DoxyCodeLine{00328\ }
+\DoxyCodeLine{00329\ \textcolor{comment}{/***********************************************************************************************}}
+\DoxyCodeLine{00330\ \textcolor{comment}{\ *\ INPUT:\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00331\ \textcolor{comment}{\ *\ name\ -\/\ static\ string\ pointer\ to\ the\ name\ of\ the\ node\ we\ are\ searching\ for\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00332\ \textcolor{comment}{\ *\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00333\ \textcolor{comment}{\ *\ WARNINGS:\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00334\ \textcolor{comment}{\ *\ All\ profile\ names\ are\ assumed\ to\ be\ static\ strings\ so\ this\ function\ uses\ pointer\ compares\ \ \ *}}
+\DoxyCodeLine{00335\ \textcolor{comment}{\ *\ to\ find\ the\ named\ node.\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00336\ \textcolor{comment}{\ *=============================================================================================*/}}
+\DoxyCodeLine{00337\ CProfileNode*\ CProfileNode::Get\_Sub\_Node(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}})}
+\DoxyCodeLine{00338\ \{}
+\DoxyCodeLine{00339\ \ \ \ \ \textcolor{comment}{//\ Try\ to\ find\ this\ sub\ node}}
+\DoxyCodeLine{00340\ \ \ \ \ CProfileNode*\ child\ =\ Child;}
+\DoxyCodeLine{00341\ \ \ \ \ \textcolor{keywordflow}{while}\ (child)}
+\DoxyCodeLine{00342\ \ \ \ \ \{}
+\DoxyCodeLine{00343\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (child-\/>Name\ ==\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}})}
+\DoxyCodeLine{00344\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00345\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ child;}
+\DoxyCodeLine{00346\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00347\ \ \ \ \ \ \ \ \ child\ =\ child-\/>Sibling;}
+\DoxyCodeLine{00348\ \ \ \ \ \}}
+\DoxyCodeLine{00349\ }
+\DoxyCodeLine{00350\ \ \ \ \ \textcolor{comment}{//\ We\ didn't\ find\ it,\ so\ add\ it}}
+\DoxyCodeLine{00351\ }
+\DoxyCodeLine{00352\ \ \ \ \ CProfileNode*\ node\ =\ \textcolor{keyword}{new}\ CProfileNode(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}},\ \textcolor{keyword}{this});}
+\DoxyCodeLine{00353\ \ \ \ \ node-\/>Sibling\ =\ Child;}
+\DoxyCodeLine{00354\ \ \ \ \ Child\ =\ node;}
+\DoxyCodeLine{00355\ \ \ \ \ \textcolor{keywordflow}{return}\ node;}
+\DoxyCodeLine{00356\ \}}
+\DoxyCodeLine{00357\ }
+\DoxyCodeLine{00358\ \textcolor{keywordtype}{void}\ CProfileNode::Reset(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00359\ \{}
+\DoxyCodeLine{00360\ \ \ \ \ TotalCalls\ =\ 0;}
+\DoxyCodeLine{00361\ \ \ \ \ TotalTime\ =\ 0.0f;}
+\DoxyCodeLine{00362\ }
+\DoxyCodeLine{00363\ \ \ \ \ \textcolor{keywordflow}{if}\ (Child)}
+\DoxyCodeLine{00364\ \ \ \ \ \{}
+\DoxyCodeLine{00365\ \ \ \ \ \ \ \ \ Child-\/>Reset();}
+\DoxyCodeLine{00366\ \ \ \ \ \}}
+\DoxyCodeLine{00367\ \ \ \ \ \textcolor{keywordflow}{if}\ (Sibling)}
+\DoxyCodeLine{00368\ \ \ \ \ \{}
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \ \ Sibling-\/>Reset();}
+\DoxyCodeLine{00370\ \ \ \ \ \}}
+\DoxyCodeLine{00371\ \}}
+\DoxyCodeLine{00372\ }
+\DoxyCodeLine{00373\ \textcolor{keywordtype}{void}\ CProfileNode::Call(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00374\ \{}
+\DoxyCodeLine{00375\ \ \ \ \ TotalCalls++;}
+\DoxyCodeLine{00376\ \ \ \ \ \textcolor{keywordflow}{if}\ (RecursionCounter++\ ==\ 0)}
+\DoxyCodeLine{00377\ \ \ \ \ \{}
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ Profile\_Get\_Ticks(\&StartTime);}
+\DoxyCodeLine{00379\ \ \ \ \ \}}
+\DoxyCodeLine{00380\ \}}
+\DoxyCodeLine{00381\ }
+\DoxyCodeLine{00382\ \textcolor{keywordtype}{bool}\ CProfileNode::Return(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00383\ \{}
+\DoxyCodeLine{00384\ \ \ \ \ \textcolor{keywordflow}{if}\ (-\/-\/RecursionCounter\ ==\ 0\ \&\&\ TotalCalls\ !=\ 0)}
+\DoxyCodeLine{00385\ \ \ \ \ \{}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{int}\ time;}
+\DoxyCodeLine{00387\ \ \ \ \ \ \ \ \ Profile\_Get\_Ticks(\&time);}
+\DoxyCodeLine{00388\ }
+\DoxyCodeLine{00389\ \ \ \ \ \ \ \ \ time\ -\/=\ StartTime;}
+\DoxyCodeLine{00390\ \ \ \ \ \ \ \ \ TotalTime\ +=\ (float)time\ /\ Profile\_Get\_Tick\_Rate();}
+\DoxyCodeLine{00391\ \ \ \ \ \}}
+\DoxyCodeLine{00392\ \ \ \ \ \textcolor{keywordflow}{return}\ (RecursionCounter\ ==\ 0);}
+\DoxyCodeLine{00393\ \}}
+\DoxyCodeLine{00394\ }
+\DoxyCodeLine{00395\ \textcolor{comment}{/***************************************************************************************************}}
+\DoxyCodeLine{00396\ \textcolor{comment}{**}}
+\DoxyCodeLine{00397\ \textcolor{comment}{**\ CProfileIterator}}
+\DoxyCodeLine{00398\ \textcolor{comment}{**}}
+\DoxyCodeLine{00399\ \textcolor{comment}{***************************************************************************************************/}}
+\DoxyCodeLine{00400\ CProfileIterator::CProfileIterator(CProfileNode*\ \mbox{\hyperlink{glad_8h_ac55adc720a3098c1b454d2a4647f4361}{start}})}
+\DoxyCodeLine{00401\ \{}
+\DoxyCodeLine{00402\ \ \ \ \ CurrentParent\ =\ \mbox{\hyperlink{glad_8h_ac55adc720a3098c1b454d2a4647f4361}{start}};}
+\DoxyCodeLine{00403\ \ \ \ \ CurrentChild\ =\ CurrentParent-\/>Get\_Child();}
+\DoxyCodeLine{00404\ \}}
+\DoxyCodeLine{00405\ }
+\DoxyCodeLine{00406\ \textcolor{keywordtype}{void}\ CProfileIterator::First(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00407\ \{}
+\DoxyCodeLine{00408\ \ \ \ \ CurrentChild\ =\ CurrentParent-\/>Get\_Child();}
+\DoxyCodeLine{00409\ \}}
+\DoxyCodeLine{00410\ }
+\DoxyCodeLine{00411\ \textcolor{keywordtype}{void}\ CProfileIterator::Next(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00412\ \{}
+\DoxyCodeLine{00413\ \ \ \ \ CurrentChild\ =\ CurrentChild-\/>Get\_Sibling();}
+\DoxyCodeLine{00414\ \}}
+\DoxyCodeLine{00415\ }
+\DoxyCodeLine{00416\ \textcolor{keywordtype}{bool}\ CProfileIterator::Is\_Done(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00417\ \{}
+\DoxyCodeLine{00418\ \ \ \ \ \textcolor{keywordflow}{return}\ CurrentChild\ ==\ \mbox{\hyperlink{module___n_u_l_l}{NULL}};}
+\DoxyCodeLine{00419\ \}}
+\DoxyCodeLine{00420\ }
+\DoxyCodeLine{00421\ \textcolor{keywordtype}{void}\ CProfileIterator::Enter\_Child(\textcolor{keywordtype}{int}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}})}
+\DoxyCodeLine{00422\ \{}
+\DoxyCodeLine{00423\ \ \ \ \ CurrentChild\ =\ CurrentParent-\/>Get\_Child();}
+\DoxyCodeLine{00424\ \ \ \ \ \textcolor{keywordflow}{while}\ ((CurrentChild\ !=\ \mbox{\hyperlink{module___n_u_l_l}{NULL}})\ \&\&\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}\ !=\ 0))}
+\DoxyCodeLine{00425\ \ \ \ \ \{}
+\DoxyCodeLine{00426\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ab47dd9958bcadea08866b42bf358e95e}{index}}-\/-\/;}
+\DoxyCodeLine{00427\ \ \ \ \ \ \ \ \ CurrentChild\ =\ CurrentChild-\/>Get\_Sibling();}
+\DoxyCodeLine{00428\ \ \ \ \ \}}
+\DoxyCodeLine{00429\ }
+\DoxyCodeLine{00430\ \ \ \ \ \textcolor{keywordflow}{if}\ (CurrentChild\ !=\ \mbox{\hyperlink{module___n_u_l_l}{NULL}})}
+\DoxyCodeLine{00431\ \ \ \ \ \{}
+\DoxyCodeLine{00432\ \ \ \ \ \ \ \ \ CurrentParent\ =\ CurrentChild;}
+\DoxyCodeLine{00433\ \ \ \ \ \ \ \ \ CurrentChild\ =\ CurrentParent-\/>Get\_Child();}
+\DoxyCodeLine{00434\ \ \ \ \ \}}
+\DoxyCodeLine{00435\ \}}
+\DoxyCodeLine{00436\ }
+\DoxyCodeLine{00437\ \textcolor{keywordtype}{void}\ CProfileIterator::Enter\_Parent(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00438\ \{}
+\DoxyCodeLine{00439\ \ \ \ \ \textcolor{keywordflow}{if}\ (CurrentParent-\/>Get\_Parent()\ !=\ \mbox{\hyperlink{module___n_u_l_l}{NULL}})}
+\DoxyCodeLine{00440\ \ \ \ \ \{}
+\DoxyCodeLine{00441\ \ \ \ \ \ \ \ \ CurrentParent\ =\ CurrentParent-\/>Get\_Parent();}
+\DoxyCodeLine{00442\ \ \ \ \ \}}
+\DoxyCodeLine{00443\ \ \ \ \ CurrentChild\ =\ CurrentParent-\/>Get\_Child();}
+\DoxyCodeLine{00444\ \}}
+\DoxyCodeLine{00445\ }
+\DoxyCodeLine{00446\ \textcolor{comment}{/***************************************************************************************************}}
+\DoxyCodeLine{00447\ \textcolor{comment}{**}}
+\DoxyCodeLine{00448\ \textcolor{comment}{**\ CProfileManager}}
+\DoxyCodeLine{00449\ \textcolor{comment}{**}}
+\DoxyCodeLine{00450\ \textcolor{comment}{***************************************************************************************************/}}
+\DoxyCodeLine{00451\ }
+\DoxyCodeLine{00452\ CProfileNode\ gRoots[\mbox{\hyperlink{bt_quickprof_8h_a5d64c7f14a951b63bdbe3280347737af}{BT\_QUICKPROF\_MAX\_THREAD\_COUNT}}]\ =\ \{}
+\DoxyCodeLine{00453\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00454\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00455\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00456\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00457\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00458\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00459\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00460\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00461\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00462\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00463\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00464\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00465\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00466\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00467\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),}
+\DoxyCodeLine{00468\ \ \ \ \ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}}),\ CProfileNode(\textcolor{stringliteral}{"{}Root"{}},\ \mbox{\hyperlink{module___n_u_l_l}{NULL}})\};}
+\DoxyCodeLine{00469\ }
+\DoxyCodeLine{00470\ CProfileNode*\ gCurrentNodes[\mbox{\hyperlink{bt_quickprof_8h_a5d64c7f14a951b63bdbe3280347737af}{BT\_QUICKPROF\_MAX\_THREAD\_COUNT}}]\ =}
+\DoxyCodeLine{00471\ \ \ \ \ \{}
+\DoxyCodeLine{00472\ \ \ \ \ \ \ \ \ \&gRoots[0],}
+\DoxyCodeLine{00473\ \ \ \ \ \ \ \ \ \&gRoots[1],}
+\DoxyCodeLine{00474\ \ \ \ \ \ \ \ \ \&gRoots[2],}
+\DoxyCodeLine{00475\ \ \ \ \ \ \ \ \ \&gRoots[3],}
+\DoxyCodeLine{00476\ \ \ \ \ \ \ \ \ \&gRoots[4],}
+\DoxyCodeLine{00477\ \ \ \ \ \ \ \ \ \&gRoots[5],}
+\DoxyCodeLine{00478\ \ \ \ \ \ \ \ \ \&gRoots[6],}
+\DoxyCodeLine{00479\ \ \ \ \ \ \ \ \ \&gRoots[7],}
+\DoxyCodeLine{00480\ \ \ \ \ \ \ \ \ \&gRoots[8],}
+\DoxyCodeLine{00481\ \ \ \ \ \ \ \ \ \&gRoots[9],}
+\DoxyCodeLine{00482\ \ \ \ \ \ \ \ \ \&gRoots[10],}
+\DoxyCodeLine{00483\ \ \ \ \ \ \ \ \ \&gRoots[11],}
+\DoxyCodeLine{00484\ \ \ \ \ \ \ \ \ \&gRoots[12],}
+\DoxyCodeLine{00485\ \ \ \ \ \ \ \ \ \&gRoots[13],}
+\DoxyCodeLine{00486\ \ \ \ \ \ \ \ \ \&gRoots[14],}
+\DoxyCodeLine{00487\ \ \ \ \ \ \ \ \ \&gRoots[15],}
+\DoxyCodeLine{00488\ \ \ \ \ \ \ \ \ \&gRoots[16],}
+\DoxyCodeLine{00489\ \ \ \ \ \ \ \ \ \&gRoots[17],}
+\DoxyCodeLine{00490\ \ \ \ \ \ \ \ \ \&gRoots[18],}
+\DoxyCodeLine{00491\ \ \ \ \ \ \ \ \ \&gRoots[19],}
+\DoxyCodeLine{00492\ \ \ \ \ \ \ \ \ \&gRoots[20],}
+\DoxyCodeLine{00493\ \ \ \ \ \ \ \ \ \&gRoots[21],}
+\DoxyCodeLine{00494\ \ \ \ \ \ \ \ \ \&gRoots[22],}
+\DoxyCodeLine{00495\ \ \ \ \ \ \ \ \ \&gRoots[23],}
+\DoxyCodeLine{00496\ \ \ \ \ \ \ \ \ \&gRoots[24],}
+\DoxyCodeLine{00497\ \ \ \ \ \ \ \ \ \&gRoots[25],}
+\DoxyCodeLine{00498\ \ \ \ \ \ \ \ \ \&gRoots[26],}
+\DoxyCodeLine{00499\ \ \ \ \ \ \ \ \ \&gRoots[27],}
+\DoxyCodeLine{00500\ \ \ \ \ \ \ \ \ \&gRoots[28],}
+\DoxyCodeLine{00501\ \ \ \ \ \ \ \ \ \&gRoots[29],}
+\DoxyCodeLine{00502\ \ \ \ \ \ \ \ \ \&gRoots[30],}
+\DoxyCodeLine{00503\ \ \ \ \ \ \ \ \ \&gRoots[31],}
+\DoxyCodeLine{00504\ \ \ \ \ \ \ \ \ \&gRoots[32],}
+\DoxyCodeLine{00505\ \ \ \ \ \ \ \ \ \&gRoots[33],}
+\DoxyCodeLine{00506\ \ \ \ \ \ \ \ \ \&gRoots[34],}
+\DoxyCodeLine{00507\ \ \ \ \ \ \ \ \ \&gRoots[35],}
+\DoxyCodeLine{00508\ \ \ \ \ \ \ \ \ \&gRoots[36],}
+\DoxyCodeLine{00509\ \ \ \ \ \ \ \ \ \&gRoots[37],}
+\DoxyCodeLine{00510\ \ \ \ \ \ \ \ \ \&gRoots[38],}
+\DoxyCodeLine{00511\ \ \ \ \ \ \ \ \ \&gRoots[39],}
+\DoxyCodeLine{00512\ \ \ \ \ \ \ \ \ \&gRoots[40],}
+\DoxyCodeLine{00513\ \ \ \ \ \ \ \ \ \&gRoots[41],}
+\DoxyCodeLine{00514\ \ \ \ \ \ \ \ \ \&gRoots[42],}
+\DoxyCodeLine{00515\ \ \ \ \ \ \ \ \ \&gRoots[43],}
+\DoxyCodeLine{00516\ \ \ \ \ \ \ \ \ \&gRoots[44],}
+\DoxyCodeLine{00517\ \ \ \ \ \ \ \ \ \&gRoots[45],}
+\DoxyCodeLine{00518\ \ \ \ \ \ \ \ \ \&gRoots[46],}
+\DoxyCodeLine{00519\ \ \ \ \ \ \ \ \ \&gRoots[47],}
+\DoxyCodeLine{00520\ \ \ \ \ \ \ \ \ \&gRoots[48],}
+\DoxyCodeLine{00521\ \ \ \ \ \ \ \ \ \&gRoots[49],}
+\DoxyCodeLine{00522\ \ \ \ \ \ \ \ \ \&gRoots[50],}
+\DoxyCodeLine{00523\ \ \ \ \ \ \ \ \ \&gRoots[51],}
+\DoxyCodeLine{00524\ \ \ \ \ \ \ \ \ \&gRoots[52],}
+\DoxyCodeLine{00525\ \ \ \ \ \ \ \ \ \&gRoots[53],}
+\DoxyCodeLine{00526\ \ \ \ \ \ \ \ \ \&gRoots[54],}
+\DoxyCodeLine{00527\ \ \ \ \ \ \ \ \ \&gRoots[55],}
+\DoxyCodeLine{00528\ \ \ \ \ \ \ \ \ \&gRoots[56],}
+\DoxyCodeLine{00529\ \ \ \ \ \ \ \ \ \&gRoots[57],}
+\DoxyCodeLine{00530\ \ \ \ \ \ \ \ \ \&gRoots[58],}
+\DoxyCodeLine{00531\ \ \ \ \ \ \ \ \ \&gRoots[59],}
+\DoxyCodeLine{00532\ \ \ \ \ \ \ \ \ \&gRoots[60],}
+\DoxyCodeLine{00533\ \ \ \ \ \ \ \ \ \&gRoots[61],}
+\DoxyCodeLine{00534\ \ \ \ \ \ \ \ \ \&gRoots[62],}
+\DoxyCodeLine{00535\ \ \ \ \ \ \ \ \ \&gRoots[63],}
+\DoxyCodeLine{00536\ \};}
+\DoxyCodeLine{00537\ }
+\DoxyCodeLine{00538\ \textcolor{keywordtype}{int}\ CProfileManager::FrameCounter\ =\ 0;}
+\DoxyCodeLine{00539\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{int}\ CProfileManager::ResetTime\ =\ 0;}
+\DoxyCodeLine{00540\ }
+\DoxyCodeLine{00541\ CProfileIterator*\ CProfileManager::Get\_Iterator(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00542\ \{}
+\DoxyCodeLine{00543\ \ \ \ \ \textcolor{keywordtype}{int}\ threadIndex\ =\ \mbox{\hyperlink{bt_quickprof_8cpp_a8712285c90efc6484e4af90d1efd1f85}{btQuickprofGetCurrentThreadIndex2}}();}
+\DoxyCodeLine{00544\ \ \ \ \ \textcolor{keywordflow}{if}\ ((threadIndex\ <\ 0)\ ||\ threadIndex\ >=\ \mbox{\hyperlink{bt_quickprof_8h_a5d64c7f14a951b63bdbe3280347737af}{BT\_QUICKPROF\_MAX\_THREAD\_COUNT}})}
+\DoxyCodeLine{00545\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 0;}
+\DoxyCodeLine{00546\ }
+\DoxyCodeLine{00547\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{new}\ CProfileIterator(\&gRoots[threadIndex]);}
+\DoxyCodeLine{00548\ \}}
+\DoxyCodeLine{00549\ }
+\DoxyCodeLine{00550\ \textcolor{keywordtype}{void}\ CProfileManager::CleanupMemory(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00551\ \{}
+\DoxyCodeLine{00552\ \ \ \ \ \textcolor{keywordflow}{for}\ (\textcolor{keywordtype}{int}\ i\ =\ 0;\ i\ <\ \mbox{\hyperlink{bt_quickprof_8h_a5d64c7f14a951b63bdbe3280347737af}{BT\_QUICKPROF\_MAX\_THREAD\_COUNT}};\ i++)}
+\DoxyCodeLine{00553\ \ \ \ \ \{}
+\DoxyCodeLine{00554\ \ \ \ \ \ \ \ \ gRoots[i].CleanupMemory();}
+\DoxyCodeLine{00555\ \ \ \ \ \}}
+\DoxyCodeLine{00556\ \}}
+\DoxyCodeLine{00557\ }
+\DoxyCodeLine{00558\ \textcolor{comment}{/***********************************************************************************************}}
+\DoxyCodeLine{00559\ \textcolor{comment}{\ *\ CProfileManager::Start\_Profile\ -\/-\/\ Begin\ a\ named\ profile\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00560\ \textcolor{comment}{\ *\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00561\ \textcolor{comment}{\ *\ Steps\ one\ level\ deeper\ into\ the\ tree,\ if\ a\ child\ already\ exists\ with\ the\ specified\ name\ \ \ \ \ *}}
+\DoxyCodeLine{00562\ \textcolor{comment}{\ *\ then\ it\ accumulates\ the\ profiling;\ otherwise\ a\ new\ child\ node\ is\ added\ to\ the\ profile\ tree.\ *}}
+\DoxyCodeLine{00563\ \textcolor{comment}{\ *\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00564\ \textcolor{comment}{\ *\ INPUT:\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00565\ \textcolor{comment}{\ *\ name\ -\/\ name\ of\ this\ profiling\ record\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00566\ \textcolor{comment}{\ *\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00567\ \textcolor{comment}{\ *\ WARNINGS:\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00568\ \textcolor{comment}{\ *\ The\ string\ used\ is\ assumed\ to\ be\ a\ static\ string;\ pointer\ compares\ are\ used\ throughout\ \ \ \ \ \ *}}
+\DoxyCodeLine{00569\ \textcolor{comment}{\ *\ the\ profiling\ code\ for\ efficiency.\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00570\ \textcolor{comment}{\ *=============================================================================================*/}}
+\DoxyCodeLine{00571\ \textcolor{keywordtype}{void}\ CProfileManager::Start\_Profile(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}})}
+\DoxyCodeLine{00572\ \{}
+\DoxyCodeLine{00573\ \ \ \ \ \textcolor{keywordtype}{int}\ threadIndex\ =\ \mbox{\hyperlink{bt_quickprof_8cpp_a8712285c90efc6484e4af90d1efd1f85}{btQuickprofGetCurrentThreadIndex2}}();}
+\DoxyCodeLine{00574\ \ \ \ \ \textcolor{keywordflow}{if}\ ((threadIndex\ <\ 0)\ ||\ threadIndex\ >=\ \mbox{\hyperlink{bt_quickprof_8h_a5d64c7f14a951b63bdbe3280347737af}{BT\_QUICKPROF\_MAX\_THREAD\_COUNT}})}
+\DoxyCodeLine{00575\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00576\ }
+\DoxyCodeLine{00577\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}}\ !=\ gCurrentNodes[threadIndex]-\/>Get\_Name())}
+\DoxyCodeLine{00578\ \ \ \ \ \{}
+\DoxyCodeLine{00579\ \ \ \ \ \ \ \ \ gCurrentNodes[threadIndex]\ =\ gCurrentNodes[threadIndex]-\/>Get\_Sub\_Node(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}});}
+\DoxyCodeLine{00580\ \ \ \ \ \}}
+\DoxyCodeLine{00581\ }
+\DoxyCodeLine{00582\ \ \ \ \ gCurrentNodes[threadIndex]-\/>Call();}
+\DoxyCodeLine{00583\ \}}
+\DoxyCodeLine{00584\ }
+\DoxyCodeLine{00585\ \textcolor{comment}{/***********************************************************************************************}}
+\DoxyCodeLine{00586\ \textcolor{comment}{\ *\ CProfileManager::Stop\_Profile\ -\/-\/\ Stop\ timing\ and\ record\ the\ results.\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00587\ \textcolor{comment}{\ *=============================================================================================*/}}
+\DoxyCodeLine{00588\ \textcolor{keywordtype}{void}\ CProfileManager::Stop\_Profile(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00589\ \{}
+\DoxyCodeLine{00590\ \ \ \ \ \textcolor{keywordtype}{int}\ threadIndex\ =\ \mbox{\hyperlink{bt_quickprof_8cpp_a8712285c90efc6484e4af90d1efd1f85}{btQuickprofGetCurrentThreadIndex2}}();}
+\DoxyCodeLine{00591\ \ \ \ \ \textcolor{keywordflow}{if}\ ((threadIndex\ <\ 0)\ ||\ threadIndex\ >=\ \mbox{\hyperlink{bt_quickprof_8h_a5d64c7f14a951b63bdbe3280347737af}{BT\_QUICKPROF\_MAX\_THREAD\_COUNT}})}
+\DoxyCodeLine{00592\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00593\ }
+\DoxyCodeLine{00594\ \ \ \ \ \textcolor{comment}{//\ Return\ will\ indicate\ whether\ we\ should\ back\ up\ to\ our\ parent\ (we\ may}}
+\DoxyCodeLine{00595\ \ \ \ \ \textcolor{comment}{//\ be\ profiling\ a\ recursive\ function)}}
+\DoxyCodeLine{00596\ \ \ \ \ \textcolor{keywordflow}{if}\ (gCurrentNodes[threadIndex]-\/>Return())}
+\DoxyCodeLine{00597\ \ \ \ \ \{}
+\DoxyCodeLine{00598\ \ \ \ \ \ \ \ \ gCurrentNodes[threadIndex]\ =\ gCurrentNodes[threadIndex]-\/>Get\_Parent();}
+\DoxyCodeLine{00599\ \ \ \ \ \}}
+\DoxyCodeLine{00600\ \}}
+\DoxyCodeLine{00601\ }
+\DoxyCodeLine{00602\ \textcolor{comment}{/***********************************************************************************************}}
+\DoxyCodeLine{00603\ \textcolor{comment}{\ *\ CProfileManager::Reset\ -\/-\/\ Reset\ the\ contents\ of\ the\ profiling\ system\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00604\ \textcolor{comment}{\ *\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00605\ \textcolor{comment}{\ *\ \ \ \ This\ resets\ everything\ except\ for\ the\ tree\ structure.\ \ All\ of\ the\ timing\ data\ is\ reset.\ \ *}}
+\DoxyCodeLine{00606\ \textcolor{comment}{\ *=============================================================================================*/}}
+\DoxyCodeLine{00607\ \textcolor{keywordtype}{void}\ CProfileManager::Reset(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00608\ \{}
+\DoxyCodeLine{00609\ \ \ \ \ gProfileClock.\mbox{\hyperlink{classbt_clock_a592eb764c2e7b645c9619ab7e483166c}{reset}}();}
+\DoxyCodeLine{00610\ \ \ \ \ \textcolor{keywordtype}{int}\ threadIndex\ =\ \mbox{\hyperlink{bt_quickprof_8cpp_a8712285c90efc6484e4af90d1efd1f85}{btQuickprofGetCurrentThreadIndex2}}();}
+\DoxyCodeLine{00611\ \ \ \ \ \textcolor{keywordflow}{if}\ ((threadIndex\ <\ 0)\ ||\ threadIndex\ >=\ \mbox{\hyperlink{bt_quickprof_8h_a5d64c7f14a951b63bdbe3280347737af}{BT\_QUICKPROF\_MAX\_THREAD\_COUNT}})}
+\DoxyCodeLine{00612\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00613\ \ \ \ \ gRoots[threadIndex].Reset();}
+\DoxyCodeLine{00614\ \ \ \ \ gRoots[threadIndex].Call();}
+\DoxyCodeLine{00615\ \ \ \ \ FrameCounter\ =\ 0;}
+\DoxyCodeLine{00616\ \ \ \ \ Profile\_Get\_Ticks(\&ResetTime);}
+\DoxyCodeLine{00617\ \}}
+\DoxyCodeLine{00618\ }
+\DoxyCodeLine{00619\ \textcolor{comment}{/***********************************************************************************************}}
+\DoxyCodeLine{00620\ \textcolor{comment}{\ *\ CProfileManager::Increment\_Frame\_Counter\ -\/-\/\ Increment\ the\ frame\ counter\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00621\ \textcolor{comment}{\ *=============================================================================================*/}}
+\DoxyCodeLine{00622\ \textcolor{keywordtype}{void}\ CProfileManager::Increment\_Frame\_Counter(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00623\ \{}
+\DoxyCodeLine{00624\ \ \ \ \ FrameCounter++;}
+\DoxyCodeLine{00625\ \}}
+\DoxyCodeLine{00626\ }
+\DoxyCodeLine{00627\ \textcolor{comment}{/***********************************************************************************************}}
+\DoxyCodeLine{00628\ \textcolor{comment}{\ *\ CProfileManager::Get\_Time\_Since\_Reset\ -\/-\/\ returns\ the\ elapsed\ time\ since\ last\ reset\ \ \ \ \ \ \ \ \ *}}
+\DoxyCodeLine{00629\ \textcolor{comment}{\ *=============================================================================================*/}}
+\DoxyCodeLine{00630\ \textcolor{keywordtype}{float}\ CProfileManager::Get\_Time\_Since\_Reset(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00631\ \{}
+\DoxyCodeLine{00632\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{long}\ \textcolor{keywordtype}{int}\ time;}
+\DoxyCodeLine{00633\ \ \ \ \ Profile\_Get\_Ticks(\&time);}
+\DoxyCodeLine{00634\ \ \ \ \ time\ -\/=\ ResetTime;}
+\DoxyCodeLine{00635\ \ \ \ \ \textcolor{keywordflow}{return}\ (\textcolor{keywordtype}{float})time\ /\ Profile\_Get\_Tick\_Rate();}
+\DoxyCodeLine{00636\ \}}
+\DoxyCodeLine{00637\ }
+\DoxyCodeLine{00638\ \textcolor{preprocessor}{\#include\ <stdio.h>}}
+\DoxyCodeLine{00639\ }
+\DoxyCodeLine{00640\ \textcolor{keywordtype}{void}\ CProfileManager::dumpRecursive(CProfileIterator*\ profileIterator,\ \textcolor{keywordtype}{int}\ spacing)}
+\DoxyCodeLine{00641\ \{}
+\DoxyCodeLine{00642\ \ \ \ \ profileIterator-\/>First();}
+\DoxyCodeLine{00643\ \ \ \ \ \textcolor{keywordflow}{if}\ (profileIterator-\/>Is\_Done())}
+\DoxyCodeLine{00644\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00645\ }
+\DoxyCodeLine{00646\ \ \ \ \ \textcolor{keywordtype}{float}\ accumulated\_time\ =\ 0,\ parent\_time\ =\ profileIterator-\/>Is\_Root()\ ?\ CProfileManager::Get\_Time\_Since\_Reset()\ :\ profileIterator-\/>Get\_Current\_Parent\_Total\_Time();}
+\DoxyCodeLine{00647\ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00648\ \ \ \ \ \textcolor{keywordtype}{int}\ frames\_since\_reset\ =\ CProfileManager::Get\_Frame\_Count\_Since\_Reset();}
+\DoxyCodeLine{00649\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ spacing;\ i++)\ printf(\textcolor{stringliteral}{"{}."{}});}
+\DoxyCodeLine{00650\ \ \ \ \ printf(\textcolor{stringliteral}{"{}-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/\(\backslash\)n"{}});}
+\DoxyCodeLine{00651\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ spacing;\ i++)\ printf(\textcolor{stringliteral}{"{}."{}});}
+\DoxyCodeLine{00652\ \ \ \ \ printf(\textcolor{stringliteral}{"{}Profiling:\ \%s\ (total\ running\ time:\ \%.3f\ ms)\ -\/-\/-\/\(\backslash\)n"{}},\ profileIterator-\/>Get\_Current\_Parent\_Name(),\ parent\_time);}
+\DoxyCodeLine{00653\ \ \ \ \ \textcolor{keywordtype}{float}\ totalTime\ =\ 0.f;}
+\DoxyCodeLine{00654\ }
+\DoxyCodeLine{00655\ \ \ \ \ \textcolor{keywordtype}{int}\ numChildren\ =\ 0;}
+\DoxyCodeLine{00656\ }
+\DoxyCodeLine{00657\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ !profileIterator-\/>Is\_Done();\ i++,\ profileIterator-\/>Next())}
+\DoxyCodeLine{00658\ \ \ \ \ \{}
+\DoxyCodeLine{00659\ \ \ \ \ \ \ \ \ numChildren++;}
+\DoxyCodeLine{00660\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ current\_total\_time\ =\ profileIterator-\/>Get\_Current\_Total\_Time();}
+\DoxyCodeLine{00661\ \ \ \ \ \ \ \ \ accumulated\_time\ +=\ current\_total\_time;}
+\DoxyCodeLine{00662\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ fraction\ =\ parent\_time\ >\ \mbox{\hyperlink{bt_scalar_8h_ae51eef6845bd59f964c1b2dbfe7054b7}{SIMD\_EPSILON}}\ ?\ (current\_total\_time\ /\ parent\_time)\ *\ 100\ :\ 0.f;}
+\DoxyCodeLine{00663\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00664\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00665\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ spacing;\ i++)\ printf(\textcolor{stringliteral}{"{}."{}});}
+\DoxyCodeLine{00666\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00667\ \ \ \ \ \ \ \ \ printf(\textcolor{stringliteral}{"{}\%d\ -\/-\/\ \%s\ (\%.2f\ \%\%)\ ::\ \%.3f\ ms\ /\ frame\ (\%d\ calls)\(\backslash\)n"{}},\ i,\ profileIterator-\/>Get\_Current\_Name(),\ fraction,\ (current\_total\_time\ /\ (\textcolor{keywordtype}{double})frames\_since\_reset),\ profileIterator-\/>Get\_Current\_Total\_Calls());}
+\DoxyCodeLine{00668\ \ \ \ \ \ \ \ \ totalTime\ +=\ current\_total\_time;}
+\DoxyCodeLine{00669\ \ \ \ \ \ \ \ \ \textcolor{comment}{//recurse\ into\ children}}
+\DoxyCodeLine{00670\ \ \ \ \ \}}
+\DoxyCodeLine{00671\ }
+\DoxyCodeLine{00672\ \ \ \ \ \textcolor{keywordflow}{if}\ (parent\_time\ <\ accumulated\_time)}
+\DoxyCodeLine{00673\ \ \ \ \ \{}
+\DoxyCodeLine{00674\ \ \ \ \ \ \ \ \ \textcolor{comment}{//printf("{}what's\ wrong\(\backslash\)n"{});}}
+\DoxyCodeLine{00675\ \ \ \ \ \}}
+\DoxyCodeLine{00676\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ spacing;\ i++)\ printf(\textcolor{stringliteral}{"{}."{}});}
+\DoxyCodeLine{00677\ \ \ \ \ printf(\textcolor{stringliteral}{"{}\%s\ (\%.3f\ \%\%)\ ::\ \%.3f\ ms\(\backslash\)n"{}},\ \textcolor{stringliteral}{"{}Unaccounted:"{}},\ parent\_time\ >\ \mbox{\hyperlink{bt_scalar_8h_ae51eef6845bd59f964c1b2dbfe7054b7}{SIMD\_EPSILON}}\ ?\ ((parent\_time\ -\/\ accumulated\_time)\ /\ parent\_time)\ *\ 100\ :\ 0.f,\ parent\_time\ -\/\ accumulated\_time);}
+\DoxyCodeLine{00678\ }
+\DoxyCodeLine{00679\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ numChildren;\ i++)}
+\DoxyCodeLine{00680\ \ \ \ \ \{}
+\DoxyCodeLine{00681\ \ \ \ \ \ \ \ \ profileIterator-\/>Enter\_Child(i);}
+\DoxyCodeLine{00682\ \ \ \ \ \ \ \ \ dumpRecursive(profileIterator,\ spacing\ +\ 3);}
+\DoxyCodeLine{00683\ \ \ \ \ \ \ \ \ profileIterator-\/>Enter\_Parent();}
+\DoxyCodeLine{00684\ \ \ \ \ \}}
+\DoxyCodeLine{00685\ \}}
+\DoxyCodeLine{00686\ }
+\DoxyCodeLine{00687\ \textcolor{keywordtype}{void}\ CProfileManager::dumpAll()}
+\DoxyCodeLine{00688\ \{}
+\DoxyCodeLine{00689\ \ \ \ \ CProfileIterator*\ profileIterator\ =\ 0;}
+\DoxyCodeLine{00690\ \ \ \ \ profileIterator\ =\ CProfileManager::Get\_Iterator();}
+\DoxyCodeLine{00691\ }
+\DoxyCodeLine{00692\ \ \ \ \ dumpRecursive(profileIterator,\ 0);}
+\DoxyCodeLine{00693\ }
+\DoxyCodeLine{00694\ \ \ \ \ CProfileManager::Release\_Iterator(profileIterator);}
+\DoxyCodeLine{00695\ \}}
+\DoxyCodeLine{00696\ }
+\DoxyCodeLine{00697\ }
+\DoxyCodeLine{00698\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_quickprof_8cpp_a6addf9285e0dd3790eea2f11bf58f4f9}{btEnterProfileZoneDefault}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}})}
+\DoxyCodeLine{00699\ \{}
+\DoxyCodeLine{00700\ \}}
+\DoxyCodeLine{00701\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_quickprof_8cpp_a55b41f3399778f2f87b50e24d5b9840b}{btLeaveProfileZoneDefault}}()}
+\DoxyCodeLine{00702\ \{}
+\DoxyCodeLine{00703\ \}}
+\DoxyCodeLine{00704\ }
+\DoxyCodeLine{00705\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00706\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_quickprof_8cpp_a6addf9285e0dd3790eea2f11bf58f4f9}{btEnterProfileZoneDefault}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}})}
+\DoxyCodeLine{00707\ \{}
+\DoxyCodeLine{00708\ \}}
+\DoxyCodeLine{00709\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_quickprof_8cpp_a55b41f3399778f2f87b50e24d5b9840b}{btLeaveProfileZoneDefault}}()}
+\DoxyCodeLine{00710\ \{}
+\DoxyCodeLine{00711\ \}}
+\DoxyCodeLine{00712\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_NO\_PROFILE}}
+\DoxyCodeLine{00713\ }
+\DoxyCodeLine{00714\ }
+\DoxyCodeLine{00715\ \textcolor{comment}{//\ clang-\/format\ off}}
+\DoxyCodeLine{00716\ \textcolor{preprocessor}{\#if\ defined(\_WIN32)\ \&\&\ (defined(\_\_MINGW32\_\_)\ ||\ defined(\_\_MINGW64\_\_))}}
+\DoxyCodeLine{00717\ \textcolor{preprocessor}{\ \ \#define\ BT\_HAVE\_TLS\ 1}}
+\DoxyCodeLine{00718\ \textcolor{preprocessor}{\#elif\ \_\_APPLE\_\_\ \&\&\ !TARGET\_OS\_IPHONE}}
+\DoxyCodeLine{00719\ \ \ \textcolor{comment}{//\ TODO:\ Modern\ versions\ of\ iOS\ support\ TLS\ now\ with\ updated\ version\ checking.}}
+\DoxyCodeLine{00720\ \textcolor{preprocessor}{\ \ \#define\ BT\_HAVE\_TLS\ 1}}
+\DoxyCodeLine{00721\ \textcolor{preprocessor}{\#elif\ \_\_linux\_\_}}
+\DoxyCodeLine{00722\ \textcolor{preprocessor}{\ \ \#define\ BT\_HAVE\_TLS\ 1}}
+\DoxyCodeLine{00723\ \textcolor{preprocessor}{\#elif\ defined(\_\_FreeBSD\_\_)\ ||\ defined(\_\_NetBSD\_\_)}}
+\DoxyCodeLine{00724\ \ \ \textcolor{comment}{//\ TODO:\ At\ the\ moment\ disabling\ purposely\ OpenBSD,\ albeit\ tls\ support\ exists\ but\ not\ fully\ functioning}}
+\DoxyCodeLine{00725\ \textcolor{preprocessor}{\ \ \#define\ BT\_HAVE\_TLS\ 1}}
+\DoxyCodeLine{00726\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00727\ }
+\DoxyCodeLine{00728\ \textcolor{comment}{//\ \_\_thread\ is\ broken\ on\ Andorid\ clang\ until\ r12b.\ See}}
+\DoxyCodeLine{00729\ \textcolor{comment}{//\ https://github.com/android-\/ndk/ndk/issues/8}}
+\DoxyCodeLine{00730\ \textcolor{preprocessor}{\#if\ defined(\_\_ANDROID\_\_)\ \&\&\ defined(\_\_clang\_\_)}}
+\DoxyCodeLine{00731\ \textcolor{preprocessor}{\ \ \#if\ \_\_has\_include(<android/ndk-\/version.h>)}}
+\DoxyCodeLine{00732\ \textcolor{preprocessor}{\ \ \ \ \#include\ <android/ndk-\/version.h>}}
+\DoxyCodeLine{00733\ \textcolor{preprocessor}{\ \ \#endif\ \ }\textcolor{comment}{//\ \_\_has\_include(<android/ndk-\/version.h>)}}
+\DoxyCodeLine{00734\ \textcolor{preprocessor}{\ \ \#if\ defined(\_\_NDK\_MAJOR\_\_)\ \&\&\ \(\backslash\)}}
+\DoxyCodeLine{00735\ \textcolor{preprocessor}{\ \ \ \ ((\_\_NDK\_MAJOR\_\_\ <\ 12)\ ||\ ((\_\_NDK\_MAJOR\_\_\ ==\ 12)\ \&\&\ (\_\_NDK\_MINOR\_\_\ <\ 1)))}}
+\DoxyCodeLine{00736\ \textcolor{preprocessor}{\ \ \ \ \#undef\ BT\_HAVE\_TLS}}
+\DoxyCodeLine{00737\ \textcolor{preprocessor}{\ \ \#endif}}
+\DoxyCodeLine{00738\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//\ defined(\_\_ANDROID\_\_)\ \&\&\ defined(\_\_clang\_\_)}}
+\DoxyCodeLine{00739\ \textcolor{comment}{//\ clang-\/format\ on}}
+\DoxyCodeLine{00740\ }
+\DoxyCodeLine{00741\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_quickprof_8cpp_a8712285c90efc6484e4af90d1efd1f85}{btQuickprofGetCurrentThreadIndex2}}()}
+\DoxyCodeLine{00742\ \{}
+\DoxyCodeLine{00743\ \ \ \ \ \textcolor{keyword}{const}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ kNullIndex\ =\ \string~0U;}
+\DoxyCodeLine{00744\ }
+\DoxyCodeLine{00745\ \textcolor{preprocessor}{\#if\ BT\_THREADSAFE}}
+\DoxyCodeLine{00746\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_threads_8cpp_aa420ae1dc2d8667f3c21c7134d4f2822}{btGetCurrentThreadIndex}}();}
+\DoxyCodeLine{00747\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00748\ \textcolor{preprocessor}{\#if\ defined(BT\_HAVE\_TLS)}}
+\DoxyCodeLine{00749\ \ \ \ \ \textcolor{keyword}{static}\ \_\_thread\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ sThreadIndex\ =\ kNullIndex;}
+\DoxyCodeLine{00750\ \textcolor{preprocessor}{\#elif\ defined(\_WIN32)}}
+\DoxyCodeLine{00751\ \ \ \ \ \_\_declspec(thread)\ \textcolor{keyword}{static}\ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ sThreadIndex\ =\ kNullIndex;}
+\DoxyCodeLine{00752\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00753\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ sThreadIndex\ =\ 0;}
+\DoxyCodeLine{00754\ \ \ \ \ \textcolor{keywordflow}{return}\ -\/1;}
+\DoxyCodeLine{00755\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00756\ }
+\DoxyCodeLine{00757\ \ \ \ \ \textcolor{keyword}{static}\ \textcolor{keywordtype}{int}\ gThreadCounter\ =\ 0;}
+\DoxyCodeLine{00758\ }
+\DoxyCodeLine{00759\ \ \ \ \ \textcolor{keywordflow}{if}\ (sThreadIndex\ ==\ kNullIndex)}
+\DoxyCodeLine{00760\ \ \ \ \ \{}
+\DoxyCodeLine{00761\ \ \ \ \ \ \ \ \ sThreadIndex\ =\ gThreadCounter++;}
+\DoxyCodeLine{00762\ \ \ \ \ \}}
+\DoxyCodeLine{00763\ \ \ \ \ \textcolor{keywordflow}{return}\ sThreadIndex;}
+\DoxyCodeLine{00764\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_THREADSAFE}}
+\DoxyCodeLine{00765\ \}}
+\DoxyCodeLine{00766\ }
+\DoxyCodeLine{00767\ \textcolor{keyword}{static}\ \mbox{\hyperlink{bt_quickprof_8h_ade650fc0cc139c134ae64dc72e6083d4}{btEnterProfileZoneFunc}}*\ bts\_enterFunc\ =\ \mbox{\hyperlink{bt_quickprof_8cpp_a6addf9285e0dd3790eea2f11bf58f4f9}{btEnterProfileZoneDefault}};}
+\DoxyCodeLine{00768\ \textcolor{keyword}{static}\ \mbox{\hyperlink{bt_quickprof_8h_aca557257e8da3d588b5cb073881a7d18}{btLeaveProfileZoneFunc}}*\ bts\_leaveFunc\ =\ \mbox{\hyperlink{bt_quickprof_8cpp_a55b41f3399778f2f87b50e24d5b9840b}{btLeaveProfileZoneDefault}};}
+\DoxyCodeLine{00769\ }
+\DoxyCodeLine{00770\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_quickprof_8cpp_a7dae89c82da15ee33f3ee2c62aa3867e}{btEnterProfileZone}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}})}
+\DoxyCodeLine{00771\ \{}
+\DoxyCodeLine{00772\ \ \ \ \ (bts\_enterFunc)(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}});}
+\DoxyCodeLine{00773\ \}}
+\DoxyCodeLine{00774\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_quickprof_8cpp_a392b157377923df5ad8696d06614b543}{btLeaveProfileZone}}()}
+\DoxyCodeLine{00775\ \{}
+\DoxyCodeLine{00776\ \ \ \ \ (bts\_leaveFunc)();}
+\DoxyCodeLine{00777\ \}}
+\DoxyCodeLine{00778\ }
+\DoxyCodeLine{00779\ \mbox{\hyperlink{bt_quickprof_8h_ade650fc0cc139c134ae64dc72e6083d4}{btEnterProfileZoneFunc}}*\ \mbox{\hyperlink{bt_quickprof_8cpp_a015ea024b2246534586dfb31337976ca}{btGetCurrentEnterProfileZoneFunc}}()}
+\DoxyCodeLine{00780\ \{}
+\DoxyCodeLine{00781\ \ \ \ \ \textcolor{keywordflow}{return}\ bts\_enterFunc;}
+\DoxyCodeLine{00782\ \}}
+\DoxyCodeLine{00783\ \mbox{\hyperlink{bt_quickprof_8h_aca557257e8da3d588b5cb073881a7d18}{btLeaveProfileZoneFunc}}*\ \mbox{\hyperlink{bt_quickprof_8cpp_aff8fa9e57113b7c63fb95f91091b95e7}{btGetCurrentLeaveProfileZoneFunc}}()}
+\DoxyCodeLine{00784\ \{}
+\DoxyCodeLine{00785\ \ \ \ \ \textcolor{keywordflow}{return}\ bts\_leaveFunc;}
+\DoxyCodeLine{00786\ \}}
+\DoxyCodeLine{00787\ }
+\DoxyCodeLine{00788\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_quickprof_8cpp_a0a6b728d8270433c89a4f8d9c1a0a89e}{btSetCustomEnterProfileZoneFunc}}(\mbox{\hyperlink{bt_quickprof_8h_ade650fc0cc139c134ae64dc72e6083d4}{btEnterProfileZoneFunc}}*\ enterFunc)}
+\DoxyCodeLine{00789\ \{}
+\DoxyCodeLine{00790\ \ \ \ \ bts\_enterFunc\ =\ enterFunc;}
+\DoxyCodeLine{00791\ \}}
+\DoxyCodeLine{00792\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_quickprof_8cpp_a57b7a0b9888b31cb422014aa1c319475}{btSetCustomLeaveProfileZoneFunc}}(\mbox{\hyperlink{bt_quickprof_8h_aca557257e8da3d588b5cb073881a7d18}{btLeaveProfileZoneFunc}}*\ leaveFunc)}
+\DoxyCodeLine{00793\ \{}
+\DoxyCodeLine{00794\ \ \ \ \ bts\_leaveFunc\ =\ leaveFunc;}
+\DoxyCodeLine{00795\ \}}
+\DoxyCodeLine{00796\ }
+\DoxyCodeLine{00797\ \mbox{\hyperlink{class_c_profile_sample_a63b5cb0514619d4f21e67fa9095752d7}{CProfileSample::CProfileSample}}(\textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}})}
+\DoxyCodeLine{00798\ \{}
+\DoxyCodeLine{00799\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8cpp_a7dae89c82da15ee33f3ee2c62aa3867e}{btEnterProfileZone}}(\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a5c4947d4516dd7cfa3505ce3a648a4ef}{name}});}
+\DoxyCodeLine{00800\ \}}
+\DoxyCodeLine{00801\ }
+\DoxyCodeLine{00802\ \mbox{\hyperlink{class_c_profile_sample_a83bcaef1f7651a17afc460f1320e6f46}{CProfileSample::\string~CProfileSample}}(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00803\ \{}
+\DoxyCodeLine{00804\ \ \ \ \ \mbox{\hyperlink{bt_quickprof_8cpp_a392b157377923df5ad8696d06614b543}{btLeaveProfileZone}}();}
+\DoxyCodeLine{00805\ \}}
+
+\end{DoxyCode}

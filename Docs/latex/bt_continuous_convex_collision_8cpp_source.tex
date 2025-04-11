@@ -1,0 +1,225 @@
+\doxysection{bt\+Continuous\+Convex\+Collision.\+cpp}
+\hypertarget{bt_continuous_convex_collision_8cpp_source}{}\label{bt_continuous_convex_collision_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/NarrowPhaseCollision/btContinuousConvexCollision.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/NarrowPhaseCollision/btContinuousConvexCollision.cpp}}
+\mbox{\hyperlink{bt_continuous_convex_collision_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2006\ Erwin\ Coumans\ \ https://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_continuous_convex_collision_8h}{btContinuousConvexCollision.h}}"{}}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_convex_shape_8h}{BulletCollision/CollisionShapes/btConvexShape.h}}"{}}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_simplex_solver_interface_8h}{BulletCollision/NarrowPhaseCollision/btSimplexSolverInterface.h}}"{}}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_transform_util_8h}{LinearMath/btTransformUtil.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_sphere_shape_8h}{BulletCollision/CollisionShapes/btSphereShape.h}}"{}}}
+\DoxyCodeLine{00021\ }
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_gjk_pair_detector_8h}{btGjkPairDetector.h}}"{}}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_point_collector_8h}{btPointCollector.h}}"{}}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_static_plane_shape_8h}{BulletCollision/CollisionShapes/btStaticPlaneShape.h}}"{}}}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \mbox{\hyperlink{classbt_continuous_convex_collision_a6c89f3b4ba10699790f486c1ab278159}{btContinuousConvexCollision::btContinuousConvexCollision}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_convex_shape_8h_a55a9d3eb9b332530624a2651ede0a28b}{btConvexShape}}*\ convexA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_convex_shape_8h_a55a9d3eb9b332530624a2651ede0a28b}{btConvexShape}}*\ convexB,\ \mbox{\hyperlink{bt_simplex_solver_interface_8h_a5a12b8e0b104b27c2758d53e5ce7ac23}{btSimplexSolverInterface}}*\ simplexSolver,\ \mbox{\hyperlink{classbt_convex_penetration_depth_solver}{btConvexPenetrationDepthSolver}}*\ penetrationDepthSolver)}
+\DoxyCodeLine{00027\ \ \ \ \ :\ m\_simplexSolver(simplexSolver),}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ m\_penetrationDepthSolver(penetrationDepthSolver),}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ m\_convexA(convexA),}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ m\_convexB1(convexB),}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ m\_planeShape(0)}
+\DoxyCodeLine{00032\ \{}
+\DoxyCodeLine{00033\ \}}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \mbox{\hyperlink{classbt_continuous_convex_collision_a6c89f3b4ba10699790f486c1ab278159}{btContinuousConvexCollision::btContinuousConvexCollision}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_convex_shape_8h_a55a9d3eb9b332530624a2651ede0a28b}{btConvexShape}}*\ convexA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_static_plane_shape_8h_ae77a68ab5c1dcbde9294ebfaac68441f}{btStaticPlaneShape}}*\ plane)}
+\DoxyCodeLine{00036\ \ \ \ \ :\ m\_simplexSolver(0),}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ m\_penetrationDepthSolver(0),}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ m\_convexA(convexA),}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ m\_convexB1(0),}
+\DoxyCodeLine{00040\ \ \ \ \ \ \ m\_planeShape(plane)}
+\DoxyCodeLine{00041\ \{}
+\DoxyCodeLine{00042\ \}}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00046\ \textcolor{preprocessor}{\#define\ MAX\_ITERATIONS\ 64}}
+\DoxyCodeLine{00047\ }
+\DoxyCodeLine{00048\ \textcolor{keywordtype}{void}\ btContinuousConvexCollision::computeClosestPoints(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ transA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ transB,\ \mbox{\hyperlink{structbt_point_collector}{btPointCollector}}\&\ pointCollector)}
+\DoxyCodeLine{00049\ \{}
+\DoxyCodeLine{00050\ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_convexB1)}
+\DoxyCodeLine{00051\ \ \ \ \ \{}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ \ \ m\_simplexSolver-\/>reset();}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_gjk_pair_detector}{btGjkPairDetector}}\ gjk(m\_convexA,\ m\_convexB1,\ m\_convexA-\/>getShapeType(),\ m\_convexB1-\/>getShapeType(),\ m\_convexA-\/>getMargin(),\ m\_convexB1-\/>getMargin(),\ m\_simplexSolver,\ m\_penetrationDepthSolver);}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_discrete_collision_detector_interface_1_1_closest_point_input}{btGjkPairDetector::ClosestPointInput}}\ input;}
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \ \ input.\mbox{\hyperlink{structbt_discrete_collision_detector_interface_1_1_closest_point_input_a7d3e89234d3bf33d65f204fd3e6011b2}{m\_transformA}}\ =\ transA;}
+\DoxyCodeLine{00056\ \ \ \ \ \ \ \ \ input.\mbox{\hyperlink{structbt_discrete_collision_detector_interface_1_1_closest_point_input_a67dd72d1a1e0a4dd433530f9b396ee5f}{m\_transformB}}\ =\ transB;}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ gjk.\mbox{\hyperlink{classbt_gjk_pair_detector_a42505a0ccc728c82595febe9af3a3bc8}{getClosestPoints}}(input,\ pointCollector,\ 0);}
+\DoxyCodeLine{00058\ \ \ \ \ \}}
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00060\ \ \ \ \ \{}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ \textcolor{comment}{//convex\ versus\ plane}}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_convex_shape_8h_a55a9d3eb9b332530624a2651ede0a28b}{btConvexShape}}*\ convexShape\ =\ m\_convexA;}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_static_plane_shape_8h_ae77a68ab5c1dcbde9294ebfaac68441f}{btStaticPlaneShape}}*\ planeShape\ =\ m\_planeShape;}
+\DoxyCodeLine{00064\ }
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ planeNormal\ =\ planeShape-\/>getPlaneNormal();}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ planeConstant\ =\ planeShape-\/>getPlaneConstant();}
+\DoxyCodeLine{00067\ }
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ convexWorldTransform\ =\ transA;}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ convexInPlaneTrans;}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ convexInPlaneTrans\ =\ transB.inverse()\ *\ convexWorldTransform;}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ planeInConvex;}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ planeInConvex\ =\ convexWorldTransform.inverse()\ *\ transB;}
+\DoxyCodeLine{00073\ }
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vtx\ =\ convexShape-\/>localGetSupportingVertex(planeInConvex.getBasis()\ *\ -\/planeNormal);}
+\DoxyCodeLine{00075\ }
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vtxInPlane\ =\ convexInPlaneTrans(vtx);}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}}\ =\ (planeNormal.dot(vtxInPlane)\ -\/\ planeConstant);}
+\DoxyCodeLine{00078\ }
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vtxInPlaneProjected\ =\ vtxInPlane\ -\/\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}}\ *\ planeNormal;}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ vtxInPlaneWorld\ =\ transB\ *\ vtxInPlaneProjected;}
+\DoxyCodeLine{00081\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ normalOnSurfaceB\ =\ transB.getBasis()\ *\ planeNormal;}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00083\ \ \ \ \ \ \ \ \ pointCollector.\mbox{\hyperlink{structbt_point_collector_afaf449bb17d0d62afe2a7f8f54318c3b}{addContactPoint}}(}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \ \ \ \ normalOnSurfaceB,}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ \ \ \ \ vtxInPlaneWorld,}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}});}
+\DoxyCodeLine{00087\ \ \ \ \ \}}
+\DoxyCodeLine{00088\ \}}
+\DoxyCodeLine{00089\ }
+\DoxyCodeLine{00090\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_continuous_convex_collision_afc75a57bddfeded52781bbd65ee16f37}{btContinuousConvexCollision::calcTimeOfImpact}}(}
+\DoxyCodeLine{00091\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ fromA,}
+\DoxyCodeLine{00092\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ toA,}
+\DoxyCodeLine{00093\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ fromB,}
+\DoxyCodeLine{00094\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ toB,}
+\DoxyCodeLine{00095\ \ \ \ \ \mbox{\hyperlink{structbt_convex_cast_1_1_cast_result}{CastResult}}\&\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}})}
+\DoxyCodeLine{00096\ \{}
+\DoxyCodeLine{00098\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ linVelA,\ angVelA,\ linVelB,\ angVelB;}
+\DoxyCodeLine{00099\ \ \ \ \ \mbox{\hyperlink{classbt_transform_util_adea3509ccb6eb65675a102c80aa1b312}{btTransformUtil::calculateVelocity}}(fromA,\ toA,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.),\ linVelA,\ angVelA);}
+\DoxyCodeLine{00100\ \ \ \ \ \mbox{\hyperlink{classbt_transform_util_adea3509ccb6eb65675a102c80aa1b312}{btTransformUtil::calculateVelocity}}(fromB,\ toB,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.),\ linVelB,\ angVelB);}
+\DoxyCodeLine{00101\ }
+\DoxyCodeLine{00102\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ boundingRadiusA\ =\ m\_convexA-\/>getAngularMotionDisc();}
+\DoxyCodeLine{00103\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ boundingRadiusB\ =\ m\_convexB1\ ?\ m\_convexB1-\/>getAngularMotionDisc()\ :\ 0.f;}
+\DoxyCodeLine{00104\ }
+\DoxyCodeLine{00105\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxAngularProjectedVelocity\ =\ angVelA.length()\ *\ boundingRadiusA\ +\ angVelB.length()\ *\ boundingRadiusB;}
+\DoxyCodeLine{00106\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ relLinVel\ =\ (linVelB\ -\/\ linVelA);}
+\DoxyCodeLine{00107\ }
+\DoxyCodeLine{00108\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ relLinVelocLength\ =\ (linVelB\ -\/\ linVelA).\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a1499969c13207ed8ab6f796685d4933f}{length}}();}
+\DoxyCodeLine{00109\ }
+\DoxyCodeLine{00110\ \ \ \ \ \textcolor{keywordflow}{if}\ ((relLinVelocLength\ +\ maxAngularProjectedVelocity)\ ==\ 0.f)}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00112\ }
+\DoxyCodeLine{00113\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ lambda\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00114\ }
+\DoxyCodeLine{00115\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ n;}
+\DoxyCodeLine{00116\ \ \ \ \ n.setValue(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.));}
+\DoxyCodeLine{00117\ \ \ \ \ \textcolor{keywordtype}{bool}\ hasResult\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00118\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ c;}
+\DoxyCodeLine{00119\ }
+\DoxyCodeLine{00120\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ lastLambda\ =\ lambda;}
+\DoxyCodeLine{00121\ \ \ \ \ \textcolor{comment}{//btScalar\ epsilon\ =\ btScalar(0.001);}}
+\DoxyCodeLine{00122\ }
+\DoxyCodeLine{00123\ \ \ \ \ \textcolor{keywordtype}{int}\ numIter\ =\ 0;}
+\DoxyCodeLine{00124\ \ \ \ \ \textcolor{comment}{//first\ solution,\ using\ GJK}}
+\DoxyCodeLine{00125\ }
+\DoxyCodeLine{00126\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ radius\ =\ 0.001f;}
+\DoxyCodeLine{00127\ \ \ \ \ \textcolor{comment}{//\ \ result.drawCoordSystem(sphereTr);}}
+\DoxyCodeLine{00128\ }
+\DoxyCodeLine{00129\ \ \ \ \ \mbox{\hyperlink{structbt_point_collector}{btPointCollector}}\ pointCollector1;}
+\DoxyCodeLine{00130\ }
+\DoxyCodeLine{00131\ \ \ \ \ \{}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ computeClosestPoints(fromA,\ fromB,\ pointCollector1);}
+\DoxyCodeLine{00133\ }
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ hasResult\ =\ pointCollector1.\mbox{\hyperlink{structbt_point_collector_ac7b16569176ef840415c9ea000325b92}{m\_hasResult}};}
+\DoxyCodeLine{00135\ \ \ \ \ \ \ \ \ c\ =\ pointCollector1.\mbox{\hyperlink{structbt_point_collector_ad10b05207fe3a122c99e35e153438964}{m\_pointInWorld}};}
+\DoxyCodeLine{00136\ \ \ \ \ \}}
+\DoxyCodeLine{00137\ }
+\DoxyCodeLine{00138\ \ \ \ \ \textcolor{keywordflow}{if}\ (hasResult)}
+\DoxyCodeLine{00139\ \ \ \ \ \{}
+\DoxyCodeLine{00140\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ dist;}
+\DoxyCodeLine{00141\ \ \ \ \ \ \ \ \ dist\ =\ pointCollector1.\mbox{\hyperlink{structbt_point_collector_a8b957ea0488b58bf9d49bda1b0fa596d}{m\_distance}}\ +\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.m\_allowedPenetration;}
+\DoxyCodeLine{00142\ \ \ \ \ \ \ \ \ n\ =\ pointCollector1.\mbox{\hyperlink{structbt_point_collector_a3fd61b2d8440ac2bc2fa9bb6061eea34}{m\_normalOnBInWorld}};}
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ projectedLinearVelocity\ =\ relLinVel.dot(n);}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((projectedLinearVelocity\ +\ maxAngularProjectedVelocity)\ <=\ \mbox{\hyperlink{bt_scalar_8h_ae51eef6845bd59f964c1b2dbfe7054b7}{SIMD\_EPSILON}})}
+\DoxyCodeLine{00145\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00146\ }
+\DoxyCodeLine{00147\ \ \ \ \ \ \ \ \ \textcolor{comment}{//not\ close\ enough}}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{while}\ (dist\ >\ radius)}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00150\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.m\_debugDrawer)}
+\DoxyCodeLine{00151\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00152\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.m\_debugDrawer-\/>drawSphere(c,\ 0.2f,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(1,\ 1,\ 1));}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00154\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ dLambda\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00155\ }
+\DoxyCodeLine{00156\ \ \ \ \ \ \ \ \ \ \ \ \ projectedLinearVelocity\ =\ relLinVel.dot(n);}
+\DoxyCodeLine{00157\ }
+\DoxyCodeLine{00158\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//don't\ report\ time\ of\ impact\ for\ motion\ away\ from\ the\ contact\ normal\ (or\ causes\ minor\ penetration)}}
+\DoxyCodeLine{00159\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ ((projectedLinearVelocity\ +\ maxAngularProjectedVelocity)\ <=\ \mbox{\hyperlink{bt_scalar_8h_ae51eef6845bd59f964c1b2dbfe7054b7}{SIMD\_EPSILON}})}
+\DoxyCodeLine{00160\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00161\ }
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \ \ \ \ dLambda\ =\ dist\ /\ (projectedLinearVelocity\ +\ maxAngularProjectedVelocity);}
+\DoxyCodeLine{00163\ }
+\DoxyCodeLine{00164\ \ \ \ \ \ \ \ \ \ \ \ \ lambda\ +=\ dLambda;}
+\DoxyCodeLine{00165\ }
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (lambda\ >\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.)\ ||\ lambda\ <\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.))}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00168\ }
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//todo:\ next\ check\ with\ relative\ epsilon}}
+\DoxyCodeLine{00170\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (lambda\ <=\ lastLambda)}
+\DoxyCodeLine{00171\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00172\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00173\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//n.setValue(0,0,0);}}
+\DoxyCodeLine{00174\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//break;}}
+\DoxyCodeLine{00175\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00176\ \ \ \ \ \ \ \ \ \ \ \ \ lastLambda\ =\ lambda;}
+\DoxyCodeLine{00177\ }
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//interpolate\ to\ next\ lambda}}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ interpolatedTransA,\ interpolatedTransB,\ relativeTrans;}
+\DoxyCodeLine{00180\ }
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_transform_util_ac943ee956ab17687013a60a5918b23e4}{btTransformUtil::integrateTransform}}(fromA,\ linVelA,\ angVelA,\ lambda,\ interpolatedTransA);}
+\DoxyCodeLine{00182\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_transform_util_ac943ee956ab17687013a60a5918b23e4}{btTransformUtil::integrateTransform}}(fromB,\ linVelB,\ angVelB,\ lambda,\ interpolatedTransB);}
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ \ \ \ \ relativeTrans\ =\ interpolatedTransB.inverseTimes(interpolatedTransA);}
+\DoxyCodeLine{00184\ }
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.m\_debugDrawer)}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.m\_debugDrawer-\/>drawSphere(interpolatedTransA.getOrigin(),\ 0.2f,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(1,\ 0,\ 0));}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00189\ }
+\DoxyCodeLine{00190\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.DebugDraw(lambda);}
+\DoxyCodeLine{00191\ }
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structbt_point_collector}{btPointCollector}}\ pointCollector;}
+\DoxyCodeLine{00193\ \ \ \ \ \ \ \ \ \ \ \ \ computeClosestPoints(interpolatedTransA,\ interpolatedTransB,\ pointCollector);}
+\DoxyCodeLine{00194\ }
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (pointCollector.\mbox{\hyperlink{structbt_point_collector_ac7b16569176ef840415c9ea000325b92}{m\_hasResult}})}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ dist\ =\ pointCollector.\mbox{\hyperlink{structbt_point_collector_a8b957ea0488b58bf9d49bda1b0fa596d}{m\_distance}}\ +\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.m\_allowedPenetration;}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ c\ =\ pointCollector.\mbox{\hyperlink{structbt_point_collector_ad10b05207fe3a122c99e35e153438964}{m\_pointInWorld}};}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ n\ =\ pointCollector.\mbox{\hyperlink{structbt_point_collector_a3fd61b2d8440ac2bc2fa9bb6061eea34}{m\_normalOnBInWorld}};}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.reportFailure(-\/1,\ numIter);}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00206\ }
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ \ \ \ \ numIter++;}
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (numIter\ >\ \mbox{\hyperlink{bt_continuous_convex_collision_8cpp_a0a3abbca80bc98e7abcb3ae73abe0f14}{MAX\_ITERATIONS}})}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.reportFailure(-\/2,\ numIter);}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00214\ }
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.m\_fraction\ =\ lambda;}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.m\_normal\ =\ n;}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_aa7f56a70231ed8bc64f97aa7c37fcb19}{result}}.m\_hitPoint\ =\ c;}
+\DoxyCodeLine{00218\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00219\ \ \ \ \ \}}
+\DoxyCodeLine{00220\ }
+\DoxyCodeLine{00221\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00222\ \}}
+
+\end{DoxyCode}

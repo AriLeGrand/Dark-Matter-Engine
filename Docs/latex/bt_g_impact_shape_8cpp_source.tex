@@ -1,0 +1,284 @@
+\doxysection{bt\+GImpact\+Shape.\+cpp}
+\hypertarget{bt_g_impact_shape_8cpp_source}{}\label{bt_g_impact_shape_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/Gimpact/btGImpactShape.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/Gimpact/btGImpactShape.cpp}}
+\mbox{\hyperlink{bt_g_impact_shape_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{This\ source\ file\ is\ part\ of\ GIMPACT\ Library.}}
+\DoxyCodeLine{00003\ \textcolor{comment}{}}
+\DoxyCodeLine{00004\ \textcolor{comment}{For\ the\ latest\ info,\ see\ http://gimpact.sourceforge.net/}}
+\DoxyCodeLine{00005\ \textcolor{comment}{}}
+\DoxyCodeLine{00006\ \textcolor{comment}{Copyright\ (c)\ 2007\ Francisco\ Leon\ Najera.\ C.C.\ 80087371.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{email:\ projectileman@yahoo.com}}
+\DoxyCodeLine{00008\ \textcolor{comment}{}}
+\DoxyCodeLine{00009\ \textcolor{comment}{}}
+\DoxyCodeLine{00010\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00011\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,}}
+\DoxyCodeLine{00013\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,}}
+\DoxyCodeLine{00014\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00015\ \textcolor{comment}{}}
+\DoxyCodeLine{00016\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00017\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00018\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00019\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_g_impact_shape_8h}{btGImpactShape.h}}"{}}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_g_impact_mass_util_8h}{btGImpactMassUtil.h}}"{}}}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_a480fc16db82d8dbfe745a43323bf204a}{btGImpactMeshShapePart::btGImpactMeshShapePart}}(\mbox{\hyperlink{bt_striding_mesh_interface_8h_a6bcaf769f2690f5ee4a9d5205c51e464}{btStridingMeshInterface}}*\ meshInterface,\ \textcolor{keywordtype}{int}\ part)}
+\DoxyCodeLine{00025\ \{}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{comment}{//\ moved\ from\ .h\ to\ .cpp\ because\ of\ conditional\ compilation}}
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{comment}{//\ (The\ setting\ of\ BT\_THREADSAFE\ may\ differ\ between\ various\ cpp\ files,\ so\ it\ is\ best\ to}}
+\DoxyCodeLine{00028\ \ \ \ \ \textcolor{comment}{//\ avoid\ using\ it\ in\ h\ files)}}
+\DoxyCodeLine{00029\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_aa5d55e9f76ff77f26db1658e4c7f021d}{m\_primitive\_manager}}.m\_meshInterface\ =\ meshInterface;}
+\DoxyCodeLine{00030\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_aa5d55e9f76ff77f26db1658e4c7f021d}{m\_primitive\_manager}}.m\_part\ =\ part;}
+\DoxyCodeLine{00031\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_shape_interface_a52b446c99038ce5614e6839479958910}{m\_box\_set}}.setPrimitiveManager(\&\mbox{\hyperlink{classbt_g_impact_mesh_shape_part_aa5d55e9f76ff77f26db1658e4c7f021d}{m\_primitive\_manager}});}
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#if\ BT\_THREADSAFE}}
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{comment}{//\ If\ threadsafe\ is\ requested,\ this\ object\ uses\ a\ different\ lock/unlock}}
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{comment}{//\ \ model\ with\ the\ btStridingMeshInterface\ -\/-\/\ lock\ once\ when\ the\ object\ is\ constructed}}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{comment}{//\ \ and\ unlock\ once\ in\ the\ destructor.}}
+\DoxyCodeLine{00036\ \ \ \ \ \textcolor{comment}{//\ The\ other\ way\ of\ locking\ and\ unlocking\ for\ each\ collision\ check\ in\ the\ narrowphase}}
+\DoxyCodeLine{00037\ \ \ \ \ \textcolor{comment}{//\ is\ not\ threadsafe.\ \ Note\ these\ are\ not\ thread-\/locks,\ they\ are\ calls\ to\ the\ meshInterface's}}
+\DoxyCodeLine{00038\ \ \ \ \ \textcolor{comment}{//\ getLockedReadOnlyVertexIndexBase\ virtual\ function,\ which\ by\ default\ just\ returns\ a\ couple\ of}}
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{comment}{//\ pointers.\ \ In\ theory\ a\ client\ could\ override\ the\ lock\ function\ to\ do\ all\ sorts\ of}}
+\DoxyCodeLine{00040\ \ \ \ \ \textcolor{comment}{//\ things\ like\ reading\ data\ from\ GPU\ memory,\ or\ decompressing\ data\ on\ the\ fly,\ but\ such\ things}}
+\DoxyCodeLine{00041\ \ \ \ \ \textcolor{comment}{//\ do\ not\ seem\ all\ that\ likely\ or\ useful,\ given\ the\ performance\ cost.}}
+\DoxyCodeLine{00042\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_aa5d55e9f76ff77f26db1658e4c7f021d}{m\_primitive\_manager}}.lock();}
+\DoxyCodeLine{00043\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00044\ \}}
+\DoxyCodeLine{00045\ }
+\DoxyCodeLine{00046\ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_ad0fea6f5132a275a4725f61cc6b06c25}{btGImpactMeshShapePart::\string~btGImpactMeshShapePart}}()}
+\DoxyCodeLine{00047\ \{}
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{comment}{//\ moved\ from\ .h\ to\ .cpp\ because\ of\ conditional\ compilation}}
+\DoxyCodeLine{00049\ \textcolor{preprocessor}{\#if\ BT\_THREADSAFE}}
+\DoxyCodeLine{00050\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_aa5d55e9f76ff77f26db1658e4c7f021d}{m\_primitive\_manager}}.unlock();}
+\DoxyCodeLine{00051\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00052\ \}}
+\DoxyCodeLine{00053\ }
+\DoxyCodeLine{00054\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_acb5cf192f447d4065fbd05514aeebdf3}{btGImpactMeshShapePart::lockChildShapes}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00055\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{comment}{//\ moved\ from\ .h\ to\ .cpp\ because\ of\ conditional\ compilation}}
+\DoxyCodeLine{00057\ \textcolor{preprocessor}{\#if\ !BT\_THREADSAFE}}
+\DoxyCodeLine{00058\ \ \ \ \ \textcolor{comment}{//\ called\ in\ the\ narrowphase\ -\/-\/\ not\ threadsafe!}}
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{keywordtype}{void}*\ dummy\ =\ (\textcolor{keywordtype}{void}*)(\mbox{\hyperlink{classbt_g_impact_shape_interface_a52b446c99038ce5614e6839479958910}{m\_box\_set}}.getPrimitiveManager());}
+\DoxyCodeLine{00060\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_1_1_trimesh_primitive_manager}{TrimeshPrimitiveManager}}*\ dummymanager\ =\ \textcolor{keyword}{static\_cast<}\mbox{\hyperlink{classbt_g_impact_mesh_shape_part_1_1_trimesh_primitive_manager}{TrimeshPrimitiveManager}}*\textcolor{keyword}{>}(dummy);}
+\DoxyCodeLine{00061\ \ \ \ \ dummymanager-\/>\mbox{\hyperlink{classbt_g_impact_mesh_shape_part_1_1_trimesh_primitive_manager_a48a013e72b76f832638a54326a7cc709}{lock}}();}
+\DoxyCodeLine{00062\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00063\ \}}
+\DoxyCodeLine{00064\ }
+\DoxyCodeLine{00065\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_ae86a7fa1a827dfeaa34643ec36d427c2}{btGImpactMeshShapePart::unlockChildShapes}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00066\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00067\ \ \ \ \ \textcolor{comment}{//\ moved\ from\ .h\ to\ .cpp\ because\ of\ conditional\ compilation}}
+\DoxyCodeLine{00068\ \textcolor{preprocessor}{\#if\ !BT\_THREADSAFE}}
+\DoxyCodeLine{00069\ \ \ \ \ \textcolor{comment}{//\ called\ in\ the\ narrowphase\ -\/-\/\ not\ threadsafe!}}
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{keywordtype}{void}*\ dummy\ =\ (\textcolor{keywordtype}{void}*)(\mbox{\hyperlink{classbt_g_impact_shape_interface_a52b446c99038ce5614e6839479958910}{m\_box\_set}}.getPrimitiveManager());}
+\DoxyCodeLine{00071\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_1_1_trimesh_primitive_manager}{TrimeshPrimitiveManager}}*\ dummymanager\ =\ \textcolor{keyword}{static\_cast<}\mbox{\hyperlink{classbt_g_impact_mesh_shape_part_1_1_trimesh_primitive_manager}{TrimeshPrimitiveManager}}*\textcolor{keyword}{>}(dummy);}
+\DoxyCodeLine{00072\ \ \ \ \ dummymanager-\/>\mbox{\hyperlink{classbt_g_impact_mesh_shape_part_1_1_trimesh_primitive_manager_aaa44d0463dfc7e66e203ede074db17ed}{unlock}}();}
+\DoxyCodeLine{00073\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00074\ \}}
+\DoxyCodeLine{00075\ }
+\DoxyCodeLine{00076\ \textcolor{preprocessor}{\#define\ CALC\_EXACT\_INERTIA\ 1}}
+\DoxyCodeLine{00077\ }
+\DoxyCodeLine{00078\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_g_impact_compound_shape_a36786f1e5efb6a0ddb6e22a993a3b09b}{btGImpactCompoundShape::calculateLocalInertia}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ mass,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ inertia)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00079\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00080\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_shape_interface_a365c563e95c59eed2ebf2487dcfc11b4}{lockChildShapes}}();}
+\DoxyCodeLine{00081\ \textcolor{preprocessor}{\#ifdef\ CALC\_EXACT\_INERTIA}}
+\DoxyCodeLine{00082\ \ \ \ \ inertia.setValue(0.f,\ 0.f,\ 0.f);}
+\DoxyCodeLine{00083\ }
+\DoxyCodeLine{00084\ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ this-\/>\mbox{\hyperlink{classbt_g_impact_compound_shape_ae0673a0cf5bb33ed1e3b18b3c2565811}{getNumChildShapes}}();}
+\DoxyCodeLine{00085\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ shapemass\ =\ mass\ /\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(i);}
+\DoxyCodeLine{00086\ }
+\DoxyCodeLine{00087\ \ \ \ \ \textcolor{keywordflow}{while}\ (i-\/-\/)}
+\DoxyCodeLine{00088\ \ \ \ \ \{}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ temp\_inertia;}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_compound_shape_aae79e1a4d800f58b2a3451e163b7adba}{m\_childShapes}}[i]-\/>calculateLocalInertia(shapemass,\ temp\_inertia);}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_g_impact_compound_shape_ab5879b0f493aee95f2703c196ace6f21}{childrenHasTransform}}())}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ \ \ \ \ inertia\ =\ \mbox{\hyperlink{bt_g_impact_mass_util_8h_a9094d786ff8d6e440e768d7196e743ab}{gim\_inertia\_add\_transformed}}(inertia,\ temp\_inertia,\ \mbox{\hyperlink{classbt_g_impact_compound_shape_a66956c32fbfe7f3c0964cbd0dfde566b}{m\_childTransforms}}[i]);}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00097\ \ \ \ \ \ \ \ \ \ \ \ \ inertia\ =\ \mbox{\hyperlink{bt_g_impact_mass_util_8h_a9094d786ff8d6e440e768d7196e743ab}{gim\_inertia\_add\_transformed}}(inertia,\ temp\_inertia,\ btTransform::getIdentity());}
+\DoxyCodeLine{00098\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00099\ \ \ \ \ \}}
+\DoxyCodeLine{00100\ }
+\DoxyCodeLine{00101\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00102\ }
+\DoxyCodeLine{00103\ \ \ \ \ \textcolor{comment}{//\ Calc\ box\ inertia}}
+\DoxyCodeLine{00104\ }
+\DoxyCodeLine{00105\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ lx\ =\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_max[0]\ -\/\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_min[0];}
+\DoxyCodeLine{00106\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ ly\ =\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_max[1]\ -\/\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_min[1];}
+\DoxyCodeLine{00107\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ lz\ =\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_max[2]\ -\/\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_min[2];}
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ x2\ =\ lx\ *\ lx;}
+\DoxyCodeLine{00109\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ y2\ =\ ly\ *\ ly;}
+\DoxyCodeLine{00110\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ z2\ =\ lz\ *\ lz;}
+\DoxyCodeLine{00111\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ scaledmass\ =\ mass\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.08333333);}
+\DoxyCodeLine{00112\ }
+\DoxyCodeLine{00113\ \ \ \ \ inertia\ =\ scaledmass\ *\ (\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(y2\ +\ z2,\ x2\ +\ z2,\ x2\ +\ y2));}
+\DoxyCodeLine{00114\ }
+\DoxyCodeLine{00115\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00116\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_shape_interface_aee8dcc5803c795a4b5c4b16e8003b400}{unlockChildShapes}}();}
+\DoxyCodeLine{00117\ \}}
+\DoxyCodeLine{00118\ }
+\DoxyCodeLine{00119\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_a1bcf320959ca5e5472c1464a32efafcf}{btGImpactMeshShapePart::calculateLocalInertia}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ mass,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ inertia)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00120\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00121\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_acb5cf192f447d4065fbd05514aeebdf3}{lockChildShapes}}();}
+\DoxyCodeLine{00122\ }
+\DoxyCodeLine{00123\ \textcolor{preprocessor}{\#ifdef\ CALC\_EXACT\_INERTIA}}
+\DoxyCodeLine{00124\ \ \ \ \ inertia.setValue(0.f,\ 0.f,\ 0.f);}
+\DoxyCodeLine{00125\ }
+\DoxyCodeLine{00126\ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ this-\/>\mbox{\hyperlink{classbt_g_impact_mesh_shape_part_a1f769ae0853fc7f336481b3b9be5cdef}{getVertexCount}}();}
+\DoxyCodeLine{00127\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ pointmass\ =\ mass\ /\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(i);}
+\DoxyCodeLine{00128\ }
+\DoxyCodeLine{00129\ \ \ \ \ \textcolor{keywordflow}{while}\ (i-\/-\/)}
+\DoxyCodeLine{00130\ \ \ \ \ \{}
+\DoxyCodeLine{00131\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ pointintertia;}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ this-\/>\mbox{\hyperlink{classbt_g_impact_mesh_shape_part_a40427b8e3fdfcc490b08f580a9199ee5}{getVertex}}(i,\ pointintertia);}
+\DoxyCodeLine{00133\ \ \ \ \ \ \ \ \ pointintertia\ =\ \mbox{\hyperlink{bt_g_impact_mass_util_8h_ab320196af3fea08ae884d0d4b763d8ae}{gim\_get\_point\_inertia}}(pointintertia,\ pointmass);}
+\DoxyCodeLine{00134\ \ \ \ \ \ \ \ \ inertia\ +=\ pointintertia;}
+\DoxyCodeLine{00135\ \ \ \ \ \}}
+\DoxyCodeLine{00136\ }
+\DoxyCodeLine{00137\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00138\ }
+\DoxyCodeLine{00139\ \ \ \ \ \textcolor{comment}{//\ Calc\ box\ inertia}}
+\DoxyCodeLine{00140\ }
+\DoxyCodeLine{00141\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ lx\ =\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_max[0]\ -\/\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_min[0];}
+\DoxyCodeLine{00142\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ ly\ =\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_max[1]\ -\/\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_min[1];}
+\DoxyCodeLine{00143\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ lz\ =\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_max[2]\ -\/\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_min[2];}
+\DoxyCodeLine{00144\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ x2\ =\ lx\ *\ lx;}
+\DoxyCodeLine{00145\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ y2\ =\ ly\ *\ ly;}
+\DoxyCodeLine{00146\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ z2\ =\ lz\ *\ lz;}
+\DoxyCodeLine{00147\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ scaledmass\ =\ mass\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.08333333);}
+\DoxyCodeLine{00148\ }
+\DoxyCodeLine{00149\ \ \ \ \ inertia\ =\ scaledmass\ *\ (\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(y2\ +\ z2,\ x2\ +\ z2,\ x2\ +\ y2));}
+\DoxyCodeLine{00150\ }
+\DoxyCodeLine{00151\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00152\ }
+\DoxyCodeLine{00153\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_ae86a7fa1a827dfeaa34643ec36d427c2}{unlockChildShapes}}();}
+\DoxyCodeLine{00154\ \}}
+\DoxyCodeLine{00155\ }
+\DoxyCodeLine{00156\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_g_impact_mesh_shape_a49c6bed561a6a241dbc833192a093174}{btGImpactMeshShape::calculateLocalInertia}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ mass,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ inertia)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00157\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00158\ \textcolor{preprocessor}{\#ifdef\ CALC\_EXACT\_INERTIA}}
+\DoxyCodeLine{00159\ \ \ \ \ inertia.setValue(0.f,\ 0.f,\ 0.f);}
+\DoxyCodeLine{00160\ }
+\DoxyCodeLine{00161\ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ this-\/>\mbox{\hyperlink{classbt_g_impact_mesh_shape_a193bab01f3cbbf640d2ddf28763b10ba}{getMeshPartCount}}();}
+\DoxyCodeLine{00162\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ partmass\ =\ mass\ /\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(i);}
+\DoxyCodeLine{00163\ }
+\DoxyCodeLine{00164\ \ \ \ \ \textcolor{keywordflow}{while}\ (i-\/-\/)}
+\DoxyCodeLine{00165\ \ \ \ \ \{}
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ partinertia;}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_a6449840d84f78ecaa16205362f2d4650}{getMeshPart}}(i)-\/>\mbox{\hyperlink{classbt_g_impact_mesh_shape_part_a1bcf320959ca5e5472c1464a32efafcf}{calculateLocalInertia}}(partmass,\ partinertia);}
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ inertia\ +=\ partinertia;}
+\DoxyCodeLine{00169\ \ \ \ \ \}}
+\DoxyCodeLine{00170\ }
+\DoxyCodeLine{00171\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00172\ }
+\DoxyCodeLine{00173\ \ \ \ \ \textcolor{comment}{//\ Calc\ box\ inertia}}
+\DoxyCodeLine{00174\ }
+\DoxyCodeLine{00175\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ lx\ =\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_max[0]\ -\/\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_min[0];}
+\DoxyCodeLine{00176\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ ly\ =\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_max[1]\ -\/\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_min[1];}
+\DoxyCodeLine{00177\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ lz\ =\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_max[2]\ -\/\ \mbox{\hyperlink{classbt_g_impact_shape_interface_ac64c6cc7924e11e775e3448adca114c9}{m\_localAABB}}.m\_min[2];}
+\DoxyCodeLine{00178\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ x2\ =\ lx\ *\ lx;}
+\DoxyCodeLine{00179\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ y2\ =\ ly\ *\ ly;}
+\DoxyCodeLine{00180\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ z2\ =\ lz\ *\ lz;}
+\DoxyCodeLine{00181\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ scaledmass\ =\ mass\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.08333333);}
+\DoxyCodeLine{00182\ }
+\DoxyCodeLine{00183\ \ \ \ \ inertia\ =\ scaledmass\ *\ (\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}(y2\ +\ z2,\ x2\ +\ z2,\ x2\ +\ y2));}
+\DoxyCodeLine{00184\ }
+\DoxyCodeLine{00185\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00186\ \}}
+\DoxyCodeLine{00187\ }
+\DoxyCodeLine{00188\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_g_impact_mesh_shape_a3f68c08b8d157a46d37088105eb1d5c1}{btGImpactMeshShape::rayTest}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ rayFrom,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ rayTo,\ \mbox{\hyperlink{structbt_collision_world_1_1_ray_result_callback}{btCollisionWorld::RayResultCallback}}\&\ resultCallback)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00189\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00190\ \}}
+\DoxyCodeLine{00191\ }
+\DoxyCodeLine{00192\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_a63c6db1d4458384ef776784a79eaf8f8}{btGImpactMeshShapePart::processAllTrianglesRay}}(\mbox{\hyperlink{classbt_triangle_callback}{btTriangleCallback}}*\ callback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ rayFrom,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ rayTo)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00193\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00194\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_acb5cf192f447d4065fbd05514aeebdf3}{lockChildShapes}}();}
+\DoxyCodeLine{00195\ }
+\DoxyCodeLine{00196\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<int>}}\ collided;}
+\DoxyCodeLine{00197\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ rayDir(rayTo\ -\/\ rayFrom);}
+\DoxyCodeLine{00198\ \ \ \ \ rayDir.normalize();}
+\DoxyCodeLine{00199\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_shape_interface_a52b446c99038ce5614e6839479958910}{m\_box\_set}}.rayQuery(rayDir,\ rayFrom,\ collided);}
+\DoxyCodeLine{00200\ }
+\DoxyCodeLine{00201\ \ \ \ \ \textcolor{keywordflow}{if}\ (collided.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ ==\ 0)}
+\DoxyCodeLine{00202\ \ \ \ \ \{}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_ae86a7fa1a827dfeaa34643ec36d427c2}{unlockChildShapes}}();}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00205\ \ \ \ \ \}}
+\DoxyCodeLine{00206\ }
+\DoxyCodeLine{00207\ \ \ \ \ \textcolor{keywordtype}{int}\ part\ =\ (int)\mbox{\hyperlink{classbt_g_impact_mesh_shape_part_a0b9a1dbcc0acd7a3082b2dbfbc5ef5d5}{getPart}}();}
+\DoxyCodeLine{00208\ \ \ \ \ \mbox{\hyperlink{classbt_primitive_triangle}{btPrimitiveTriangle}}\ triangle;}
+\DoxyCodeLine{00209\ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ collided.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();}
+\DoxyCodeLine{00210\ \ \ \ \ \textcolor{keywordflow}{while}\ (i-\/-\/)}
+\DoxyCodeLine{00211\ \ \ \ \ \{}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_shape_interface_a13d9c190157bb9b0087cdbcdf940f4ac}{getPrimitiveTriangle}}(collided[i],\ triangle);}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ callback-\/>\mbox{\hyperlink{classbt_triangle_callback_a3850755f2c1fd71c4ca5877db1e6f891}{processTriangle}}(triangle.\mbox{\hyperlink{classbt_primitive_triangle_a26239c0109fc0a279f1ed0369783eea3}{m\_vertices}},\ part,\ collided[i]);}
+\DoxyCodeLine{00214\ \ \ \ \ \}}
+\DoxyCodeLine{00215\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_ae86a7fa1a827dfeaa34643ec36d427c2}{unlockChildShapes}}();}
+\DoxyCodeLine{00216\ \}}
+\DoxyCodeLine{00217\ }
+\DoxyCodeLine{00218\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_a040a65abd0627d83ecd8bb73be43383e}{btGImpactMeshShapePart::processAllTriangles}}(\mbox{\hyperlink{classbt_triangle_callback}{btTriangleCallback}}*\ callback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00219\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00220\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_acb5cf192f447d4065fbd05514aeebdf3}{lockChildShapes}}();}
+\DoxyCodeLine{00221\ \ \ \ \ \mbox{\hyperlink{bt_box_collision_8h_af5e7af7aae5e601451a7256d35c5db2a}{btAABB}}\ box;}
+\DoxyCodeLine{00222\ \ \ \ \ box.m\_min\ =\ aabbMin;}
+\DoxyCodeLine{00223\ \ \ \ \ box.m\_max\ =\ aabbMax;}
+\DoxyCodeLine{00224\ }
+\DoxyCodeLine{00225\ \ \ \ \ \mbox{\hyperlink{classbt_aligned_object_array}{btAlignedObjectArray<int>}}\ collided;}
+\DoxyCodeLine{00226\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_shape_interface_a52b446c99038ce5614e6839479958910}{m\_box\_set}}.boxQuery(box,\ collided);}
+\DoxyCodeLine{00227\ }
+\DoxyCodeLine{00228\ \ \ \ \ \textcolor{keywordflow}{if}\ (collided.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}()\ ==\ 0)}
+\DoxyCodeLine{00229\ \ \ \ \ \{}
+\DoxyCodeLine{00230\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_ae86a7fa1a827dfeaa34643ec36d427c2}{unlockChildShapes}}();}
+\DoxyCodeLine{00231\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00232\ \ \ \ \ \}}
+\DoxyCodeLine{00233\ }
+\DoxyCodeLine{00234\ \ \ \ \ \textcolor{keywordtype}{int}\ part\ =\ (int)\mbox{\hyperlink{classbt_g_impact_mesh_shape_part_a0b9a1dbcc0acd7a3082b2dbfbc5ef5d5}{getPart}}();}
+\DoxyCodeLine{00235\ \ \ \ \ \mbox{\hyperlink{classbt_primitive_triangle}{btPrimitiveTriangle}}\ triangle;}
+\DoxyCodeLine{00236\ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ collided.\mbox{\hyperlink{classbt_aligned_object_array_a31de8d83d29c6edd1493fc583091194c}{size}}();}
+\DoxyCodeLine{00237\ \ \ \ \ \textcolor{keywordflow}{while}\ (i-\/-\/)}
+\DoxyCodeLine{00238\ \ \ \ \ \{}
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ this-\/>\mbox{\hyperlink{classbt_g_impact_shape_interface_a13d9c190157bb9b0087cdbcdf940f4ac}{getPrimitiveTriangle}}(collided[i],\ triangle);}
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ callback-\/>\mbox{\hyperlink{classbt_triangle_callback_a3850755f2c1fd71c4ca5877db1e6f891}{processTriangle}}(triangle.\mbox{\hyperlink{classbt_primitive_triangle_a26239c0109fc0a279f1ed0369783eea3}{m\_vertices}},\ part,\ collided[i]);}
+\DoxyCodeLine{00241\ \ \ \ \ \}}
+\DoxyCodeLine{00242\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_part_ae86a7fa1a827dfeaa34643ec36d427c2}{unlockChildShapes}}();}
+\DoxyCodeLine{00243\ \}}
+\DoxyCodeLine{00244\ }
+\DoxyCodeLine{00245\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_g_impact_mesh_shape_aa2963b35e88c0f423b4b7b10540a5f6b}{btGImpactMeshShape::processAllTriangles}}(\mbox{\hyperlink{classbt_triangle_callback}{btTriangleCallback}}*\ callback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMin,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ aabbMax)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00246\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00247\ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ \mbox{\hyperlink{classbt_g_impact_mesh_shape_adb3071a27a8d10e7e3ed3ad4cc966056}{m\_mesh\_parts}}.size();}
+\DoxyCodeLine{00248\ \ \ \ \ \textcolor{keywordflow}{while}\ (i-\/-\/)}
+\DoxyCodeLine{00249\ \ \ \ \ \{}
+\DoxyCodeLine{00250\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_adb3071a27a8d10e7e3ed3ad4cc966056}{m\_mesh\_parts}}[i]-\/>processAllTriangles(callback,\ aabbMin,\ aabbMax);}
+\DoxyCodeLine{00251\ \ \ \ \ \}}
+\DoxyCodeLine{00252\ \}}
+\DoxyCodeLine{00253\ }
+\DoxyCodeLine{00254\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_g_impact_mesh_shape_ab7221f209f9d10d2f1eb80cca5aee55d}{btGImpactMeshShape::processAllTrianglesRay}}(\mbox{\hyperlink{classbt_triangle_callback}{btTriangleCallback}}*\ callback,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ rayFrom,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ rayTo)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00255\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00256\ \ \ \ \ \textcolor{keywordtype}{int}\ i\ =\ \mbox{\hyperlink{classbt_g_impact_mesh_shape_adb3071a27a8d10e7e3ed3ad4cc966056}{m\_mesh\_parts}}.size();}
+\DoxyCodeLine{00257\ \ \ \ \ \textcolor{keywordflow}{while}\ (i-\/-\/)}
+\DoxyCodeLine{00258\ \ \ \ \ \{}
+\DoxyCodeLine{00259\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_mesh_shape_adb3071a27a8d10e7e3ed3ad4cc966056}{m\_mesh\_parts}}[i]-\/>processAllTrianglesRay(callback,\ rayFrom,\ rayTo);}
+\DoxyCodeLine{00260\ \ \ \ \ \}}
+\DoxyCodeLine{00261\ \}}
+\DoxyCodeLine{00262\ }
+\DoxyCodeLine{00264\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{classbt_g_impact_mesh_shape_af7a49e08ffba1adfd6981e224eba9430}{btGImpactMeshShape::serialize}}(\textcolor{keywordtype}{void}*\ dataBuffer,\ \mbox{\hyperlink{classbt_serializer}{btSerializer}}*\ serializer)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00265\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00266\ \ \ \ \ \mbox{\hyperlink{structbt_g_impact_mesh_shape_data}{btGImpactMeshShapeData}}*\ trimeshData\ =\ (\mbox{\hyperlink{structbt_g_impact_mesh_shape_data}{btGImpactMeshShapeData}}*)dataBuffer;}
+\DoxyCodeLine{00267\ }
+\DoxyCodeLine{00268\ \ \ \ \ btCollisionShape::serialize(\&trimeshData-\/>\mbox{\hyperlink{structbt_g_impact_mesh_shape_data_a07bd784d15bf2f004ae03ec7fbe33c5a}{m\_collisionShapeData}},\ serializer);}
+\DoxyCodeLine{00269\ }
+\DoxyCodeLine{00270\ \ \ \ \ m\_meshInterface-\/>serialize(\&trimeshData-\/>\mbox{\hyperlink{structbt_g_impact_mesh_shape_data_a635a1bc2cfb2a9c4c73799c4be50df54}{m\_meshInterface}},\ serializer);}
+\DoxyCodeLine{00271\ }
+\DoxyCodeLine{00272\ \ \ \ \ trimeshData-\/>\mbox{\hyperlink{structbt_g_impact_mesh_shape_data_aded76ad490cff87f5f8b51e726b9d221}{m\_collisionMargin}}\ =\ float(\mbox{\hyperlink{bt_compound_shape_8h_ac1869412a5574ef8e65cf70ff81bf325}{m\_collisionMargin}});}
+\DoxyCodeLine{00273\ }
+\DoxyCodeLine{00274\ \ \ \ \ \mbox{\hyperlink{classbt_g_impact_shape_interface_a1d26e1da7195c7e3308a341cdff8b691}{localScaling}}.serializeFloat(trimeshData-\/>\mbox{\hyperlink{structbt_g_impact_mesh_shape_data_ae8e15246acba144c3383e86b903894ff}{m\_localScaling}});}
+\DoxyCodeLine{00275\ }
+\DoxyCodeLine{00276\ \ \ \ \ trimeshData-\/>\mbox{\hyperlink{structbt_g_impact_mesh_shape_data_a405b8aa1e0b9a7d46cf9bc1540214820}{m\_gimpactSubType}}\ =\ int(\mbox{\hyperlink{classbt_g_impact_mesh_shape_ac48641f3b35339f6de0716197bbbe302}{getGImpactShapeType}}());}
+\DoxyCodeLine{00277\ }
+\DoxyCodeLine{00278\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{stringliteral}{"{}btGImpactMeshShapeData"{}};}
+\DoxyCodeLine{00279\ \}}
+
+\end{DoxyCode}

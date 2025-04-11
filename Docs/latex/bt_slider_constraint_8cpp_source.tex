@@ -1,0 +1,825 @@
+\doxysection{bt\+Slider\+Constraint.\+cpp}
+\hypertarget{bt_slider_constraint_8cpp_source}{}\label{bt_slider_constraint_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/ConstraintSolver/btSliderConstraint.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/ConstraintSolver/btSliderConstraint.cpp}}
+\mbox{\hyperlink{bt_slider_constraint_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2006\ Erwin\ Coumans\ \ https://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,}}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,}}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00017\ \textcolor{comment}{Added\ by\ Roman\ Ponomarev\ (rponom@gmail.com)}}
+\DoxyCodeLine{00018\ \textcolor{comment}{April\ 04,\ 2008}}
+\DoxyCodeLine{00019\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_slider_constraint_8h}{btSliderConstraint.h}}"{}}}
+\DoxyCodeLine{00022\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_rigid_body_8h}{BulletDynamics/Dynamics/btRigidBody.h}}"{}}}
+\DoxyCodeLine{00023\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_transform_util_8h}{LinearMath/btTransformUtil.h}}"{}}}
+\DoxyCodeLine{00024\ \textcolor{preprocessor}{\#include\ <new>}}
+\DoxyCodeLine{00025\ }
+\DoxyCodeLine{00026\ \textcolor{preprocessor}{\#define\ USE\_OFFSET\_FOR\_CONSTANT\_FRAME\ true}}
+\DoxyCodeLine{00027\ }
+\DoxyCodeLine{00028\ \textcolor{keywordtype}{void}\ btSliderConstraint::initParams()}
+\DoxyCodeLine{00029\ \{}
+\DoxyCodeLine{00030\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a54eeec48902ee64f8e504b1324e89b0b}{m\_lowerLinLimit}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0);}
+\DoxyCodeLine{00031\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_acde0bff0a69081a988ba2450231778db}{m\_upperLinLimit}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/1.0);}
+\DoxyCodeLine{00032\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a178e24d0cd0c9b9e26cb7471179201d0}{m\_lowerAngLimit}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00033\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a987513e2a2a75e18dcbe768c6d9c3043}{m\_upperAngLimit}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00034\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a31a00d4c01be7e213420d264f4f4111c}{m\_softnessDirLin}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ac54fe2cf4a6aaf5042614d2344c13e67}{SLIDER\_CONSTRAINT\_DEF\_SOFTNESS}};}
+\DoxyCodeLine{00035\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ac191ef4f1e190c6a6257bacfbf8dd440}{m\_restitutionDirLin}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_acb20d7d795a08109ca31460a85788904}{SLIDER\_CONSTRAINT\_DEF\_RESTITUTION}};}
+\DoxyCodeLine{00036\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a030938cdb041c7e3ae77238e0e3deabd}{m\_dampingDirLin}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00037\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a40e1f7dcf22b78211c8eef860a48782d}{m\_cfmDirLin}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_aebc1478f7efedb9a41065abfc94f4de9}{SLIDER\_CONSTRAINT\_DEF\_CFM}};}
+\DoxyCodeLine{00038\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ab0da0a51be6e20ab337402657cbac2d3}{m\_softnessDirAng}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ac54fe2cf4a6aaf5042614d2344c13e67}{SLIDER\_CONSTRAINT\_DEF\_SOFTNESS}};}
+\DoxyCodeLine{00039\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a2b5d5ceb21d651379e1ee1528053007c}{m\_restitutionDirAng}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_acb20d7d795a08109ca31460a85788904}{SLIDER\_CONSTRAINT\_DEF\_RESTITUTION}};}
+\DoxyCodeLine{00040\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ac95e8af636bc9a37fab329b9c722d692}{m\_dampingDirAng}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00041\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ac83e489f2bab7a066e447318010cefe1}{m\_cfmDirAng}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_aebc1478f7efedb9a41065abfc94f4de9}{SLIDER\_CONSTRAINT\_DEF\_CFM}};}
+\DoxyCodeLine{00042\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a11fe62e726349c77ac85e3fa5102cd40}{m\_softnessOrthoLin}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ac54fe2cf4a6aaf5042614d2344c13e67}{SLIDER\_CONSTRAINT\_DEF\_SOFTNESS}};}
+\DoxyCodeLine{00043\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ac8a9e135655ea3ce3503cb9f601b53db}{m\_restitutionOrthoLin}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_acb20d7d795a08109ca31460a85788904}{SLIDER\_CONSTRAINT\_DEF\_RESTITUTION}};}
+\DoxyCodeLine{00044\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_aeb53794aebf6fd464691a53ed8e83d6b}{m\_dampingOrthoLin}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a8757f7bcb4b32e7c9ae2c28fd096180c}{SLIDER\_CONSTRAINT\_DEF\_DAMPING}};}
+\DoxyCodeLine{00045\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a7af73ddd2921fdaeb0a75b0c494c7d95}{m\_cfmOrthoLin}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_aebc1478f7efedb9a41065abfc94f4de9}{SLIDER\_CONSTRAINT\_DEF\_CFM}};}
+\DoxyCodeLine{00046\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a35dfa882f36fcb7fd8e8284248935f73}{m\_softnessOrthoAng}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ac54fe2cf4a6aaf5042614d2344c13e67}{SLIDER\_CONSTRAINT\_DEF\_SOFTNESS}};}
+\DoxyCodeLine{00047\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_af78584cf2e9f518615e294072f68d67f}{m\_restitutionOrthoAng}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_acb20d7d795a08109ca31460a85788904}{SLIDER\_CONSTRAINT\_DEF\_RESTITUTION}};}
+\DoxyCodeLine{00048\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a28771cf82748330834d95f388336be3b}{m\_dampingOrthoAng}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a8757f7bcb4b32e7c9ae2c28fd096180c}{SLIDER\_CONSTRAINT\_DEF\_DAMPING}};}
+\DoxyCodeLine{00049\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_af7bcb012b5c40537bebc63f83f45e5e0}{m\_cfmOrthoAng}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_aebc1478f7efedb9a41065abfc94f4de9}{SLIDER\_CONSTRAINT\_DEF\_CFM}};}
+\DoxyCodeLine{00050\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ae1dcc713e7245e0b5779f83e2874f1e2}{m\_softnessLimLin}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ac54fe2cf4a6aaf5042614d2344c13e67}{SLIDER\_CONSTRAINT\_DEF\_SOFTNESS}};}
+\DoxyCodeLine{00051\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a5210002a2724883a59345a81cc161518}{m\_restitutionLimLin}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_acb20d7d795a08109ca31460a85788904}{SLIDER\_CONSTRAINT\_DEF\_RESTITUTION}};}
+\DoxyCodeLine{00052\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a471f31ec3746a9a588656264aaf700b9}{m\_dampingLimLin}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a8757f7bcb4b32e7c9ae2c28fd096180c}{SLIDER\_CONSTRAINT\_DEF\_DAMPING}};}
+\DoxyCodeLine{00053\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_aeb6d64df2a2a1eda840805e1f84feec3}{m\_cfmLimLin}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_aebc1478f7efedb9a41065abfc94f4de9}{SLIDER\_CONSTRAINT\_DEF\_CFM}};}
+\DoxyCodeLine{00054\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ab5cc7bf0d83f80f77bb0c3a367c6a409}{m\_softnessLimAng}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ac54fe2cf4a6aaf5042614d2344c13e67}{SLIDER\_CONSTRAINT\_DEF\_SOFTNESS}};}
+\DoxyCodeLine{00055\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a9a36eef729ae418f25d8155344da25f6}{m\_restitutionLimAng}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_acb20d7d795a08109ca31460a85788904}{SLIDER\_CONSTRAINT\_DEF\_RESTITUTION}};}
+\DoxyCodeLine{00056\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a8c858fed6377f880e6ea29a3c5ced301}{m\_dampingLimAng}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a8757f7bcb4b32e7c9ae2c28fd096180c}{SLIDER\_CONSTRAINT\_DEF\_DAMPING}};}
+\DoxyCodeLine{00057\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ab7f77c6e351df7ce21b7b268edf7b26f}{m\_cfmLimAng}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_aebc1478f7efedb9a41065abfc94f4de9}{SLIDER\_CONSTRAINT\_DEF\_CFM}};}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a3c38aa22d69f842adfa679bf6a5ee2da}{m\_poweredLinMotor}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00060\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ae0f94dc7bdce7de3e7ce0824a8044534}{m\_targetLinMotorVelocity}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00061\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a603e0f3000de823fe0a18e148189d639}{m\_maxLinMotorForce}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00062\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a5dc5b7690b1ea9c95bbb43adec9126d7}{m\_accumulatedLinMotorImpulse}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0);}
+\DoxyCodeLine{00063\ }
+\DoxyCodeLine{00064\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_aeab3d6ae70299509004befcad61b3c9e}{m\_poweredAngMotor}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00065\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_aa6a59d63107b49ef9fa8ace9994d0d0e}{m\_targetAngMotorVelocity}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00066\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ab1193df9f5be0d4ac83cf3e2c92652ed}{m\_maxAngMotorForce}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00067\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ac4bc5d8b9e1c2a710e2fa9146fee0971}{m\_accumulatedAngMotorImpulse}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0);}
+\DoxyCodeLine{00068\ }
+\DoxyCodeLine{00069\ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ =\ 0;}
+\DoxyCodeLine{00070\ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ =\ 0;}
+\DoxyCodeLine{00071\ }
+\DoxyCodeLine{00072\ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_af6c6acb263eab259f11664caaad04152}{m\_useOffsetForConstraintFrame}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8cpp_ad08bc7188bc96155f814594b859e679e}{USE\_OFFSET\_FOR\_CONSTANT\_FRAME}};}
+\DoxyCodeLine{00073\ }
+\DoxyCodeLine{00074\ \ \ \ \ \mbox{\hyperlink{bt_generic6_dof_constraint_8h_af2f3863d926d172c2e12a4850ffd73de}{calculateTransforms}}(\mbox{\hyperlink{b3_typed_constraint_8h_aef98dda132581084092d99f8324d6aae}{m\_rbA}}.getCenterOfMassTransform(),\ \mbox{\hyperlink{b3_typed_constraint_8h_a2bf7c92b40a2f2f1d9be3aa1992929e4}{m\_rbB}}.getCenterOfMassTransform());}
+\DoxyCodeLine{00075\ \}}
+\DoxyCodeLine{00076\ }
+\DoxyCodeLine{00077\ btSliderConstraint::btSliderConstraint(\mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}\&\ rbA,\ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}\&\ \mbox{\hyperlink{bt_fixed_constraint_8h_a2708cf4cc286b1cfc99a645b9ec1dccd}{rbB}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ \mbox{\hyperlink{bt_fixed_constraint_8h_a3b6cb56b2efefc58fc8a860b7ba48997}{frameInA}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ \mbox{\hyperlink{bt_fixed_constraint_8h_ae58e62c5843af61d56950f0000db46b9}{frameInB}},\ \textcolor{keywordtype}{bool}\ useLinearReferenceFrameA)}
+\DoxyCodeLine{00078\ \ \ \ \ :\ \mbox{\hyperlink{bt_typed_constraint_8h_ac4d45dd414a1096579ca1009cb892163}{btTypedConstraint}}(\mbox{\hyperlink{bt_typed_constraint_8h_af8c47105aa5342e470e9c4e353fbcb73a181a89b9f6e90033a4e125d732da05ab}{SLIDER\_CONSTRAINT\_TYPE}},\ rbA,\ \mbox{\hyperlink{bt_fixed_constraint_8h_a2708cf4cc286b1cfc99a645b9ec1dccd}{rbB}}),}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a4d71fe60a5ce6f9ddc48e4859feff4bb}{m\_useSolveConstraintObsolete}}(false),}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a385cf545f997f70e88905e18fb7ff44e}{m\_frameInA}}(\mbox{\hyperlink{bt_fixed_constraint_8h_a3b6cb56b2efefc58fc8a860b7ba48997}{frameInA}}),}
+\DoxyCodeLine{00081\ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a399c033a4edc1a30d0531bbb4c9a9d3c}{m\_frameInB}}(\mbox{\hyperlink{bt_fixed_constraint_8h_ae58e62c5843af61d56950f0000db46b9}{frameInB}}),}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a745cf0223abd9ab74ba83f4d88299026}{m\_useLinearReferenceFrameA}}(useLinearReferenceFrameA)}
+\DoxyCodeLine{00083\ \{}
+\DoxyCodeLine{00084\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a75f108890bbfd1b32cd1ff4d60be9ea2}{initParams}}();}
+\DoxyCodeLine{00085\ \}}
+\DoxyCodeLine{00086\ }
+\DoxyCodeLine{00087\ btSliderConstraint::btSliderConstraint(\mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}\&\ \mbox{\hyperlink{bt_fixed_constraint_8h_a2708cf4cc286b1cfc99a645b9ec1dccd}{rbB}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ \mbox{\hyperlink{bt_fixed_constraint_8h_ae58e62c5843af61d56950f0000db46b9}{frameInB}},\ \textcolor{keywordtype}{bool}\ useLinearReferenceFrameA)}
+\DoxyCodeLine{00088\ \ \ \ \ :\ \mbox{\hyperlink{bt_typed_constraint_8h_ac4d45dd414a1096579ca1009cb892163}{btTypedConstraint}}(\mbox{\hyperlink{bt_typed_constraint_8h_af8c47105aa5342e470e9c4e353fbcb73a181a89b9f6e90033a4e125d732da05ab}{SLIDER\_CONSTRAINT\_TYPE}},\ getFixedBody(),\ \mbox{\hyperlink{bt_fixed_constraint_8h_a2708cf4cc286b1cfc99a645b9ec1dccd}{rbB}}),}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a4d71fe60a5ce6f9ddc48e4859feff4bb}{m\_useSolveConstraintObsolete}}(false),}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a399c033a4edc1a30d0531bbb4c9a9d3c}{m\_frameInB}}(\mbox{\hyperlink{bt_fixed_constraint_8h_ae58e62c5843af61d56950f0000db46b9}{frameInB}}),}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a745cf0223abd9ab74ba83f4d88299026}{m\_useLinearReferenceFrameA}}(useLinearReferenceFrameA)}
+\DoxyCodeLine{00092\ \{}
+\DoxyCodeLine{00094\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a385cf545f997f70e88905e18fb7ff44e}{m\_frameInA}}\ =\ \mbox{\hyperlink{bt_fixed_constraint_8h_a2708cf4cc286b1cfc99a645b9ec1dccd}{rbB}}.getCenterOfMassTransform()\ *\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a399c033a4edc1a30d0531bbb4c9a9d3c}{m\_frameInB}};}
+\DoxyCodeLine{00095\ \ \ \ \ \textcolor{comment}{//\ \ m\_frameInA.getOrigin()\ =\ m\_rbA.getCenterOfMassTransform()(m\_frameInA.getOrigin());}}
+\DoxyCodeLine{00096\ }
+\DoxyCodeLine{00097\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a75f108890bbfd1b32cd1ff4d60be9ea2}{initParams}}();}
+\DoxyCodeLine{00098\ \}}
+\DoxyCodeLine{00099\ }
+\DoxyCodeLine{00100\ \textcolor{keywordtype}{void}\ btSliderConstraint::getInfo1(\mbox{\hyperlink{structbt_constraint_info1}{btConstraintInfo1}}*\ info)}
+\DoxyCodeLine{00101\ \{}
+\DoxyCodeLine{00102\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_cone_twist_constraint_8h_a4d71fe60a5ce6f9ddc48e4859feff4bb}{m\_useSolveConstraintObsolete}})}
+\DoxyCodeLine{00103\ \ \ \ \ \{}
+\DoxyCodeLine{00104\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info1_a4686a149143b1fa15521d1bdbe979874}{m\_numConstraintRows}}\ =\ 0;}
+\DoxyCodeLine{00105\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info1_a9c1b3a5d85cf307a2ef413e00d193df3}{nub}}\ =\ 0;}
+\DoxyCodeLine{00106\ \ \ \ \ \}}
+\DoxyCodeLine{00107\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00108\ \ \ \ \ \{}
+\DoxyCodeLine{00109\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info1_a4686a149143b1fa15521d1bdbe979874}{m\_numConstraintRows}}\ =\ 4;\ \ \textcolor{comment}{//\ Fixed\ 2\ linear\ +\ 2\ angular}}
+\DoxyCodeLine{00110\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info1_a9c1b3a5d85cf307a2ef413e00d193df3}{nub}}\ =\ 2;}
+\DoxyCodeLine{00111\ \ \ \ \ \ \ \ \ \textcolor{comment}{//prepare\ constraint}}
+\DoxyCodeLine{00112\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_generic6_dof_constraint_8h_af2f3863d926d172c2e12a4850ffd73de}{calculateTransforms}}(\mbox{\hyperlink{b3_typed_constraint_8h_aef98dda132581084092d99f8324d6aae}{m\_rbA}}.getCenterOfMassTransform(),\ \mbox{\hyperlink{b3_typed_constraint_8h_a2bf7c92b40a2f2f1d9be3aa1992929e4}{m\_rbB}}.getCenterOfMassTransform());}
+\DoxyCodeLine{00113\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_acdb045ba3ec011303ec5184e8b0fac30}{testAngLimits}}();}
+\DoxyCodeLine{00114\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_af57a44b05a83605586c250b09a7ab47c}{testLinLimits}}();}
+\DoxyCodeLine{00115\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_slider_constraint_8h_a48e2a4362be963ad60a27544d11cc813}{getSolveLinLimit}}()\ ||\ \mbox{\hyperlink{bt_slider_constraint_8h_ae8738281085d5086d1a44625cbb252b2}{getPoweredLinMotor}}())}
+\DoxyCodeLine{00116\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00117\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info1_a4686a149143b1fa15521d1bdbe979874}{m\_numConstraintRows}}++;\ \ \textcolor{comment}{//\ limit\ 3rd\ linear\ as\ well}}
+\DoxyCodeLine{00118\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info1_a9c1b3a5d85cf307a2ef413e00d193df3}{nub}}-\/-\/;}
+\DoxyCodeLine{00119\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00120\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_slider_constraint_8h_ae2317be4fffefb6f088b45f595a61456}{getSolveAngLimit}}()\ ||\ \mbox{\hyperlink{bt_slider_constraint_8h_ada794107201a33e440e8fe45e48dcecc}{getPoweredAngMotor}}())}
+\DoxyCodeLine{00121\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00122\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info1_a4686a149143b1fa15521d1bdbe979874}{m\_numConstraintRows}}++;\ \ \textcolor{comment}{//\ limit\ 3rd\ angular\ as\ well}}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info1_a9c1b3a5d85cf307a2ef413e00d193df3}{nub}}-\/-\/;}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00125\ \ \ \ \ \}}
+\DoxyCodeLine{00126\ \}}
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00128\ \textcolor{keywordtype}{void}\ btSliderConstraint::getInfo1NonVirtual(\mbox{\hyperlink{structbt_constraint_info1}{btConstraintInfo1}}*\ info)}
+\DoxyCodeLine{00129\ \{}
+\DoxyCodeLine{00130\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info1_a4686a149143b1fa15521d1bdbe979874}{m\_numConstraintRows}}\ =\ 6;\ \ \textcolor{comment}{//\ Fixed\ 2\ linear\ +\ 2\ angular\ +\ 1\ limit\ (even\ if\ not\ used)}}
+\DoxyCodeLine{00131\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info1_a9c1b3a5d85cf307a2ef413e00d193df3}{nub}}\ =\ 0;}
+\DoxyCodeLine{00132\ \}}
+\DoxyCodeLine{00133\ }
+\DoxyCodeLine{00134\ \textcolor{keywordtype}{void}\ btSliderConstraint::getInfo2(\mbox{\hyperlink{structbt_constraint_info2}{btConstraintInfo2}}*\ info)}
+\DoxyCodeLine{00135\ \{}
+\DoxyCodeLine{00136\ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_aa8e21d785db76ac7f8ae48eea10f052e}{getInfo2NonVirtual}}(info,\ \mbox{\hyperlink{b3_typed_constraint_8h_aef98dda132581084092d99f8324d6aae}{m\_rbA}}.getCenterOfMassTransform(),\ \mbox{\hyperlink{b3_typed_constraint_8h_a2bf7c92b40a2f2f1d9be3aa1992929e4}{m\_rbB}}.getCenterOfMassTransform(),\ \mbox{\hyperlink{b3_typed_constraint_8h_aef98dda132581084092d99f8324d6aae}{m\_rbA}}.getLinearVelocity(),\ \mbox{\hyperlink{b3_typed_constraint_8h_a2bf7c92b40a2f2f1d9be3aa1992929e4}{m\_rbB}}.getLinearVelocity(),\ \mbox{\hyperlink{b3_typed_constraint_8h_aef98dda132581084092d99f8324d6aae}{m\_rbA}}.getInvMass(),\ \mbox{\hyperlink{b3_typed_constraint_8h_a2bf7c92b40a2f2f1d9be3aa1992929e4}{m\_rbB}}.getInvMass());}
+\DoxyCodeLine{00137\ \}}
+\DoxyCodeLine{00138\ }
+\DoxyCodeLine{00139\ \textcolor{keywordtype}{void}\ btSliderConstraint::calculateTransforms(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ transA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ transB)}
+\DoxyCodeLine{00140\ \{}
+\DoxyCodeLine{00141\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_generic6_dof_constraint_8h_a745cf0223abd9ab74ba83f4d88299026}{m\_useLinearReferenceFrameA}}\ ||\ (!\mbox{\hyperlink{bt_cone_twist_constraint_8h_a4d71fe60a5ce6f9ddc48e4859feff4bb}{m\_useSolveConstraintObsolete}}))}
+\DoxyCodeLine{00142\ \ \ \ \ \{}
+\DoxyCodeLine{00143\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a6eae690d50bb68982eeac38951977dd0}{m\_calculatedTransformA}}\ =\ transA\ *\ \mbox{\hyperlink{bt_slider_constraint_8h_a385cf545f997f70e88905e18fb7ff44e}{m\_frameInA}};}
+\DoxyCodeLine{00144\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_afe532efdbdad6279835698616c234ba9}{m\_calculatedTransformB}}\ =\ transB\ *\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a399c033a4edc1a30d0531bbb4c9a9d3c}{m\_frameInB}};}
+\DoxyCodeLine{00145\ \ \ \ \ \}}
+\DoxyCodeLine{00146\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00147\ \ \ \ \ \{}
+\DoxyCodeLine{00148\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a6eae690d50bb68982eeac38951977dd0}{m\_calculatedTransformA}}\ =\ transB\ *\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a399c033a4edc1a30d0531bbb4c9a9d3c}{m\_frameInB}};}
+\DoxyCodeLine{00149\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_afe532efdbdad6279835698616c234ba9}{m\_calculatedTransformB}}\ =\ transA\ *\ \mbox{\hyperlink{bt_slider_constraint_8h_a385cf545f997f70e88905e18fb7ff44e}{m\_frameInA}};}
+\DoxyCodeLine{00150\ \ \ \ \ \}}
+\DoxyCodeLine{00151\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a66736489150b73d875ceebd6eda73e2b}{m\_realPivotAInW}}\ =\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a6eae690d50bb68982eeac38951977dd0}{m\_calculatedTransformA}}.getOrigin();}
+\DoxyCodeLine{00152\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ad0de41d57afc739eee759cb2e0581bac}{m\_realPivotBInW}}\ =\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_afe532efdbdad6279835698616c234ba9}{m\_calculatedTransformB}}.getOrigin();}
+\DoxyCodeLine{00153\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a5383e11b238adf8639ccd3990636e682}{m\_sliderAxis}}\ =\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a6eae690d50bb68982eeac38951977dd0}{m\_calculatedTransformA}}.getBasis().getColumn(0);\ \ \textcolor{comment}{//\ along\ X}}
+\DoxyCodeLine{00154\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_generic6_dof_constraint_8h_a745cf0223abd9ab74ba83f4d88299026}{m\_useLinearReferenceFrameA}}\ ||\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a4d71fe60a5ce6f9ddc48e4859feff4bb}{m\_useSolveConstraintObsolete}})}
+\DoxyCodeLine{00155\ \ \ \ \ \{}
+\DoxyCodeLine{00156\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_af5e3674564bac1afe7d4b7e15db54d0b}{m\_delta}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ad0de41d57afc739eee759cb2e0581bac}{m\_realPivotBInW}}\ -\/\ \mbox{\hyperlink{bt_slider_constraint_8h_a66736489150b73d875ceebd6eda73e2b}{m\_realPivotAInW}};}
+\DoxyCodeLine{00157\ \ \ \ \ \}}
+\DoxyCodeLine{00158\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00159\ \ \ \ \ \{}
+\DoxyCodeLine{00160\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_af5e3674564bac1afe7d4b7e15db54d0b}{m\_delta}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a66736489150b73d875ceebd6eda73e2b}{m\_realPivotAInW}}\ -\/\ \mbox{\hyperlink{bt_slider_constraint_8h_ad0de41d57afc739eee759cb2e0581bac}{m\_realPivotBInW}};}
+\DoxyCodeLine{00161\ \ \ \ \ \}}
+\DoxyCodeLine{00162\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a874a43966406aade278615a0a84d4693}{m\_projPivotInW}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a66736489150b73d875ceebd6eda73e2b}{m\_realPivotAInW}}\ +\ \mbox{\hyperlink{bt_slider_constraint_8h_a5383e11b238adf8639ccd3990636e682}{m\_sliderAxis}}.dot(\mbox{\hyperlink{bt_slider_constraint_8h_af5e3674564bac1afe7d4b7e15db54d0b}{m\_delta}})\ *\ \mbox{\hyperlink{bt_slider_constraint_8h_a5383e11b238adf8639ccd3990636e682}{m\_sliderAxis}};}
+\DoxyCodeLine{00163\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ normalWorld;}
+\DoxyCodeLine{00164\ \ \ \ \ \textcolor{keywordtype}{int}\ i;}
+\DoxyCodeLine{00165\ \ \ \ \ \textcolor{comment}{//linear\ part}}
+\DoxyCodeLine{00166\ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)}
+\DoxyCodeLine{00167\ \ \ \ \ \{}
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ normalWorld\ =\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a6eae690d50bb68982eeac38951977dd0}{m\_calculatedTransformA}}.getBasis().getColumn(i);}
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a3af4138d948502b7f5f5f65abe3eb2f8}{m\_depth}}[i]\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_af5e3674564bac1afe7d4b7e15db54d0b}{m\_delta}}.dot(normalWorld);}
+\DoxyCodeLine{00170\ \ \ \ \ \}}
+\DoxyCodeLine{00171\ \}}
+\DoxyCodeLine{00172\ }
+\DoxyCodeLine{00173\ \textcolor{keywordtype}{void}\ btSliderConstraint::testLinLimits(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00174\ \{}
+\DoxyCodeLine{00175\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a99339c50dd1a8b638c4d2859b71ca52d}{m\_solveLinLim}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00176\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_aba9d128328f8a7abef951b7a9a020cb2}{m\_linPos}}\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a3af4138d948502b7f5f5f65abe3eb2f8}{m\_depth}}[0];}
+\DoxyCodeLine{00177\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_slider_constraint_8h_a54eeec48902ee64f8e504b1324e89b0b}{m\_lowerLinLimit}}\ <=\ \mbox{\hyperlink{bt_slider_constraint_8h_acde0bff0a69081a988ba2450231778db}{m\_upperLinLimit}})}
+\DoxyCodeLine{00178\ \ \ \ \ \{}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_slider_constraint_8h_a3af4138d948502b7f5f5f65abe3eb2f8}{m\_depth}}[0]\ >\ \mbox{\hyperlink{bt_slider_constraint_8h_acde0bff0a69081a988ba2450231778db}{m\_upperLinLimit}})}
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a3af4138d948502b7f5f5f65abe3eb2f8}{m\_depth}}[0]\ -\/=\ \mbox{\hyperlink{bt_slider_constraint_8h_acde0bff0a69081a988ba2450231778db}{m\_upperLinLimit}};}
+\DoxyCodeLine{00182\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a99339c50dd1a8b638c4d2859b71ca52d}{m\_solveLinLim}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00184\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_slider_constraint_8h_a3af4138d948502b7f5f5f65abe3eb2f8}{m\_depth}}[0]\ <\ \mbox{\hyperlink{bt_slider_constraint_8h_a54eeec48902ee64f8e504b1324e89b0b}{m\_lowerLinLimit}})}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a3af4138d948502b7f5f5f65abe3eb2f8}{m\_depth}}[0]\ -\/=\ \mbox{\hyperlink{bt_slider_constraint_8h_a54eeec48902ee64f8e504b1324e89b0b}{m\_lowerLinLimit}};}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a99339c50dd1a8b638c4d2859b71ca52d}{m\_solveLinLim}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00190\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00191\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a3af4138d948502b7f5f5f65abe3eb2f8}{m\_depth}}[0]\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00193\ \ \ \ \ \}}
+\DoxyCodeLine{00194\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00195\ \ \ \ \ \{}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a3af4138d948502b7f5f5f65abe3eb2f8}{m\_depth}}[0]\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00197\ \ \ \ \ \}}
+\DoxyCodeLine{00198\ \}}
+\DoxyCodeLine{00199\ }
+\DoxyCodeLine{00200\ \textcolor{keywordtype}{void}\ btSliderConstraint::testAngLimits(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00201\ \{}
+\DoxyCodeLine{00202\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_aa718e0520293636befd81e55d3ec5127}{m\_angDepth}}\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.);}
+\DoxyCodeLine{00203\ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a344244fa1350a5ccc9a4bdbfd26de41c}{m\_solveAngLim}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00204\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_slider_constraint_8h_a178e24d0cd0c9b9e26cb7471179201d0}{m\_lowerAngLimit}}\ <=\ \mbox{\hyperlink{bt_slider_constraint_8h_a987513e2a2a75e18dcbe768c6d9c3043}{m\_upperAngLimit}})}
+\DoxyCodeLine{00205\ \ \ \ \ \{}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ axisA0\ =\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a6eae690d50bb68982eeac38951977dd0}{m\_calculatedTransformA}}.getBasis().getColumn(1);}
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ axisA1\ =\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a6eae690d50bb68982eeac38951977dd0}{m\_calculatedTransformA}}.getBasis().getColumn(2);}
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ axisB0\ =\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_afe532efdbdad6279835698616c234ba9}{m\_calculatedTransformB}}.getBasis().getColumn(1);}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ btScalar\ rot\ =\ btAtan2Fast(axisB0.dot(axisA1),\ axisB0.dot(axisA0));}}
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ rot\ =\ \mbox{\hyperlink{bt_scalar_8h_ac7d89f182c6f2997f9a50fe963f6f986}{btAtan2}}(axisB0.dot(axisA1),\ axisB0.dot(axisA0));}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ rot\ =\ \mbox{\hyperlink{bt_typed_constraint_8h_a920cb3e223537d73f43a0fdd703db225}{btAdjustAngleToLimits}}(rot,\ \mbox{\hyperlink{bt_slider_constraint_8h_a178e24d0cd0c9b9e26cb7471179201d0}{m\_lowerAngLimit}},\ \mbox{\hyperlink{bt_slider_constraint_8h_a987513e2a2a75e18dcbe768c6d9c3043}{m\_upperAngLimit}});}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_aaf2707323929f028913ff9a57e4b6665}{m\_angPos}}\ =\ rot;}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (rot\ <\ \mbox{\hyperlink{bt_slider_constraint_8h_a178e24d0cd0c9b9e26cb7471179201d0}{m\_lowerAngLimit}})}
+\DoxyCodeLine{00214\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_aa718e0520293636befd81e55d3ec5127}{m\_angDepth}}\ =\ rot\ -\/\ \mbox{\hyperlink{bt_slider_constraint_8h_a178e24d0cd0c9b9e26cb7471179201d0}{m\_lowerAngLimit}};}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a344244fa1350a5ccc9a4bdbfd26de41c}{m\_solveAngLim}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00218\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (rot\ >\ \mbox{\hyperlink{bt_slider_constraint_8h_a987513e2a2a75e18dcbe768c6d9c3043}{m\_upperAngLimit}})}
+\DoxyCodeLine{00219\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00220\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_aa718e0520293636befd81e55d3ec5127}{m\_angDepth}}\ =\ rot\ -\/\ \mbox{\hyperlink{bt_slider_constraint_8h_a987513e2a2a75e18dcbe768c6d9c3043}{m\_upperAngLimit}};}
+\DoxyCodeLine{00221\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a344244fa1350a5ccc9a4bdbfd26de41c}{m\_solveAngLim}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00222\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00223\ \ \ \ \ \}}
+\DoxyCodeLine{00224\ \}}
+\DoxyCodeLine{00225\ }
+\DoxyCodeLine{00226\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ btSliderConstraint::getAncorInA(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00227\ \{}
+\DoxyCodeLine{00228\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ ancorInA;}
+\DoxyCodeLine{00229\ \ \ \ \ ancorInA\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a66736489150b73d875ceebd6eda73e2b}{m\_realPivotAInW}}\ +\ (\mbox{\hyperlink{bt_slider_constraint_8h_a54eeec48902ee64f8e504b1324e89b0b}{m\_lowerLinLimit}}\ +\ \mbox{\hyperlink{bt_slider_constraint_8h_acde0bff0a69081a988ba2450231778db}{m\_upperLinLimit}})\ *\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5)\ *\ \mbox{\hyperlink{bt_slider_constraint_8h_a5383e11b238adf8639ccd3990636e682}{m\_sliderAxis}};}
+\DoxyCodeLine{00230\ \ \ \ \ ancorInA\ =\ \mbox{\hyperlink{b3_typed_constraint_8h_aef98dda132581084092d99f8324d6aae}{m\_rbA}}.getCenterOfMassTransform().inverse()\ *\ ancorInA;}
+\DoxyCodeLine{00231\ \ \ \ \ \textcolor{keywordflow}{return}\ ancorInA;}
+\DoxyCodeLine{00232\ \}}
+\DoxyCodeLine{00233\ }
+\DoxyCodeLine{00234\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ btSliderConstraint::getAncorInB(\textcolor{keywordtype}{void})}
+\DoxyCodeLine{00235\ \{}
+\DoxyCodeLine{00236\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ ancorInB;}
+\DoxyCodeLine{00237\ \ \ \ \ ancorInB\ =\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a399c033a4edc1a30d0531bbb4c9a9d3c}{m\_frameInB}}.getOrigin();}
+\DoxyCodeLine{00238\ \ \ \ \ \textcolor{keywordflow}{return}\ ancorInB;}
+\DoxyCodeLine{00239\ \}}
+\DoxyCodeLine{00240\ }
+\DoxyCodeLine{00241\ \textcolor{keywordtype}{void}\ btSliderConstraint::getInfo2NonVirtual(\mbox{\hyperlink{structbt_constraint_info2}{btConstraintInfo2}}*\ info,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ transA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ transB,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ linVelA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ linVelB,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ rbAinvMass,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ rbBinvMass)}
+\DoxyCodeLine{00242\ \{}
+\DoxyCodeLine{00243\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ trA\ =\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a1c96f47aa758ad6e6b790fa624fa53bd}{getCalculatedTransformA}}();}
+\DoxyCodeLine{00244\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ trB\ =\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a65e5286f118c279ee0f68d2badd7bdca}{getCalculatedTransformB}}();}
+\DoxyCodeLine{00245\ }
+\DoxyCodeLine{00246\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(!\mbox{\hyperlink{bt_cone_twist_constraint_8h_a4d71fe60a5ce6f9ddc48e4859feff4bb}{m\_useSolveConstraintObsolete}});}
+\DoxyCodeLine{00247\ \ \ \ \ \textcolor{keywordtype}{int}\ i,\ s\ =\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aebdf1a06e1ad055c3cf72796992d1a1a}{rowskip}};}
+\DoxyCodeLine{00248\ }
+\DoxyCodeLine{00249\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ signFact\ =\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_a745cf0223abd9ab74ba83f4d88299026}{m\_useLinearReferenceFrameA}}\ ?\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0f)\ :\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/1.0f);}
+\DoxyCodeLine{00250\ }
+\DoxyCodeLine{00251\ \ \ \ \ \textcolor{comment}{//\ difference\ between\ frames\ in\ WCS}}
+\DoxyCodeLine{00252\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ ofs\ =\ trB.getOrigin()\ -\/\ trA.getOrigin();}
+\DoxyCodeLine{00253\ \ \ \ \ \textcolor{comment}{//\ now\ get\ weight\ factors\ depending\ on\ masses}}
+\DoxyCodeLine{00254\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ miA\ =\ rbAinvMass;}
+\DoxyCodeLine{00255\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ miB\ =\ rbBinvMass;}
+\DoxyCodeLine{00256\ \ \ \ \ \textcolor{keywordtype}{bool}\ hasStaticBody\ =\ (miA\ <\ \mbox{\hyperlink{bt_scalar_8h_ae51eef6845bd59f964c1b2dbfe7054b7}{SIMD\_EPSILON}})\ ||\ (miB\ <\ \mbox{\hyperlink{bt_scalar_8h_ae51eef6845bd59f964c1b2dbfe7054b7}{SIMD\_EPSILON}});}
+\DoxyCodeLine{00257\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ miS\ =\ miA\ +\ miB;}
+\DoxyCodeLine{00258\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ factA,\ factB;}
+\DoxyCodeLine{00259\ \ \ \ \ \textcolor{keywordflow}{if}\ (miS\ >\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.f))}
+\DoxyCodeLine{00260\ \ \ \ \ \{}
+\DoxyCodeLine{00261\ \ \ \ \ \ \ \ \ factA\ =\ miB\ /\ miS;}
+\DoxyCodeLine{00262\ \ \ \ \ \}}
+\DoxyCodeLine{00263\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00264\ \ \ \ \ \{}
+\DoxyCodeLine{00265\ \ \ \ \ \ \ \ \ factA\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.5f);}
+\DoxyCodeLine{00266\ \ \ \ \ \}}
+\DoxyCodeLine{00267\ \ \ \ \ factB\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0f)\ -\/\ factA;}
+\DoxyCodeLine{00268\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ ax1,\ p,\ q;}
+\DoxyCodeLine{00269\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ ax1A\ =\ trA.getBasis().getColumn(0);}
+\DoxyCodeLine{00270\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ ax1B\ =\ trB.getBasis().getColumn(0);}
+\DoxyCodeLine{00271\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_generic6_dof_constraint_8h_af6c6acb263eab259f11664caaad04152}{m\_useOffsetForConstraintFrame}})}
+\DoxyCodeLine{00272\ \ \ \ \ \{}
+\DoxyCodeLine{00273\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ get\ the\ desired\ direction\ of\ slider\ axis}}
+\DoxyCodeLine{00274\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ as\ weighted\ sum\ of\ X-\/orthos\ of\ frameA\ and\ frameB\ in\ WCS}}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ ax1\ =\ ax1A\ *\ factA\ +\ ax1B\ *\ factB;}
+\DoxyCodeLine{00276\ \ \ \ \ \ \ \ \ ax1.normalize();}
+\DoxyCodeLine{00277\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ construct\ two\ orthos\ to\ slider\ axis}}
+\DoxyCodeLine{00278\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a0682ea634178928396d78f27c87aec07}{btPlaneSpace1}}(ax1,\ p,\ q);}
+\DoxyCodeLine{00279\ \ \ \ \ \}}
+\DoxyCodeLine{00280\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00281\ \ \ \ \ \{\ \ \textcolor{comment}{//\ old\ way\ -\/\ use\ frameA}}
+\DoxyCodeLine{00282\ \ \ \ \ \ \ \ \ ax1\ =\ trA.getBasis().getColumn(0);}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ get\ 2\ orthos\ to\ slider\ axis\ (Y,\ Z)}}
+\DoxyCodeLine{00284\ \ \ \ \ \ \ \ \ p\ =\ trA.getBasis().getColumn(1);}
+\DoxyCodeLine{00285\ \ \ \ \ \ \ \ \ q\ =\ trA.getBasis().getColumn(2);}
+\DoxyCodeLine{00286\ \ \ \ \ \}}
+\DoxyCodeLine{00287\ \ \ \ \ \textcolor{comment}{//\ make\ rotations\ around\ these\ orthos\ equal}}
+\DoxyCodeLine{00288\ \ \ \ \ \textcolor{comment}{//\ the\ slider\ axis\ should\ be\ the\ only\ unconstrained}}
+\DoxyCodeLine{00289\ \ \ \ \ \textcolor{comment}{//\ rotational\ axis,\ the\ angular\ velocity\ of\ the\ two\ bodies\ perpendicular\ to}}
+\DoxyCodeLine{00290\ \ \ \ \ \textcolor{comment}{//\ the\ slider\ axis\ should\ be\ equal.\ thus\ the\ constraint\ equations\ are}}
+\DoxyCodeLine{00291\ \ \ \ \ \textcolor{comment}{//\ \ \ \ p*w1\ -\/\ p*w2\ =\ 0}}
+\DoxyCodeLine{00292\ \ \ \ \ \textcolor{comment}{//\ \ \ \ q*w1\ -\/\ q*w2\ =\ 0}}
+\DoxyCodeLine{00293\ \ \ \ \ \textcolor{comment}{//\ where\ p\ and\ q\ are\ unit\ vectors\ normal\ to\ the\ slider\ axis,\ and\ w1\ and\ w2}}
+\DoxyCodeLine{00294\ \ \ \ \ \textcolor{comment}{//\ are\ the\ angular\ velocity\ vectors\ of\ the\ two\ bodies.}}
+\DoxyCodeLine{00295\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[0]\ =\ p[0];}
+\DoxyCodeLine{00296\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[1]\ =\ p[1];}
+\DoxyCodeLine{00297\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[2]\ =\ p[2];}
+\DoxyCodeLine{00298\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[s\ +\ 0]\ =\ q[0];}
+\DoxyCodeLine{00299\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[s\ +\ 1]\ =\ q[1];}
+\DoxyCodeLine{00300\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[s\ +\ 2]\ =\ q[2];}
+\DoxyCodeLine{00301\ }
+\DoxyCodeLine{00302\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[0]\ =\ -\/p[0];}
+\DoxyCodeLine{00303\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[1]\ =\ -\/p[1];}
+\DoxyCodeLine{00304\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[2]\ =\ -\/p[2];}
+\DoxyCodeLine{00305\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[s\ +\ 0]\ =\ -\/q[0];}
+\DoxyCodeLine{00306\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[s\ +\ 1]\ =\ -\/q[1];}
+\DoxyCodeLine{00307\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[s\ +\ 2]\ =\ -\/q[2];}
+\DoxyCodeLine{00308\ \ \ \ \ \textcolor{comment}{//\ compute\ the\ right\ hand\ side\ of\ the\ constraint\ equation.\ set\ relative}}
+\DoxyCodeLine{00309\ \ \ \ \ \textcolor{comment}{//\ body\ velocities\ along\ p\ and\ q\ to\ bring\ the\ slider\ back\ into\ alignment.}}
+\DoxyCodeLine{00310\ \ \ \ \ \textcolor{comment}{//\ if\ ax1A,ax1B\ are\ the\ unit\ length\ slider\ axes\ as\ computed\ from\ bodyA\ and}}
+\DoxyCodeLine{00311\ \ \ \ \ \textcolor{comment}{//\ bodyB,\ we\ need\ to\ rotate\ both\ bodies\ along\ the\ axis\ u\ =\ (ax1\ x\ ax2).}}
+\DoxyCodeLine{00312\ \ \ \ \ \textcolor{comment}{//\ if\ "{}theta"{}\ is\ the\ angle\ between\ ax1\ and\ ax2,\ we\ need\ an\ angular\ velocity}}
+\DoxyCodeLine{00313\ \ \ \ \ \textcolor{comment}{//\ along\ u\ to\ cover\ angle\ erp*theta\ in\ one\ step\ :}}
+\DoxyCodeLine{00314\ \ \ \ \ \textcolor{comment}{//\ \ \ |angular\_velocity|\ =\ angle/time\ =\ erp*theta\ /\ stepsize}}
+\DoxyCodeLine{00315\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ =\ (erp*fps)\ *\ theta}}
+\DoxyCodeLine{00316\ \ \ \ \ \textcolor{comment}{//\ \ \ \ angular\_velocity\ \ =\ |angular\_velocity|\ *\ (ax1\ x\ ax2)\ /\ |ax1\ x\ ax2|}}
+\DoxyCodeLine{00317\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ =\ (erp*fps)\ *\ theta\ *\ (ax1\ x\ ax2)\ /\ sin(theta)}}
+\DoxyCodeLine{00318\ \ \ \ \ \textcolor{comment}{//\ ...as\ ax1\ and\ ax2\ are\ unit\ length.\ if\ theta\ is\ smallish,}}
+\DoxyCodeLine{00319\ \ \ \ \ \textcolor{comment}{//\ theta\ \string~=\ sin(theta),\ so}}
+\DoxyCodeLine{00320\ \ \ \ \ \textcolor{comment}{//\ \ \ \ angular\_velocity\ \ =\ (erp*fps)\ *\ (ax1\ x\ ax2)}}
+\DoxyCodeLine{00321\ \ \ \ \ \textcolor{comment}{//\ ax1\ x\ ax2\ is\ in\ the\ plane\ space\ of\ ax1,\ so\ we\ project\ the\ angular}}
+\DoxyCodeLine{00322\ \ \ \ \ \textcolor{comment}{//\ velocity\ to\ p\ and\ q\ to\ find\ the\ right\ hand\ side.}}
+\DoxyCodeLine{00323\ \ \ \ \ \textcolor{comment}{//\ \ btScalar\ k\ =\ info-\/>fps\ *\ info-\/>erp\ *\ getSoftnessOrthoAng();}}
+\DoxyCodeLine{00324\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ currERP\ =\ (\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea71810adbb8db385e30a8ada81bc9e4ad}{BT\_SLIDER\_FLAGS\_ERP\_ORTANG}})\ ?\ \mbox{\hyperlink{bt_slider_constraint_8h_a35dfa882f36fcb7fd8e8284248935f73}{m\_softnessOrthoAng}}\ :\ \mbox{\hyperlink{bt_slider_constraint_8h_a35dfa882f36fcb7fd8e8284248935f73}{m\_softnessOrthoAng}}\ *\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a1bd8e6285e47472bfd307aa5582365e7}{erp}};}
+\DoxyCodeLine{00325\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ k\ =\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a758269a654c7e879172098323722a6ea}{fps}}\ *\ currERP;}
+\DoxyCodeLine{00326\ }
+\DoxyCodeLine{00327\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ u\ =\ ax1A.cross(ax1B);}
+\DoxyCodeLine{00328\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[0]\ =\ k\ *\ u.dot(p);}
+\DoxyCodeLine{00329\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[s]\ =\ k\ *\ u.dot(q);}
+\DoxyCodeLine{00330\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea5865cfb8bbc70511abd7dbf1bd3e0b6d}{BT\_SLIDER\_FLAGS\_CFM\_ORTANG}})}
+\DoxyCodeLine{00331\ \ \ \ \ \{}
+\DoxyCodeLine{00332\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aaa223d5bfd5b8e8a7a6f509600e16008}{cfm}}[0]\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_af7bcb012b5c40537bebc63f83f45e5e0}{m\_cfmOrthoAng}};}
+\DoxyCodeLine{00333\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aaa223d5bfd5b8e8a7a6f509600e16008}{cfm}}[s]\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_af7bcb012b5c40537bebc63f83f45e5e0}{m\_cfmOrthoAng}};}
+\DoxyCodeLine{00334\ \ \ \ \ \}}
+\DoxyCodeLine{00335\ }
+\DoxyCodeLine{00336\ \ \ \ \ \textcolor{keywordtype}{int}\ nrow\ =\ 1;\ \ \textcolor{comment}{//\ last\ filled\ row}}
+\DoxyCodeLine{00337\ \ \ \ \ \textcolor{keywordtype}{int}\ srow;}
+\DoxyCodeLine{00338\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ limit\_err;}
+\DoxyCodeLine{00339\ \ \ \ \ \textcolor{keywordtype}{int}\ limit;}
+\DoxyCodeLine{00340\ }
+\DoxyCodeLine{00341\ \ \ \ \ \textcolor{comment}{//\ next\ two\ rows.}}
+\DoxyCodeLine{00342\ \ \ \ \ \textcolor{comment}{//\ we\ want:\ velA\ +\ wA\ x\ relA\ ==\ velB\ +\ wB\ x\ relB\ ...\ but\ this\ would}}
+\DoxyCodeLine{00343\ \ \ \ \ \textcolor{comment}{//\ result\ in\ three\ equations,\ so\ we\ project\ along\ two\ orthos\ to\ the\ slider\ axis}}
+\DoxyCodeLine{00344\ }
+\DoxyCodeLine{00345\ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ bodyA\_trans\ =\ transA;}
+\DoxyCodeLine{00346\ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ bodyB\_trans\ =\ transB;}
+\DoxyCodeLine{00347\ \ \ \ \ nrow++;}
+\DoxyCodeLine{00348\ \ \ \ \ \textcolor{keywordtype}{int}\ s2\ =\ nrow\ *\ s;}
+\DoxyCodeLine{00349\ \ \ \ \ nrow++;}
+\DoxyCodeLine{00350\ \ \ \ \ \textcolor{keywordtype}{int}\ s3\ =\ nrow\ *\ s;}
+\DoxyCodeLine{00351\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ tmpA(0,\ 0,\ 0),\ tmpB(0,\ 0,\ 0),\ relA(0,\ 0,\ 0),\ relB(0,\ 0,\ 0),\ c(0,\ 0,\ 0);}
+\DoxyCodeLine{00352\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_generic6_dof_constraint_8h_af6c6acb263eab259f11664caaad04152}{m\_useOffsetForConstraintFrame}})}
+\DoxyCodeLine{00353\ \ \ \ \ \{}
+\DoxyCodeLine{00354\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ get\ vector\ from\ bodyB\ to\ frameB\ in\ WCS}}
+\DoxyCodeLine{00355\ \ \ \ \ \ \ \ \ relB\ =\ trB.getOrigin()\ -\/\ bodyB\_trans.getOrigin();}
+\DoxyCodeLine{00356\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ get\ its\ projection\ to\ slider\ axis}}
+\DoxyCodeLine{00357\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ projB\ =\ ax1\ *\ relB.dot(ax1);}
+\DoxyCodeLine{00358\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ get\ vector\ directed\ from\ bodyB\ to\ slider\ axis\ (and\ orthogonal\ to\ it)}}
+\DoxyCodeLine{00359\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ orthoB\ =\ relB\ -\/\ projB;}
+\DoxyCodeLine{00360\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ same\ for\ bodyA}}
+\DoxyCodeLine{00361\ \ \ \ \ \ \ \ \ relA\ =\ trA.getOrigin()\ -\/\ bodyA\_trans.getOrigin();}
+\DoxyCodeLine{00362\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ projA\ =\ ax1\ *\ relA.dot(ax1);}
+\DoxyCodeLine{00363\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ orthoA\ =\ relA\ -\/\ projA;}
+\DoxyCodeLine{00364\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ get\ desired\ offset\ between\ frames\ A\ and\ B\ along\ slider\ axis}}
+\DoxyCodeLine{00365\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ sliderOffs\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_aba9d128328f8a7abef951b7a9a020cb2}{m\_linPos}}\ -\/\ \mbox{\hyperlink{bt_slider_constraint_8h_a3af4138d948502b7f5f5f65abe3eb2f8}{m\_depth}}[0];}
+\DoxyCodeLine{00366\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ desired\ vector\ from\ projection\ of\ center\ of\ bodyA\ to\ projection\ of\ center\ of\ bodyB\ to\ slider\ axis}}
+\DoxyCodeLine{00367\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ totalDist\ =\ projA\ +\ ax1\ *\ sliderOffs\ -\/\ projB;}
+\DoxyCodeLine{00368\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ get\ offset\ vectors\ relA\ and\ relB}}
+\DoxyCodeLine{00369\ \ \ \ \ \ \ \ \ relA\ =\ orthoA\ +\ totalDist\ *\ factA;}
+\DoxyCodeLine{00370\ \ \ \ \ \ \ \ \ relB\ =\ orthoB\ -\/\ totalDist\ *\ factB;}
+\DoxyCodeLine{00371\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ now\ choose\ average\ ortho\ to\ slider\ axis}}
+\DoxyCodeLine{00372\ \ \ \ \ \ \ \ \ p\ =\ orthoB\ *\ factA\ +\ orthoA\ *\ factB;}
+\DoxyCodeLine{00373\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ len2\ =\ p.length2();}
+\DoxyCodeLine{00374\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (len2\ >\ \mbox{\hyperlink{bt_scalar_8h_ae51eef6845bd59f964c1b2dbfe7054b7}{SIMD\_EPSILON}})}
+\DoxyCodeLine{00375\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00376\ \ \ \ \ \ \ \ \ \ \ \ \ p\ /=\ \mbox{\hyperlink{bt_scalar_8h_a6b200a8d26a49406ca13329be909ec10}{btSqrt}}(len2);}
+\DoxyCodeLine{00377\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00378\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00379\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00380\ \ \ \ \ \ \ \ \ \ \ \ \ p\ =\ trA.getBasis().getColumn(1);}
+\DoxyCodeLine{00381\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00382\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ make\ one\ more\ ortho}}
+\DoxyCodeLine{00383\ \ \ \ \ \ \ \ \ q\ =\ ax1.cross(p);}
+\DoxyCodeLine{00384\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ fill\ two\ rows}}
+\DoxyCodeLine{00385\ \ \ \ \ \ \ \ \ tmpA\ =\ relA.cross(p);}
+\DoxyCodeLine{00386\ \ \ \ \ \ \ \ \ tmpB\ =\ relB.cross(p);}
+\DoxyCodeLine{00387\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[s2\ +\ i]\ =\ tmpA[i];}
+\DoxyCodeLine{00388\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[s2\ +\ i]\ =\ -\/tmpB[i];}
+\DoxyCodeLine{00389\ \ \ \ \ \ \ \ \ tmpA\ =\ relA.cross(q);}
+\DoxyCodeLine{00390\ \ \ \ \ \ \ \ \ tmpB\ =\ relB.cross(q);}
+\DoxyCodeLine{00391\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (hasStaticBody\ \&\&\ \mbox{\hyperlink{bt_slider_constraint_8h_ae2317be4fffefb6f088b45f595a61456}{getSolveAngLimit}}())}
+\DoxyCodeLine{00392\ \ \ \ \ \ \ \ \ \{\ \ \textcolor{comment}{//\ to\ make\ constraint\ between\ static\ and\ dynamic\ objects\ more\ rigid}}
+\DoxyCodeLine{00393\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ remove\ wA\ (or\ wB)\ from\ equation\ if\ angular\ limit\ is\ hit}}
+\DoxyCodeLine{00394\ \ \ \ \ \ \ \ \ \ \ \ \ tmpB\ *=\ factB;}
+\DoxyCodeLine{00395\ \ \ \ \ \ \ \ \ \ \ \ \ tmpA\ *=\ factA;}
+\DoxyCodeLine{00396\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00397\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[s3\ +\ i]\ =\ tmpA[i];}
+\DoxyCodeLine{00398\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[s3\ +\ i]\ =\ -\/tmpB[i];}
+\DoxyCodeLine{00399\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_ac398d0352e205c30f487d4ed55f3e97a}{m\_J1linearAxis}}[s2\ +\ i]\ =\ p[i];}
+\DoxyCodeLine{00400\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_ac398d0352e205c30f487d4ed55f3e97a}{m\_J1linearAxis}}[s3\ +\ i]\ =\ q[i];}
+\DoxyCodeLine{00401\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a036315b576ba6858f8c55ce60dca4224}{m\_J2linearAxis}}[s2\ +\ i]\ =\ -\/p[i];}
+\DoxyCodeLine{00402\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a036315b576ba6858f8c55ce60dca4224}{m\_J2linearAxis}}[s3\ +\ i]\ =\ -\/q[i];}
+\DoxyCodeLine{00403\ \ \ \ \ \}}
+\DoxyCodeLine{00404\ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00405\ \ \ \ \ \{\ \ \textcolor{comment}{//\ old\ way\ -\/\ maybe\ incorrect\ if\ bodies\ are\ not\ on\ the\ slider\ axis}}
+\DoxyCodeLine{00406\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ see\ discussion\ "{}Bug\ in\ slider\ constraint"{}\ http://bulletphysics.org/Bullet/phpBB3/viewtopic.php?f=9\&t=4024\&start=0}}
+\DoxyCodeLine{00407\ \ \ \ \ \ \ \ \ c\ =\ bodyB\_trans.getOrigin()\ -\/\ bodyA\_trans.getOrigin();}
+\DoxyCodeLine{00408\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ tmp\ =\ c.cross(p);}
+\DoxyCodeLine{00409\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[s2\ +\ i]\ =\ factA\ *\ tmp[i];}
+\DoxyCodeLine{00410\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[s2\ +\ i]\ =\ factB\ *\ tmp[i];}
+\DoxyCodeLine{00411\ \ \ \ \ \ \ \ \ tmp\ =\ c.cross(q);}
+\DoxyCodeLine{00412\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[s3\ +\ i]\ =\ factA\ *\ tmp[i];}
+\DoxyCodeLine{00413\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[s3\ +\ i]\ =\ factB\ *\ tmp[i];}
+\DoxyCodeLine{00414\ }
+\DoxyCodeLine{00415\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_ac398d0352e205c30f487d4ed55f3e97a}{m\_J1linearAxis}}[s2\ +\ i]\ =\ p[i];}
+\DoxyCodeLine{00416\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_ac398d0352e205c30f487d4ed55f3e97a}{m\_J1linearAxis}}[s3\ +\ i]\ =\ q[i];}
+\DoxyCodeLine{00417\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a036315b576ba6858f8c55ce60dca4224}{m\_J2linearAxis}}[s2\ +\ i]\ =\ -\/p[i];}
+\DoxyCodeLine{00418\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{for}\ (i\ =\ 0;\ i\ <\ 3;\ i++)\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a036315b576ba6858f8c55ce60dca4224}{m\_J2linearAxis}}[s3\ +\ i]\ =\ -\/q[i];}
+\DoxyCodeLine{00419\ \ \ \ \ \}}
+\DoxyCodeLine{00420\ \ \ \ \ \textcolor{comment}{//\ compute\ two\ elements\ of\ right\ hand\ side}}
+\DoxyCodeLine{00421\ }
+\DoxyCodeLine{00422\ \ \ \ \ \textcolor{comment}{//\ \ k\ =\ info-\/>fps\ *\ info-\/>erp\ *\ getSoftnessOrthoLin();}}
+\DoxyCodeLine{00423\ \ \ \ \ currERP\ =\ (\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5eab1aed5e038f2040370c421556df0d49c}{BT\_SLIDER\_FLAGS\_ERP\_ORTLIN}})\ ?\ \mbox{\hyperlink{bt_slider_constraint_8h_a11fe62e726349c77ac85e3fa5102cd40}{m\_softnessOrthoLin}}\ :\ \mbox{\hyperlink{bt_slider_constraint_8h_a11fe62e726349c77ac85e3fa5102cd40}{m\_softnessOrthoLin}}\ *\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a1bd8e6285e47472bfd307aa5582365e7}{erp}};}
+\DoxyCodeLine{00424\ \ \ \ \ k\ =\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a758269a654c7e879172098323722a6ea}{fps}}\ *\ currERP;}
+\DoxyCodeLine{00425\ }
+\DoxyCodeLine{00426\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ rhs\ =\ k\ *\ p.dot(ofs);}
+\DoxyCodeLine{00427\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[s2]\ =\ rhs;}
+\DoxyCodeLine{00428\ \ \ \ \ rhs\ =\ k\ *\ q.dot(ofs);}
+\DoxyCodeLine{00429\ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[s3]\ =\ rhs;}
+\DoxyCodeLine{00430\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea61e1574b7ff56b10f976ee50a58f7a09}{BT\_SLIDER\_FLAGS\_CFM\_ORTLIN}})}
+\DoxyCodeLine{00431\ \ \ \ \ \{}
+\DoxyCodeLine{00432\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aaa223d5bfd5b8e8a7a6f509600e16008}{cfm}}[s2]\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a7af73ddd2921fdaeb0a75b0c494c7d95}{m\_cfmOrthoLin}};}
+\DoxyCodeLine{00433\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aaa223d5bfd5b8e8a7a6f509600e16008}{cfm}}[s3]\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a7af73ddd2921fdaeb0a75b0c494c7d95}{m\_cfmOrthoLin}};}
+\DoxyCodeLine{00434\ \ \ \ \ \}}
+\DoxyCodeLine{00435\ }
+\DoxyCodeLine{00436\ \ \ \ \ \textcolor{comment}{//\ check\ linear\ limits}}
+\DoxyCodeLine{00437\ \ \ \ \ limit\_err\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0);}
+\DoxyCodeLine{00438\ \ \ \ \ limit\ =\ 0;}
+\DoxyCodeLine{00439\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_slider_constraint_8h_a48e2a4362be963ad60a27544d11cc813}{getSolveLinLimit}}())}
+\DoxyCodeLine{00440\ \ \ \ \ \{}
+\DoxyCodeLine{00441\ \ \ \ \ \ \ \ \ limit\_err\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a71756a701f22c889fa53c2e2caca1fca}{getLinDepth}}()\ *\ signFact;}
+\DoxyCodeLine{00442\ \ \ \ \ \ \ \ \ limit\ =\ (limit\_err\ >\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0))\ ?\ 2\ :\ 1;}
+\DoxyCodeLine{00443\ \ \ \ \ \}}
+\DoxyCodeLine{00444\ \ \ \ \ \textcolor{keywordtype}{bool}\ powered\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ae8738281085d5086d1a44625cbb252b2}{getPoweredLinMotor}}();}
+\DoxyCodeLine{00445\ \ \ \ \ \textcolor{comment}{//\ if\ the\ slider\ has\ joint\ limits\ or\ motor,\ add\ in\ the\ extra\ row}}
+\DoxyCodeLine{00446\ \ \ \ \ \textcolor{keywordflow}{if}\ (limit\ ||\ powered)}
+\DoxyCodeLine{00447\ \ \ \ \ \{}
+\DoxyCodeLine{00448\ \ \ \ \ \ \ \ \ nrow++;}
+\DoxyCodeLine{00449\ \ \ \ \ \ \ \ \ srow\ =\ nrow\ *\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aebdf1a06e1ad055c3cf72796992d1a1a}{rowskip}};}
+\DoxyCodeLine{00450\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_ac398d0352e205c30f487d4ed55f3e97a}{m\_J1linearAxis}}[srow\ +\ 0]\ =\ ax1[0];}
+\DoxyCodeLine{00451\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_ac398d0352e205c30f487d4ed55f3e97a}{m\_J1linearAxis}}[srow\ +\ 1]\ =\ ax1[1];}
+\DoxyCodeLine{00452\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_ac398d0352e205c30f487d4ed55f3e97a}{m\_J1linearAxis}}[srow\ +\ 2]\ =\ ax1[2];}
+\DoxyCodeLine{00453\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a036315b576ba6858f8c55ce60dca4224}{m\_J2linearAxis}}[srow\ +\ 0]\ =\ -\/ax1[0];}
+\DoxyCodeLine{00454\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a036315b576ba6858f8c55ce60dca4224}{m\_J2linearAxis}}[srow\ +\ 1]\ =\ -\/ax1[1];}
+\DoxyCodeLine{00455\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a036315b576ba6858f8c55ce60dca4224}{m\_J2linearAxis}}[srow\ +\ 2]\ =\ -\/ax1[2];}
+\DoxyCodeLine{00456\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ linear\ torque\ decoupling\ step:}}
+\DoxyCodeLine{00457\ \ \ \ \ \ \ \ \ \textcolor{comment}{//}}
+\DoxyCodeLine{00458\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ we\ have\ to\ be\ careful\ that\ the\ linear\ constraint\ forces\ (+/-\/\ ax1)\ applied\ to\ the\ two\ bodies}}
+\DoxyCodeLine{00459\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ do\ not\ create\ a\ torque\ couple.\ in\ other\ words,\ the\ points\ that\ the}}
+\DoxyCodeLine{00460\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ constraint\ force\ is\ applied\ at\ must\ lie\ along\ the\ same\ ax1\ axis.}}
+\DoxyCodeLine{00461\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ a\ torque\ couple\ will\ result\ in\ limited\ slider-\/jointed\ free}}
+\DoxyCodeLine{00462\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ bodies\ from\ gaining\ angular\ momentum.}}
+\DoxyCodeLine{00463\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_generic6_dof_constraint_8h_af6c6acb263eab259f11664caaad04152}{m\_useOffsetForConstraintFrame}})}
+\DoxyCodeLine{00464\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00465\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ this\ is\ needed\ only\ when\ bodyA\ and\ bodyB\ are\ both\ dynamic.}}
+\DoxyCodeLine{00466\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (!hasStaticBody)}
+\DoxyCodeLine{00467\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00468\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpA\ =\ relA.cross(ax1);}
+\DoxyCodeLine{00469\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ tmpB\ =\ relB.cross(ax1);}
+\DoxyCodeLine{00470\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[srow\ +\ 0]\ =\ tmpA[0];}
+\DoxyCodeLine{00471\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[srow\ +\ 1]\ =\ tmpA[1];}
+\DoxyCodeLine{00472\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[srow\ +\ 2]\ =\ tmpA[2];}
+\DoxyCodeLine{00473\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[srow\ +\ 0]\ =\ -\/tmpB[0];}
+\DoxyCodeLine{00474\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[srow\ +\ 1]\ =\ -\/tmpB[1];}
+\DoxyCodeLine{00475\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[srow\ +\ 2]\ =\ -\/tmpB[2];}
+\DoxyCodeLine{00476\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00477\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00478\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00479\ \ \ \ \ \ \ \ \ \{\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ The\ old\ way.\ May\ be\ incorrect\ if\ bodies\ are\ not\ on\ the\ slider\ axis}}
+\DoxyCodeLine{00480\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ ltd;\ \ \textcolor{comment}{//\ Linear\ Torque\ Decoupling\ vector\ (a\ torque)}}
+\DoxyCodeLine{00481\ \ \ \ \ \ \ \ \ \ \ \ \ ltd\ =\ c.cross(ax1);}
+\DoxyCodeLine{00482\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[srow\ +\ 0]\ =\ factA\ *\ ltd[0];}
+\DoxyCodeLine{00483\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[srow\ +\ 1]\ =\ factA\ *\ ltd[1];}
+\DoxyCodeLine{00484\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[srow\ +\ 2]\ =\ factA\ *\ ltd[2];}
+\DoxyCodeLine{00485\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[srow\ +\ 0]\ =\ factB\ *\ ltd[0];}
+\DoxyCodeLine{00486\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[srow\ +\ 1]\ =\ factB\ *\ ltd[1];}
+\DoxyCodeLine{00487\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[srow\ +\ 2]\ =\ factB\ *\ ltd[2];}
+\DoxyCodeLine{00488\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00489\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ right-\/hand\ part}}
+\DoxyCodeLine{00490\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ lostop\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a272d3ecac1c4e092d8e6f75249765820}{getLowerLinLimit}}();}
+\DoxyCodeLine{00491\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ histop\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a27c891940382c405cf023ae570bb262f}{getUpperLinLimit}}();}
+\DoxyCodeLine{00492\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (limit\ \&\&\ (lostop\ ==\ histop))}
+\DoxyCodeLine{00493\ \ \ \ \ \ \ \ \ \{\ \ \textcolor{comment}{//\ the\ joint\ motor\ is\ ineffective}}
+\DoxyCodeLine{00494\ \ \ \ \ \ \ \ \ \ \ \ \ powered\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00495\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00496\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[srow]\ =\ 0.;}
+\DoxyCodeLine{00497\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a3d963ff1fe6e3ca1e149c52e398adfd6}{m\_lowerLimit}}[srow]\ =\ 0.;}
+\DoxyCodeLine{00498\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa978f5cade80fe5d18ece312ead59ebd}{m\_upperLimit}}[srow]\ =\ 0.;}
+\DoxyCodeLine{00499\ \ \ \ \ \ \ \ \ currERP\ =\ (\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea15a9de6d29122b55bf0769f31c909a0d}{BT\_SLIDER\_FLAGS\_ERP\_LIMLIN}})\ ?\ \mbox{\hyperlink{bt_slider_constraint_8h_ae1dcc713e7245e0b5779f83e2874f1e2}{m\_softnessLimLin}}\ :\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a1bd8e6285e47472bfd307aa5582365e7}{erp}};}
+\DoxyCodeLine{00500\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (powered)}
+\DoxyCodeLine{00501\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00502\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea181f35b0304a2191a1b40022dc8ef559}{BT\_SLIDER\_FLAGS\_CFM\_DIRLIN}})}
+\DoxyCodeLine{00503\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00504\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aaa223d5bfd5b8e8a7a6f509600e16008}{cfm}}[srow]\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a40e1f7dcf22b78211c8eef860a48782d}{m\_cfmDirLin}};}
+\DoxyCodeLine{00505\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00506\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ tag\_vel\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_af67e068a38dc3d6d51b3779c2de71afe}{getTargetLinMotorVelocity}}();}
+\DoxyCodeLine{00507\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ mot\_fact\ =\ \mbox{\hyperlink{b3_typed_constraint_8h_a6883798620d16a04a93e82d9cf317a7f}{getMotorFactor}}(\mbox{\hyperlink{bt_slider_constraint_8h_aba9d128328f8a7abef951b7a9a020cb2}{m\_linPos}},\ \mbox{\hyperlink{bt_slider_constraint_8h_a54eeec48902ee64f8e504b1324e89b0b}{m\_lowerLinLimit}},\ \mbox{\hyperlink{bt_slider_constraint_8h_acde0bff0a69081a988ba2450231778db}{m\_upperLinLimit}},\ tag\_vel,\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a758269a654c7e879172098323722a6ea}{fps}}\ *\ currERP);}
+\DoxyCodeLine{00508\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[srow]\ -\/=\ signFact\ *\ mot\_fact\ *\ \mbox{\hyperlink{bt_slider_constraint_8h_af67e068a38dc3d6d51b3779c2de71afe}{getTargetLinMotorVelocity}}();}
+\DoxyCodeLine{00509\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a3d963ff1fe6e3ca1e149c52e398adfd6}{m\_lowerLimit}}[srow]\ +=\ -\/\mbox{\hyperlink{bt_slider_constraint_8h_a74734c4b318375266206ca70f298b66f}{getMaxLinMotorForce}}()\ /\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a758269a654c7e879172098323722a6ea}{fps}};}
+\DoxyCodeLine{00510\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa978f5cade80fe5d18ece312ead59ebd}{m\_upperLimit}}[srow]\ +=\ \mbox{\hyperlink{bt_slider_constraint_8h_a74734c4b318375266206ca70f298b66f}{getMaxLinMotorForce}}()\ /\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a758269a654c7e879172098323722a6ea}{fps}};}
+\DoxyCodeLine{00511\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00512\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (limit)}
+\DoxyCodeLine{00513\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00514\ \ \ \ \ \ \ \ \ \ \ \ \ k\ =\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a758269a654c7e879172098323722a6ea}{fps}}\ *\ currERP;}
+\DoxyCodeLine{00515\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[srow]\ +=\ k\ *\ limit\_err;}
+\DoxyCodeLine{00516\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5eae426f609986e9a395ccbcbd0ff4cb3b4}{BT\_SLIDER\_FLAGS\_CFM\_LIMLIN}})}
+\DoxyCodeLine{00517\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00518\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aaa223d5bfd5b8e8a7a6f509600e16008}{cfm}}[srow]\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_aeb6d64df2a2a1eda840805e1f84feec3}{m\_cfmLimLin}};}
+\DoxyCodeLine{00519\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00520\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (lostop\ ==\ histop)}
+\DoxyCodeLine{00521\ \ \ \ \ \ \ \ \ \ \ \ \ \{\ \ \textcolor{comment}{//\ limited\ low\ and\ high\ simultaneously}}
+\DoxyCodeLine{00522\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a3d963ff1fe6e3ca1e149c52e398adfd6}{m\_lowerLimit}}[srow]\ =\ -\/\mbox{\hyperlink{bt_scalar_8h_a87dcd463392e45ddb5350989e566f34a}{SIMD\_INFINITY}};}
+\DoxyCodeLine{00523\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa978f5cade80fe5d18ece312ead59ebd}{m\_upperLimit}}[srow]\ =\ \mbox{\hyperlink{bt_scalar_8h_a87dcd463392e45ddb5350989e566f34a}{SIMD\_INFINITY}};}
+\DoxyCodeLine{00524\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00525\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (limit\ ==\ 1)}
+\DoxyCodeLine{00526\ \ \ \ \ \ \ \ \ \ \ \ \ \{\ \ \textcolor{comment}{//\ low\ limit}}
+\DoxyCodeLine{00527\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a3d963ff1fe6e3ca1e149c52e398adfd6}{m\_lowerLimit}}[srow]\ =\ -\/\mbox{\hyperlink{bt_scalar_8h_a87dcd463392e45ddb5350989e566f34a}{SIMD\_INFINITY}};}
+\DoxyCodeLine{00528\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa978f5cade80fe5d18ece312ead59ebd}{m\_upperLimit}}[srow]\ =\ 0;}
+\DoxyCodeLine{00529\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00530\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00531\ \ \ \ \ \ \ \ \ \ \ \ \ \{\ \ \textcolor{comment}{//\ high\ limit}}
+\DoxyCodeLine{00532\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a3d963ff1fe6e3ca1e149c52e398adfd6}{m\_lowerLimit}}[srow]\ =\ 0;}
+\DoxyCodeLine{00533\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa978f5cade80fe5d18ece312ead59ebd}{m\_upperLimit}}[srow]\ =\ \mbox{\hyperlink{bt_scalar_8h_a87dcd463392e45ddb5350989e566f34a}{SIMD\_INFINITY}};}
+\DoxyCodeLine{00534\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00535\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ bounce\ (we'll\ use\ slider\ parameter\ abs(1.0\ -\/\ m\_dampingLimLin)\ for\ that)}}
+\DoxyCodeLine{00536\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ bounce\ =\ \mbox{\hyperlink{bt_scalar_8h_a4c4bd8e065ab617f4e37273d76e6d581}{btFabs}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0)\ -\/\ \mbox{\hyperlink{bt_slider_constraint_8h_a1a39ef795ddb0eaf0cb9700038bcb5fb}{getDampingLimLin}}());}
+\DoxyCodeLine{00537\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (bounce\ >\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0))}
+\DoxyCodeLine{00538\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00539\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ vel\ =\ linVelA.dot(ax1);}
+\DoxyCodeLine{00540\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vel\ -\/=\ linVelB.dot(ax1);}
+\DoxyCodeLine{00541\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vel\ *=\ signFact;}
+\DoxyCodeLine{00542\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ only\ apply\ bounce\ if\ the\ velocity\ is\ incoming,\ and\ if\ the}}
+\DoxyCodeLine{00543\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ resulting\ c[]\ exceeds\ what\ we\ already\ have.}}
+\DoxyCodeLine{00544\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (limit\ ==\ 1)}
+\DoxyCodeLine{00545\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{\ \ \textcolor{comment}{//\ low\ limit}}
+\DoxyCodeLine{00546\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (vel\ <\ 0)}
+\DoxyCodeLine{00547\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00548\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ newc\ =\ -\/bounce\ *\ vel;}
+\DoxyCodeLine{00549\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (newc\ >\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[srow])}
+\DoxyCodeLine{00550\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00551\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[srow]\ =\ newc;}
+\DoxyCodeLine{00552\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00553\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00554\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00555\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00556\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{\ \ \textcolor{comment}{//\ high\ limit\ -\/\ all\ those\ computations\ are\ reversed}}
+\DoxyCodeLine{00557\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (vel\ >\ 0)}
+\DoxyCodeLine{00558\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00559\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ newc\ =\ -\/bounce\ *\ vel;}
+\DoxyCodeLine{00560\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (newc\ <\ info-\/>m\_constraintError[srow])}
+\DoxyCodeLine{00561\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00562\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[srow]\ =\ newc;}
+\DoxyCodeLine{00563\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00564\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00565\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00566\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00567\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[srow]\ *=\ \mbox{\hyperlink{bt_slider_constraint_8h_ae35fc666bdc2fcd6ab9d6197ec3c5df9}{getSoftnessLimLin}}();}
+\DoxyCodeLine{00568\ \ \ \ \ \ \ \ \ \}\ \ \textcolor{comment}{//\ if(limit)}}
+\DoxyCodeLine{00569\ \ \ \ \ \}\ \ \ \ \ \ \textcolor{comment}{//\ if\ linear\ limit}}
+\DoxyCodeLine{00570\ \ \ \ \ \textcolor{comment}{//\ check\ angular\ limits}}
+\DoxyCodeLine{00571\ \ \ \ \ limit\_err\ =\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0);}
+\DoxyCodeLine{00572\ \ \ \ \ limit\ =\ 0;}
+\DoxyCodeLine{00573\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{bt_slider_constraint_8h_ae2317be4fffefb6f088b45f595a61456}{getSolveAngLimit}}())}
+\DoxyCodeLine{00574\ \ \ \ \ \{}
+\DoxyCodeLine{00575\ \ \ \ \ \ \ \ \ limit\_err\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a7c5bf4a6f2f2e39931f831c35159cf7a}{getAngDepth}}();}
+\DoxyCodeLine{00576\ \ \ \ \ \ \ \ \ limit\ =\ (limit\_err\ >\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0))\ ?\ 1\ :\ 2;}
+\DoxyCodeLine{00577\ \ \ \ \ \}}
+\DoxyCodeLine{00578\ \ \ \ \ \textcolor{comment}{//\ if\ the\ slider\ has\ joint\ limits,\ add\ in\ the\ extra\ row}}
+\DoxyCodeLine{00579\ \ \ \ \ powered\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ada794107201a33e440e8fe45e48dcecc}{getPoweredAngMotor}}();}
+\DoxyCodeLine{00580\ \ \ \ \ \textcolor{keywordflow}{if}\ (limit\ ||\ powered)}
+\DoxyCodeLine{00581\ \ \ \ \ \{}
+\DoxyCodeLine{00582\ \ \ \ \ \ \ \ \ nrow++;}
+\DoxyCodeLine{00583\ \ \ \ \ \ \ \ \ srow\ =\ nrow\ *\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aebdf1a06e1ad055c3cf72796992d1a1a}{rowskip}};}
+\DoxyCodeLine{00584\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[srow\ +\ 0]\ =\ ax1[0];}
+\DoxyCodeLine{00585\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[srow\ +\ 1]\ =\ ax1[1];}
+\DoxyCodeLine{00586\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a268282b87836c2a215e9362657fc3ff4}{m\_J1angularAxis}}[srow\ +\ 2]\ =\ ax1[2];}
+\DoxyCodeLine{00587\ }
+\DoxyCodeLine{00588\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[srow\ +\ 0]\ =\ -\/ax1[0];}
+\DoxyCodeLine{00589\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[srow\ +\ 1]\ =\ -\/ax1[1];}
+\DoxyCodeLine{00590\ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a0d15a36c97cb60500c5f3aaf6eeecc85}{m\_J2angularAxis}}[srow\ +\ 2]\ =\ -\/ax1[2];}
+\DoxyCodeLine{00591\ }
+\DoxyCodeLine{00592\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ lostop\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ad475b6cd5ec9e2942d18a530d4d5608a}{getLowerAngLimit}}();}
+\DoxyCodeLine{00593\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ histop\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ad3129898e15e854fb7e652b133ec1957}{getUpperAngLimit}}();}
+\DoxyCodeLine{00594\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (limit\ \&\&\ (lostop\ ==\ histop))}
+\DoxyCodeLine{00595\ \ \ \ \ \ \ \ \ \{\ \ \textcolor{comment}{//\ the\ joint\ motor\ is\ ineffective}}
+\DoxyCodeLine{00596\ \ \ \ \ \ \ \ \ \ \ \ \ powered\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00597\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00598\ \ \ \ \ \ \ \ \ currERP\ =\ (\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5eaf9afc22c57e2c6ae44ea266d6ad79eae}{BT\_SLIDER\_FLAGS\_ERP\_LIMANG}})\ ?\ \mbox{\hyperlink{bt_slider_constraint_8h_ab5cc7bf0d83f80f77bb0c3a367c6a409}{m\_softnessLimAng}}\ :\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a1bd8e6285e47472bfd307aa5582365e7}{erp}};}
+\DoxyCodeLine{00599\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (powered)}
+\DoxyCodeLine{00600\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00601\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea05f2b497d5017dfc0418195e87e08b38}{BT\_SLIDER\_FLAGS\_CFM\_DIRANG}})}
+\DoxyCodeLine{00602\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00603\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aaa223d5bfd5b8e8a7a6f509600e16008}{cfm}}[srow]\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ac83e489f2bab7a066e447318010cefe1}{m\_cfmDirAng}};}
+\DoxyCodeLine{00604\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00605\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ mot\_fact\ =\ \mbox{\hyperlink{b3_typed_constraint_8h_a6883798620d16a04a93e82d9cf317a7f}{getMotorFactor}}(\mbox{\hyperlink{bt_slider_constraint_8h_aaf2707323929f028913ff9a57e4b6665}{m\_angPos}},\ \mbox{\hyperlink{bt_slider_constraint_8h_a178e24d0cd0c9b9e26cb7471179201d0}{m\_lowerAngLimit}},\ \mbox{\hyperlink{bt_slider_constraint_8h_a987513e2a2a75e18dcbe768c6d9c3043}{m\_upperAngLimit}},\ \mbox{\hyperlink{bt_slider_constraint_8h_afe63cd9dbbd636b59bcab1a20e85d582}{getTargetAngMotorVelocity}}(),\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a758269a654c7e879172098323722a6ea}{fps}}\ *\ currERP);}
+\DoxyCodeLine{00606\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[srow]\ =\ mot\_fact\ *\ \mbox{\hyperlink{bt_slider_constraint_8h_afe63cd9dbbd636b59bcab1a20e85d582}{getTargetAngMotorVelocity}}();}
+\DoxyCodeLine{00607\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a3d963ff1fe6e3ca1e149c52e398adfd6}{m\_lowerLimit}}[srow]\ =\ -\/\mbox{\hyperlink{bt_slider_constraint_8h_a9533b0059e9725a1c0e493084f4a0fb3}{getMaxAngMotorForce}}()\ /\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a758269a654c7e879172098323722a6ea}{fps}};}
+\DoxyCodeLine{00608\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa978f5cade80fe5d18ece312ead59ebd}{m\_upperLimit}}[srow]\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a9533b0059e9725a1c0e493084f4a0fb3}{getMaxAngMotorForce}}()\ /\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a758269a654c7e879172098323722a6ea}{fps}};}
+\DoxyCodeLine{00609\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00610\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (limit)}
+\DoxyCodeLine{00611\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00612\ \ \ \ \ \ \ \ \ \ \ \ \ k\ =\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a758269a654c7e879172098323722a6ea}{fps}}\ *\ currERP;}
+\DoxyCodeLine{00613\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[srow]\ +=\ k\ *\ limit\_err;}
+\DoxyCodeLine{00614\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5eaad2e9fd383940b530a31685bf5335759}{BT\_SLIDER\_FLAGS\_CFM\_LIMANG}})}
+\DoxyCodeLine{00615\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00616\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aaa223d5bfd5b8e8a7a6f509600e16008}{cfm}}[srow]\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ab7f77c6e351df7ce21b7b268edf7b26f}{m\_cfmLimAng}};}
+\DoxyCodeLine{00617\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00618\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (lostop\ ==\ histop)}
+\DoxyCodeLine{00619\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00620\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ limited\ low\ and\ high\ simultaneously}}
+\DoxyCodeLine{00621\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a3d963ff1fe6e3ca1e149c52e398adfd6}{m\_lowerLimit}}[srow]\ =\ -\/\mbox{\hyperlink{bt_scalar_8h_a87dcd463392e45ddb5350989e566f34a}{SIMD\_INFINITY}};}
+\DoxyCodeLine{00622\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa978f5cade80fe5d18ece312ead59ebd}{m\_upperLimit}}[srow]\ =\ \mbox{\hyperlink{bt_scalar_8h_a87dcd463392e45ddb5350989e566f34a}{SIMD\_INFINITY}};}
+\DoxyCodeLine{00623\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00624\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (limit\ ==\ 1)}
+\DoxyCodeLine{00625\ \ \ \ \ \ \ \ \ \ \ \ \ \{\ \ \textcolor{comment}{//\ low\ limit}}
+\DoxyCodeLine{00626\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a3d963ff1fe6e3ca1e149c52e398adfd6}{m\_lowerLimit}}[srow]\ =\ 0;}
+\DoxyCodeLine{00627\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa978f5cade80fe5d18ece312ead59ebd}{m\_upperLimit}}[srow]\ =\ \mbox{\hyperlink{bt_scalar_8h_a87dcd463392e45ddb5350989e566f34a}{SIMD\_INFINITY}};}
+\DoxyCodeLine{00628\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00629\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00630\ \ \ \ \ \ \ \ \ \ \ \ \ \{\ \ \textcolor{comment}{//\ high\ limit}}
+\DoxyCodeLine{00631\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_a3d963ff1fe6e3ca1e149c52e398adfd6}{m\_lowerLimit}}[srow]\ =\ -\/\mbox{\hyperlink{bt_scalar_8h_a87dcd463392e45ddb5350989e566f34a}{SIMD\_INFINITY}};}
+\DoxyCodeLine{00632\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa978f5cade80fe5d18ece312ead59ebd}{m\_upperLimit}}[srow]\ =\ 0;}
+\DoxyCodeLine{00633\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00634\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ bounce\ (we'll\ use\ slider\ parameter\ abs(1.0\ -\/\ m\_dampingLimAng)\ for\ that)}}
+\DoxyCodeLine{00635\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ bounce\ =\ \mbox{\hyperlink{bt_scalar_8h_a4c4bd8e065ab617f4e37273d76e6d581}{btFabs}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0)\ -\/\ \mbox{\hyperlink{bt_slider_constraint_8h_ad045276748e6e1865e41a32f782c98c9}{getDampingLimAng}}());}
+\DoxyCodeLine{00636\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (bounce\ >\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0))}
+\DoxyCodeLine{00637\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00638\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ vel\ =\ \mbox{\hyperlink{b3_typed_constraint_8h_aef98dda132581084092d99f8324d6aae}{m\_rbA}}.getAngularVelocity().dot(ax1);}
+\DoxyCodeLine{00639\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ vel\ -\/=\ \mbox{\hyperlink{b3_typed_constraint_8h_a2bf7c92b40a2f2f1d9be3aa1992929e4}{m\_rbB}}.getAngularVelocity().dot(ax1);}
+\DoxyCodeLine{00640\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ only\ apply\ bounce\ if\ the\ velocity\ is\ incoming,\ and\ if\ the}}
+\DoxyCodeLine{00641\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ resulting\ c[]\ exceeds\ what\ we\ already\ have.}}
+\DoxyCodeLine{00642\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (limit\ ==\ 1)}
+\DoxyCodeLine{00643\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{\ \ \textcolor{comment}{//\ low\ limit}}
+\DoxyCodeLine{00644\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (vel\ <\ 0)}
+\DoxyCodeLine{00645\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00646\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ newc\ =\ -\/bounce\ *\ vel;}
+\DoxyCodeLine{00647\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (newc\ >\ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[srow])}
+\DoxyCodeLine{00648\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00649\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[srow]\ =\ newc;}
+\DoxyCodeLine{00650\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00651\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00652\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00653\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00654\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{\ \ \textcolor{comment}{//\ high\ limit\ -\/\ all\ those\ computations\ are\ reversed}}
+\DoxyCodeLine{00655\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (vel\ >\ 0)}
+\DoxyCodeLine{00656\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00657\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ newc\ =\ -\/bounce\ *\ vel;}
+\DoxyCodeLine{00658\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (newc\ <\ info-\/>m\_constraintError[srow])}
+\DoxyCodeLine{00659\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00660\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[srow]\ =\ newc;}
+\DoxyCodeLine{00661\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00662\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00663\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00664\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00665\ \ \ \ \ \ \ \ \ \ \ \ \ info-\/>\mbox{\hyperlink{structbt_constraint_info2_aa8eda5783f00ebf8a802d430bbd13e70}{m\_constraintError}}[srow]\ *=\ \mbox{\hyperlink{bt_slider_constraint_8h_a1cc968de63960db57fbc7b83c46197d2}{getSoftnessLimAng}}();}
+\DoxyCodeLine{00666\ \ \ \ \ \ \ \ \ \}\ \ \textcolor{comment}{//\ if(limit)}}
+\DoxyCodeLine{00667\ \ \ \ \ \}\ \ \ \ \ \ \textcolor{comment}{//\ if\ angular\ limit\ or\ powered}}
+\DoxyCodeLine{00668\ \}}
+\DoxyCodeLine{00669\ }
+\DoxyCodeLine{00672\ \textcolor{keywordtype}{void}\ btSliderConstraint::setParam(\textcolor{keywordtype}{int}\ num,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a03aff08f73d7fde3d1a08e0abd8e84fa}{value}},\ \textcolor{keywordtype}{int}\ axis)}
+\DoxyCodeLine{00673\ \{}
+\DoxyCodeLine{00674\ \ \ \ \ \textcolor{keywordflow}{switch}\ (num)}
+\DoxyCodeLine{00675\ \ \ \ \ \{}
+\DoxyCodeLine{00676\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_typed_constraint_8h_adbf2bd68c9d2fcd047d052d9bc627e1aaf95fc89b78bf5f778d27567f192cb8f9}{BT\_CONSTRAINT\_STOP\_ERP}}:}
+\DoxyCodeLine{00677\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (axis\ <\ 1)}
+\DoxyCodeLine{00678\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00679\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ae1dcc713e7245e0b5779f83e2874f1e2}{m\_softnessLimLin}}\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a03aff08f73d7fde3d1a08e0abd8e84fa}{value}};}
+\DoxyCodeLine{00680\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ |=\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea15a9de6d29122b55bf0769f31c909a0d}{BT\_SLIDER\_FLAGS\_ERP\_LIMLIN}};}
+\DoxyCodeLine{00681\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00682\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (axis\ <\ 3)}
+\DoxyCodeLine{00683\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00684\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a11fe62e726349c77ac85e3fa5102cd40}{m\_softnessOrthoLin}}\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a03aff08f73d7fde3d1a08e0abd8e84fa}{value}};}
+\DoxyCodeLine{00685\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ |=\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5eab1aed5e038f2040370c421556df0d49c}{BT\_SLIDER\_FLAGS\_ERP\_ORTLIN}};}
+\DoxyCodeLine{00686\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00687\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (axis\ ==\ 3)}
+\DoxyCodeLine{00688\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00689\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ab5cc7bf0d83f80f77bb0c3a367c6a409}{m\_softnessLimAng}}\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a03aff08f73d7fde3d1a08e0abd8e84fa}{value}};}
+\DoxyCodeLine{00690\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ |=\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5eaf9afc22c57e2c6ae44ea266d6ad79eae}{BT\_SLIDER\_FLAGS\_ERP\_LIMANG}};}
+\DoxyCodeLine{00691\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00692\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (axis\ <\ 6)}
+\DoxyCodeLine{00693\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00694\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a35dfa882f36fcb7fd8e8284248935f73}{m\_softnessOrthoAng}}\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a03aff08f73d7fde3d1a08e0abd8e84fa}{value}};}
+\DoxyCodeLine{00695\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ |=\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea71810adbb8db385e30a8ada81bc9e4ad}{BT\_SLIDER\_FLAGS\_ERP\_ORTANG}};}
+\DoxyCodeLine{00696\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00697\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00698\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00699\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(0);}
+\DoxyCodeLine{00700\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00701\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00702\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_typed_constraint_8h_adbf2bd68c9d2fcd047d052d9bc627e1aa0b433a419024d791a6a83bd59ae940cc}{BT\_CONSTRAINT\_CFM}}:}
+\DoxyCodeLine{00703\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (axis\ <\ 1)}
+\DoxyCodeLine{00704\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00705\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a40e1f7dcf22b78211c8eef860a48782d}{m\_cfmDirLin}}\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a03aff08f73d7fde3d1a08e0abd8e84fa}{value}};}
+\DoxyCodeLine{00706\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ |=\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea181f35b0304a2191a1b40022dc8ef559}{BT\_SLIDER\_FLAGS\_CFM\_DIRLIN}};}
+\DoxyCodeLine{00707\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00708\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (axis\ ==\ 3)}
+\DoxyCodeLine{00709\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00710\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ac83e489f2bab7a066e447318010cefe1}{m\_cfmDirAng}}\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a03aff08f73d7fde3d1a08e0abd8e84fa}{value}};}
+\DoxyCodeLine{00711\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ |=\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea05f2b497d5017dfc0418195e87e08b38}{BT\_SLIDER\_FLAGS\_CFM\_DIRANG}};}
+\DoxyCodeLine{00712\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00713\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00714\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00715\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(0);}
+\DoxyCodeLine{00716\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00717\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00718\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_typed_constraint_8h_adbf2bd68c9d2fcd047d052d9bc627e1aa80f229d99f998883ffa56a28bc57f0bd}{BT\_CONSTRAINT\_STOP\_CFM}}:}
+\DoxyCodeLine{00719\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (axis\ <\ 1)}
+\DoxyCodeLine{00720\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00721\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_aeb6d64df2a2a1eda840805e1f84feec3}{m\_cfmLimLin}}\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a03aff08f73d7fde3d1a08e0abd8e84fa}{value}};}
+\DoxyCodeLine{00722\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ |=\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5eae426f609986e9a395ccbcbd0ff4cb3b4}{BT\_SLIDER\_FLAGS\_CFM\_LIMLIN}};}
+\DoxyCodeLine{00723\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00724\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (axis\ <\ 3)}
+\DoxyCodeLine{00725\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00726\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_a7af73ddd2921fdaeb0a75b0c494c7d95}{m\_cfmOrthoLin}}\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a03aff08f73d7fde3d1a08e0abd8e84fa}{value}};}
+\DoxyCodeLine{00727\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ |=\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea61e1574b7ff56b10f976ee50a58f7a09}{BT\_SLIDER\_FLAGS\_CFM\_ORTLIN}};}
+\DoxyCodeLine{00728\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00729\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (axis\ ==\ 3)}
+\DoxyCodeLine{00730\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00731\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_ab7f77c6e351df7ce21b7b268edf7b26f}{m\_cfmLimAng}}\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a03aff08f73d7fde3d1a08e0abd8e84fa}{value}};}
+\DoxyCodeLine{00732\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ |=\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5eaad2e9fd383940b530a31685bf5335759}{BT\_SLIDER\_FLAGS\_CFM\_LIMANG}};}
+\DoxyCodeLine{00733\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00734\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (axis\ <\ 6)}
+\DoxyCodeLine{00735\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00736\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_slider_constraint_8h_af7bcb012b5c40537bebc63f83f45e5e0}{m\_cfmOrthoAng}}\ =\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a03aff08f73d7fde3d1a08e0abd8e84fa}{value}};}
+\DoxyCodeLine{00737\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ |=\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea5865cfb8bbc70511abd7dbf1bd3e0b6d}{BT\_SLIDER\_FLAGS\_CFM\_ORTANG}};}
+\DoxyCodeLine{00738\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00739\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00740\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00741\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(0);}
+\DoxyCodeLine{00742\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00743\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00744\ \ \ \ \ \}}
+\DoxyCodeLine{00745\ \}}
+\DoxyCodeLine{00746\ }
+\DoxyCodeLine{00748\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ btSliderConstraint::getParam(\textcolor{keywordtype}{int}\ num,\ \textcolor{keywordtype}{int}\ axis)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00749\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00750\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ retVal(\mbox{\hyperlink{bt_scalar_8h_a87dcd463392e45ddb5350989e566f34a}{SIMD\_INFINITY}});}
+\DoxyCodeLine{00751\ \ \ \ \ \textcolor{keywordflow}{switch}\ (num)}
+\DoxyCodeLine{00752\ \ \ \ \ \{}
+\DoxyCodeLine{00753\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_typed_constraint_8h_adbf2bd68c9d2fcd047d052d9bc627e1aaf95fc89b78bf5f778d27567f192cb8f9}{BT\_CONSTRAINT\_STOP\_ERP}}:}
+\DoxyCodeLine{00754\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (axis\ <\ 1)}
+\DoxyCodeLine{00755\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00756\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea15a9de6d29122b55bf0769f31c909a0d}{BT\_SLIDER\_FLAGS\_ERP\_LIMLIN}});}
+\DoxyCodeLine{00757\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ retVal\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ae1dcc713e7245e0b5779f83e2874f1e2}{m\_softnessLimLin}};}
+\DoxyCodeLine{00758\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00759\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (axis\ <\ 3)}
+\DoxyCodeLine{00760\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00761\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5eab1aed5e038f2040370c421556df0d49c}{BT\_SLIDER\_FLAGS\_ERP\_ORTLIN}});}
+\DoxyCodeLine{00762\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ retVal\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a11fe62e726349c77ac85e3fa5102cd40}{m\_softnessOrthoLin}};}
+\DoxyCodeLine{00763\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00764\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (axis\ ==\ 3)}
+\DoxyCodeLine{00765\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00766\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5eaf9afc22c57e2c6ae44ea266d6ad79eae}{BT\_SLIDER\_FLAGS\_ERP\_LIMANG}});}
+\DoxyCodeLine{00767\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ retVal\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ab5cc7bf0d83f80f77bb0c3a367c6a409}{m\_softnessLimAng}};}
+\DoxyCodeLine{00768\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00769\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (axis\ <\ 6)}
+\DoxyCodeLine{00770\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00771\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea71810adbb8db385e30a8ada81bc9e4ad}{BT\_SLIDER\_FLAGS\_ERP\_ORTANG}});}
+\DoxyCodeLine{00772\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ retVal\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a35dfa882f36fcb7fd8e8284248935f73}{m\_softnessOrthoAng}};}
+\DoxyCodeLine{00773\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00774\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00775\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00776\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(0);}
+\DoxyCodeLine{00777\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00778\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00779\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_typed_constraint_8h_adbf2bd68c9d2fcd047d052d9bc627e1aa0b433a419024d791a6a83bd59ae940cc}{BT\_CONSTRAINT\_CFM}}:}
+\DoxyCodeLine{00780\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (axis\ <\ 1)}
+\DoxyCodeLine{00781\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00782\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea181f35b0304a2191a1b40022dc8ef559}{BT\_SLIDER\_FLAGS\_CFM\_DIRLIN}});}
+\DoxyCodeLine{00783\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ retVal\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a40e1f7dcf22b78211c8eef860a48782d}{m\_cfmDirLin}};}
+\DoxyCodeLine{00784\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00785\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (axis\ ==\ 3)}
+\DoxyCodeLine{00786\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00787\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea05f2b497d5017dfc0418195e87e08b38}{BT\_SLIDER\_FLAGS\_CFM\_DIRANG}});}
+\DoxyCodeLine{00788\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ retVal\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ac83e489f2bab7a066e447318010cefe1}{m\_cfmDirAng}};}
+\DoxyCodeLine{00789\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00790\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00791\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00792\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(0);}
+\DoxyCodeLine{00793\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00794\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00795\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ \mbox{\hyperlink{bt_typed_constraint_8h_adbf2bd68c9d2fcd047d052d9bc627e1aa80f229d99f998883ffa56a28bc57f0bd}{BT\_CONSTRAINT\_STOP\_CFM}}:}
+\DoxyCodeLine{00796\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (axis\ <\ 1)}
+\DoxyCodeLine{00797\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00798\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5eae426f609986e9a395ccbcbd0ff4cb3b4}{BT\_SLIDER\_FLAGS\_CFM\_LIMLIN}});}
+\DoxyCodeLine{00799\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ retVal\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_aeb6d64df2a2a1eda840805e1f84feec3}{m\_cfmLimLin}};}
+\DoxyCodeLine{00800\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00801\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (axis\ <\ 3)}
+\DoxyCodeLine{00802\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00803\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea61e1574b7ff56b10f976ee50a58f7a09}{BT\_SLIDER\_FLAGS\_CFM\_ORTLIN}});}
+\DoxyCodeLine{00804\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ retVal\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_a7af73ddd2921fdaeb0a75b0c494c7d95}{m\_cfmOrthoLin}};}
+\DoxyCodeLine{00805\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00806\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (axis\ ==\ 3)}
+\DoxyCodeLine{00807\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00808\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5eaad2e9fd383940b530a31685bf5335759}{BT\_SLIDER\_FLAGS\_CFM\_LIMANG}});}
+\DoxyCodeLine{00809\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ retVal\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_ab7f77c6e351df7ce21b7b268edf7b26f}{m\_cfmLimAng}};}
+\DoxyCodeLine{00810\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00811\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}\ \textcolor{keywordflow}{if}\ (axis\ <\ 6)}
+\DoxyCodeLine{00812\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00813\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(\mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}}\ \&\ \mbox{\hyperlink{bt_slider_constraint_8h_a23937ff2f862cf481757d8bde043ab5ea5865cfb8bbc70511abd7dbf1bd3e0b6d}{BT\_SLIDER\_FLAGS\_CFM\_ORTANG}});}
+\DoxyCodeLine{00814\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ retVal\ =\ \mbox{\hyperlink{bt_slider_constraint_8h_af7bcb012b5c40537bebc63f83f45e5e0}{m\_cfmOrthoAng}};}
+\DoxyCodeLine{00815\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00816\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{else}}
+\DoxyCodeLine{00817\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00818\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_typed_constraint_8h_aa159da6403424fcf4e4c72374f4e61a9}{btAssertConstrParams}}(0);}
+\DoxyCodeLine{00819\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00820\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00821\ \ \ \ \ \}}
+\DoxyCodeLine{00822\ \ \ \ \ \textcolor{keywordflow}{return}\ retVal;}
+\DoxyCodeLine{00823\ \}}
+
+\end{DoxyCode}

@@ -1,0 +1,422 @@
+\doxysection{bt\+Cone\+Twist\+Constraint.\+h}
+\hypertarget{bt_cone_twist_constraint_8h_source}{}\label{bt_cone_twist_constraint_8h_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/ConstraintSolver/btConeTwistConstraint.h@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletDynamics/ConstraintSolver/btConeTwistConstraint.h}}
+\mbox{\hyperlink{bt_cone_twist_constraint_8h}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{btConeTwistConstraint\ is\ Copyright\ (c)\ 2007\ Starbreeze\ Studios}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{}}
+\DoxyCodeLine{00015\ \textcolor{comment}{Written\ by:\ Marcus\ Hennix}}
+\DoxyCodeLine{00016\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00019\ \textcolor{comment}{Overview:}}
+\DoxyCodeLine{00020\ \textcolor{comment}{}}
+\DoxyCodeLine{00021\ \textcolor{comment}{btConeTwistConstraint\ can\ be\ used\ to\ simulate\ ragdoll\ joints\ (upper\ arm,\ leg\ etc).}}
+\DoxyCodeLine{00022\ \textcolor{comment}{It\ is\ a\ fixed\ translation,\ 3\ degree-\/of-\/freedom\ (DOF)\ rotational\ "{}joint"{}.}}
+\DoxyCodeLine{00023\ \textcolor{comment}{It\ divides\ the\ 3\ rotational\ DOFs\ into\ swing\ (movement\ within\ a\ cone)\ and\ twist.}}
+\DoxyCodeLine{00024\ \textcolor{comment}{Swing\ is\ divided\ into\ swing1\ and\ swing2\ which\ can\ have\ different\ limits,\ giving\ an\ elliptical\ shape.}}
+\DoxyCodeLine{00025\ \textcolor{comment}{(Note:\ the\ cone's\ base\ isn't\ flat,\ so\ this\ ellipse\ is\ "{}embedded"{}\ on\ the\ surface\ of\ a\ sphere.)}}
+\DoxyCodeLine{00026\ \textcolor{comment}{}}
+\DoxyCodeLine{00027\ \textcolor{comment}{In\ the\ contraint's\ frame\ of\ reference:}}
+\DoxyCodeLine{00028\ \textcolor{comment}{twist\ is\ along\ the\ x-\/axis,}}
+\DoxyCodeLine{00029\ \textcolor{comment}{and\ swing\ 1\ and\ 2\ are\ along\ the\ z\ and\ y\ axes\ respectively.}}
+\DoxyCodeLine{00030\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00031\ }
+\DoxyCodeLine{00032\ \textcolor{preprocessor}{\#ifndef\ BT\_CONETWISTCONSTRAINT\_H}}
+\DoxyCodeLine{00033\ \textcolor{preprocessor}{\#define\ BT\_CONETWISTCONSTRAINT\_H}}
+\DoxyCodeLine{00034\ }
+\DoxyCodeLine{00035\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_vector3_8h}{LinearMath/btVector3.h}}"{}}}
+\DoxyCodeLine{00036\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_jacobian_entry_8h}{btJacobianEntry.h}}"{}}}
+\DoxyCodeLine{00037\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_typed_constraint_8h}{btTypedConstraint.h}}"{}}}
+\DoxyCodeLine{00038\ }
+\DoxyCodeLine{00039\ \textcolor{preprocessor}{\#ifdef\ BT\_USE\_DOUBLE\_PRECISION}}
+\DoxyCodeLine{00040\ \textcolor{preprocessor}{\#define\ btConeTwistConstraintData2\ btConeTwistConstraintDoubleData}}
+\DoxyCodeLine{00041\ \textcolor{preprocessor}{\#define\ btConeTwistConstraintDataName\ "{}btConeTwistConstraintDoubleData"{}}}
+\DoxyCodeLine{00042\ \textcolor{preprocessor}{\#else}}
+\DoxyCodeLine{00043\ \textcolor{preprocessor}{\#define\ btConeTwistConstraintData2\ btConeTwistConstraintData}}
+\DoxyCodeLine{00044\ \textcolor{preprocessor}{\#define\ btConeTwistConstraintDataName\ "{}btConeTwistConstraintData"{}}}
+\DoxyCodeLine{00045\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_USE\_DOUBLE\_PRECISION}}
+\DoxyCodeLine{00046\ }
+\DoxyCodeLine{00047\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classbt_rigid_body}{btRigidBody}};}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \textcolor{keyword}{enum}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a47c61c273ae9c48432b65a92d607481e}{btConeTwistFlags}}}
+\DoxyCodeLine{00050\ \{}
+\DoxyCodeLine{00051\ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a47c61c273ae9c48432b65a92d607481ea4259c8d65138be663e5ab368054fc994}{BT\_CONETWIST\_FLAGS\_LIN\_CFM}}\ =\ 1,}
+\DoxyCodeLine{00052\ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a47c61c273ae9c48432b65a92d607481ea43904f56ec584a9102dc046f4998bb68}{BT\_CONETWIST\_FLAGS\_LIN\_ERP}}\ =\ 2,}
+\DoxyCodeLine{00053\ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a47c61c273ae9c48432b65a92d607481ea7c4ee7313641e9762ff905341cab3cd6}{BT\_CONETWIST\_FLAGS\_ANG\_CFM}}\ =\ 4}
+\DoxyCodeLine{00054\ \};}
+\DoxyCodeLine{00055\ }
+\DoxyCodeLine{00057\ \mbox{\hyperlink{bt_scalar_8h_a38c30fdd0ea2558373a1b6e41c77d9d2}{ATTRIBUTE\_ALIGNED16}}(\textcolor{keyword}{class})}
+\DoxyCodeLine{00058\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a6c1d41196d4830e5c231ffd81731d0a2}{btConeTwistConstraint}}\ :\ public\ \mbox{\hyperlink{bt_typed_constraint_8h_ac4d45dd414a1096579ca1009cb892163}{btTypedConstraint}}}
+\DoxyCodeLine{00059\ \{}
+\DoxyCodeLine{00060\ \textcolor{preprocessor}{\#ifdef\ IN\_PARALLELL\_SOLVER}}
+\DoxyCodeLine{00061\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00062\ \textcolor{preprocessor}{\#endif}}
+\DoxyCodeLine{00063\ \ \ \ \ \mbox{\hyperlink{bt_jacobian_entry_8h_a73a373577124db53d8df6d64eb8ebee9}{btJacobianEntry}}\ m\_jac[3];\ \ \textcolor{comment}{//3\ orthogonal\ linear\ constraints}}
+\DoxyCodeLine{00064\ }
+\DoxyCodeLine{00065\ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ab09c020a52c3376c8c14990a128a2219}{m\_rbAFrame}};}
+\DoxyCodeLine{00066\ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a14cb7ee36728207d88e47147adf17e05}{m\_rbBFrame}};}
+\DoxyCodeLine{00067\ }
+\DoxyCodeLine{00068\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aa6eef5c001ac9991644e027e43368ea4}{m\_limitSoftness}};}
+\DoxyCodeLine{00069\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aa7a6718c6743de673292b5c2fb213b3d}{m\_biasFactor}};}
+\DoxyCodeLine{00070\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_af48355e0991035820dad21984fe4622c}{m\_relaxationFactor}};}
+\DoxyCodeLine{00071\ }
+\DoxyCodeLine{00072\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aee07f1a9533e9e45c670caf57f5dda9b}{m\_damping}};}
+\DoxyCodeLine{00073\ }
+\DoxyCodeLine{00074\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ac2117cefe52b9da2553e3e2fb0d1f39c}{m\_swingSpan1}};}
+\DoxyCodeLine{00075\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a3e22b7619625ba6be194dcdf4353fd5d}{m\_swingSpan2}};}
+\DoxyCodeLine{00076\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a0b7c9d14169ccd1ca79cbe9e537c6306}{m\_twistSpan}};}
+\DoxyCodeLine{00077\ }
+\DoxyCodeLine{00078\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_abe5004e5fa355edf33d3c7302bbb94b6}{m\_fixThresh}};}
+\DoxyCodeLine{00079\ }
+\DoxyCodeLine{00080\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ad9f69aa2310363b2106370f167dc89bd}{m\_swingAxis}};}
+\DoxyCodeLine{00081\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_abb29b1cd2a69059397d559bda5bbac1d}{m\_twistAxis}};}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00083\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a8cad62a9e70e4564da60103e13392d75}{m\_kSwing}};}
+\DoxyCodeLine{00084\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aca4c804c34c80cb3472e2fde71441eb9}{m\_kTwist}};}
+\DoxyCodeLine{00085\ }
+\DoxyCodeLine{00086\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a34387cd7221b8f2e61754fc4c9d9ae60}{m\_twistLimitSign}};}
+\DoxyCodeLine{00087\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a9e62ddbb568bdb1c8ef5badae4cdf7e6}{m\_swingCorrection}};}
+\DoxyCodeLine{00088\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a7a7627a63832171dc4a9968e15c8908b}{m\_twistCorrection}};}
+\DoxyCodeLine{00089\ }
+\DoxyCodeLine{00090\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a8236c6bd0cb2a2ed653a1553369c8839}{m\_twistAngle}};}
+\DoxyCodeLine{00091\ }
+\DoxyCodeLine{00092\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a389dc5cd4c33ab2636c3451d99443a71}{m\_accSwingLimitImpulse}};}
+\DoxyCodeLine{00093\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a39fe88ed8d097cafaa4fe99c9f59f50d}{m\_accTwistLimitImpulse}};}
+\DoxyCodeLine{00094\ }
+\DoxyCodeLine{00095\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_acccdefa6165265b04157158b2d980fb1}{m\_angularOnly}};}
+\DoxyCodeLine{00096\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a00c96b90edf862c95abfd851ae7cf894}{m\_solveTwistLimit}};}
+\DoxyCodeLine{00097\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a87b4e59b5ef895335ebfcbb3dd81177e}{m\_solveSwingLimit}};}
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a4d71fe60a5ce6f9ddc48e4859feff4bb}{m\_useSolveConstraintObsolete}};}
+\DoxyCodeLine{00100\ }
+\DoxyCodeLine{00101\ \ \ \ \ \textcolor{comment}{//\ not\ yet\ used...}}
+\DoxyCodeLine{00102\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a3f5be8e056a71b318161c526d5d50111}{m\_swingLimitRatio}};}
+\DoxyCodeLine{00103\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a88a38fb0afd0fa7e65fe06f1a24e8ef4}{m\_twistLimitRatio}};}
+\DoxyCodeLine{00104\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ada6c8843f2154a4efd938a8d3d227136}{m\_twistAxisA}};}
+\DoxyCodeLine{00105\ }
+\DoxyCodeLine{00106\ \ \ \ \ \textcolor{comment}{//\ motor}}
+\DoxyCodeLine{00107\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a30e2ae587f26496ea72da5a83f7977b4}{m\_bMotorEnabled}};}
+\DoxyCodeLine{00108\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a408301fb6e7cbbec2ca294c30edfa638}{m\_bNormalizedMotorStrength}};}
+\DoxyCodeLine{00109\ \ \ \ \ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aa5d8d1099760fc6b5845284b6aac94d9}{m\_qTarget}};}
+\DoxyCodeLine{00110\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a5847beb84b207a5d52f188a807fe0ad3}{m\_maxMotorImpulse}};}
+\DoxyCodeLine{00111\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a9095642b7dd995054a8623f5938f5790}{m\_accMotorImpulse}};}
+\DoxyCodeLine{00112\ }
+\DoxyCodeLine{00113\ \ \ \ \ \textcolor{comment}{//\ parameters}}
+\DoxyCodeLine{00114\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}};}
+\DoxyCodeLine{00115\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ab1cedf78054968d590917a2d97e1550a}{m\_linCFM}};}
+\DoxyCodeLine{00116\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ab67c19daf645ecfe2e3ba6bbf2cac229}{m\_linERP}};}
+\DoxyCodeLine{00117\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aaa02c890a38b5f0dade97efcdcad5e73}{m\_angCFM}};}
+\DoxyCodeLine{00118\ }
+\DoxyCodeLine{00119\ \textcolor{keyword}{protected}:}
+\DoxyCodeLine{00120\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a02fd73d861ef2e4aabb38c0c9ff82947}{init}}();}
+\DoxyCodeLine{00121\ }
+\DoxyCodeLine{00122\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a9598f57371abe6a8c647a23038d51b46}{computeConeLimitInfo}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ qCone,\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ in}}
+\DoxyCodeLine{00123\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ swingAngle,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ vSwingAxis,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ swingLimit);\ \ \textcolor{comment}{//\ all\ outs}}
+\DoxyCodeLine{00124\ }
+\DoxyCodeLine{00125\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a7327d130d314d2f7b9da9884c139fa4c}{computeTwistLimitInfo}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ qTwist,\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ in}}
+\DoxyCodeLine{00126\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ twistAngle,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ vTwistAxis);\ \ \textcolor{comment}{//\ all\ outs}}
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00128\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ad49853c30246355b9ce6b4a583114b6a}{adjustSwingAxisToUseEllipseNormal}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \&\ vSwingAxis)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00129\ }
+\DoxyCodeLine{00130\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00131\ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a073043644ede242268123f98ca10ec2d}{BT\_DECLARE\_ALIGNED\_ALLOCATOR}}();}
+\DoxyCodeLine{00132\ }
+\DoxyCodeLine{00133\ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a6c1d41196d4830e5c231ffd81731d0a2}{btConeTwistConstraint}}(\mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}\ \&\ rbA,\ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}\ \&\ \mbox{\hyperlink{bt_fixed_constraint_8h_a2708cf4cc286b1cfc99a645b9ec1dccd}{rbB}},\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ rbAFrame,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ rbBFrame);}
+\DoxyCodeLine{00134\ }
+\DoxyCodeLine{00135\ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a6c1d41196d4830e5c231ffd81731d0a2}{btConeTwistConstraint}}(\mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}\ \&\ rbA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ rbAFrame);}
+\DoxyCodeLine{00136\ }
+\DoxyCodeLine{00137\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a0ca8cd14e3d13fe89860d126552f7332}{buildJacobian}}();}
+\DoxyCodeLine{00138\ }
+\DoxyCodeLine{00139\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a669d0c5e6b87a6d900d94a74098db1fd}{getInfo1}}(\mbox{\hyperlink{structbt_constraint_info1}{btConstraintInfo1}}\ *\ info);}
+\DoxyCodeLine{00140\ }
+\DoxyCodeLine{00141\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_afd6721620413b137a9ae8fdc46f1dfff}{getInfo1NonVirtual}}(\mbox{\hyperlink{structbt_constraint_info1}{btConstraintInfo1}}\ *\ info);}
+\DoxyCodeLine{00142\ }
+\DoxyCodeLine{00143\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a0c8618759057f62f867e535cdc41c46d}{getInfo2}}(\mbox{\hyperlink{structbt_constraint_info2}{btConstraintInfo2}}\ *\ info);}
+\DoxyCodeLine{00144\ }
+\DoxyCodeLine{00145\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a6e303822942e27b953326e32ff0d1c43}{getInfo2NonVirtual}}(\mbox{\hyperlink{structbt_constraint_info2}{btConstraintInfo2}}\ *\ info,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ transA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ transB,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_matrix3x3_8h_a8789e58a469e9c671c351d681306b4d7}{btMatrix3x3}}\&\ invInertiaWorldA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_matrix3x3_8h_a8789e58a469e9c671c351d681306b4d7}{btMatrix3x3}}\&\ invInertiaWorldB);}
+\DoxyCodeLine{00146\ }
+\DoxyCodeLine{00147\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a66495544fc95421b19bb163502b47ff3}{solveConstraintObsolete}}(\mbox{\hyperlink{bt_solver_body_8h_a029df9344a303d369eb63b1c7f3e60d5}{btSolverBody}}\ \&\ bodyA,\ \mbox{\hyperlink{bt_solver_body_8h_a029df9344a303d369eb63b1c7f3e60d5}{btSolverBody}}\ \&\ bodyB,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ timeStep);}
+\DoxyCodeLine{00148\ }
+\DoxyCodeLine{00149\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_afe60d54689fc1c33faaf0dfebaa7526f}{updateRHS}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ timeStep);}
+\DoxyCodeLine{00150\ }
+\DoxyCodeLine{00151\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}\&\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a258b57751826f618da43647344954144}{getRigidBodyA}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00152\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00153\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{b3_typed_constraint_8h_aef98dda132581084092d99f8324d6aae}{m\_rbA}};}
+\DoxyCodeLine{00154\ \ \ \ \ \}}
+\DoxyCodeLine{00155\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_rigid_body}{btRigidBody}}\&\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a5448d2bd3587939b95c686a6e734c9d3}{getRigidBodyB}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00156\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00157\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{b3_typed_constraint_8h_a2bf7c92b40a2f2f1d9be3aa1992929e4}{m\_rbB}};}
+\DoxyCodeLine{00158\ \ \ \ \ \}}
+\DoxyCodeLine{00159\ }
+\DoxyCodeLine{00160\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aa51baf6e39d49d769b946f851a9c9653}{setAngularOnly}}(\textcolor{keywordtype}{bool}\ angularOnly)}
+\DoxyCodeLine{00161\ \ \ \ \ \{}
+\DoxyCodeLine{00162\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_acccdefa6165265b04157158b2d980fb1}{m\_angularOnly}}\ =\ angularOnly;}
+\DoxyCodeLine{00163\ \ \ \ \ \}}
+\DoxyCodeLine{00164\ }
+\DoxyCodeLine{00165\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aaecd3b5e4fba937fefb63c6981552610}{getAngularOnly}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00166\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_acccdefa6165265b04157158b2d980fb1}{m\_angularOnly}};}
+\DoxyCodeLine{00168\ \ \ \ \ \}}
+\DoxyCodeLine{00169\ }
+\DoxyCodeLine{00170\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ad04534f2d27893035d3fdc8e8ae5964f}{setLimit}}(\textcolor{keywordtype}{int}\ limitIndex,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ limitValue)}
+\DoxyCodeLine{00171\ \ \ \ \ \{}
+\DoxyCodeLine{00172\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (limitIndex)}
+\DoxyCodeLine{00173\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00174\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 3:}
+\DoxyCodeLine{00175\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00176\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a0b7c9d14169ccd1ca79cbe9e537c6306}{m\_twistSpan}}\ =\ limitValue;}
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00179\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 4:}
+\DoxyCodeLine{00180\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00181\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a3e22b7619625ba6be194dcdf4353fd5d}{m\_swingSpan2}}\ =\ limitValue;}
+\DoxyCodeLine{00182\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00183\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00184\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 5:}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ac2117cefe52b9da2553e3e2fb0d1f39c}{m\_swingSpan1}}\ =\ limitValue;}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00188\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00189\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00190\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00191\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00192\ \ \ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00193\ \ \ \ \ \}}
+\DoxyCodeLine{00194\ }
+\DoxyCodeLine{00195\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a7c63ca9bb934b824f61e3d04873ea88f}{getLimit}}(\textcolor{keywordtype}{int}\ limitIndex)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00196\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00197\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{switch}\ (limitIndex)}
+\DoxyCodeLine{00198\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00199\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 3:}
+\DoxyCodeLine{00200\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00201\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a0b7c9d14169ccd1ca79cbe9e537c6306}{m\_twistSpan}};}
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 4:}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00206\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a3e22b7619625ba6be194dcdf4353fd5d}{m\_swingSpan2}};}
+\DoxyCodeLine{00207\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00208\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00209\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{case}\ 5:}
+\DoxyCodeLine{00210\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00211\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ac2117cefe52b9da2553e3e2fb0d1f39c}{m\_swingSpan1}};}
+\DoxyCodeLine{00212\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{break};}
+\DoxyCodeLine{00213\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00214\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{default}:}
+\DoxyCodeLine{00215\ \ \ \ \ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00216\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_aff3e6078c073f6ba0edb95353f2c2c62}{btAssert}}(0\ \&\&\ \textcolor{stringliteral}{"{}Invalid\ limitIndex\ specified\ for\ btConeTwistConstraint"{}});}
+\DoxyCodeLine{00217\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ 0.0;}
+\DoxyCodeLine{00218\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00219\ \ \ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00220\ \ \ \ \ \}}
+\DoxyCodeLine{00221\ }
+\DoxyCodeLine{00222\ \ \ \ \ \textcolor{comment}{//\ setLimit(),\ a\ few\ notes:}}
+\DoxyCodeLine{00223\ \ \ \ \ \textcolor{comment}{//\ \_softness:}}
+\DoxyCodeLine{00224\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ 0-\/>1,\ recommend\ \string~0.8-\/>1.}}
+\DoxyCodeLine{00225\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ describes\ \%\ of\ limits\ where\ movement\ is\ free.}}
+\DoxyCodeLine{00226\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ beyond\ this\ softness\ \%,\ the\ limit\ is\ gradually\ enforced\ until\ the\ "{}hard"{}\ (1.0)\ limit\ is\ reached.}}
+\DoxyCodeLine{00227\ \ \ \ \ \textcolor{comment}{//\ \_biasFactor:}}
+\DoxyCodeLine{00228\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ 0-\/>1?,\ recommend\ 0.3\ +/-\/0.3\ or\ so.}}
+\DoxyCodeLine{00229\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ strength\ with\ which\ constraint\ resists\ zeroth\ order\ (angular,\ not\ angular\ velocity)\ limit\ violation.}}
+\DoxyCodeLine{00230\ \ \ \ \ \textcolor{comment}{//\ \_\_relaxationFactor:}}
+\DoxyCodeLine{00231\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ 0-\/>1,\ recommend\ to\ stay\ near\ 1.}}
+\DoxyCodeLine{00232\ \ \ \ \ \textcolor{comment}{//\ \ \ \ \ \ the\ lower\ the\ value,\ the\ less\ the\ constraint\ will\ fight\ velocities\ which\ violate\ the\ angular\ limits.}}
+\DoxyCodeLine{00233\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ad04534f2d27893035d3fdc8e8ae5964f}{setLimit}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \_swingSpan1,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \_swingSpan2,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \_twistSpan,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \_softness\ =\ 1.f,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \_biasFactor\ =\ 0.3f,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \_relaxationFactor\ =\ 1.0f)}
+\DoxyCodeLine{00234\ \ \ \ \ \{}
+\DoxyCodeLine{00235\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ac2117cefe52b9da2553e3e2fb0d1f39c}{m\_swingSpan1}}\ =\ \_swingSpan1;}
+\DoxyCodeLine{00236\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a3e22b7619625ba6be194dcdf4353fd5d}{m\_swingSpan2}}\ =\ \_swingSpan2;}
+\DoxyCodeLine{00237\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a0b7c9d14169ccd1ca79cbe9e537c6306}{m\_twistSpan}}\ =\ \_twistSpan;}
+\DoxyCodeLine{00238\ }
+\DoxyCodeLine{00239\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aa6eef5c001ac9991644e027e43368ea4}{m\_limitSoftness}}\ =\ \_softness;}
+\DoxyCodeLine{00240\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aa7a6718c6743de673292b5c2fb213b3d}{m\_biasFactor}}\ =\ \_biasFactor;}
+\DoxyCodeLine{00241\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_af48355e0991035820dad21984fe4622c}{m\_relaxationFactor}}\ =\ \_relaxationFactor;}
+\DoxyCodeLine{00242\ \ \ \ \ \}}
+\DoxyCodeLine{00243\ }
+\DoxyCodeLine{00244\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a1699eb71421a0efa9b546df3ba26b733}{getAFrame}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ab09c020a52c3376c8c14990a128a2219}{m\_rbAFrame}};\ \};}
+\DoxyCodeLine{00245\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ab5ee0fd45808f60e755a25552220edf8}{getBFrame}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a14cb7ee36728207d88e47147adf17e05}{m\_rbBFrame}};\ \};}
+\DoxyCodeLine{00246\ }
+\DoxyCodeLine{00247\ \ \ \ \ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a7f51611fdeace6a6a171f9363954a6f0}{getSolveTwistLimit}}()}
+\DoxyCodeLine{00248\ \ \ \ \ \{}
+\DoxyCodeLine{00249\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a00c96b90edf862c95abfd851ae7cf894}{m\_solveTwistLimit}};}
+\DoxyCodeLine{00250\ \ \ \ \ \}}
+\DoxyCodeLine{00251\ }
+\DoxyCodeLine{00252\ \ \ \ \ \textcolor{keyword}{inline}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a63f212719d19ed450dc71d22735dd6df}{getSolveSwingLimit}}()}
+\DoxyCodeLine{00253\ \ \ \ \ \{}
+\DoxyCodeLine{00254\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a87b4e59b5ef895335ebfcbb3dd81177e}{m\_solveSwingLimit}};}
+\DoxyCodeLine{00255\ \ \ \ \ \}}
+\DoxyCodeLine{00256\ }
+\DoxyCodeLine{00257\ \ \ \ \ \textcolor{keyword}{inline}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a69209551bc13d8cabb9448dabb6d2efb}{getTwistLimitSign}}()}
+\DoxyCodeLine{00258\ \ \ \ \ \{}
+\DoxyCodeLine{00259\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a34387cd7221b8f2e61754fc4c9d9ae60}{m\_twistLimitSign}};}
+\DoxyCodeLine{00260\ \ \ \ \ \}}
+\DoxyCodeLine{00261\ }
+\DoxyCodeLine{00262\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aaaf3cc9dcbbc551314ba3f4bdabf437d}{calcAngleInfo}}();}
+\DoxyCodeLine{00263\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ac367e0423a33ec00b18223921db6bbb0}{calcAngleInfo2}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ transA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ transB,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_matrix3x3_8h_a8789e58a469e9c671c351d681306b4d7}{btMatrix3x3}}\&\ invInertiaWorldA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_matrix3x3_8h_a8789e58a469e9c671c351d681306b4d7}{btMatrix3x3}}\&\ invInertiaWorldB);}
+\DoxyCodeLine{00264\ }
+\DoxyCodeLine{00265\ \ \ \ \ \textcolor{keyword}{inline}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a8ffad8d3cab6ef255e3f6b05125a41ad}{getSwingSpan1}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00266\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00267\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ac2117cefe52b9da2553e3e2fb0d1f39c}{m\_swingSpan1}};}
+\DoxyCodeLine{00268\ \ \ \ \ \}}
+\DoxyCodeLine{00269\ \ \ \ \ \textcolor{keyword}{inline}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a85d7383d41ff4f428f0284754828c0b2}{getSwingSpan2}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00270\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00271\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a3e22b7619625ba6be194dcdf4353fd5d}{m\_swingSpan2}};}
+\DoxyCodeLine{00272\ \ \ \ \ \}}
+\DoxyCodeLine{00273\ \ \ \ \ \textcolor{keyword}{inline}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ad030a05fbbf16cb593a1f0e7ab90695d}{getTwistSpan}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00274\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00275\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a0b7c9d14169ccd1ca79cbe9e537c6306}{m\_twistSpan}};}
+\DoxyCodeLine{00276\ \ \ \ \ \}}
+\DoxyCodeLine{00277\ \ \ \ \ \textcolor{keyword}{inline}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ab079e16ecd2108fe6f1c2a7f17f54b39}{getLimitSoftness}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00278\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00279\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aa6eef5c001ac9991644e027e43368ea4}{m\_limitSoftness}};}
+\DoxyCodeLine{00280\ \ \ \ \ \}}
+\DoxyCodeLine{00281\ \ \ \ \ \textcolor{keyword}{inline}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a42b1af4e0d08495f1a7e9caf43525404}{getBiasFactor}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00282\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00283\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aa7a6718c6743de673292b5c2fb213b3d}{m\_biasFactor}};}
+\DoxyCodeLine{00284\ \ \ \ \ \}}
+\DoxyCodeLine{00285\ \ \ \ \ \textcolor{keyword}{inline}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aa156e50b40afa87ff7feb1a07fc9886b}{getRelaxationFactor}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00286\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00287\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_af48355e0991035820dad21984fe4622c}{m\_relaxationFactor}};}
+\DoxyCodeLine{00288\ \ \ \ \ \}}
+\DoxyCodeLine{00289\ \ \ \ \ \textcolor{keyword}{inline}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a68116a58d9f099501f5e955c4effd146}{getTwistAngle}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00290\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00291\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a8236c6bd0cb2a2ed653a1553369c8839}{m\_twistAngle}};}
+\DoxyCodeLine{00292\ \ \ \ \ \}}
+\DoxyCodeLine{00293\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ac26a36ccfb6c20773a79a69f4cc018f8}{isPastSwingLimit}}()\ \{\ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a87b4e59b5ef895335ebfcbb3dd81177e}{m\_solveSwingLimit}};\ \}}
+\DoxyCodeLine{00294\ }
+\DoxyCodeLine{00295\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_af48c836edb1d1a0cf98ec6e2b38ad47c}{getDamping}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aee07f1a9533e9e45c670caf57f5dda9b}{m\_damping}};\ \}}
+\DoxyCodeLine{00296\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a2e22c9b7f2e0b20eb4f5a33647d4a5aa}{setDamping}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ damping)\ \{\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aee07f1a9533e9e45c670caf57f5dda9b}{m\_damping}}\ =\ damping;\ \}}
+\DoxyCodeLine{00297\ }
+\DoxyCodeLine{00298\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a95278956131eeffec2ede18af909787c}{enableMotor}}(\textcolor{keywordtype}{bool}\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}})\ \{\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a30e2ae587f26496ea72da5a83f7977b4}{m\_bMotorEnabled}}\ =\ \mbox{\hyperlink{glad_8h_a6eba317e3cf44d6d26c04a5a8f197dcb}{b}};\ \}}
+\DoxyCodeLine{00299\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_acca0e9d8ab9f09a8129460178d0c0647}{isMotorEnabled}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a30e2ae587f26496ea72da5a83f7977b4}{m\_bMotorEnabled}};\ \}}
+\DoxyCodeLine{00300\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aad03c7e354cf073e5717d93efffe664f}{getMaxMotorImpulse}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a5847beb84b207a5d52f188a807fe0ad3}{m\_maxMotorImpulse}};\ \}}
+\DoxyCodeLine{00301\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a5817706def233c9bd97f4df7aab5761f}{isMaxMotorImpulseNormalized}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a408301fb6e7cbbec2ca294c30edfa638}{m\_bNormalizedMotorStrength}};\ \}}
+\DoxyCodeLine{00302\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ae6b96a3cef88ca5354da9ae3f4d08e13}{setMaxMotorImpulse}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxMotorImpulse)}
+\DoxyCodeLine{00303\ \ \ \ \ \{}
+\DoxyCodeLine{00304\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a5847beb84b207a5d52f188a807fe0ad3}{m\_maxMotorImpulse}}\ =\ maxMotorImpulse;}
+\DoxyCodeLine{00305\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a408301fb6e7cbbec2ca294c30edfa638}{m\_bNormalizedMotorStrength}}\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00306\ \ \ \ \ \}}
+\DoxyCodeLine{00307\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a9e90a05afe4c41414d7109a5eff8df66}{setMaxMotorImpulseNormalized}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxMotorImpulse)}
+\DoxyCodeLine{00308\ \ \ \ \ \{}
+\DoxyCodeLine{00309\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a5847beb84b207a5d52f188a807fe0ad3}{m\_maxMotorImpulse}}\ =\ maxMotorImpulse;}
+\DoxyCodeLine{00310\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a408301fb6e7cbbec2ca294c30edfa638}{m\_bNormalizedMotorStrength}}\ =\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00311\ \ \ \ \ \}}
+\DoxyCodeLine{00312\ }
+\DoxyCodeLine{00313\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ab7ca4803942bc2b33b08312d22d1d409}{getFixThresh}}()\ \{\ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_abe5004e5fa355edf33d3c7302bbb94b6}{m\_fixThresh}};\ \}}
+\DoxyCodeLine{00314\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ab46d8c2d4726c881796c634162dcff19}{setFixThresh}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ fixThresh)\ \{\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_abe5004e5fa355edf33d3c7302bbb94b6}{m\_fixThresh}}\ =\ fixThresh;\ \}}
+\DoxyCodeLine{00315\ }
+\DoxyCodeLine{00316\ \ \ \ \ \textcolor{comment}{//\ setMotorTarget:}}
+\DoxyCodeLine{00317\ \ \ \ \ \textcolor{comment}{//\ q:\ the\ desired\ rotation\ of\ bodyA\ wrt\ bodyB.}}
+\DoxyCodeLine{00318\ \ \ \ \ \textcolor{comment}{//\ note:\ if\ q\ violates\ the\ joint\ limits,\ the\ internal\ target\ is\ clamped\ to\ avoid\ conflicting\ impulses\ (very\ bad\ for\ stability)}}
+\DoxyCodeLine{00319\ \ \ \ \ \textcolor{comment}{//\ note:\ don't\ forget\ to\ enableMotor()}}
+\DoxyCodeLine{00320\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_affa8f9aeea43d37a4ce5e61d87217d93}{setMotorTarget}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ q);}
+\DoxyCodeLine{00321\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a648b6a9c201707ef0128743122c3c445}{getMotorTarget}}()\textcolor{keyword}{\ const\ }\{\ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aa5d8d1099760fc6b5845284b6aac94d9}{m\_qTarget}};\ \}}
+\DoxyCodeLine{00322\ }
+\DoxyCodeLine{00323\ \ \ \ \ \textcolor{comment}{//\ same\ as\ above,\ but\ q\ is\ the\ desired\ rotation\ of\ frameA\ wrt\ frameB\ in\ constraint\ space}}
+\DoxyCodeLine{00324\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a8e5e0ef917335c9e12580872d3dbf533}{setMotorTargetInConstraintSpace}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classbt_quaternion}{btQuaternion}}\&\ q);}
+\DoxyCodeLine{00325\ }
+\DoxyCodeLine{00326\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a91dd27bde29032a78785d6d36d358746}{GetPointForAngle}}(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ fAngleInRadians,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ fLength)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00327\ }
+\DoxyCodeLine{00330\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a26dfa6938f7a46bf45b934b5a11fe93f}{setParam}}(\textcolor{keywordtype}{int}\ num,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{imgui__impl__opengl3__loader_8h_a03aff08f73d7fde3d1a08e0abd8e84fa}{value}},\ \textcolor{keywordtype}{int}\ axis\ =\ -\/1);}
+\DoxyCodeLine{00331\ }
+\DoxyCodeLine{00332\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a336d3704f57c776974525fbdea86d31f}{setFrames}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ frameA,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ frameB);}
+\DoxyCodeLine{00333\ }
+\DoxyCodeLine{00334\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a44c7bd98106117b79970a88161db432c}{getFrameOffsetA}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00335\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00336\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ab09c020a52c3376c8c14990a128a2219}{m\_rbAFrame}};}
+\DoxyCodeLine{00337\ \ \ \ \ \}}
+\DoxyCodeLine{00338\ }
+\DoxyCodeLine{00339\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\&\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_afa9bd8ac333138e20ccbd0831060349a}{getFrameOffsetB}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00340\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00341\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a14cb7ee36728207d88e47147adf17e05}{m\_rbBFrame}};}
+\DoxyCodeLine{00342\ \ \ \ \ \}}
+\DoxyCodeLine{00343\ }
+\DoxyCodeLine{00345\ \ \ \ \ \textcolor{keyword}{virtual}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a6fb65e3e09d26e834e2f83508ed9ede7}{getParam}}(\textcolor{keywordtype}{int}\ num,\ \textcolor{keywordtype}{int}\ axis\ =\ -\/1)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00346\ }
+\DoxyCodeLine{00347\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a6eef5d251313a004d28606d1f7e84cf9}{getFlags}}()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00348\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00349\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{b3_generic6_dof_constraint_8h_acf88a9269a6bde0e77d6d64102d824ad}{m\_flags}};}
+\DoxyCodeLine{00350\ \ \ \ \ \}}
+\DoxyCodeLine{00351\ }
+\DoxyCodeLine{00352\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a3190126c6ac06fd622568c57b00f8464}{calculateSerializeBufferSize}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00353\ }
+\DoxyCodeLine{00355\ \ \ \ \ \textcolor{keyword}{virtual}\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_adc87fd6ad33bfd5ad0485f3ea50f156c}{serialize}}(\textcolor{keywordtype}{void}*\ dataBuffer,\ \mbox{\hyperlink{classbt_serializer}{btSerializer}}*\ serializer)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00356\ \};}
+\DoxyCodeLine{00357\ }
+\DoxyCodeLine{00358\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structbt_cone_twist_constraint_double_data}{btConeTwistConstraintDoubleData}}}
+\DoxyCodeLine{00359\ \{}
+\DoxyCodeLine{00360\ \ \ \ \ \mbox{\hyperlink{structbt_typed_constraint_double_data}{btTypedConstraintDoubleData}}\ \mbox{\hyperlink{structbt_cone_twist_constraint_double_data_a2c025cafc78fb0957b574c553beb7107}{m\_typeConstraintData}};}
+\DoxyCodeLine{00361\ \ \ \ \ \mbox{\hyperlink{structbt_transform_double_data}{btTransformDoubleData}}\ \mbox{\hyperlink{structbt_cone_twist_constraint_double_data_af26ee70fc95b5c1fa6915b87f207db70}{m\_rbAFrame}};}
+\DoxyCodeLine{00362\ \ \ \ \ \mbox{\hyperlink{structbt_transform_double_data}{btTransformDoubleData}}\ \mbox{\hyperlink{structbt_cone_twist_constraint_double_data_ab6118fb912908c31d7049f2ff32eed24}{m\_rbBFrame}};}
+\DoxyCodeLine{00363\ }
+\DoxyCodeLine{00364\ \ \ \ \ \textcolor{comment}{//limits}}
+\DoxyCodeLine{00365\ \ \ \ \ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{structbt_cone_twist_constraint_double_data_ae3409769b377340aee5f1ce2ee4400f0}{m\_swingSpan1}};}
+\DoxyCodeLine{00366\ \ \ \ \ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{structbt_cone_twist_constraint_double_data_aab156c2780767d200f39fd13dddef94b}{m\_swingSpan2}};}
+\DoxyCodeLine{00367\ \ \ \ \ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{structbt_cone_twist_constraint_double_data_ac388d94e593b005798fd982f0b1ed553}{m\_twistSpan}};}
+\DoxyCodeLine{00368\ \ \ \ \ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{structbt_cone_twist_constraint_double_data_aac503a53cbc51bdc811d00b069204ce7}{m\_limitSoftness}};}
+\DoxyCodeLine{00369\ \ \ \ \ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{structbt_cone_twist_constraint_double_data_a652d206046bfacc0f093b4551b9f2ff3}{m\_biasFactor}};}
+\DoxyCodeLine{00370\ \ \ \ \ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{structbt_cone_twist_constraint_double_data_ad3a740156d2dff51a10564c5aa7d44a6}{m\_relaxationFactor}};}
+\DoxyCodeLine{00371\ }
+\DoxyCodeLine{00372\ \ \ \ \ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{structbt_cone_twist_constraint_double_data_a602d893f0fb62617989895db260a2b8c}{m\_damping}};}
+\DoxyCodeLine{00373\ \};}
+\DoxyCodeLine{00374\ }
+\DoxyCodeLine{00375\ \textcolor{preprocessor}{\#ifdef\ BT\_BACKWARDS\_COMPATIBLE\_SERIALIZATION}}
+\DoxyCodeLine{00377\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structbt_cone_twist_constraint_data}{btConeTwistConstraintData}}}
+\DoxyCodeLine{00378\ \{}
+\DoxyCodeLine{00379\ \ \ \ \ \mbox{\hyperlink{structbt_typed_constraint_data}{btTypedConstraintData}}\ \mbox{\hyperlink{structbt_cone_twist_constraint_data_a0bed6f14155f41a8b72be374a1353262}{m\_typeConstraintData}};}
+\DoxyCodeLine{00380\ \ \ \ \ \mbox{\hyperlink{structbt_transform_float_data}{btTransformFloatData}}\ \mbox{\hyperlink{structbt_cone_twist_constraint_data_a3d0681f2afeb8ff69db61fc7cf18bd6b}{m\_rbAFrame}};}
+\DoxyCodeLine{00381\ \ \ \ \ \mbox{\hyperlink{structbt_transform_float_data}{btTransformFloatData}}\ \mbox{\hyperlink{structbt_cone_twist_constraint_data_a2abd2306ef1c60346f4ad31fa7fbc66a}{m\_rbBFrame}};}
+\DoxyCodeLine{00382\ }
+\DoxyCodeLine{00383\ \ \ \ \ \textcolor{comment}{//limits}}
+\DoxyCodeLine{00384\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{structbt_cone_twist_constraint_data_a0e9ac8295b4d6772e24a68c8bcf9b691}{m\_swingSpan1}};}
+\DoxyCodeLine{00385\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{structbt_cone_twist_constraint_data_a9c760c7203c610e9d18e5735551a9f9a}{m\_swingSpan2}};}
+\DoxyCodeLine{00386\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{structbt_cone_twist_constraint_data_af54538755bdc310aa8533dc69f60c4d6}{m\_twistSpan}};}
+\DoxyCodeLine{00387\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{structbt_cone_twist_constraint_data_ad4bf6a3bd2b8af62dfa91fc8c610692c}{m\_limitSoftness}};}
+\DoxyCodeLine{00388\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{structbt_cone_twist_constraint_data_aee612c3f1ecd4be8b4eee541e90247e3}{m\_biasFactor}};}
+\DoxyCodeLine{00389\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{structbt_cone_twist_constraint_data_a84157db329d52c7c79c7a271244f0317}{m\_relaxationFactor}};}
+\DoxyCodeLine{00390\ }
+\DoxyCodeLine{00391\ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{structbt_cone_twist_constraint_data_a8238dcb16ff48b51f7efaff2bf066b74}{m\_damping}};}
+\DoxyCodeLine{00392\ }
+\DoxyCodeLine{00393\ \ \ \ \ \textcolor{keywordtype}{char}\ \mbox{\hyperlink{structbt_cone_twist_constraint_data_acd4e20e5fc0aaa46143e5fba3d1e084b}{m\_pad}}[4];}
+\DoxyCodeLine{00394\ \};}
+\DoxyCodeLine{00395\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_BACKWARDS\_COMPATIBLE\_SERIALIZATION}}
+\DoxyCodeLine{00396\ \textcolor{comment}{//}}
+\DoxyCodeLine{00397\ }
+\DoxyCodeLine{00398\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keywordtype}{int}\ btConeTwistConstraint::calculateSerializeBufferSize()\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00399\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00400\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{sizeof}(\mbox{\hyperlink{bt_cone_twist_constraint_8h_a77db784737b406f438f766c5f9893c73}{btConeTwistConstraintData2}});}
+\DoxyCodeLine{00401\ \}}
+\DoxyCodeLine{00402\ }
+\DoxyCodeLine{00404\ \mbox{\hyperlink{bt_scalar_8h_a8a6a3e8b28846a3d7271e376c738ec40}{SIMD\_FORCE\_INLINE}}\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{char}*\ btConeTwistConstraint::serialize(\textcolor{keywordtype}{void}*\ dataBuffer,\ \mbox{\hyperlink{classbt_serializer}{btSerializer}}*\ serializer)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00405\ \textcolor{keyword}{}\{}
+\DoxyCodeLine{00406\ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a77db784737b406f438f766c5f9893c73}{btConeTwistConstraintData2}}*\ cone\ =\ (\mbox{\hyperlink{bt_cone_twist_constraint_8h_a77db784737b406f438f766c5f9893c73}{btConeTwistConstraintData2}}*)dataBuffer;}
+\DoxyCodeLine{00407\ \ \ \ \ btTypedConstraint::serialize(\&cone-\/>m\_typeConstraintData,\ serializer);}
+\DoxyCodeLine{00408\ }
+\DoxyCodeLine{00409\ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ab09c020a52c3376c8c14990a128a2219}{m\_rbAFrame}}.serialize(cone-\/>m\_rbAFrame);}
+\DoxyCodeLine{00410\ \ \ \ \ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a14cb7ee36728207d88e47147adf17e05}{m\_rbBFrame}}.serialize(cone-\/>m\_rbBFrame);}
+\DoxyCodeLine{00411\ }
+\DoxyCodeLine{00412\ \ \ \ \ cone-\/>m\_swingSpan1\ =\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_ac2117cefe52b9da2553e3e2fb0d1f39c}{m\_swingSpan1}};}
+\DoxyCodeLine{00413\ \ \ \ \ cone-\/>m\_swingSpan2\ =\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a3e22b7619625ba6be194dcdf4353fd5d}{m\_swingSpan2}};}
+\DoxyCodeLine{00414\ \ \ \ \ cone-\/>m\_twistSpan\ =\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_a0b7c9d14169ccd1ca79cbe9e537c6306}{m\_twistSpan}};}
+\DoxyCodeLine{00415\ \ \ \ \ cone-\/>m\_limitSoftness\ =\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aa6eef5c001ac9991644e027e43368ea4}{m\_limitSoftness}};}
+\DoxyCodeLine{00416\ \ \ \ \ cone-\/>m\_biasFactor\ =\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aa7a6718c6743de673292b5c2fb213b3d}{m\_biasFactor}};}
+\DoxyCodeLine{00417\ \ \ \ \ cone-\/>m\_relaxationFactor\ =\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_af48355e0991035820dad21984fe4622c}{m\_relaxationFactor}};}
+\DoxyCodeLine{00418\ \ \ \ \ cone-\/>m\_damping\ =\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aee07f1a9533e9e45c670caf57f5dda9b}{m\_damping}};}
+\DoxyCodeLine{00419\ }
+\DoxyCodeLine{00420\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_cone_twist_constraint_8h_aadeeeef1bfcdb62036cf09d15178bb5b}{btConeTwistConstraintDataName}};}
+\DoxyCodeLine{00421\ \}}
+\DoxyCodeLine{00422\ }
+\DoxyCodeLine{00423\ \textcolor{preprocessor}{\#endif\ \ }\textcolor{comment}{//BT\_CONETWISTCONSTRAINT\_H}}
+
+\end{DoxyCode}

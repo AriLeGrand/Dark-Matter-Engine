@@ -1,0 +1,214 @@
+\doxysection{bt\+Sphere\+Box\+Collision\+Algorithm.\+cpp}
+\hypertarget{bt_sphere_box_collision_algorithm_8cpp_source}{}\label{bt_sphere_box_collision_algorithm_8cpp_source}\index{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/CollisionDispatch/btSphereBoxCollisionAlgorithm.cpp@{C:/Users/quant/source/repos/Dark-\/Matter-\/Engine/ENGINE/Libraries/include/Bullet/BulletCollision/CollisionDispatch/btSphereBoxCollisionAlgorithm.cpp}}
+\mbox{\hyperlink{bt_sphere_box_collision_algorithm_8cpp}{Go to the documentation of this file.}}
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{/*}}
+\DoxyCodeLine{00002\ \textcolor{comment}{Bullet\ Continuous\ Collision\ Detection\ and\ Physics\ Library}}
+\DoxyCodeLine{00003\ \textcolor{comment}{Copyright\ (c)\ 2003-\/2006\ Erwin\ Coumans\ \ https://bulletphysics.org}}
+\DoxyCodeLine{00004\ \textcolor{comment}{}}
+\DoxyCodeLine{00005\ \textcolor{comment}{This\ software\ is\ provided\ 'as-\/is',\ without\ any\ express\ or\ implied\ warranty.}}
+\DoxyCodeLine{00006\ \textcolor{comment}{In\ no\ event\ will\ the\ authors\ be\ held\ liable\ for\ any\ damages\ arising\ from\ the\ use\ of\ this\ software.}}
+\DoxyCodeLine{00007\ \textcolor{comment}{Permission\ is\ granted\ to\ anyone\ to\ use\ this\ software\ for\ any\ purpose,\ }}
+\DoxyCodeLine{00008\ \textcolor{comment}{including\ commercial\ applications,\ and\ to\ alter\ it\ and\ redistribute\ it\ freely,\ }}
+\DoxyCodeLine{00009\ \textcolor{comment}{subject\ to\ the\ following\ restrictions:}}
+\DoxyCodeLine{00010\ \textcolor{comment}{}}
+\DoxyCodeLine{00011\ \textcolor{comment}{1.\ The\ origin\ of\ this\ software\ must\ not\ be\ misrepresented;\ you\ must\ not\ claim\ that\ you\ wrote\ the\ original\ software.\ If\ you\ use\ this\ software\ in\ a\ product,\ an\ acknowledgment\ in\ the\ product\ documentation\ would\ be\ appreciated\ but\ is\ not\ required.}}
+\DoxyCodeLine{00012\ \textcolor{comment}{2.\ Altered\ source\ versions\ must\ be\ plainly\ marked\ as\ such,\ and\ must\ not\ be\ misrepresented\ as\ being\ the\ original\ software.}}
+\DoxyCodeLine{00013\ \textcolor{comment}{3.\ This\ notice\ may\ not\ be\ removed\ or\ altered\ from\ any\ source\ distribution.}}
+\DoxyCodeLine{00014\ \textcolor{comment}{*/}}
+\DoxyCodeLine{00015\ }
+\DoxyCodeLine{00016\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_sphere_box_collision_algorithm_8h}{btSphereBoxCollisionAlgorithm.h}}"{}}}
+\DoxyCodeLine{00017\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_dispatcher_8h}{BulletCollision/CollisionDispatch/btCollisionDispatcher.h}}"{}}}
+\DoxyCodeLine{00018\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_sphere_shape_8h}{BulletCollision/CollisionShapes/btSphereShape.h}}"{}}}
+\DoxyCodeLine{00019\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_box_shape_8h}{BulletCollision/CollisionShapes/btBoxShape.h}}"{}}}
+\DoxyCodeLine{00020\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_object_8h}{BulletCollision/CollisionDispatch/btCollisionObject.h}}"{}}}
+\DoxyCodeLine{00021\ \textcolor{preprocessor}{\#include\ "{}\mbox{\hyperlink{bt_collision_object_wrapper_8h}{BulletCollision/CollisionDispatch/btCollisionObjectWrapper.h}}"{}}}
+\DoxyCodeLine{00022\ \textcolor{comment}{//\#include\ <stdio.h>}}
+\DoxyCodeLine{00023\ }
+\DoxyCodeLine{00024\ \mbox{\hyperlink{classbt_sphere_box_collision_algorithm_a0d289a90663e6b7a7863ba6530c3de78}{btSphereBoxCollisionAlgorithm::btSphereBoxCollisionAlgorithm}}(\mbox{\hyperlink{bt_persistent_manifold_8h_aaed89c0c544afc37ffa9f500b5968214}{btPersistentManifold}}*\ mf,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_algorithm_construction_info}{btCollisionAlgorithmConstructionInfo}}\&\ ci,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ col0Wrap,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ col1Wrap,\ \textcolor{keywordtype}{bool}\ isSwapped)}
+\DoxyCodeLine{00025\ \ \ \ \ :\ \mbox{\hyperlink{classbt_activating_collision_algorithm_a8445dd4e3085b72cd76c9773fccea861}{btActivatingCollisionAlgorithm}}(ci,\ col0Wrap,\ col1Wrap),}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ m\_ownManifold(false),}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ m\_manifoldPtr(mf),}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ m\_isSwapped(isSwapped)}
+\DoxyCodeLine{00029\ \{}
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ sphereObjWrap\ =\ m\_isSwapped\ ?\ col1Wrap\ :\ col0Wrap;}
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ boxObjWrap\ =\ m\_isSwapped\ ?\ col0Wrap\ :\ col1Wrap;}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keywordflow}{if}\ (!m\_manifoldPtr\ \&\&\ \mbox{\hyperlink{classbt_collision_algorithm_a11004907cdf3028c635486b435302f90}{m\_dispatcher}}-\/>needsCollision(sphereObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_ae58fab885d967232e8eb1096ef8c3215}{getCollisionObject}}(),\ boxObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_ae58fab885d967232e8eb1096ef8c3215}{getCollisionObject}}()))}
+\DoxyCodeLine{00034\ \ \ \ \ \{}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ m\_manifoldPtr\ =\ m\_dispatcher-\/>getNewManifold(sphereObjWrap-\/>getCollisionObject(),\ boxObjWrap-\/>getCollisionObject());}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ m\_ownManifold\ =\ true;}
+\DoxyCodeLine{00037\ \ \ \ \ \}}
+\DoxyCodeLine{00038\ \}}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00040\ \mbox{\hyperlink{classbt_sphere_box_collision_algorithm_a257b3ebee0d81ea82dac536c8051c8a3}{btSphereBoxCollisionAlgorithm::\string~btSphereBoxCollisionAlgorithm}}()}
+\DoxyCodeLine{00041\ \{}
+\DoxyCodeLine{00042\ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_ownManifold)}
+\DoxyCodeLine{00043\ \ \ \ \ \{}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_manifoldPtr)}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classbt_collision_algorithm_a11004907cdf3028c635486b435302f90}{m\_dispatcher}}-\/>releaseManifold(m\_manifoldPtr);}
+\DoxyCodeLine{00046\ \ \ \ \ \}}
+\DoxyCodeLine{00047\ \}}
+\DoxyCodeLine{00048\ }
+\DoxyCodeLine{00049\ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classbt_sphere_box_collision_algorithm_ab171b2afeabaaaa8a51728426643c369}{btSphereBoxCollisionAlgorithm::processCollision}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ body0Wrap,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ body1Wrap,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_dispatcher_info}{btDispatcherInfo}}\&\ dispatchInfo,\ \mbox{\hyperlink{classbt_manifold_result}{btManifoldResult}}*\ resultOut)}
+\DoxyCodeLine{00050\ \{}
+\DoxyCodeLine{00051\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})dispatchInfo;}
+\DoxyCodeLine{00052\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})resultOut;}
+\DoxyCodeLine{00053\ \ \ \ \ \textcolor{keywordflow}{if}\ (!m\_manifoldPtr)}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return};}
+\DoxyCodeLine{00055\ }
+\DoxyCodeLine{00056\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ sphereObjWrap\ =\ m\_isSwapped\ ?\ body1Wrap\ :\ body0Wrap;}
+\DoxyCodeLine{00057\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ boxObjWrap\ =\ m\_isSwapped\ ?\ body0Wrap\ :\ body1Wrap;}
+\DoxyCodeLine{00058\ }
+\DoxyCodeLine{00059\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ pOnBox;}
+\DoxyCodeLine{00060\ }
+\DoxyCodeLine{00061\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ normalOnSurfaceB;}
+\DoxyCodeLine{00062\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ penetrationDepth;}
+\DoxyCodeLine{00063\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ sphereCenter\ =\ sphereObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a707b16ff995f2b7575bbdc2882b17b6f}{getWorldTransform}}().getOrigin();}
+\DoxyCodeLine{00064\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_sphere_shape_8h_a930d334ca38a868b18921a34affbda3b}{btSphereShape}}*\ sphere0\ =\ (\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_sphere_shape_8h_a930d334ca38a868b18921a34affbda3b}{btSphereShape}}*)sphereObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a4d0eab4572788c8627d8badff7312a67}{getCollisionShape}}();}
+\DoxyCodeLine{00065\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ radius\ =\ sphere0-\/>getRadius();}
+\DoxyCodeLine{00066\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxContactDistance\ =\ m\_manifoldPtr-\/>getContactBreakingThreshold();}
+\DoxyCodeLine{00067\ }
+\DoxyCodeLine{00068\ \ \ \ \ resultOut-\/>\mbox{\hyperlink{classbt_manifold_result_a7a46d46b9a13c2896695e458c1d6df1f}{setPersistentManifold}}(m\_manifoldPtr);}
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00070\ \ \ \ \ \textcolor{keywordflow}{if}\ (\mbox{\hyperlink{classbt_sphere_box_collision_algorithm_a84fb21901c8dbbf9c8fca70ac173721f}{getSphereDistance}}(boxObjWrap,\ pOnBox,\ normalOnSurfaceB,\ penetrationDepth,\ sphereCenter,\ radius,\ maxContactDistance))}
+\DoxyCodeLine{00071\ \ \ \ \ \{}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ resultOut-\/>\mbox{\hyperlink{classbt_manifold_result_aebe32f0c202d988d0458e88d768602c6}{addContactPoint}}(normalOnSurfaceB,\ pOnBox,\ penetrationDepth);}
+\DoxyCodeLine{00074\ \ \ \ \ \}}
+\DoxyCodeLine{00075\ }
+\DoxyCodeLine{00076\ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_ownManifold)}
+\DoxyCodeLine{00077\ \ \ \ \ \{}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{if}\ (m\_manifoldPtr-\/>getNumContacts())}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \ \ \ \ \ \ resultOut-\/>\mbox{\hyperlink{classbt_manifold_result_adbcfd865252ac9dc8a3543f404e2dcf1}{refreshContactPoints}}();}
+\DoxyCodeLine{00081\ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00082\ \ \ \ \ \}}
+\DoxyCodeLine{00083\ \}}
+\DoxyCodeLine{00084\ }
+\DoxyCodeLine{00085\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_sphere_box_collision_algorithm_adb1982e2585bfcf69dadc4d6b2305fa4}{btSphereBoxCollisionAlgorithm::calculateTimeOfImpact}}(\mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ col0,\ \mbox{\hyperlink{bt_collision_object_8h_a162a0e48dd47198d73efdd1fef8747cb}{btCollisionObject}}*\ col1,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_dispatcher_info}{btDispatcherInfo}}\&\ dispatchInfo,\ \mbox{\hyperlink{classbt_manifold_result}{btManifoldResult}}*\ resultOut)}
+\DoxyCodeLine{00086\ \{}
+\DoxyCodeLine{00087\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})resultOut;}
+\DoxyCodeLine{00088\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})dispatchInfo;}
+\DoxyCodeLine{00089\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})col0;}
+\DoxyCodeLine{00090\ \ \ \ \ (\mbox{\hyperlink{imgui__impl__opengl3__loader_8h_ac668e7cffd9e2e9cfee428b9b2f34fa7}{void}})col1;}
+\DoxyCodeLine{00091\ }
+\DoxyCodeLine{00092\ \ \ \ \ \textcolor{comment}{//not\ yet}}
+\DoxyCodeLine{00093\ \ \ \ \ \textcolor{keywordflow}{return}\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.);}
+\DoxyCodeLine{00094\ \}}
+\DoxyCodeLine{00095\ }
+\DoxyCodeLine{00096\ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classbt_sphere_box_collision_algorithm_a84fb21901c8dbbf9c8fca70ac173721f}{btSphereBoxCollisionAlgorithm::getSphereDistance}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{structbt_collision_object_wrapper}{btCollisionObjectWrapper}}*\ boxObjWrap,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ pointOnBox,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ normal,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\&\ penetrationDepth,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ sphereCenter,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ fRadius,\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ maxContactDistance)}
+\DoxyCodeLine{00097\ \{}
+\DoxyCodeLine{00098\ \ \ \ \ \textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box_shape_8h_af85a5dfc008b3c2268cd5f0555b3dc8d}{btBoxShape}}*\ boxShape\ =\ (\textcolor{keyword}{const}\ \mbox{\hyperlink{bt_box_shape_8h_af85a5dfc008b3c2268cd5f0555b3dc8d}{btBoxShape}}*)boxObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a4d0eab4572788c8627d8badff7312a67}{getCollisionShape}}();}
+\DoxyCodeLine{00099\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \textcolor{keyword}{const}\&\ boxHalfExtent\ =\ boxShape-\/>getHalfExtentsWithoutMargin();}
+\DoxyCodeLine{00100\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ boxMargin\ =\ boxShape-\/>getMargin();}
+\DoxyCodeLine{00101\ \ \ \ \ penetrationDepth\ =\ 1.0f;}
+\DoxyCodeLine{00102\ }
+\DoxyCodeLine{00103\ \ \ \ \ \textcolor{comment}{//\ convert\ the\ sphere\ position\ to\ the\ box's\ local\ space}}
+\DoxyCodeLine{00104\ \ \ \ \ \mbox{\hyperlink{bt_transform_8h_addf03f129c64d2963d86b8f57ec01f82}{btTransform}}\ \textcolor{keyword}{const}\&\ m44T\ =\ boxObjWrap-\/>\mbox{\hyperlink{structbt_collision_object_wrapper_a707b16ff995f2b7575bbdc2882b17b6f}{getWorldTransform}}();}
+\DoxyCodeLine{00105\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ sphereRelPos\ =\ m44T.invXform(sphereCenter);}
+\DoxyCodeLine{00106\ }
+\DoxyCodeLine{00107\ \ \ \ \ \textcolor{comment}{//\ Determine\ the\ closest\ point\ to\ the\ sphere\ center\ in\ the\ box}}
+\DoxyCodeLine{00108\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ closestPoint\ =\ sphereRelPos;}
+\DoxyCodeLine{00109\ \ \ \ \ closestPoint.setX(\mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin}}(boxHalfExtent.getX(),\ closestPoint.getX()));}
+\DoxyCodeLine{00110\ \ \ \ \ closestPoint.setX(\mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(-\/boxHalfExtent.getX(),\ closestPoint.getX()));}
+\DoxyCodeLine{00111\ \ \ \ \ closestPoint.setY(\mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin}}(boxHalfExtent.getY(),\ closestPoint.getY()));}
+\DoxyCodeLine{00112\ \ \ \ \ closestPoint.setY(\mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(-\/boxHalfExtent.getY(),\ closestPoint.getY()));}
+\DoxyCodeLine{00113\ \ \ \ \ closestPoint.setZ(\mbox{\hyperlink{bt_min_max_8h_a4f5836062dedebaa16e5a4eb997d95ba}{btMin}}(boxHalfExtent.getZ(),\ closestPoint.getZ()));}
+\DoxyCodeLine{00114\ \ \ \ \ closestPoint.setZ(\mbox{\hyperlink{bt_min_max_8h_a9866f0eafc86a31b646d31b3389293dd}{btMax}}(-\/boxHalfExtent.getZ(),\ closestPoint.getZ()));}
+\DoxyCodeLine{00115\ }
+\DoxyCodeLine{00116\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ intersectionDist\ =\ fRadius\ +\ boxMargin;}
+\DoxyCodeLine{00117\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ contactDist\ =\ intersectionDist\ +\ maxContactDistance;}
+\DoxyCodeLine{00118\ \ \ \ \ normal\ =\ sphereRelPos\ -\/\ closestPoint;}
+\DoxyCodeLine{00119\ }
+\DoxyCodeLine{00120\ \ \ \ \ \textcolor{comment}{//if\ there\ is\ no\ penetration,\ we\ are\ done}}
+\DoxyCodeLine{00121\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ dist2\ =\ normal.length2();}
+\DoxyCodeLine{00122\ \ \ \ \ \textcolor{keywordflow}{if}\ (dist2\ >\ contactDist\ *\ contactDist)}
+\DoxyCodeLine{00123\ \ \ \ \ \{}
+\DoxyCodeLine{00124\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00125\ \ \ \ \ \}}
+\DoxyCodeLine{00126\ }
+\DoxyCodeLine{00127\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}};}
+\DoxyCodeLine{00128\ }
+\DoxyCodeLine{00129\ \ \ \ \ \textcolor{comment}{//special\ case\ if\ the\ sphere\ center\ is\ inside\ the\ box}}
+\DoxyCodeLine{00130\ \ \ \ \ \textcolor{keywordflow}{if}\ (dist2\ <=\ \mbox{\hyperlink{bt_scalar_8h_ae51eef6845bd59f964c1b2dbfe7054b7}{SIMD\_EPSILON}})}
+\DoxyCodeLine{00131\ \ \ \ \ \{}
+\DoxyCodeLine{00132\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}}\ =\ -\/\mbox{\hyperlink{classbt_sphere_box_collision_algorithm_ab6566f6aa866da47034cb976fe1276a4}{getSpherePenetration}}(boxHalfExtent,\ sphereRelPos,\ closestPoint,\ normal);}
+\DoxyCodeLine{00133\ \ \ \ \ \}}
+\DoxyCodeLine{00134\ \ \ \ \ \textcolor{keywordflow}{else}\ \ \textcolor{comment}{//compute\ the\ penetration\ details}}
+\DoxyCodeLine{00135\ \ \ \ \ \{}
+\DoxyCodeLine{00136\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}}\ =\ normal.length();}
+\DoxyCodeLine{00137\ \ \ \ \ \ \ \ \ normal\ /=\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}};}
+\DoxyCodeLine{00138\ \ \ \ \ \}}
+\DoxyCodeLine{00139\ }
+\DoxyCodeLine{00140\ \ \ \ \ pointOnBox\ =\ closestPoint\ +\ normal\ *\ boxMargin;}
+\DoxyCodeLine{00141\ \ \ \ \ \textcolor{comment}{//\ \ v3PointOnSphere\ =\ sphereRelPos\ -\/\ (normal\ *\ fRadius);}}
+\DoxyCodeLine{00142\ \ \ \ \ penetrationDepth\ =\ \mbox{\hyperlink{b3_vector3_8h_aec083f9e213f861b1ac5d98110857753}{distance}}\ -\/\ intersectionDist;}
+\DoxyCodeLine{00143\ }
+\DoxyCodeLine{00144\ \ \ \ \ \textcolor{comment}{//\ transform\ back\ in\ world\ space}}
+\DoxyCodeLine{00145\ \ \ \ \ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ tmp\ =\ m44T(pointOnBox);}
+\DoxyCodeLine{00146\ \ \ \ \ pointOnBox\ =\ tmp;}
+\DoxyCodeLine{00147\ \ \ \ \ \textcolor{comment}{//\ \ tmp\ =\ m44T(v3PointOnSphere);}}
+\DoxyCodeLine{00148\ \ \ \ \ \textcolor{comment}{//\ \ v3PointOnSphere\ =\ tmp;}}
+\DoxyCodeLine{00149\ \ \ \ \ tmp\ =\ m44T.getBasis()\ *\ normal;}
+\DoxyCodeLine{00150\ \ \ \ \ normal\ =\ tmp;}
+\DoxyCodeLine{00151\ }
+\DoxyCodeLine{00152\ \ \ \ \ \textcolor{keywordflow}{return}\ \textcolor{keyword}{true};}
+\DoxyCodeLine{00153\ \}}
+\DoxyCodeLine{00154\ }
+\DoxyCodeLine{00155\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ \mbox{\hyperlink{classbt_sphere_box_collision_algorithm_ab6566f6aa866da47034cb976fe1276a4}{btSphereBoxCollisionAlgorithm::getSpherePenetration}}(\mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \textcolor{keyword}{const}\&\ boxHalfExtent,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\ \textcolor{keyword}{const}\&\ sphereRelPos,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ closestPoint,\ \mbox{\hyperlink{bt_vector3_8h_a755c140e1fbddef09844cf2873258525}{btVector3}}\&\ normal)}
+\DoxyCodeLine{00156\ \{}
+\DoxyCodeLine{00157\ \ \ \ \ \textcolor{comment}{//project\ the\ center\ of\ the\ sphere\ on\ the\ closest\ face\ of\ the\ box}}
+\DoxyCodeLine{00158\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ faceDist\ =\ boxHalfExtent.getX()\ -\/\ sphereRelPos.getX();}
+\DoxyCodeLine{00159\ \ \ \ \ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}\ minDist\ =\ faceDist;}
+\DoxyCodeLine{00160\ \ \ \ \ closestPoint.setX(boxHalfExtent.getX());}
+\DoxyCodeLine{00161\ \ \ \ \ normal.setValue(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0f),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0f),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0f));}
+\DoxyCodeLine{00162\ }
+\DoxyCodeLine{00163\ \ \ \ \ faceDist\ =\ boxHalfExtent.getX()\ +\ sphereRelPos.getX();}
+\DoxyCodeLine{00164\ \ \ \ \ \textcolor{keywordflow}{if}\ (faceDist\ <\ minDist)}
+\DoxyCodeLine{00165\ \ \ \ \ \{}
+\DoxyCodeLine{00166\ \ \ \ \ \ \ \ \ minDist\ =\ faceDist;}
+\DoxyCodeLine{00167\ \ \ \ \ \ \ \ \ closestPoint\ =\ sphereRelPos;}
+\DoxyCodeLine{00168\ \ \ \ \ \ \ \ \ closestPoint.setX(-\/boxHalfExtent.getX());}
+\DoxyCodeLine{00169\ \ \ \ \ \ \ \ \ normal.setValue(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/1.0f),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0f),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0f));}
+\DoxyCodeLine{00170\ \ \ \ \ \}}
+\DoxyCodeLine{00171\ }
+\DoxyCodeLine{00172\ \ \ \ \ faceDist\ =\ boxHalfExtent.getY()\ -\/\ sphereRelPos.getY();}
+\DoxyCodeLine{00173\ \ \ \ \ \textcolor{keywordflow}{if}\ (faceDist\ <\ minDist)}
+\DoxyCodeLine{00174\ \ \ \ \ \{}
+\DoxyCodeLine{00175\ \ \ \ \ \ \ \ \ minDist\ =\ faceDist;}
+\DoxyCodeLine{00176\ \ \ \ \ \ \ \ \ closestPoint\ =\ sphereRelPos;}
+\DoxyCodeLine{00177\ \ \ \ \ \ \ \ \ closestPoint.setY(boxHalfExtent.getY());}
+\DoxyCodeLine{00178\ \ \ \ \ \ \ \ \ normal.setValue(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0f),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0f),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0f));}
+\DoxyCodeLine{00179\ \ \ \ \ \}}
+\DoxyCodeLine{00180\ }
+\DoxyCodeLine{00181\ \ \ \ \ faceDist\ =\ boxHalfExtent.getY()\ +\ sphereRelPos.getY();}
+\DoxyCodeLine{00182\ \ \ \ \ \textcolor{keywordflow}{if}\ (faceDist\ <\ minDist)}
+\DoxyCodeLine{00183\ \ \ \ \ \{}
+\DoxyCodeLine{00184\ \ \ \ \ \ \ \ \ minDist\ =\ faceDist;}
+\DoxyCodeLine{00185\ \ \ \ \ \ \ \ \ closestPoint\ =\ sphereRelPos;}
+\DoxyCodeLine{00186\ \ \ \ \ \ \ \ \ closestPoint.setY(-\/boxHalfExtent.getY());}
+\DoxyCodeLine{00187\ \ \ \ \ \ \ \ \ normal.setValue(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0f),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/1.0f),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0f));}
+\DoxyCodeLine{00188\ \ \ \ \ \}}
+\DoxyCodeLine{00189\ }
+\DoxyCodeLine{00190\ \ \ \ \ faceDist\ =\ boxHalfExtent.getZ()\ -\/\ sphereRelPos.getZ();}
+\DoxyCodeLine{00191\ \ \ \ \ \textcolor{keywordflow}{if}\ (faceDist\ <\ minDist)}
+\DoxyCodeLine{00192\ \ \ \ \ \{}
+\DoxyCodeLine{00193\ \ \ \ \ \ \ \ \ minDist\ =\ faceDist;}
+\DoxyCodeLine{00194\ \ \ \ \ \ \ \ \ closestPoint\ =\ sphereRelPos;}
+\DoxyCodeLine{00195\ \ \ \ \ \ \ \ \ closestPoint.setZ(boxHalfExtent.getZ());}
+\DoxyCodeLine{00196\ \ \ \ \ \ \ \ \ normal.setValue(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0f),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0f),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(1.0f));}
+\DoxyCodeLine{00197\ \ \ \ \ \}}
+\DoxyCodeLine{00198\ }
+\DoxyCodeLine{00199\ \ \ \ \ faceDist\ =\ boxHalfExtent.getZ()\ +\ sphereRelPos.getZ();}
+\DoxyCodeLine{00200\ \ \ \ \ \textcolor{keywordflow}{if}\ (faceDist\ <\ minDist)}
+\DoxyCodeLine{00201\ \ \ \ \ \{}
+\DoxyCodeLine{00202\ \ \ \ \ \ \ \ \ minDist\ =\ faceDist;}
+\DoxyCodeLine{00203\ \ \ \ \ \ \ \ \ closestPoint\ =\ sphereRelPos;}
+\DoxyCodeLine{00204\ \ \ \ \ \ \ \ \ closestPoint.setZ(-\/boxHalfExtent.getZ());}
+\DoxyCodeLine{00205\ \ \ \ \ \ \ \ \ normal.setValue(\mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0f),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(0.0f),\ \mbox{\hyperlink{bt_scalar_8h_a1e5824cfc8adbf5a77f2622132d16018}{btScalar}}(-\/1.0f));}
+\DoxyCodeLine{00206\ \ \ \ \ \}}
+\DoxyCodeLine{00207\ }
+\DoxyCodeLine{00208\ \ \ \ \ \textcolor{keywordflow}{return}\ minDist;}
+\DoxyCodeLine{00209\ \}}
+
+\end{DoxyCode}
